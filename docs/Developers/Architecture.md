@@ -105,7 +105,7 @@ AiracService.RunAsync
         3. XxxGeojsonWriter           → .geojson files
         4. XxxAliasWriter             → alias .txt
   DuplicateAliasReport.Write          → Duplicate_Alias_Commands.txt
-  VnasAliasFileWriter.Write           → Upload_to_vNAS\vNAS_Alias.txt
+  VnasAliasFileWriter.Write           → Aliases\Combined_Alias.txt
         │  AiracServiceResult
         ▼
 Review tab: each tab's DescribeRunResult(result)
@@ -122,7 +122,7 @@ Not every sub-service has all four steps:
 | Wx Stations | aviationweather.gov | Symbols and Text | no |
 | Procedures | d-TPP Metafile, joined to NASR | no - writes `Procedure_Changes.md` and `Procedures.json` | `Faa_Chart_Recall.txt`, for every airport in the metafile |
 | Telephony | FAA telephony pages (and virtual airlines) | no | `Telephony.txt` |
-| vNAS Alias Upload | the user's custom alias files | no | merges into `vNAS_Alias.txt` |
+| Concatenate Aliases | the run's alias files and the user's custom alias files | no | combines them into `Combined_Alias.txt` |
 
 - **The settings block is the contract.** Every tab, and the harness, hands Core a flat
   `Dictionary<string, string>` ([Settings reference](Settings-Reference.md)). Core never sees a
@@ -141,18 +141,22 @@ Not every sub-service has all four steps:
   alphabetically, then `TELEPHONY`, then `OTHER` (airways, NAVAIDs, and anything with no known
   ARTCC). It is written whenever an
   alias file was written, even with no duplicates, so an old report never misleads.
-- **`vNAS_Alias.txt`** is written last, whenever an alias file is marked for vNAS or vNAS Alias
-  Upload is in the run. vNAS takes one alias file per facility, so `VnasAliasFileWriter` writes:
+- **Every file is ready for vNAS**, so nothing is marked for upload: GeoJSON goes in `Geojson`,
+  alias files in `Aliases`, and CRC-ERAM defaults go on whichever GeoJSON files `CrcDefaultsFor`
+  names.
+- **`Combined_Alias.txt`** is written last, into `Aliases`, while Concatenate Aliases is in the run
+  and combining (`CombineAliasFiles`, on by default). vNAS takes one alias file per facility, so
+  `VnasAliasFileWriter` writes:
   1. the first `.FeUseOnly` line any custom file has;
   2. a start line, `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. …`;
-  3. each marked FE-Buddy alias file under `; ----- <name> -----`;
+  3. each alias file the run wrote, under `; ----- <name> -----`;
   4. an end line, `; ===== End of FE-Buddy aliases. …`;
   5. each custom alias file, in order.
 
   CRC uses the last copy of a command, so the facility's own commands win. A custom file holding
   FE-Buddy's section (last cycle's upload, reused) loses everything from the start line to the end
-  line. An unreadable custom file is left out with an advisory. With nothing to merge, no file is
-  written and an old one is deleted, so it can't be uploaded by mistake.
+  line. An unreadable custom file is left out with an advisory. When no combined file is written but
+  the run rewrote alias files, an old one is deleted, so it can't be uploaded by mistake.
 - **File conversions** run one service each (`DatToGeojsonService`, `SctToGeojsonService`,
   `EramToGeojsonService`), one source file at a time through `ConversionFiles`: an unreadable file
   fails alone. Each writes into its own folder beside the `AIRAC_<cycle>` folders

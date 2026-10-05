@@ -401,46 +401,37 @@ public sealed class ProcedureSettingsParserTests
 
 	// ---- UploadToVnas / CrcDefaultsFor ----
 
+	/// <summary>Every file is a vNAS file now, so a saved <c>UploadToVnas</c> is no longer read, and says so.</summary>
 	[Fact]
-	public void upload_to_vnas_may_name_the_alias_file()
+	public void a_stale_upload_to_vnas_key_produces_a_warning_and_changes_nothing()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["UploadToVnas"] = "Faa_Chart_Recall.txt";
 
-		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
 
-		Assert.True(parsed.Vnas.IsUploaded(ProcedureOutputFiles.Alias));
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("'UploadToVnas'"));
+		Assert.True(result.Settings.GenerateAliasFile);
 	}
 
+	/// <summary>Procedures writes no GeoJSON, so <c>CrcDefaultsFor</c> has nothing to choose among; the shared key is accepted and ignored.</summary>
 	[Fact]
-	public void upload_to_vnas_naming_any_other_file_throws()
+	public void crc_defaults_for_is_accepted_and_ignored()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Procedures.json";
-
-		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
-		Assert.Contains("Procedures.json", ex.Message);
-	}
-
-	[Fact]
-	public void crc_defaults_for_naming_the_alias_file_throws()
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Faa_Chart_Recall.txt";
 		settings["CrcDefaultsFor"] = "Faa_Chart_Recall.txt";
 
-		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
-		Assert.Contains("Faa_Chart_Recall.txt", ex.Message);
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
+
+		Assert.Empty(result.Messages);
 	}
 
 	[Fact]
-	public void generate_alias_file_and_vnas_default_to_on_and_nothing_uploaded()
+	public void generate_alias_file_defaults_to_on()
 	{
 		ProcedureSettings parsed = ProcedureSettingsParser.Parse(MinimalValidSettings()).Settings;
 
 		Assert.True(parsed.GenerateAliasFile);
-		Assert.Empty(parsed.Vnas.UploadFiles);
-		Assert.False(parsed.Vnas.IsUploaded(ProcedureOutputFiles.Alias));
 	}
 
 	// ---- ROI reuse ----

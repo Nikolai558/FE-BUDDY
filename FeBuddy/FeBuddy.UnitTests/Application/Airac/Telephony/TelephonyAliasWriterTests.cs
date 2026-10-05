@@ -1,4 +1,3 @@
-using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Domain.Telephony.Models;
@@ -34,10 +33,9 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 		}
 	}
 
-	private TelephonySettings Settings(VnasFileChoices? vnas = null) => new()
+	private TelephonySettings Settings() => new()
 	{
 		OutputDirectory = _outputDirectory,
-		Vnas = vnas ?? VnasFileChoices.None,
 	};
 
 	private static TelephonyEntry Icao(string designator, string telephony, string company, string country) =>
@@ -95,17 +93,6 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 	{
 		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate(
 			[Icao("AVA", "AVIANCA", "AVIANCA S.A.", "COLOMBIA")], Settings());
-
-		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Telephony.txt"), result.FilePath);
-	}
-
-	[Fact]
-	public void the_alias_file_stays_in_the_aliases_folder_when_marked_for_vnas()
-	{
-		TelephonySettings settings = Settings(new VnasFileChoices([TelephonyOutputFiles.Alias], []));
-
-		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate(
-			[Icao("AVA", "AVIANCA", "AVIANCA S.A.", "COLOMBIA")], settings);
 
 		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Telephony.txt"), result.FilePath);
 	}

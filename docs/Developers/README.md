@@ -11,8 +11,8 @@ package it. Paths are relative to the repository root; the solution is `FeBuddy/
 2. **The user picks** sub-services (Airports, Airways, …) on the AIRAC Service screen and sets their
    options. Each tab turns its options into a flat `key = value` dictionary: the **settings block**.
 3. **The library builds.** For each sub-service it parses the block, turns FAA rows into objects (an
-   airway with its waypoints in order), and writes GeoJSON and alias files. Alias files meant for
-   vNAS are merged, with the facility's own, into one `vNAS_Alias.txt`.
+   airway with its waypoints in order), and writes GeoJSON and alias files, every one ready for vNAS.
+   The alias files are combined, with the facility's own, into one `Combined_Alias.txt`.
 4. **A result comes back** - files written, warnings, what was skipped and why - and the app shows
    it on the Review tab.
 

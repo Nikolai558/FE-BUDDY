@@ -23,8 +23,8 @@ public sealed class InlineCodeTests
 	public void several_code_parts_and_code_at_either_end_split_cleanly()
 	{
 		Assert.Equal(
-			[("Aliases", true), (" and ", false), ("Upload_to_vNAS", true)],
-			InlineCode.Split("`Aliases` and `Upload_to_vNAS`"));
+			[("Aliases", true), (" and ", false), ("Combined_Alias.txt", true)],
+			InlineCode.Split("`Aliases` and `Combined_Alias.txt`"));
 	}
 
 	[Theory]

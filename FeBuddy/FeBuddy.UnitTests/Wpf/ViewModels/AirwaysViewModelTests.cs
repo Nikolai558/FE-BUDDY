@@ -142,21 +142,22 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Equal("ZK", block["ExcludedDesignations"]);
 	}
 
-	/// <summary>A High or Low file is listed - for vNAS, and for renaming - only while an included type goes in it.</summary>
+	/// <summary>A High or Low file is listed - for CRC-ERAM defaults, and for renaming - only while an included type goes in it.</summary>
 	[Fact]
 	public void only_the_files_an_included_type_goes_in_are_listed()
 	{
 		AirwaysViewModel tab = NewTab("J", "V");
 
-		Assert.Equal(["High", "Low", "Alias file"], tab.VnasFileRows.Select(row => row.Label));
+		Assert.Equal(["High", "Low"], tab.CrcFileRows.Select(row => row.Label));
 
 		Designation(tab, "J").Included = false;
 
-		Assert.Equal(["Low", "Alias file"], tab.VnasFileRows.Select(row => row.Label));
+		Assert.Equal(["Low"], tab.CrcFileRows.Select(row => row.Label));
+		Assert.DoesNotContain(tab.OutputFileEntries(), file => file.Key.StartsWith("Airways_High", StringComparison.Ordinal));
 
 		Designation(tab, "V").Stratum = AirwayStratum.Both;
 
-		Assert.Equal(["High", "Low", "Alias file"], tab.VnasFileRows.Select(row => row.Label));
+		Assert.Equal(["High", "Low"], tab.CrcFileRows.Select(row => row.Label));
 	}
 
 	/// <summary>The choices are saved, and a type a later cycle adds is flagged until the user chooses.</summary>

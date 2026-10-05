@@ -251,7 +251,6 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			rows.Add(new ServicePreviewRow("Symbol style", DescribeSymbolStyle()));
 		}
 
-		rows.Add(new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()));
 		rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()));
 
 		return [new ServicePreviewSection("NAVAIDs", rows)];

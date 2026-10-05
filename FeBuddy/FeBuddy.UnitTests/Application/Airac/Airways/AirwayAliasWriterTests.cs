@@ -1,6 +1,5 @@
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
-using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airways.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
@@ -8,8 +7,8 @@ using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
 /// <summary>
-/// Covers the <c>Airways.txt</c> alias file: where it goes (the <c>Aliases</c> folder,
-/// even when marked for vNAS) and the <see cref="AliasRoiScope"/> toggle.
+/// Covers the <c>Airways.txt</c> alias file: where it goes (the <c>Aliases</c> folder) and the
+/// <see cref="AliasRoiScope"/> toggle.
 /// </summary>
 public sealed class AirwayAliasWriterTests : IDisposable
 {
@@ -31,7 +30,7 @@ public sealed class AirwayAliasWriterTests : IDisposable
 		}
 	}
 
-	private AirwaySettings Settings(bool uploadToVnas = false, AliasRoiScope scope = AliasRoiScope.All, RegionOfInterest? roi = null) => new()
+	private AirwaySettings Settings(AliasRoiScope scope = AliasRoiScope.All, RegionOfInterest? roi = null) => new()
 	{
 		OutputDirectory = _outputDirectory,
 		OutputBy = AirwayGeojsonOutputBy.None,
@@ -40,7 +39,6 @@ public sealed class AirwayAliasWriterTests : IDisposable
 		FebProperties = [],
 		GenerateAliasFile = true,
 		SplitAtAntimeridian = true,
-		Vnas = uploadToVnas ? new VnasFileChoices([AirwayOutputFiles.Alias], []) : VnasFileChoices.None,
 		AliasRoiScope = scope,
 		Roi = roi,
 	};
@@ -87,15 +85,6 @@ public sealed class AirwayAliasWriterTests : IDisposable
 		AirwayAliasGenerateResult result = AirwayAliasWriter.Generate(BuildTwoAirways(), Settings());
 
 		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airways.txt"), result.FilePath);
-	}
-
-	[Fact]
-	public void an_alias_file_marked_for_vnas_still_goes_in_the_aliases_folder()
-	{
-		AirwayAliasGenerateResult result = AirwayAliasWriter.Generate(BuildTwoAirways(), Settings(uploadToVnas: true));
-
-		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airways.txt"), result.FilePath);
-		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Upload_to_vNAS")));
 	}
 
 	[Fact]

@@ -11,8 +11,8 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 namespace FeBuddy.Core.Application.Airac.VnasAlias;
 
 /// <summary>
-/// Writes <c>Upload_to_vNAS\vNAS_Alias.txt</c>, the one alias file a facility uploads to vNAS: every
-/// FE-Buddy alias file marked for vNAS first, then the user's own custom alias files.
+/// Writes <c>Aliases\Combined_Alias.txt</c>, the one alias file a facility uploads to vNAS: every
+/// alias file the run wrote first, then the user's own custom alias files.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -35,7 +35,7 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// <para>
 /// A custom file is copied as it is, with two exceptions. A <c>.FeUseOnly</c> line must be the
 /// first line of an alias file, so only the first one found is kept, and it is moved to the top.
-/// And a custom file that is itself an old <c>vNAS_Alias.txt</c> - a facility that keeps the file it
+/// And a custom file that is itself an old combined file - a facility that keeps the file it
 /// last uploaded as its custom file - loses its FE-Buddy section, from <see cref="FeBuddySectionMarker"/>
 /// to <see cref="FeBuddySectionEndMarker"/>, so last cycle's FE-Buddy aliases are not merged in a
 /// second time. A file from before the end line existed (FE-Buddy's section was last) loses
@@ -48,11 +48,11 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// </para>
 /// <para>
 /// When there is nothing to merge, no file is written, and one an earlier run left in
-/// <c>Upload_to_vNAS</c> is deleted, so last run's file cannot be uploaded by mistake.
+/// <c>Aliases</c> is deleted, so last run's file cannot be uploaded by mistake.
 /// </para>
 /// <para>
 /// The names are FE-Buddy's. A file the user renamed (the File Names tab) is written, and headed,
-/// under its new name - <c>vNAS_Alias.txt</c> itself included.
+/// under its new name - <c>Combined_Alias.txt</c> itself included.
 /// </para>
 /// </remarks>
 public static class VnasAliasFileWriter
@@ -68,14 +68,13 @@ public static class VnasAliasFileWriter
 	private const int DuplicatesListed = 10;
 
 	/// <summary>
-	/// Writes <c>vNAS_Alias.txt</c> into <paramref name="outputDirectory"/>'s
-	/// <c>Upload_to_vNAS</c> folder.
+	/// Writes <c>Combined_Alias.txt</c> into <paramref name="outputDirectory"/>'s <c>Aliases</c> folder.
 	/// </summary>
 	/// <param name="customFiles">
 	/// The user's custom alias files as they were read, in merge order. One that could not be read is
 	/// left out with a warning.
 	/// </param>
-	/// <param name="feBuddyAliasFiles">The full paths of FE-Buddy's alias files marked for vNAS, in the order to add them.</param>
+	/// <param name="feBuddyAliasFiles">The full paths of FE-Buddy's alias files, in the order to add them.</param>
 	/// <param name="cycleId">The AIRAC cycle the FE-Buddy files are for, e.g. <c>2610</c>.</param>
 	/// <param name="outputDirectory">The folder the run writes into - the cycle folder.</param>
 	/// <param name="fileName">The file's name, when the user gave it one of their own (see <see cref="OutputFileNames"/>).</param>
@@ -86,7 +85,7 @@ public static class VnasAliasFileWriter
 		IReadOnlyList<string> feBuddyAliasFiles,
 		string cycleId,
 		string outputDirectory,
-		string fileName = AiracOutputPaths.VnasAliasFileName)
+		string fileName = AiracOutputPaths.CombinedAliasFileName)
 	{
 		ArgumentNullException.ThrowIfNull(customFiles);
 		ArgumentNullException.ThrowIfNull(feBuddyAliasFiles);
@@ -168,7 +167,7 @@ public static class VnasAliasFileWriter
 		if (custom.Count == 0 && feBuddy.Count == 0)
 		{
 			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
-				$"{fileName} was not written: no custom alias file could be read, and no FE-Buddy alias file is marked for vNAS." +
+				$"{fileName} was not written: no custom alias file could be read, and the run wrote no alias file." +
 				DeleteEarlierFile(outputDirectory, fileName).Sentence)
 			{ IsAdvisory = true });
 
@@ -198,7 +197,7 @@ public static class VnasAliasFileWriter
 		}
 
 		// One blank line before each custom file, except one that starts the file. A file left
-		// with nothing (an old vNAS_Alias.txt that was only FE-Buddy's section) adds nothing.
+		// with nothing (an old combined file that was only FE-Buddy's section) adds nothing.
 		bool anythingAbove = feBuddy.Count > 0;
 
 		foreach (IReadOnlyList<string> lines in custom.Select(f => f.Lines).Where(lines => lines.Count > 0))
@@ -212,7 +211,7 @@ public static class VnasAliasFileWriter
 			anythingAbove = true;
 		}
 
-		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory, fileName);
+		string path = AiracOutputPaths.CombinedAliasFilePath(outputDirectory, fileName);
 		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
@@ -293,7 +292,7 @@ public static class VnasAliasFileWriter
 	}
 
 	/// <summary>
-	/// Deletes the <c>vNAS_Alias.txt</c> an earlier run left, when this run writes none, so it cannot
+	/// Deletes the <c>Combined_Alias.txt</c> an earlier run left, when this run writes none, so it cannot
 	/// be uploaded by mistake. <see cref="AiracService"/> uses it too, for a run that rewrites alias
 	/// files without writing a new one.
 	/// </summary>
@@ -305,7 +304,7 @@ public static class VnasAliasFileWriter
 	/// </returns>
 	internal static (string Sentence, bool Failed) DeleteEarlierFile(string outputDirectory, string fileName)
 	{
-		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory, fileName);
+		string path = AiracOutputPaths.CombinedAliasFilePath(outputDirectory, fileName);
 
 		if (!File.Exists(path))
 		{

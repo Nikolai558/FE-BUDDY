@@ -23,11 +23,11 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 /// <param name="CreateTab">Builds the tab view-model. Called once, when the screen is built.</param>
 /// <param name="AliasFileName">
 /// The alias file the sub-service can write (e.g. <c>Airways.txt</c>), or <see langword="null"/> when it
-/// writes none. The vNAS Alias Upload tab lists these, to show which go into <c>vNAS_Alias.txt</c>.
+/// writes none. The Concatenate Aliases tab lists these, to show which go into <c>Combined_Alias.txt</c>.
 /// </param>
 /// <param name="Outputs">
 /// What the sub-service can make: its columns on the General tab. <see cref="SubServiceOutputKinds.None"/>
-/// keeps it off the General tab's table altogether (vNAS Alias Upload).
+/// keeps it off the General tab's table altogether (Concatenate Aliases).
 /// </param>
 /// <param name="Help">What it and each of its outputs are, for the tooltips; <see langword="null"/> for none.</param>
 public sealed record SubServiceDescriptor(

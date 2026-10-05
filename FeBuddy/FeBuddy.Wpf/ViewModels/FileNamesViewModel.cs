@@ -8,6 +8,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 
@@ -21,7 +22,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <remarks>
 /// <para>
 /// The list is read from the other tabs' settings as they are now, each time the tab is shown (see
-/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the vNAS Alias Upload tab reads
+/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the Concatenate Aliases tab reads
 /// its alias files. A file's choice - whether to rename it, and its new name - is kept by file key,
 /// including files the current settings do not write, so a file that drops off the list and comes
 /// back keeps its choice.
@@ -44,6 +45,9 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 	private const string RenameFilesKey = "RenameFiles";
 	private const string FilesKey = "Files";
 	private const string KeyField = "Key";
+
+	// The combined alias file's key until every file became a vNAS file: a name given to it then is kept.
+	private const string RetiredCombinedAliasKey = "vNAS_Alias.txt";
 	private const string RenameField = "Rename";
 	private const string NameField = "Name";
 
@@ -378,8 +382,9 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 			}
 
 			string rename = fields.GetValueOrDefault(RenameField, "Y");
+			string currentKey = fileKey.Equals(RetiredCombinedAliasKey, StringComparison.OrdinalIgnoreCase) ? AiracOutputPaths.CombinedAliasFileName : fileKey;
 
-			yield return (fileKey, new FileNameChoice(
+			yield return (currentKey, new FileNameChoice(
 				rename.Equals("Y", StringComparison.OrdinalIgnoreCase) || rename.Equals("true", StringComparison.OrdinalIgnoreCase),
 				fields.GetValueOrDefault(NameField, string.Empty)));
 		}

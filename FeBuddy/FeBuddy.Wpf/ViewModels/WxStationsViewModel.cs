@@ -133,7 +133,6 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
 			new ServicePreviewRow("Station data", StationDataStatus),
 			new ServicePreviewRow("Region of interest", DescribeRoi()),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 

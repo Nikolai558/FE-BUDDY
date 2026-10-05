@@ -155,7 +155,6 @@ public sealed class AirwayServiceTests : IDisposable
 		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
 			[
 				.. highDefaults,
-				("UploadToVnas", "Airways_High_Lines"),
 				("CrcDefaultsFor", "Airways_High_Lines"),
 				("EmitSymbols", "N"),
 				("EmitText", "N"),
@@ -190,7 +189,6 @@ public sealed class AirwayServiceTests : IDisposable
 			[
 				.. CrcDefaults(),
 				.. SouthEastRoi,
-				("UploadToVnas", everyFile),
 				("CrcDefaultsFor", everyFile),
 				("GenerateAliasFile", "N"),
 			]));
@@ -198,7 +196,7 @@ public sealed class AirwayServiceTests : IDisposable
 		Assert.Equal(1, result.AirwayCount);
 		Assert.Empty(result.Warnings);
 		Assert.All(result.GeojsonFilesWritten, path =>
-			Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Geojson"), Path.GetDirectoryName(path)));
+			Assert.Equal(Path.Combine(_outputDirectory, "Geojson"), Path.GetDirectoryName(path)));
 
 		string symbols = Assert.Single(result.GeojsonFilesWritten, p => p.EndsWith("_Symbols.geojson", StringComparison.Ordinal));
 		JsonElement[] features = Features(symbols);

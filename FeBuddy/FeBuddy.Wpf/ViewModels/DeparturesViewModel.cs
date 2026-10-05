@@ -300,7 +300,6 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
 			new ServicePreviewRow("Includes", DescribeScope(selectedArtccs)),
 			new ServicePreviewRow("Region of interest", DescribeRegion()),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 

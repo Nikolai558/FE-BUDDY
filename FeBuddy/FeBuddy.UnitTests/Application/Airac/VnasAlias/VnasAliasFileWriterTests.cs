@@ -8,9 +8,9 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 namespace FeBuddy.UnitTests.Application.Airac.VnasAlias;
 
 /// <summary>
-/// Covers <see cref="VnasAliasFileWriter"/>: <c>vNAS_Alias.txt</c> is FE-Buddy's marked alias files
+/// Covers <see cref="VnasAliasFileWriter"/>: <c>Combined_Alias.txt</c> is FE-Buddy's alias files
 /// between a start and an end line, then the custom alias files, so CRC (last copy wins) uses the
-/// user's commands; a <c>.FeUseOnly</c> line stays first; an old <c>vNAS_Alias.txt</c> used as a
+/// user's commands; a <c>.FeUseOnly</c> line stays first; an old combined file used as a
 /// custom file loses its FE-Buddy section, in either layout; commands in more than one file are
 /// reported; and a custom file that could not be read is left out with a warning.
 /// </summary>
@@ -26,7 +26,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 
 	public VnasAliasFileWriterTests() => Directory.CreateDirectory(Path.Combine(_output, "Aliases"));
 
-	private string VnasAliasPath => Path.Combine(_output, "Upload_to_vNAS", "vNAS_Alias.txt");
+	private string VnasAliasPath => Path.Combine(_output, "Aliases", "Combined_Alias.txt");
 
 	public void Dispose() => Directory.Delete(_output, recursive: true);
 
@@ -125,7 +125,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		ServiceMessage notice = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, notice.Level);
 		Assert.Equal(
-			"custom alias file 1 (ZOB-Alias.txt) holds FE-Buddy aliases from an earlier vNAS_Alias.txt; they were left out, so they are not added twice.",
+			"custom alias file 1 (ZOB-Alias.txt) holds FE-Buddy aliases from an earlier Combined_Alias.txt; they were left out, so they are not added twice.",
 			notice.Text);
 	}
 
@@ -216,7 +216,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		Assert.Equal(LogLevel.Warning, warning.Level);
 		Assert.True(warning.IsAdvisory);
 		Assert.Equal(
-			"Left custom alias file 1 (ZOB-Alias.txt) out of vNAS_Alias.txt: GitHub refused the credential 'ZOB GitHub'. " +
+			"Left custom alias file 1 (ZOB-Alias.txt) out of Combined_Alias.txt: GitHub refused the credential 'ZOB GitHub'. " +
 			"Uploading the file without it would remove its aliases from vNAS.",
 			warning.Text);
 	}
@@ -231,10 +231,10 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 			_output);
 
 		Assert.Null(result.FilePath);
-		Assert.False(Directory.Exists(Path.Combine(_output, "Upload_to_vNAS")));
+		Assert.False(File.Exists(VnasAliasPath));
 		Assert.Equal(2, result.Messages.Count);
 		Assert.Equal(
-			"vNAS_Alias.txt was not written: no custom alias file could be read, and no FE-Buddy alias file is marked for vNAS.",
+			"Combined_Alias.txt was not written: no custom alias file could be read, and the run wrote no alias file.",
 			result.Messages[1].Text);
 		Assert.True(result.Messages[1].IsAdvisory);
 	}
@@ -283,7 +283,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		Assert.True(notice.IsAdvisory);
 		Assert.Equal(LogLevel.Info, notice.Level);
 		Assert.Equal(
-			"1 alias command(s) from your custom alias files are also in another file merged into vNAS_Alias.txt: " +
+			"1 alias command(s) from your custom alias files are also in another file merged into Combined_Alias.txt: " +
 			".CLE (Navaids.txt, ZOB-Alias.txt). CRC uses the last copy of a command - the one from the last file named - " +
 			"and your custom alias files come after FE-Buddy's, so a command of yours replaces FE-Buddy's. " +
 			"To use FE-Buddy's instead, remove yours.",

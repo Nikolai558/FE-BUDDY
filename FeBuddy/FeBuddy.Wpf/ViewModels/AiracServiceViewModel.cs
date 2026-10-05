@@ -40,8 +40,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// Every sub-service has a tab in the rail from the start, each reading its outputs from its row
 /// on the General tab. A sub-service left out there is greyed out (<see cref="ServiceTabViewModel.IsAvailable"/>)
 /// and skipped by the run, its checks and the Preview Settings tab, but keeps what was typed on it.
-/// vNAS Alias Upload isn't in the table: its tab is greyed out while no alias file is ticked for
-/// vNAS.
+/// Concatenate Aliases isn't in the table: its tab is greyed out while no included sub-service makes
+/// an alias file.
 /// </para>
 /// </remarks>
 public sealed class AiracServiceViewModel : TabbedServiceViewModel
@@ -81,10 +81,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 		AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 
-		// The vNAS Alias Upload tab lists what the other tabs put into vNAS_Alias.txt, and is only valid
-		// when something goes in; the File Names tab lists every file they write, and a new one needs a
-		// name. Re-read both whenever the user moves between tabs, so their lists and their dots in the
-		// rail follow edits made elsewhere.
+		// The Concatenate Aliases tab lists what the other tabs put into Combined_Alias.txt; the File
+		// Names tab lists every file they write, and a new one needs a name. Re-read both whenever the
+		// user moves between tabs, so their lists and their dots in the rail follow edits made elsewhere.
 		PropertyChanged += (_, e) =>
 		{
 			if (e.PropertyName == nameof(SelectedTab))
@@ -158,7 +157,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Telephony tab while it is open, otherwise <see langword="null"/>.</summary>
 	private TelephonyViewModel? TelephonyTab => TabFor<TelephonyViewModel>(AiracSubServices.TelephonyKey);
 
-	/// <summary>The vNAS Alias Upload tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Concatenate Aliases tab while it is open, otherwise <see langword="null"/>.</summary>
 	private VnasAliasViewModel? VnasAliasTab => TabFor<VnasAliasViewModel>(AiracSubServices.VnasAliasKey);
 
 	/// <summary>Every sub-service tab that runs: for readiness and the cycle's lists, which every tab follows.</summary>
@@ -186,7 +185,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	/// <summary>
 	/// Builds every sub-service's tab, once: each takes its outputs from its row on the General tab,
-	/// and tells the screen when the files it writes change, which can bring vNAS Alias Upload in.
+	/// and tells the screen when the files it writes change, which can bring Concatenate Aliases in.
 	/// </summary>
 	private void BuildSubServiceTabs()
 	{
@@ -255,8 +254,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	}
 
 	/// <summary>
-	/// Brings vNAS Alias Upload in while an included sub-service writes an alias file ticked for
-	/// vNAS, and greys it out otherwise: it has nothing of FE-Buddy's to merge.
+	/// Brings Concatenate Aliases in while an included sub-service makes an alias file, and greys it
+	/// out otherwise: it has nothing of FE-Buddy's to combine.
 	/// </summary>
 	private void RefreshVnasAliasAvailability()
 	{
@@ -265,18 +264,15 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		bool anyAliasFileToVnas = AiracSubServices.All.Any(descriptor => descriptor.AliasFileName is { } aliasFile
-			&& TabFor<GeojsonSubServiceViewModel>(descriptor.Key) is { WritesAliasFile: true } tab
-			&& tab.IsMarkedForVnas(aliasFile));
-
+		bool anyAliasFile = _tabsByKey.Values.Where(t => t.IsAvailable).OfType<GeojsonSubServiceViewModel>().Any(tab => tab.WritesAliasFile);
 		bool wasAvailable = vnasAlias.IsAvailable;
 
-		vnasAlias.SetAvailability(anyAliasFileToVnas,
-			"vNAS Alias Upload writes Upload_to_vNAS\\vNAS_Alias.txt: the alias files ticked for vNAS on the sub-service tabs, " +
-			"then your facility's own alias files.\nTo use it, tick an alias file on a sub-service's Upload to vNAS card.");
+		vnasAlias.SetAvailability(anyAliasFile,
+			$"{AiracSubServices.All.Single(d => d.Key == AiracSubServices.VnasAliasKey).Help?.Summary}\n" +
+			"No alias file is being made. To make one, tick a sub-service and its Alias box on the General tab.");
 
 		// Left on a tab that just went grey, go back to the start.
-		if (wasAvailable && !anyAliasFileToVnas && ReferenceEquals(SelectedTab, vnasAlias))
+		if (wasAvailable && !anyAliasFile && ReferenceEquals(SelectedTab, vnasAlias))
 		{
 			SelectedTab = Tabs.FirstOrDefault();
 		}
@@ -284,9 +280,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	/// <summary>
 	/// Every file the included sub-services' settings write right now, for the File Names tab: each
-	/// tab's own files, then the two the run itself writes - <c>Duplicate_Alias_Commands.txt</c>
-	/// whenever an alias file is written, and <c>vNAS_Alias.txt</c> when an alias file is ticked
-	/// for vNAS.
+	/// tab's own files, then the two the run itself writes whenever an alias file is written -
+	/// <c>Duplicate_Alias_Commands.txt</c>, and <c>Combined_Alias.txt</c> while Concatenate Aliases
+	/// combines them.
 	/// </summary>
 	/// <returns>The files.</returns>
 	private IEnumerable<OutputFileEntry> FilesTheRunWrites()
@@ -303,13 +299,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			yield return OutputFileEntry.Renamable(AiracOutputPaths.DuplicateAliasReportFileName, string.Empty, "AIRAC Service");
 		}
 
-		bool aliasFileToVnas = AiracSubServices.All.Any(descriptor => descriptor.AliasFileName is { } aliasFile
-			&& TabFor<GeojsonSubServiceViewModel>(descriptor.Key) is { WritesAliasFile: true } tab
-			&& tab.IsMarkedForVnas(aliasFile));
-
-		if (VnasAliasTab is not null || aliasFileToVnas)
+		if (VnasAliasTab is { CombineAliasFiles: true } combine)
 		{
-			yield return OutputFileEntry.Renamable(AiracOutputPaths.VnasAliasFileName, AiracOutputPaths.VnasFolder, VnasAliasTab?.Title ?? "AIRAC Service");
+			yield return OutputFileEntry.Renamable(AiracOutputPaths.CombinedAliasFileName, AiracOutputPaths.AliasFolder, combine.Title);
 		}
 	}
 
@@ -432,8 +424,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private async Task RunAsync()
 	{
-		// The vNAS Alias Upload tab's validity depends on what the other tabs tick for vNAS, and the
-		// File Names tab's on which files they write.
+		// The Concatenate Aliases tab lists the alias files the other tabs make, and the File Names
+		// tab's validity depends on which files they write.
 		VnasAliasTab?.RefreshFeBuddyAliasFiles();
 		_fileNames.RefreshFiles();
 

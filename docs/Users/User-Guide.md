@@ -32,7 +32,7 @@ Unfamiliar words are in the [glossary](Glossary.md).
 
 ## AIRAC Service
 
-Where you make files. The tabs run down the left:
+Where you make files, every one ready to upload to vNAS. The tabs run down the left:
 
 | Tab | What it is |
 |---|---|
@@ -62,13 +62,13 @@ says why.
   Changes** and **Procedures JSON**. A box a sub-service doesn't have is greyed out. An included
   sub-service keeps at least one file on; to make nothing, untick it under Include. Hover a box for
   what the file is. A sub-service left out is greyed out in the list to the left and keeps its
-  settings; hovering it says how to bring it back. vNAS Alias Upload isn't in the table: its tab comes
-  in once an alias file is ticked for vNAS.
+  settings; hovering it says how to bring it back. Concatenate Aliases isn't in the table: its tab
+  comes in while an alias file is ticked.
 
 ### The cards most tabs share
 
-The tabs that write GeoJSON are built from the same cards. Procedures, Telephony and vNAS Alias
-Upload have their own; see their sections.
+The tabs that write GeoJSON are built from the same cards. Procedures, Telephony and Concatenate
+Aliases have their own; see their sections.
 
 - **Outputs** - whether the GeoJSON files and the alias file are on (set on the General tab), and
   what each writes. ARTCC Boundaries, Fixes and Wx Stations have no alias file, so no Outputs card.
@@ -81,14 +81,10 @@ Upload have their own; see their sections.
 - **Region of Interest** - Settings' **Default Region of Interest**, unless you tick **Override the
   default ROI** and give the tab its own box (type the corners or **Pick on map…**). With no region,
   the run covers the whole country.
-- **Upload to vNAS** - tick the files you'll upload. A ticked GeoJSON file is written to
-  `Upload_to_vNAS\Geojson` instead of `Geojson`. vNAS takes only one alias file, so a ticked alias file stays
-  in `Aliases` and is also merged into `Upload_to_vNAS\vNAS_Alias.txt`. Then choose which ticked
-  GeoJSON files get **CRC-ERAM Default Properties**: none, all of them, or specific files.
 - **CRC ERAM Defaults** - how CRC draws a file, written as one hidden defaults feature at its top.
-  Only files going to vNAS get them (CRC reads its maps from vNAS), so the card appears once you've
-  chosen files for them, showing only the boxes those files need. FE-Buddy never guesses: every box
-  shown must be filled in.
+  Choose which of the tab's GeoJSON files get them: none (to start), every one, or specific files.
+  The card then shows only the boxes those files need. FE-Buddy never guesses: every box shown must
+  be filled in.
 
 | Field | Values | For |
 |---|---|---|
@@ -176,8 +172,8 @@ covers STARs. Otherwise the two tabs work the same.
 - **Names** - a procedure is named by its FAA computer code without the version number
   (`DOTSS2.DOTSS` is `DOTSS`; a STAR's code runs the other way, so `AALAN.BLAID2` is `BLAID`), or by
   its name without punctuation when it has no code (`O'HARE` is `OHARE`).
-- **Upload to vNAS** - by kind (every procedure's Lines, Symbols or Text), since a run writes
-  thousands of files.
+- **CRC ERAM Defaults** - chosen by kind (every procedure's Lines, Symbols or Text), since a run
+  writes thousands of files.
 
 ### NAVAIDs tab
 
@@ -341,15 +337,17 @@ file.
   falling back on FE-Buddy's kept copy; the very first run needs an internet connection.
 - **Region** - a station is included when it's inside the region.
 
-### vNAS Alias Upload tab
+### Concatenate Aliases tab
 
-vNAS takes one alias file per facility. This tab writes `Upload_to_vNAS\vNAS_Alias.txt`: the
-FE-Buddy alias files ticked for vNAS, then your facility's own. CRC uses the last copy of a command,
-so yours win.
+vNAS takes one alias file per facility. With **Combine the alias files into one file for vNAS** on
+(it starts on), this tab writes `Aliases\Combined_Alias.txt`: every alias file the run makes, then
+your facility's own. CRC uses the last copy of a command, so yours win. Upload that one file. The tab
+is greyed out while no sub-service makes an alias file.
 
-- **FE-Buddy Alias Files** - whether each FE-Buddy alias file goes in, as the other tabs stand.
-  **Open tab** jumps there to change it.
-- **Custom Alias Files** - your own files, merged in the order listed:
+- **FE-Buddy Alias Files** - whether each FE-Buddy alias file goes in, as the General tab stands.
+  **Open tab** jumps to its sub-service.
+- **Custom Alias Files** - your own files, merged in the order listed (greyed out while combining is
+  off):
   - **Add file…** for a file on this PC, **Add web address** for one on the web (`https://`). On
     GitHub, use the file's own page (with `/blob/` in it) or its Raw link. An address with a password
     or token written into it is refused - choose a credential instead.
@@ -362,9 +360,10 @@ so yours win.
 - **Reusing last cycle's upload** as your custom file works: FE-Buddy's section, between its start
   and end lines, is dropped, so only your own aliases carry over.
 - A command in your files that another file also has is noted on the Review tab.
+- With no custom files, the file holds only FE-Buddy's aliases, and the Review tab warns you:
+  uploading it would remove your facility's own aliases from vNAS.
 
-Without this sub-service, `vNAS_Alias.txt` is still written whenever an alias file is ticked for
-vNAS - with FE-Buddy's aliases only, and a warning.
+With combining off, each alias file stays on its own in `Aliases`.
 
 ### File Names tab
 
@@ -377,13 +376,13 @@ Every file the run will write, by folder, with a way to rename any of them.
 - A name can't be empty, contain `\ / : * ? " < > |`, end in a dot or an extension, be a name Windows
   reserves (`CON`, `NUL`, …), be over 100 characters, or match another file's.
 - Departures and Arrivals GeoJSON files can't be renamed: there's one per procedure.
-- The Review tab, `vNAS_Alias.txt` and `Duplicate_Alias_Commands.txt` use the new names.
+- The Review tab, `Combined_Alias.txt` and `Duplicate_Alias_Commands.txt` use the new names.
 
 ### Preview Settings tab
 
-A plain-words summary of the run: the folder, what will be written, the region, and which files go
-to vNAS. A tab with a problem blocks the run; unsaved changes are saved when it starts (you're asked
-first). **Run AIRAC Service** starts it.
+A plain-words summary of the run: the folder, what will be written, the region, and which files get
+CRC-ERAM defaults. A tab with a problem blocks the run; unsaved changes are saved when it starts
+(you're asked first). **Run AIRAC Service** starts it.
 
 If the cycle has been run before, choose **Overwrite files** (old files this run doesn't write
 stay), **Delete all files** (the folder is emptied first - not to the Recycle Bin) or **Cancel**.
@@ -474,20 +473,18 @@ Every AIRAC Service run of a cycle writes into one `AIRAC_<cycle>` folder in you
     ├── AIRAC_2610\
     │   ├── Duplicate_Alias_Commands.txt   (when the run wrote an alias file)
     │   ├── Aliases\                       Airports.txt, Airways.txt, Arrivals.txt, Departures.txt,
-    │   │                                  Navaids.txt, Faa_Chart_Recall.txt, Telephony.txt
+    │   │                                  Navaids.txt, Faa_Chart_Recall.txt, Telephony.txt, and
+    │   │                                  Combined_Alias.txt: all of them, then your own
     │   ├── Geojson\                       every GeoJSON file; Departures and Arrivals in
     │   │                                  <ARTCC>\<airport>\ folders
-    │   ├── Publication_Docs\              Procedure_Changes.md, Procedures.json
-    │   └── Upload_to_vNAS\
-    │       ├── vNAS_Alias.txt             the alias files marked for vNAS, then your own
-    │       └── Geojson\                   the GeoJSON files marked for vNAS
+    │   └── Publication_Docs\              Procedure_Changes.md, Procedures.json
     ├── DAT to GeoJSON\                    one .geojson per map
     ├── SCT2 to GeoJSON\                   a folder per sector file
     └── ERAM_TO_GEOJSON\                   emptied by every ERAM run
 ```
 
-- A GeoJSON file marked for vNAS goes to `Upload_to_vNAS` *instead of* `Geojson`. An alias file
-  marked for vNAS stays in `Aliases` and is copied into `vNAS_Alias.txt` *as well*.
+- Every file is ready to upload to vNAS. For the alias files, upload `Combined_Alias.txt` (see
+  [Concatenate Aliases tab](#concatenate-aliases-tab)).
 - A folder is only made when something goes in it, and an empty file isn't written.
 - The conversions replace any file of the same name.
 

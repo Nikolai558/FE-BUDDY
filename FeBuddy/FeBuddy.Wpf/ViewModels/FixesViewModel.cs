@@ -330,7 +330,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		// The per-fix-use and per-chart files exist only now; list them even when the tab has
 		// unsaved edits (the resync below then does nothing).
-		RefreshVnasFiles();
+		RefreshOutputFiles();
 
 		// The lists were empty when this tab snapshotted itself at construction; re-take the
 		// snapshot now they reflect what is actually saved.
@@ -398,7 +398,6 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		rows.Add(new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()));
 		rows.Add(new ServicePreviewRow("Region of interest", DescribeRoi()));
-		rows.Add(new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()));
 		rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()));
 
 		return [new ServicePreviewSection("Fixes", rows)];

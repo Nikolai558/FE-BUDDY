@@ -2,6 +2,7 @@ using System.Globalization;
 
 using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
@@ -9,24 +10,32 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 
 /// <summary>
 /// Parses the raw <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>)
-/// supplies for the vNAS Alias Upload sub-service into the user's custom alias files.
+/// supplies for the Concatenate Aliases sub-service (key <c>VnasAlias</c>, its name before it was
+/// renamed): whether to combine the run's alias files into <c>Combined_Alias.txt</c>, and the user's
+/// custom alias files to add after them.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Each custom alias file is numbered, and has either a file on this PC or a web address:
+/// Combining is on unless <c>CombineAliasFiles</c> is <c>N</c>. Each custom alias file is numbered,
+/// and has either a file on this PC or a web address:
 /// </para>
 /// <code>
+/// CombineAliasFiles      = Y
 /// Sources.1.FilePath     = C:\Users\me\Documents\ZOB-Alias.txt
 /// Sources.2.Url          = https://github.com/vZOB/facility/blob/main/ZOB-Alias.txt
 /// Sources.2.CredentialId = 0f8fad5bd9cb469fa16570867728950e
 /// </code>
 /// <para>
 /// They are merged in number order. <c>CredentialId</c> names a saved credential (see
-/// <c>CredentialStore</c>) and is only ever an id: the secret never passes through settings.
+/// <c>CredentialStore</c>) and is only ever an id: the secret never passes through settings. While
+/// combining is off, the custom alias files are not read or checked: nothing would use them.
 /// </para>
 /// </remarks>
 public static class VnasAliasSettingsParser
 {
+	/// <summary>Whether to combine the alias files into <c>Combined_Alias.txt</c>: <c>Y</c> (the default) or <c>N</c>.</summary>
+	public const string CombineAliasFilesKey = "CombineAliasFiles";
+
 	/// <summary>The start of every custom alias file's keys.</summary>
 	public const string SourcesPrefix = "Sources.";
 
@@ -44,32 +53,51 @@ public static class VnasAliasSettingsParser
 	/// <summary>Keys the AIRAC Service sets on every block, which this sub-service does not need.</summary>
 	private static readonly HashSet<string> IgnoredKeys = new(StringComparer.OrdinalIgnoreCase) { "OutputDirectory" };
 
+	/// <summary>Whether the block combines the alias files: <c>CombineAliasFiles</c>, on unless it is <c>N</c>.</summary>
+	/// <param name="settings">The raw settings dictionary.</param>
+	/// <returns><see langword="true"/> unless combining is turned off.</returns>
+	/// <exception cref="ArgumentException">Thrown when <c>CombineAliasFiles</c> is neither <c>Y</c> nor <c>N</c>.</exception>
+	public static bool CombinesAliasFiles(IReadOnlyDictionary<string, string> settings)
+	{
+		ArgumentNullException.ThrowIfNull(settings);
+
+		// The block's keys match ignoring case, whatever dictionary the caller built.
+		return SettingsValueReader.YesNo(new Dictionary<string, string>(settings, StringComparer.OrdinalIgnoreCase), CombineAliasFilesKey, defaultValue: true);
+	}
+
 	/// <summary>
-	/// Parses and validates <paramref name="settings"/> into the user's custom alias files.
+	/// Parses and validates <paramref name="settings"/>: whether to combine, and the user's custom alias
+	/// files.
 	/// </summary>
 	/// <param name="settings">The raw settings dictionary.</param>
-	/// <returns>The custom alias files, in merge order, plus any non-fatal parsing messages.</returns>
+	/// <returns>Whether to combine, the custom alias files in merge order (none while combining is off), and any non-fatal parsing messages.</returns>
 	/// <exception cref="ArgumentException">
-	/// Thrown when a custom alias file has both a path and a web address, or only a credential; its
-	/// path is not a full path; its web address is not an <c>http</c> or <c>https</c> address, or has
-	/// a secret in it (<see cref="UrlSecrets"/>); or its credential id is not an id.
+	/// Thrown when <c>CombineAliasFiles</c> is neither <c>Y</c> nor <c>N</c>; or, while combining, when a
+	/// custom alias file has both a path and a web address, or only a credential; its path is not a
+	/// full path; its web address is not an <c>http</c> or <c>https</c> address, or has a secret in it
+	/// (<see cref="UrlSecrets"/>); or its credential id is not an id.
 	/// </exception>
 	public static VnasAliasSettingsParseResult Parse(IReadOnlyDictionary<string, string> settings)
 	{
-		ArgumentNullException.ThrowIfNull(settings);
+		bool combine = CombinesAliasFiles(settings);
 
 		List<ServiceMessage> messages = [];
 		SortedDictionary<int, Dictionary<string, string>> byNumber = [];
 
 		foreach (KeyValuePair<string, string> entry in settings)
 		{
-			if (IgnoredKeys.Contains(entry.Key))
+			if (IgnoredKeys.Contains(entry.Key) || entry.Key.Equals(CombineAliasFilesKey, StringComparison.OrdinalIgnoreCase))
 			{
 				continue;
 			}
 
 			if (TrySplitSourceKey(entry.Key, out int number, out string field))
 			{
+				if (!combine)
+				{
+					continue;
+				}
+
 				if (!byNumber.TryGetValue(number, out Dictionary<string, string>? fields))
 				{
 					fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -81,8 +109,13 @@ public static class VnasAliasSettingsParser
 			}
 
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"Unknown vNAS Alias Upload setting '{entry.Key}' was ignored. Custom alias files look like " +
+				$"Unknown Concatenate Aliases setting '{entry.Key}' was ignored. Custom alias files look like " +
 				$"'{SourcesPrefix}1.{FilePathKey}' or '{SourcesPrefix}1.{UrlKey}'."));
+		}
+
+		if (!combine)
+		{
+			return new VnasAliasSettingsParseResult([], messages, Combine: false);
 		}
 
 		List<AliasSource> sources = [];
@@ -95,10 +128,15 @@ public static class VnasAliasSettingsParser
 			}
 		}
 
+		// vNAS takes one alias file per facility, so uploading FE-Buddy's alone would remove the
+		// facility's own aliases from vNAS.
 		if (sources.Count == 0)
 		{
-			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
-				$"No custom alias files are set, so {AiracOutputPaths.VnasAliasFileName} holds only FE-Buddy's aliases."));
+			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
+				$"No custom alias files are set, so {AiracOutputPaths.CombinedAliasFileName} holds only FE-Buddy's aliases. " +
+				"vNAS takes one alias file per facility, so uploading it would remove your facility's own aliases from vNAS. " +
+				"To keep them, add your facility's alias file on the Concatenate Aliases tab.")
+			{ IsAdvisory = true });
 		}
 
 		return new VnasAliasSettingsParseResult(sources, messages);
@@ -117,7 +155,7 @@ public static class VnasAliasSettingsParser
 			&& !f.Equals(CredentialIdKey, StringComparison.OrdinalIgnoreCase)))
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"Unknown vNAS Alias Upload setting '{SourcesPrefix}{number}.{field}' was ignored."));
+				$"Unknown Concatenate Aliases setting '{SourcesPrefix}{number}.{field}' was ignored."));
 		}
 
 		if (filePath.Length > 0 && url.Length > 0)

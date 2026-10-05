@@ -14,9 +14,8 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// </summary>
 /// <remarks>
 /// Each file is named <c>Airways_&lt;group&gt;_&lt;kind&gt;.geojson</c> (its name without the
-/// extension is its file key, see <see cref="AirwayOutputFiles"/>) and goes in the GeoJSON folder,
-/// or the vNAS one when the user marked it for vNAS. Only a file chosen for CRC-ERAM defaults gets
-/// an isDefaults Feature.
+/// extension is its file key, see <see cref="AirwayOutputFiles"/>) and goes in the GeoJSON folder.
+/// Only a file chosen for CRC-ERAM defaults (<c>CrcDefaultsFor</c>) gets an isDefaults Feature.
 /// </remarks>
 public static class AirwayGeojsonWriter
 {
@@ -107,7 +106,7 @@ public static class AirwayGeojsonWriter
 				.Order(StringComparer.OrdinalIgnoreCase)];
 	}
 
-	/// <summary>Writes one group's file of one kind, into the GeoJSON or vNAS folder as the user chose, under the name they chose.</summary>
+	/// <summary>Writes one group's file of one kind, into the GeoJSON folder, under the name the user chose.</summary>
 	private static void WriteFile(
 		FeatureCollection collection,
 		int renderedCount,
@@ -115,7 +114,7 @@ public static class AirwayGeojsonWriter
 		string fileKey,
 		GeojsonFileSet files)
 	{
-		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
+		string directory = AiracOutputPaths.GeojsonDirectory(settings.OutputDirectory);
 		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
 	}
 
@@ -190,7 +189,7 @@ public static class AirwayGeojsonWriter
 		GeojsonFileSet files)
 	{
 		string fileKey = AirwayOutputFiles.GeojsonKey(group, CrcFeatureKind.Line);
-		bool crcDefaults = settings.Vnas.HasCrcDefaults(fileKey);
+		bool crcDefaults = settings.CrcDefaultsFiles.HasCrcDefaults(fileKey);
 		FeatureCollection collection = [];
 
 		if (crcDefaults)
@@ -295,7 +294,7 @@ public static class AirwayGeojsonWriter
 		string fileKey = AirwayOutputFiles.GeojsonKey(group, CrcFeatureKind.Symbol);
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(fileKey))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(fileKey))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[referenceClass]));
 		}
@@ -334,7 +333,7 @@ public static class AirwayGeojsonWriter
 		string fileKey = AirwayOutputFiles.GeojsonKey(group, CrcFeatureKind.Text);
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(fileKey))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(fileKey))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[referenceClass]));
 		}

@@ -171,8 +171,11 @@
             <!-- ============ region of interest ============ -->
             <cards:RoiOverrideCard />
 
-            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
-            <cards:VnasUploadCard />
-            <cards:CrcDefaultsCard />
+            <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
+            <cards:CrcDefaultsCard>
+                <cards:CrcDefaultsCard.Choice>
+                    <cards:CrcFileChoice />
+                </cards:CrcDefaultsCard.Choice>
+            </cards:CrcDefaultsCard>
     </StackPanel>
 </UserControl>

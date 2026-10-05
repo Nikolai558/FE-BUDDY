@@ -19,7 +19,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airways;
 /// Verifies that an <see cref="AirwayGeojsonOutputBy.Designation"/> run names files from the
 /// designation derived from <c>AWY_ID</c>, so a <c>Q</c>/<c>T</c> RNAV
 /// airway lands in <c>Airways_Q_*</c> / <c>Airways_T_*</c> and never <c>Airways_RN_*</c>; and that
-/// each file goes to the GeoJSON or vNAS folder and gets CRC defaults only as chosen.
+/// each file goes in the GeoJSON folder and gets CRC defaults only as chosen.
 /// </summary>
 public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 {
@@ -55,7 +55,7 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 				AirwayTestDataBuilder.Segment("Q100", 20, "BBBBB", "WP", "CCCCC"),
 			]);
 
-		AirwaySettings settings = Settings(VnasFileChoices.None);
+		AirwaySettings settings = Settings(CrcDefaultsFiles.None);
 
 		AirwayBuildAllResult built = AirwayBuilder.BuildAll(data, settings);
 		GeojsonFileSet result = AirwayGeojsonWriter.Generate(built.Airways, settings);
@@ -70,10 +70,10 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 	}
 
 	[Fact]
-	public void vnas_files_go_to_upload_to_vnas_and_only_the_chosen_ones_get_crc_defaults()
+	public void every_file_goes_in_geojson_and_only_the_chosen_ones_get_crc_defaults()
 	{
 		// J: two High airways and one Low - the High defaults are the file's, the Low airway
-		// carries its own as an override. V: one Low airway, uploaded without defaults.
+		// carries its own as an override. V: one Low airway, written without defaults.
 		Airway[] airways =
 		[
 			BuildAirway("J1", AirwayAltitudeClass.High, 40.0),
@@ -82,9 +82,7 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 			BuildAirway("V1", AirwayAltitudeClass.Low, 43.0),
 		];
 
-		AirwaySettings settings = Settings(new VnasFileChoices(
-			uploadFiles: ["Airways_J_Lines", "Airways_V_Lines"],
-			crcDefaultsFiles: ["Airways_J_Lines"])) with
+		AirwaySettings settings = Settings(new CrcDefaultsFiles(["Airways_J_Lines"])) with
 		{
 			LineDefaults = new Dictionary<AirwayAltitudeClass, CrcLineDefaults>
 			{
@@ -96,27 +94,25 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 
 		GeojsonFileSet result = AirwayGeojsonWriter.Generate(airways, settings);
 
-		string vnas = Path.Combine(_outputDirectory, "Upload_to_vNAS", "Geojson");
 		string geojson = Path.Combine(_outputDirectory, "Geojson");
 
-		Assert.Contains(Path.Combine(vnas, "Airways_J_Lines.geojson"), result.FilesWritten);
-		Assert.Contains(Path.Combine(vnas, "Airways_V_Lines.geojson"), result.FilesWritten);
+		Assert.Contains(Path.Combine(geojson, "Airways_J_Lines.geojson"), result.FilesWritten);
+		Assert.Contains(Path.Combine(geojson, "Airways_V_Lines.geojson"), result.FilesWritten);
 		Assert.Contains(Path.Combine(geojson, "Airways_J_Symbols.geojson"), result.FilesWritten);
-		Assert.False(File.Exists(Path.Combine(geojson, "Airways_J_Lines.geojson")));
 
-		JsonElement[] jLines = Properties(Path.Combine(vnas, "Airways_J_Lines.geojson"));
+		JsonElement[] jLines = Properties(Path.Combine(geojson, "Airways_J_Lines.geojson"));
 		Assert.True(jLines[0].GetProperty("isLineDefaults").GetBoolean());
 		Assert.Equal(3, jLines[0].GetProperty("bcg").GetInt32());
 		Assert.Equal(2, jLines[3].GetProperty("bcg").GetInt32()); // J3, the Low airway
 
-		// Uploaded without defaults: the one airway, and no isLineDefaults Feature before it.
-		Assert.Single(Properties(Path.Combine(vnas, "Airways_V_Lines.geojson")));
+		// Written without defaults: the one airway, and no isLineDefaults Feature before it.
+		Assert.Single(Properties(Path.Combine(geojson, "Airways_V_Lines.geojson")));
 
 		JsonElement[] jSymbols = Properties(Path.Combine(geojson, "Airways_J_Symbols.geojson"));
 		Assert.DoesNotContain(jSymbols, properties => properties.TryGetProperty("isSymbolDefaults", out _));
 	}
 
-	private AirwaySettings Settings(VnasFileChoices vnas) => new()
+	private AirwaySettings Settings(CrcDefaultsFiles crcFiles) => new()
 	{
 		OutputDirectory = _outputDirectory,
 		OutputBy = AirwayGeojsonOutputBy.Designation,
@@ -125,7 +121,7 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 		FebProperties = [],
 		GenerateAliasFile = false,
 		SplitAtAntimeridian = true,
-		Vnas = vnas,
+		CrcDefaultsFiles = crcFiles,
 		Roi = null,
 	};
 

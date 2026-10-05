@@ -55,7 +55,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.False(general.IsDirty);
 	}
 
-	/// <summary>vNAS Alias Upload makes nothing of its own, so it is not a row; it comes in by itself.</summary>
+	/// <summary>Concatenate Aliases makes nothing of its own, so it is not a row; it comes in by itself.</summary>
 	[Fact]
 	public void the_table_lists_every_sub_service_but_vnas_alias_upload_in_rail_order()
 	{

@@ -178,10 +178,11 @@
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 
-            <!-- ============ upload to vNAS ============ -->
-            <cards:VnasUploadCard />
-
-            <!-- ============ CRC ERAM defaults ============ -->
-            <cards:CrcDefaultsCard SymbolsTitle="Fixes — Symbols" TextTitle="Fixes — Text" />
+            <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
+            <cards:CrcDefaultsCard SymbolsTitle="Fixes — Symbols" TextTitle="Fixes — Text">
+                <cards:CrcDefaultsCard.Choice>
+                    <cards:CrcFileChoice />
+                </cards:CrcDefaultsCard.Choice>
+            </cards:CrcDefaultsCard>
     </StackPanel>
 </UserControl>

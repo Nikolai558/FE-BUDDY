@@ -10,8 +10,8 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 /// <summary>
 /// Covers the AIRAC Service screen's rail (<see cref="AiracServiceViewModel"/>): every sub-service
 /// keeps its tab, greyed out while it is left out on the General tab, with a tooltip saying what it
-/// is and how to bring it in; Next steps over the greyed ones; and vNAS Alias Upload comes in by
-/// itself once an alias file is ticked for vNAS - against a throwaway config.
+/// is and how to bring it in; Next steps over the greyed ones; and Concatenate Aliases comes in by
+/// itself while an included sub-service makes an alias file - against a throwaway config.
 /// </summary>
 [Collection("AppLog")]
 public sealed class AiracServiceViewModelTests : IDisposable
@@ -100,18 +100,42 @@ public sealed class AiracServiceViewModelTests : IDisposable
 	}
 
 	[Fact]
-	public void vnas_alias_upload_comes_in_once_an_alias_file_is_ticked_for_vnas()
+	public void concatenate_aliases_comes_in_while_an_included_sub_service_makes_an_alias_file()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", "Fixes");
+		AiracServiceViewModel screen = new();
+		ServiceTabViewModel concatenate = TabTitled(screen, "Concatenate Aliases");
+		Assert.False(concatenate.IsAvailable);
+		Assert.StartsWith("Combines every alias file the run makes", concatenate.UnavailableToolTip, StringComparison.Ordinal);
+		Assert.EndsWith("To make one, tick a sub-service and its Alias box on the General tab.", concatenate.UnavailableToolTip, StringComparison.Ordinal);
+
+		AiracGeneralTabViewModel general = Assert.IsType<AiracGeneralTabViewModel>(screen.Tabs[0]);
+		SubServiceRow airports = general.RowFor(AiracSubServices.AirportsKey)!;
+		airports.IsIncluded = true;
+
+		Assert.True(concatenate.IsAvailable);
+
+		airports.Alias = false;
+
+		Assert.False(concatenate.IsAvailable);
+	}
+
+	/// <summary>Combined_Alias.txt goes in Aliases, and is on the File Names tab while combining is on.</summary>
+	[Fact]
+	public void the_combined_alias_file_is_listed_for_renaming_while_combining()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", "Airports");
 		AiracServiceViewModel screen = new();
-		ServiceTabViewModel vnasAlias = TabTitled(screen, "vNAS Alias Upload");
-		Assert.False(vnasAlias.IsAvailable);
-		Assert.Contains("tick an alias file on a sub-service's Upload to vNAS card", vnasAlias.UnavailableToolTip, StringComparison.Ordinal);
+		FileNamesViewModel fileNames = Assert.IsType<FileNamesViewModel>(TabTitled(screen, "File Names"));
+		VnasAliasViewModel concatenate = Assert.IsType<VnasAliasViewModel>(TabTitled(screen, "Concatenate Aliases"));
 
-		AirportsViewModel airports = Assert.IsType<AirportsViewModel>(TabTitled(screen, "Airports"));
-		VnasFileToggle aliasFile = airports.VnasFileRows.SelectMany(row => row.Files).Single(file => file.Key == "Airports.txt");
-		aliasFile.IsUploaded = true;
+		fileNames.RefreshFiles();
+		FileNameFolder aliases = fileNames.Folders.Single(folder => folder.Folder.EndsWith(@"\Aliases", StringComparison.Ordinal));
+		Assert.Contains(aliases.Files, file => file.Key == "Combined_Alias.txt");
 
-		Assert.True(vnasAlias.IsAvailable);
+		concatenate.CombineAliasFiles = false;
+		fileNames.RefreshFiles();
+
+		Assert.DoesNotContain(fileNames.Folders.SelectMany(folder => folder.Files), file => file.Key == "Combined_Alias.txt");
 	}
 }

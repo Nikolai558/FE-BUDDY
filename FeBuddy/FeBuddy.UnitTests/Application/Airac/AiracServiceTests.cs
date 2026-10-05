@@ -672,7 +672,7 @@ public sealed class AiracServiceTests : IDisposable
 			m.Text.Contains("no telephony data to build from", StringComparison.Ordinal));
 	}
 
-	// ---- vNAS_Alias.txt ----
+	// ---- Combined_Alias.txt ----
 
 	private static TelephonyDataCollection OneOperator => new()
 	{
@@ -682,16 +682,17 @@ public sealed class AiracServiceTests : IDisposable
 		],
 	};
 
-	private string VnasAliasFile => Path.Combine(CycleFolder, "Upload_to_vNAS", "vNAS_Alias.txt");
+	private string CombinedAliasFile => Path.Combine(CycleFolder, "Aliases", "Combined_Alias.txt");
 
 	[Fact]
-	public async Task an_alias_file_marked_for_vnas_stays_in_aliases_and_is_copied_into_vnas_alias_txt()
+	public async Task every_alias_file_the_run_writes_goes_into_combined_alias_txt_in_aliases()
 	{
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Telephony = new Dictionary<string, string> { ["uploadtovnas"] = "telephony.TXT" },
+			Telephony = new Dictionary<string, string>(),
+			VnasAlias = new Dictionary<string, string>(),
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(
@@ -701,37 +702,33 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Equal(telephony, result.Telephony!.AliasFilePath);
 
 		Assert.NotNull(result.VnasAlias);
-		Assert.Equal(VnasAliasFile, result.VnasAlias!.FilePath);
+		Assert.Equal(CombinedAliasFile, result.VnasAlias!.FilePath);
 		Assert.Equal(["Telephony.txt"], result.VnasAlias.FeBuddyFiles);
 		Assert.Equal(0, result.VnasAlias.CustomFileCount);
 
-		string written = File.ReadAllText(VnasAliasFile);
+		string written = File.ReadAllText(CombinedAliasFile);
 		Assert.StartsWith("; ===== FE-Buddy aliases (AIRAC 2610) start here.", written, StringComparison.Ordinal);
 		Assert.Contains(File.ReadAllText(telephony).TrimEnd(), written, StringComparison.Ordinal);
+		Assert.False(Directory.Exists(Path.Combine(CycleFolder, "Upload_to_vNAS")));
 
-		// Without vNAS Alias Upload the file has no facility aliases, and the Review tab says what uploading it would do.
-		ServiceMessage onlyFeBuddy = Assert.Single(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
-		Assert.True(onlyFeBuddy.IsAdvisory);
-		Assert.Equal(LogLevel.Warning, onlyFeBuddy.Level);
-		Assert.Contains("uploading it would remove your facility's own aliases from vNAS", onlyFeBuddy.Text, StringComparison.Ordinal);
+		// The combined file is not one of the alias files the duplicate report checks.
+		Assert.Contains("Files checked: Telephony.txt" + Environment.NewLine, File.ReadAllText(result.DuplicateAliasReport!.FilePath), StringComparison.Ordinal);
 	}
 
-	/// <summary>
-	/// A renamed alias file is still the one UploadToVnas names by its key, so it goes into the vNAS
-	/// alias file - and that file, the duplicate report and every message use the new names.
-	/// </summary>
+	/// <summary>A renamed alias file still goes into the combined file - and that file, the duplicate report and every message use the new names.</summary>
 	[Fact]
-	public async Task renamed_files_are_written_under_their_new_names_and_a_renamed_alias_file_still_goes_to_vnas()
+	public async Task renamed_files_are_written_under_their_new_names_and_a_renamed_alias_file_is_still_combined()
 	{
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Telephony = new Dictionary<string, string> { ["UploadToVnas"] = "Telephony.txt" },
+			Telephony = new Dictionary<string, string>(),
+			VnasAlias = new Dictionary<string, string> { ["combinealiasfiles"] = "y" },
 			FileNames = new Dictionary<string, string>
 			{
 				["Telephony.txt"] = "ZOB Telephony",
-				["vNAS_Alias.txt"] = "ZOB vNAS",
+				["Combined_Alias.txt"] = "ZOB vNAS",
 				["Duplicate_Alias_Commands.txt"] = "ZOB Duplicates",
 			},
 		};
@@ -740,23 +737,22 @@ public sealed class AiracServiceTests : IDisposable
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 
 		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "ZOB Telephony.txt"), result.Telephony!.AliasFilePath);
-		Assert.Equal(Path.Combine(CycleFolder, "Upload_to_vNAS", "ZOB vNAS.txt"), result.VnasAlias!.FilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "ZOB vNAS.txt"), result.VnasAlias!.FilePath);
 		Assert.Equal(["ZOB Telephony.txt"], result.VnasAlias.FeBuddyFiles);
 		Assert.Equal(Path.Combine(CycleFolder, "ZOB Duplicates.txt"), result.DuplicateAliasReport!.FilePath);
 
 		Assert.False(File.Exists(Path.Combine(CycleFolder, "Aliases", "Telephony.txt")));
-		Assert.False(File.Exists(VnasAliasFile));
+		Assert.False(File.Exists(CombinedAliasFile));
 		Assert.False(File.Exists(Path.Combine(CycleFolder, "Duplicate_Alias_Commands.txt")));
 
 		Assert.Contains("; ----- ZOB Telephony.txt -----", File.ReadAllText(result.VnasAlias.FilePath!), StringComparison.Ordinal);
 		Assert.Contains("Files checked: ZOB Telephony.txt", File.ReadAllText(result.DuplicateAliasReport.FilePath), StringComparison.Ordinal);
-		Assert.Contains(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected, so ZOB vNAS.txt holds only", StringComparison.Ordinal));
 	}
 
 	[Fact]
-	public async Task a_renamed_vnas_alias_file_an_earlier_run_left_is_deleted_under_its_new_name()
+	public async Task a_renamed_combined_file_an_earlier_run_left_is_deleted_under_its_new_name()
 	{
-		string renamed = Path.Combine(CycleFolder, "Upload_to_vNAS", "ZOB vNAS.txt");
+		string renamed = Path.Combine(CycleFolder, "Aliases", "ZOB vNAS.txt");
 		Directory.CreateDirectory(Path.GetDirectoryName(renamed)!);
 		File.WriteAllText(renamed, ".old last run's aliases");
 
@@ -765,16 +761,15 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			Telephony = new Dictionary<string, string>(),
-			FileNames = new Dictionary<string, string> { ["vNAS_Alias.txt"] = "ZOB vNAS" },
+			FileNames = new Dictionary<string, string> { ["Combined_Alias.txt"] = "ZOB vNAS" },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 
 		Assert.False(File.Exists(renamed));
-		Assert.Contains(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS, so ZOB vNAS.txt was not written.", StringComparison.Ordinal));
+		Assert.Contains(result.Messages, m => m.Text.StartsWith("Concatenate Aliases is not in the run, so ZOB vNAS.txt was not written.", StringComparison.Ordinal));
 	}
-
 	[Fact]
 	public async Task a_new_name_for_no_file_is_a_warning_on_the_run()
 	{
@@ -808,7 +803,7 @@ public sealed class AiracServiceTests : IDisposable
 	}
 
 	[Fact]
-	public async Task no_alias_file_marked_for_vnas_and_no_vnas_alias_block_writes_no_vnas_alias_txt()
+	public async Task without_concatenate_aliases_no_combined_file_is_written()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -821,40 +816,45 @@ public sealed class AiracServiceTests : IDisposable
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 
 		Assert.Null(result.VnasAlias);
-		Assert.False(Directory.Exists(Path.Combine(CycleFolder, "Upload_to_vNAS")));
+		Assert.False(File.Exists(CombinedAliasFile));
 	}
 
 	[Fact]
-	public async Task rewriting_alias_files_without_marking_any_for_vnas_deletes_an_earlier_vnas_alias_txt()
+	public async Task with_combining_off_no_combined_file_is_written_and_an_earlier_one_is_deleted()
 	{
-		// An earlier run of this cycle marked Telephony for vNAS; this one does not.
-		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
-		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+		Directory.CreateDirectory(Path.GetDirectoryName(CombinedAliasFile)!);
+		File.WriteAllText(CombinedAliasFile, ".old last run's aliases");
 
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			Telephony = new Dictionary<string, string>(),
+			VnasAlias = new Dictionary<string, string> { ["CombineAliasFiles"] = "N", ["Sources.1.FilePath"] = "not even a full path" },
 		};
 
+		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
-			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator }, new SynchronousProgress(reports.Add));
 
 		Assert.Null(result.VnasAlias);
-		Assert.False(File.Exists(VnasAliasFile));
+		Assert.False(File.Exists(CombinedAliasFile));
 
-		ServiceMessage deleted = Assert.Single(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+		ServiceMessage deleted = Assert.Single(result.Messages, m => m.Text.StartsWith("Combining is off on the Concatenate Aliases tab, so Combined_Alias.txt was not written.", StringComparison.Ordinal));
 		Assert.True(deleted.IsAdvisory);
 		Assert.Equal(LogLevel.Info, deleted.Level);
 		Assert.Contains("The one an earlier run wrote was deleted", deleted.Text, StringComparison.Ordinal);
+
+		AiracServiceProgress done = reports.Last(p => p.SubService == "Concatenate Aliases");
+		Assert.Equal(100, done.PercentComplete);
+		Assert.Equal("Combining is off, so Combined_Alias.txt was not written.", done.Message);
 	}
 
 	[Fact]
-	public async Task a_run_that_writes_no_alias_file_leaves_an_earlier_vnas_alias_txt_alone()
+	public async Task a_run_that_writes_no_alias_file_leaves_an_earlier_combined_file_alone()
 	{
-		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
-		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+		Directory.CreateDirectory(Path.GetDirectoryName(CombinedAliasFile)!);
+		File.WriteAllText(CombinedAliasFile, ".old last run's aliases");
 
 		AiracServiceSettings settings = new()
 		{
@@ -866,15 +866,15 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]));
 
 		Assert.Null(result.VnasAlias);
-		Assert.Equal(".old last run's aliases", File.ReadAllText(VnasAliasFile));
-		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+		Assert.Equal(".old last run's aliases", File.ReadAllText(CombinedAliasFile));
+		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("was not written.", StringComparison.Ordinal));
 	}
 
 	[Fact]
-	public async Task an_earlier_vnas_alias_txt_that_cannot_be_deleted_is_a_warning()
+	public async Task an_earlier_combined_file_that_cannot_be_deleted_is_a_warning()
 	{
-		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
-		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+		Directory.CreateDirectory(Path.GetDirectoryName(CombinedAliasFile)!);
+		File.WriteAllText(CombinedAliasFile, ".old last run's aliases");
 
 		AiracServiceSettings settings = new()
 		{
@@ -886,28 +886,28 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result;
 
 		// Held open without delete sharing, as another program might, so it cannot be deleted.
-		using (new FileStream(VnasAliasFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+		using (new FileStream(CombinedAliasFile, FileMode.Open, FileAccess.Read, FileShare.Read))
 		{
 			result = await AiracService.RunAsync(
 				settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 		}
 
-		Assert.True(File.Exists(VnasAliasFile));
+		Assert.True(File.Exists(CombinedAliasFile));
 
-		ServiceMessage notDeleted = Assert.Single(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+		ServiceMessage notDeleted = Assert.Single(result.Messages, m => m.Text.StartsWith("Concatenate Aliases is not in the run", StringComparison.Ordinal));
 		Assert.Equal(LogLevel.Warning, notDeleted.Level);
 		Assert.Contains("could not be deleted", notDeleted.Text, StringComparison.Ordinal);
 		Assert.Contains("do not upload it", notDeleted.Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
-	public async Task the_vnas_alias_block_puts_the_custom_files_last_and_reports_its_progress()
+	public async Task the_concatenate_aliases_block_puts_the_custom_files_last_and_reports_its_progress()
 	{
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Telephony = new Dictionary<string, string> { ["UploadToVnas"] = "Telephony.txt" },
+			Telephony = new Dictionary<string, string>(),
 			VnasAlias = new Dictionary<string, string> { ["Sources.1.FilePath"] = @"C:\ZOB-Alias.txt" },
 		};
 
@@ -926,21 +926,20 @@ public sealed class AiracServiceTests : IDisposable
 
 		Assert.Equal(2, result.VnasAlias!.CustomFileCount);
 		Assert.Equal(1, result.VnasAlias.CustomFilesMerged);
-		string written = File.ReadAllText(VnasAliasFile);
+		string written = File.ReadAllText(CombinedAliasFile);
 		Assert.StartsWith(".FeUseOnly first" + Environment.NewLine + "; ===== FE-Buddy aliases (AIRAC ", written, StringComparison.Ordinal);
 		Assert.EndsWith(Environment.NewLine + Environment.NewLine + ".dtwdv .ECHO DTW" + Environment.NewLine, written, StringComparison.Ordinal);
 
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.StartsWith("Left custom alias file 2 (Extra.txt) out", StringComparison.Ordinal));
-		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
 
-		AiracServiceProgress done = reports.Last(p => p.SubService == "vNAS Alias Upload");
+		AiracServiceProgress done = reports.Last(p => p.SubService == "Concatenate Aliases");
 		Assert.Equal(100, done.PercentComplete);
-		Assert.StartsWith("vNAS_Alias.txt: ", done.Message, StringComparison.Ordinal);
+		Assert.StartsWith("Combined_Alias.txt: ", done.Message, StringComparison.Ordinal);
 		Assert.EndsWith(" command(s) from 1 FE-Buddy alias file(s), then 1 custom command(s).", done.Message, StringComparison.Ordinal);
 	}
 
 	[Fact]
-	public async Task a_vnas_alias_block_alone_counts_as_something_selected()
+	public async Task a_concatenate_aliases_block_alone_counts_as_something_selected()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -955,7 +954,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("no sub-service selected", StringComparison.Ordinal));
 		Assert.Null(result.VnasAlias!.FilePath);
-		Assert.Contains("vNAS_Alias.txt not written.", reports.Last().Message, StringComparison.Ordinal);
+		Assert.Contains("Combined_Alias.txt not written.", reports.Last().Message, StringComparison.Ordinal);
 	}
 
 	// ---- Procedures ----

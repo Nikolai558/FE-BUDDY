@@ -156,7 +156,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 
 		// The per-ARTCC files exist only now; list them even when the tab has unsaved edits (the
 		// resync below then does nothing).
-		RefreshVnasFiles();
+		RefreshOutputFiles();
 
 		// The lists were empty when this tab snapshotted itself at construction; re-take the
 		// snapshot now they reflect what is actually saved (or the Settings facility).
@@ -204,7 +204,6 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
 			new ServicePreviewRow("Region of interest", HasRoi ? $"{DescribeRoi()}; lines are clipped at its edge" : DescribeRoi()),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 

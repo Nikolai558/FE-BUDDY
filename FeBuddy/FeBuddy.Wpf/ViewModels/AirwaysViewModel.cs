@@ -218,9 +218,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		OnPropertyChanged(nameof(ShowsStrata));
 
-		// The files - and so the Upload to vNAS rows - come from this list: in Designation mode one
+		// The files - and so the CRC ERAM Defaults card's rows - come from this list: in Designation mode one
 		// set per designation, with High and Low files only the ones its designations go in.
-		RefreshVnasFiles();
+		RefreshOutputFiles();
 		Revalidate();
 
 		// The list was empty when this tab snapshotted itself at construction, so the snapshot
@@ -438,7 +438,6 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 				: "No"),
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
 			new ServicePreviewRow("Region of interest", DescribeRoi()),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -517,7 +516,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		// saved choices name - a save or a run in the meantime must not drop them.
 		HashSet<string> excluded = ParseExcludedFromConfig();
 
-		return ChosenVnasFileKeys
+		return ChosenCrcFileKeys
 			.Where(AirwayOutputFiles.IsGeojsonKey)
 			.Select(key => key.Split('_')[1])
 			.Where(group => !excluded.Contains(group))

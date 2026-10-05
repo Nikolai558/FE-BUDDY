@@ -61,7 +61,7 @@ public sealed class FixSettingsParserTests
 		Assert.Empty(result.Settings.Combinations);
 		Assert.False(result.Settings.IncludeFebCustomProperties);
 		Assert.Empty(result.Settings.FebProperties);
-		Assert.Empty(result.Settings.Vnas.UploadFiles);
+		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
 		Assert.Empty(result.Settings.SymbolDefaults);
 		Assert.Empty(result.Settings.TextDefaults);
 		Assert.Null(result.Settings.Roi);
@@ -321,31 +321,45 @@ public sealed class FixSettingsParserTests
 		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains(key));
 	}
 
-	[Fact]
-	public void upload_to_vnas_naming_an_alias_looking_key_throws_because_there_is_no_alias_file()
+	/// <summary>Only a Fixes GeoJSON file can get CRC-ERAM defaults: Fixes has no alias file, and no other sub-service's file counts.</summary>
+	[Theory]
+	[InlineData("Fix.txt")]
+	[InlineData("Airways_High_Lines")]
+	public void crc_defaults_for_naming_a_key_that_is_not_a_fixes_geojson_file_throws(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Fix.txt";
+		settings["CrcDefaultsFor"] = key;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => FixSettingsParser.Parse(settings));
-		Assert.Contains("Fix.txt", ex.Message);
+		Assert.Contains(key, ex.Message);
 	}
 
 	[Fact]
-	public void crc_defaults_for_entry_not_in_upload_to_vnas_throws()
+	public void crc_defaults_for_a_file_that_is_written_requires_its_values()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["CrcDefaultsFor"] = FixOutputFiles.Symbols;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => FixSettingsParser.Parse(settings));
-		Assert.Contains(FixOutputFiles.Symbols, ex.Message);
+		Assert.Contains($"Crc.{FixOutputFiles.AllClass}.Symbol.", ex.Message);
+	}
+
+	[Fact]
+	public void a_stale_upload_to_vnas_key_produces_a_warning_and_changes_nothing()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["UploadToVnas"] = $"{FixOutputFiles.Symbols},{FixOutputFiles.Text}";
+
+		FixSettingsParseResult result = FixSettingsParser.Parse(settings);
+
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("UploadToVnas"));
+		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
 	}
 
 	// ---- CRC defaults: All layout ----
 
 	private static void MarkForCrcDefaults(Dictionary<string, string> settings, params string[] keys)
 	{
-		settings["UploadToVnas"] = string.Join(',', keys);
 		settings["CrcDefaultsFor"] = string.Join(',', keys);
 	}
 
@@ -379,7 +393,6 @@ public sealed class FixSettingsParserTests
 	public void crc_defaults_are_only_read_for_the_files_chosen_in_crc_defaults_for()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = $"{FixOutputFiles.Symbols},{FixOutputFiles.Text}";
 		settings["CrcDefaultsFor"] = FixOutputFiles.Symbols;
 		AddSymbolDefaults(settings, $"Crc.{FixOutputFiles.AllClass}.Symbol");
 		// No Crc.Fix.Text.* keys supplied - if the parser tried to read them, this would throw.

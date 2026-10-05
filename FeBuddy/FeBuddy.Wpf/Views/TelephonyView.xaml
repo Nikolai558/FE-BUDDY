@@ -42,7 +42,7 @@
                                Text="A card for every operator in the FAA telephony pages: its three-letter designator, telephony, company and country. Your virtual airlines (below) are added too.&#xA;Type .id and either the designator from the data block or the telephony the pilot said,&#xA;Ex: .idAVA or .idAVIANCA&#xA;When one command fits more than one operator, it shows all of them." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               bhv:InlineCode.Text="Written to `Aliases\` in the cycle's folder. Ticked below, it is also added to `Upload_to_vNAS\vNAS_Alias.txt`." />
+                               bhv:InlineCode.Text="Written to `Aliases\` in the cycle's folder. The Concatenate Aliases tab also adds it to `Aliases\Combined_Alias.txt`." />
                 </StackPanel>
             </ctl:Card>
 
@@ -153,7 +153,5 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ upload to vNAS (the alias file only) ============ -->
-            <cards:VnasUploadCard />
     </StackPanel>
 </UserControl>

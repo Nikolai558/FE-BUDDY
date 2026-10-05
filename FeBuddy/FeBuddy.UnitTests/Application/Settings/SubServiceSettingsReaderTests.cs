@@ -1,96 +1,87 @@
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Domain.Crc.Models;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.UnitTests.Application.Settings;
 
 /// <summary>
-/// Covers <see cref="SubServiceSettingsReader.ReadVnasFiles"/>: both lists default to empty, only
-/// a sub-service's own files are accepted, and CRC defaults go only on uploaded GeoJSON files.
+/// Covers <see cref="SubServiceSettingsReader.ReadCrcDefaultsFiles"/>: the list defaults to empty,
+/// and only a sub-service's own GeoJSON files are accepted. Also that a key no sub-service reads
+/// any more (<c>UploadToVnas</c>) is warned about as unrecognized.
 /// </summary>
 public sealed class SubServiceSettingsReaderTests
 {
-	private const string Alias = "Things.txt";
-
 	private static bool IsGeojson(string key) => key is "Things_Lines" or "Things_Text";
 
-	private static VnasFileChoices Read(params (string Key, string Value)[] entries) =>
-		SubServiceSettingsReader.ReadVnasFiles(
-			entries.ToDictionary(e => e.Key, e => e.Value, StringComparer.OrdinalIgnoreCase),
-			Alias, IsGeojson, example: "Things_Lines, Things.txt");
+	private static Dictionary<string, string> Settings(params (string Key, string Value)[] entries) =>
+		entries.ToDictionary(e => e.Key, e => e.Value, StringComparer.OrdinalIgnoreCase);
+
+	private static CrcDefaultsFiles Read(params (string Key, string Value)[] entries) =>
+		SubServiceSettingsReader.ReadCrcDefaultsFiles(
+			Settings(entries), IsGeojson, example: "Things_Lines, Things_Text");
 
 	[Fact]
-	public void nothing_is_uploaded_when_the_keys_are_absent_or_blank()
+	public void no_file_gets_crc_defaults_when_the_key_is_absent_or_blank()
 	{
-		Assert.Empty(Read().UploadFiles);
-		Assert.Empty(Read(("UploadToVnas", " "), ("CrcDefaultsFor", "")).UploadFiles);
+		Assert.Empty(Read().Files);
+		Assert.Empty(Read(("CrcDefaultsFor", " ")).Files);
+		Assert.Empty(Read(("CrcDefaultsFor", "")).Files);
 	}
 
 	[Fact]
-	public void the_lists_are_trimmed_and_blanks_ignored()
+	public void the_list_is_trimmed_and_blanks_ignored()
 	{
-		VnasFileChoices choices = Read(("UploadToVnas", " Things_Lines , ,Things.txt"), ("CrcDefaultsFor", "Things_Lines,"));
+		CrcDefaultsFiles files = Read(("CrcDefaultsFor", " Things_Lines , ,Things_Text,"));
 
-		Assert.Equal(2, choices.UploadFiles.Count);
-		Assert.True(choices.IsUploaded(Alias));
-		Assert.True(choices.HasCrcDefaults("Things_Lines"));
+		Assert.Equal(2, files.Files.Count);
+		Assert.True(files.HasCrcDefaults("Things_Lines"));
+		Assert.True(files.HasCrcDefaults("Things_Text"));
+	}
+
+	/// <summary>Only a GeoJSON file the sub-service writes can get CRC-ERAM defaults: not another one's, not an alias file, not junk.</summary>
+	[Theory]
+	[InlineData("Other_Lines")]
+	[InlineData("Things.txt")]
+	[InlineData("junk")]
+	public void a_file_that_is_not_a_geojson_file_of_the_sub_service_is_rejected_with_an_example(string key)
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => Read(("CrcDefaultsFor", $"Things_Lines,{key}")));
+
+		Assert.Contains($"'{key}'", ex.Message, StringComparison.Ordinal);
+		Assert.Contains("'CrcDefaultsFor'", ex.Message, StringComparison.Ordinal);
+		Assert.Contains("Things_Lines, Things_Text", ex.Message, StringComparison.Ordinal);
 	}
 
 	[Fact]
-	public void a_file_the_sub_service_does_not_write_is_rejected_with_an_example()
+	public void crc_defaults_for_is_a_setting_every_sub_service_understands()
 	{
-		ArgumentException ex = Assert.Throws<ArgumentException>(() => Read(("UploadToVnas", "Things_Lines,Other_Lines")));
+		IReadOnlyList<ServiceMessage> warnings = SubServiceSettingsReader.UnknownKeyWarnings(
+			Settings(("CrcDefaultsFor", "Things_Lines")),
+			new HashSet<string>(),
+			new Dictionary<string, CrcFeatureKind[]>(),
+			source: "ThingsSettingsParser",
+			labelSource: "each thing is labelled with its own ID");
 
-		Assert.Contains("'Other_Lines'", ex.Message, StringComparison.Ordinal);
-		Assert.Contains("Things_Lines, Things.txt", ex.Message, StringComparison.Ordinal);
+		Assert.Empty(warnings);
 	}
 
+	/// <summary>A saved <c>UploadToVnas</c> from before every file became a vNAS file is no longer read, and says so.</summary>
 	[Fact]
-	public void crc_defaults_for_a_file_not_uploaded_are_rejected()
+	public void a_stale_upload_to_vnas_key_gets_an_unrecognized_setting_warning()
 	{
-		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-			Read(("UploadToVnas", "Things_Lines"), ("CrcDefaultsFor", "Things_Text")));
+		IReadOnlyList<ServiceMessage> warnings = SubServiceSettingsReader.UnknownKeyWarnings(
+			Settings(("UploadToVnas", "Things_Lines,Things.txt")),
+			new HashSet<string>(),
+			new Dictionary<string, CrcFeatureKind[]>(),
+			source: "ThingsSettingsParser",
+			labelSource: "each thing is labelled with its own ID");
 
-		Assert.Contains("not in 'UploadToVnas'", ex.Message, StringComparison.Ordinal);
-	}
+		ServiceMessage warning = Assert.Single(warnings);
 
-	[Fact]
-	public void crc_defaults_for_the_alias_file_are_rejected()
-	{
-		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-			Read(("UploadToVnas", "Things.txt"), ("CrcDefaultsFor", "things.txt")));
-
-		Assert.Contains("alias file", ex.Message, StringComparison.Ordinal);
-	}
-
-	// ---- a null aliasFileKey (a sub-service with no alias file, e.g. ARTCC Boundaries) ----
-
-	private static VnasFileChoices ReadNoAlias(params (string Key, string Value)[] entries) =>
-		SubServiceSettingsReader.ReadVnasFiles(
-			entries.ToDictionary(e => e.Key, e => e.Value, StringComparer.OrdinalIgnoreCase),
-			aliasFileKey: null, IsGeojson, example: "Things_Lines");
-
-	[Fact]
-	public void a_null_alias_file_key_accepts_geojson_keys()
-	{
-		VnasFileChoices choices = ReadNoAlias(("UploadToVnas", "Things_Lines"), ("CrcDefaultsFor", "Things_Lines"));
-
-		Assert.True(choices.IsUploaded("Things_Lines"));
-		Assert.True(choices.HasCrcDefaults("Things_Lines"));
-	}
-
-	[Fact]
-	public void a_null_alias_file_key_rejects_the_key_the_alias_file_would_have_used()
-	{
-		ArgumentException ex = Assert.Throws<ArgumentException>(() => ReadNoAlias(("UploadToVnas", Alias)));
-
-		Assert.Contains($"'{Alias}'", ex.Message, StringComparison.Ordinal);
-	}
-
-	[Fact]
-	public void a_null_alias_file_key_rejects_any_other_unrecognized_key_too()
-	{
-		ArgumentException ex = Assert.Throws<ArgumentException>(() => ReadNoAlias(("UploadToVnas", "junk")));
-
-		Assert.Contains("'junk'", ex.Message, StringComparison.Ordinal);
+		Assert.Equal(LogLevel.Warning, warning.Level);
+		Assert.Equal("ThingsSettingsParser", warning.Source);
+		Assert.Equal("Unrecognized setting 'UploadToVnas' was ignored.", warning.Text);
 	}
 }

@@ -3,10 +3,13 @@ using FeBuddy.Core.Application.Airac.Models;
 namespace FeBuddy.Core.Application.Airac.Airports;
 
 /// <summary>
-/// The files the Airports sub-service writes, by file key - the name the <c>UploadToVnas</c> and
-/// <c>CrcDefaultsFor</c> settings use (see <see cref="VnasFileChoices"/>).
+/// The files the Airports sub-service writes, by file key - the name the <c>CrcDefaultsFor</c>
+/// setting (see <see cref="CrcDefaultsFiles"/>) and the File Names tab use.
 /// </summary>
-/// <remarks>A GeoJSON file's key is its name without <c>.geojson</c>; the alias file's is its name.</remarks>
+/// <remarks>
+/// A GeoJSON file's key is its name without <c>.geojson</c>; the alias file's is its name. Only a
+/// GeoJSON key can go in <c>CrcDefaultsFor</c>.
+/// </remarks>
 public static class AirportOutputFiles
 {
 	/// <summary><c>Runways_Lines.geojson</c>: each airport's runway centrelines.</summary>

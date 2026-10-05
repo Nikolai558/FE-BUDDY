@@ -18,7 +18,7 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// A file that cannot be read never throws - not even when Windows Credential Manager cannot be
 /// read, or a download cannot be read as text; only cancelling does. The result says why, in words
 /// the user can act on (a mistyped path, a token GitHub refused, a private repository and no
-/// credential, and so on). The vNAS Alias Upload tab's <b>Check</b> button and the AIRAC run both use it.
+/// credential, and so on). The Concatenate Aliases tab's <b>Check</b> button and the AIRAC run both use it.
 /// </para>
 /// <para>
 /// A credential is added by <see cref="CredentialStore.Authorize"/> only, so it goes over HTTPS to

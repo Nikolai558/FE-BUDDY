@@ -267,7 +267,7 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 		{
 			nameof(LayoutByFilters), nameof(LayoutByAttributes), nameof(LayoutRaw), nameof(LayoutRawPlus),
 			nameof(DefaultsFromXml), nameof(DefaultsFromXmlThenCard), nameof(DefaultsFromCard), nameof(UsesCrcDefaults),
-			nameof(HasCrcDefaultsInUse),
+			nameof(ShowsCrcDefaultsCard), nameof(HasCrcDefaultsInUse),
 		})
 		{
 			OnPropertyChanged(name);

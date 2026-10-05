@@ -92,8 +92,8 @@ public sealed record AiracServiceResult : ServiceResult
 	public TelephonyServiceResult? Telephony { get; init; }
 
 	/// <summary>
-	/// What writing <c>Upload_to_vNAS\vNAS_Alias.txt</c> produced, or <see langword="null"/> when it was
-	/// not written: vNAS Alias Upload was not selected and no alias file was marked for vNAS.
+	/// What writing <c>Aliases\Combined_Alias.txt</c> produced, or <see langword="null"/> when it was
+	/// not written: Concatenate Aliases was not in the run, or its combining was off.
 	/// </summary>
 	public VnasAliasResult? VnasAlias { get; init; }
 }

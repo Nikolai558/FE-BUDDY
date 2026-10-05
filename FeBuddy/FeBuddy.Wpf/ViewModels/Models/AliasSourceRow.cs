@@ -7,7 +7,7 @@ using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 namespace FeBuddy.Wpf.ViewModels.Models;
 
 /// <summary>
-/// One custom alias file on the vNAS Alias Upload tab: a file on this PC, or a web address with the
+/// One custom alias file on the Concatenate Aliases tab: a file on this PC, or a web address with the
 /// saved credential to download it with.
 /// </summary>
 /// <remarks>

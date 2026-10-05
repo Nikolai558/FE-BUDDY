@@ -1,24 +1,27 @@
 <!--
-    CrcDefaultsCard  -  the CRC ERAM Defaults card every GeoJSON sub-service tab shows right after
-    its Upload to vNAS card: a CrcDefaultsPanel per kind of file, always Lines | Symbols | Text.
-    Binds to the tab's view model through ICrcDefaultsSettings; the tab supplies only the panel
-    titles.
+    CrcDefaultsCard  -  the CRC ERAM Defaults card: a CrcDefaultsPanel per kind of file, always
+    Lines | Symbols | Text. Binds to the tab's view model through ICrcDefaultsSettings; the tab
+    supplies only the panel titles.
 
-    Which files get CRC-ERAM defaults is chosen on the Upload to vNAS card, so the card shows only
-    once one does, a panel only while a file of its kind does, and a panel only the classes those
-    files need (Airways High/Low: just the class of each file chosen). A panel with no class to
-    show hides itself.
+    An AIRAC sub-service puts a CrcFileChoice in Choice: which of its GeoJSON files get CRC-ERAM
+    defaults. The card shows while the tab writes a GeoJSON file, a panel only while a file of its
+    kind gets defaults, and a panel only the classes those files need (Airways High/Low: just the
+    class of each file chosen). A panel with no class to show hides itself.
 
     The panels sit side by side; the WrapPanel stacks them when the window is too narrow for all
     three, so no panel is ever clipped. It is also the size scope for the panels' label column, so
     every panel's blocks are one width.
 
-    The File Conversions have no Upload to vNAS card: they set ShowInclude, which puts an Include
-    box on each panel, bind IncludeLines / IncludeSymbols / IncludeText to their own flags, and
-    give their own Note.
+    The File Conversions have no Choice: they set ShowInclude, which puts an Include box on each
+    panel, bind IncludeLines / IncludeSymbols / IncludeText to their own flags, and give their own
+    Note.
 
     Usage:
-        <cards:CrcDefaultsCard LinesTitle="Runways — Lines" />
+        <cards:CrcDefaultsCard LinesTitle="Runways — Lines">
+            <cards:CrcDefaultsCard.Choice>
+                <cards:CrcFileChoice />
+            </cards:CrcDefaultsCard.Choice>
+        </cards:CrcDefaultsCard>
         <cards:CrcDefaultsCard LinesTitle="Video Map — Lines" ShowInclude="True"
                                IncludeLines="{Binding IncludeCrcLineDefaults}" Note="..." />
 -->
@@ -34,11 +37,26 @@
              d:DataContext="{d:DesignInstance tabs:ICrcDefaultsSettings}"
              d:DesignWidth="900"
              x:Name="Self"
-             Visibility="{Binding HasCrcDefaultsInUse, Converter={StaticResource BoolToVis}}">
+             Visibility="{Binding ShowsCrcDefaultsCard, Converter={StaticResource BoolToVis}}">
     <ctl:Card Header="CRC ERAM Defaults">
         <StackPanel>
             <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding Note, ElementName=Self}" />
-            <WrapPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.IsSharedSizeScope="True">
+
+            <!-- which files get them (the AIRAC sub-services), hidden when there is no choice to make -->
+            <ContentPresenter Margin="0,8,0,0" Content="{Binding Choice, ElementName=Self}">
+                <ContentPresenter.Style>
+                    <Style TargetType="ContentPresenter">
+                        <Style.Triggers>
+                            <Trigger Property="Content" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentPresenter.Style>
+            </ContentPresenter>
+
+            <WrapPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.IsSharedSizeScope="True"
+                       Visibility="{Binding HasCrcDefaultsInUse, Converter={StaticResource BoolToVis}}">
                 <cards:CrcDefaultsPanel Title="{Binding LinesTitle, ElementName=Self}" Classes="{Binding LineDefaultsInUse}"
                                         ShowInclude="{Binding ShowInclude, ElementName=Self}"
                                         IsIncluded="{Binding IncludeLines, ElementName=Self}" />

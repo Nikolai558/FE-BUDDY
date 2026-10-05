@@ -24,9 +24,10 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// <see cref="SubServiceDescriptor.Key"/> is persisted in <c>UserConfig</c> under
 /// <c>Services.AiracService.SelectedSubServices</c> and <c>Services.AiracService.Outputs.&lt;Key&gt;</c>,
-/// so a key may not be renamed without migrating those values. <see cref="SubServiceDescriptor.IsImplemented"/> is <see langword="false"/> for a
-/// sub-service that has no library code behind it yet: its tab opens and explains itself, and it
-/// contributes nothing to a run.
+/// so a key may not be renamed without migrating those values - Concatenate Aliases keeps
+/// <c>VnasAlias</c>, from its old name. <see cref="SubServiceDescriptor.IsImplemented"/> is
+/// <see langword="false"/> for a sub-service that has no library code behind it yet: its tab opens
+/// and explains itself, and it contributes nothing to a run.
 /// </para>
 /// </remarks>
 public static class AiracSubServices
@@ -61,15 +62,15 @@ public static class AiracSubServices
 	/// <summary>The Telephony sub-service key.</summary>
 	public const string TelephonyKey = "Telephony";
 
-	/// <summary>The vNAS Alias Upload sub-service key.</summary>
+	/// <summary>The Concatenate Aliases sub-service key, from its old name, vNAS Alias Upload.</summary>
 	public const string VnasAliasKey = "VnasAlias";
 
 	private const SubServiceOutputKinds AliasAndGeojson = SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson;
 
 	/// <summary>
-	/// Every sub-service, in the order the General tab's table and the tab rail show them. The vNAS
-	/// Alias Upload tab lists FE-Buddy's alias files in this order too, straight from the list, so
-	/// keep the <see cref="SubServiceDescriptor.Order"/> values in the same order as the entries.
+	/// Every sub-service, in the order the General tab's table and the tab rail show them. The
+	/// Concatenate Aliases tab lists FE-Buddy's alias files in this order too, straight from the list,
+	/// so keep the <see cref="SubServiceDescriptor.Order"/> values in the same order as the entries.
 	/// </summary>
 	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
 	[
@@ -142,6 +143,9 @@ public static class AiracSubServices
 			Help: new SubServiceHelp(
 				"A symbol and a label for every US and US-territory station that reports METAR, from aviationweather.gov. GeoJSON only.",
 				Geojson: "Wx_Symbols and Wx_Text (the ICAO ID, then the IATA ID and site name). The region of interest narrows them.")),
-		new SubServiceDescriptor(VnasAliasKey, "vNAS Alias Upload", 110, true, () => new VnasAliasViewModel()),
+		new SubServiceDescriptor(VnasAliasKey, "Concatenate Aliases", 110, true, () => new VnasAliasViewModel(),
+			Help: new SubServiceHelp(
+				"Combines every alias file the run makes, then your facility's own alias files, into Combined_Alias.txt: " +
+				"vNAS takes one alias file per facility.")),
 	];
 }

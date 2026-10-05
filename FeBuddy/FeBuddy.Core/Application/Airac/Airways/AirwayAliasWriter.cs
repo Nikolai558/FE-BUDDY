@@ -10,8 +10,8 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// draws every waypoint on it (e.g. <c>.J3F .FF OAK RBL LKV IMB GEG</c>).
 /// </summary>
 /// <remarks>
-/// The file goes in the output folder's <c>Aliases</c> folder; when the user marked it for vNAS it is
-/// also copied into <c>vNAS_Alias.txt</c> (see <see cref="AiracOutputPaths"/>).
+/// The file goes in the output folder's <c>Aliases</c> folder; an AIRAC Service run with Concatenate
+/// Aliases also copies it into <c>Combined_Alias.txt</c> (see <see cref="AiracOutputPaths"/>).
 /// </remarks>
 public static class AirwayAliasWriter
 {

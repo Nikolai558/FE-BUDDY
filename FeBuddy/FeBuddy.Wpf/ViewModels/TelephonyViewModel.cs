@@ -21,14 +21,14 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>Telephony</b> sub-service tab inside the AIRAC Service screen: the <c>Telephony.txt</c>
-/// alias file, the user's virtual airlines merged into it, and whether it goes to vNAS.
+/// alias file and the user's virtual airlines merged into it.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The alias file is Telephony's only output, and it covers every operator in the FAA telephony
 /// pages; the only thing to add is the Virtual Airlines card's list, each one written as a card of
 /// its own marked <c>--VA--</c>, after the FAA's operators. The tab still derives from
-/// <see cref="GeojsonSubServiceViewModel"/> for the alias file and the Upload to vNAS card, with
+/// <see cref="GeojsonSubServiceViewModel"/> for the alias file plumbing, with
 /// <see cref="EmitKeys"/> <c>(null, null, null)</c> and one output that cannot be turned off.
 /// </para>
 /// <para>
@@ -391,7 +391,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				: "None"),
 			new ServicePreviewRow("VATSIM-Radar list", IncludeVatsimRadarList ? $"Included. {VatsimRadarListStatus}" : "Not included"),
 			new ServicePreviewRow("Telephony data", TelephonyDataStatus),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 		];
 
 		return [new ServicePreviewSection("Telephony", rows)];

@@ -15,7 +15,7 @@ namespace FeBuddy.Wpf.Behaviors;
 /// <remarks>
 /// <para>
 /// Set it instead of <c>Text</c>: it replaces the TextBlock's inlines. Only a backtick is special,
-/// so a name such as <c>Upload_to_vNAS</c> needs no escaping, and a backtick with no partner shows
+/// so a name such as <c>Combined_Alias.txt</c> needs no escaping, and a backtick with no partner shows
 /// as it is. Line breaks (<c>&amp;#xA;</c> in XAML, <c>\n</c> in code) work as they do in
 /// <c>Text</c>.
 /// </para>

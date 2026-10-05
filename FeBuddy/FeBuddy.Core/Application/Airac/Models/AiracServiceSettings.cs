@@ -113,10 +113,10 @@ public sealed record AiracServiceSettings
 	public IReadOnlyDictionary<string, string>? Telephony { get; init; }
 
 	/// <summary>
-	/// The vNAS Alias Upload sub-service settings block - the user's custom alias files, merged into the
-	/// top of <c>vNAS_Alias.txt</c> - or <see langword="null"/> when vNAS Alias Upload was not selected
-	/// for this run. <c>vNAS_Alias.txt</c> is still written without it whenever an alias file is marked
-	/// for vNAS.
+	/// The Concatenate Aliases sub-service settings block - whether to combine every alias file the run
+	/// writes into <c>Aliases\Combined_Alias.txt</c>, and the user's custom alias files to add after them -
+	/// or <see langword="null"/> when Concatenate Aliases is not in this run, which then writes no
+	/// combined file.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? VnasAlias { get; init; }
 }

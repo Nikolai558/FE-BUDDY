@@ -1,7 +1,7 @@
 # Creating a GitHub token for FE-Buddy
 
 FE-Buddy needs a GitHub token only to read a file from a **private** GitHub repository - usually
-your facility's custom alias file, on the vNAS Alias Upload tab. A public repository needs no token.
+your facility's custom alias file, on the Concatenate Aliases tab. A public repository needs no token.
 
 This guide makes a **fine-grained personal access token** that can do as little as possible: read
 the files of the repositories you pick, for a limited time. FE-Buddy never writes to GitHub.
@@ -18,8 +18,8 @@ the files of the repositories you pick, for a limited time. FE-Buddy never write
 | Repository permissions | **Contents: Read-only**, nothing else |
 | Account permissions | None |
 
-Then paste the token into FE-Buddy (Settings ▸ Credentials, or **New credential…** on the vNAS Alias
-Upload tab) and press **Check**.
+Then paste the token into FE-Buddy (Settings ▸ Credentials, or **New credential…** on the Concatenate
+Aliases tab) and press **Check**.
 
 ## Step by step
 
@@ -86,7 +86,7 @@ starts with `github_pat_` - **once only**, so copy it straight away.
 ### 6. Save it in FE-Buddy
 
 In FE-Buddy's credential editor (Settings ▸ Credentials ▸ **Add credential…**, or **New credential…**
-on the vNAS Alias Upload tab):
+on the Concatenate Aliases tab):
 
 ![FE-Buddy's Add Credential window, set to GitHub personal access token](Media/GitHub-Token/05-fe-buddy-credential-editor.png)
 
@@ -100,7 +100,7 @@ on the vNAS Alias Upload tab):
 FE-Buddy keeps the token in Windows Credential Manager, encrypted with your Windows sign-in. It's
 never written to FE-Buddy's settings or exports, and never shown again.
 
-Now choose it for your file on the vNAS Alias Upload tab and press **Check** there: it should say
+Now choose it for your file on the Concatenate Aliases tab and press **Check** there: it should say
 how many alias commands it read. One token can serve several files - a later GitHub file with no
 credential is offered, for example, **Use ZOB GitHub, like file 1**.
 

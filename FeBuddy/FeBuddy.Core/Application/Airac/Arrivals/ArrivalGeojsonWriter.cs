@@ -21,8 +21,8 @@ namespace FeBuddy.Core.Application.Airac.Arrivals;
 /// Text but no Lines file.
 /// </para>
 /// <para>
-/// A kind the user marked for vNAS goes under <c>Upload_to_vNAS</c> instead, and only a kind
-/// chosen for CRC-ERAM defaults gets an isDefaults Feature (see <see cref="ArrivalOutputFiles"/>).
+/// Only a kind chosen for CRC-ERAM defaults (<c>CrcDefaultsFor</c>) gets an isDefaults Feature
+/// (see <see cref="ArrivalOutputFiles"/>).
 /// </para>
 /// </remarks>
 public static class ArrivalGeojsonWriter
@@ -68,7 +68,7 @@ public static class ArrivalGeojsonWriter
 		return files;
 	}
 
-	/// <summary>Writes one airport + procedure's file of one kind, into the GeoJSON or vNAS folder as the user chose.</summary>
+	/// <summary>Writes one airport + procedure's file of one kind, into the GeoJSON folder.</summary>
 	private static void WriteFile(
 		FeatureCollection collection,
 		int renderedCount,
@@ -79,7 +79,7 @@ public static class ArrivalGeojsonWriter
 		files.Write(
 			collection,
 			renderedCount,
-			ArrivalOutputFiles.GeojsonDirectory(settings, airportProcedure, kind),
+			ArrivalOutputFiles.GeojsonDirectory(settings, airportProcedure),
 			ArrivalOutputFiles.GeojsonFileName(airportProcedure, kind));
 
 	private static void GenerateLines(
@@ -96,7 +96,7 @@ public static class ArrivalGeojsonWriter
 
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(ArrivalOutputFiles.Lines))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(ArrivalOutputFiles.Lines))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.LineDefaults[ArrivalCrcClass.Arrivals]));
 		}
@@ -117,7 +117,7 @@ public static class ArrivalGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(ArrivalOutputFiles.Symbols))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(ArrivalOutputFiles.Symbols))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[ArrivalCrcClass.Arrivals]));
 		}
@@ -139,7 +139,7 @@ public static class ArrivalGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(ArrivalOutputFiles.Text))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(ArrivalOutputFiles.Text))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[ArrivalCrcClass.Arrivals]));
 		}

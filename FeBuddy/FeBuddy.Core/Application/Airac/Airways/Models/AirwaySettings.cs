@@ -101,10 +101,10 @@ public sealed record AirwaySettings
 	public int CoordinatePrecision { get; init; } = 6;
 
 	/// <summary>
-	/// Which files go to vNAS, and which of those get CRC-ERAM defaults, by file key (see
+	/// Which GeoJSON files get CRC-ERAM defaults (<c>CrcDefaultsFor</c>), by file key (see
 	/// <see cref="AirwayOutputFiles"/>). Default: none.
 	/// </summary>
-	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
+	public CrcDefaultsFiles CrcDefaultsFiles { get; init; } = CrcDefaultsFiles.None;
 
 	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
@@ -117,21 +117,21 @@ public sealed record AirwaySettings
 
 	/// <summary>
 	/// CRC line property defaults, keyed by altitude class. Holds every class a Lines file in
-	/// <see cref="VnasFileChoices.CrcDefaultsFiles"/> needs.
+	/// <see cref="CrcDefaultsFiles"/> needs.
 	/// </summary>
 	public IReadOnlyDictionary<AirwayAltitudeClass, CrcLineDefaults> LineDefaults { get; init; } =
 		new Dictionary<AirwayAltitudeClass, CrcLineDefaults>();
 
 	/// <summary>
 	/// CRC symbol property defaults, keyed by altitude class. Holds every class a Symbols file in
-	/// <see cref="VnasFileChoices.CrcDefaultsFiles"/> needs.
+	/// <see cref="CrcDefaultsFiles"/> needs.
 	/// </summary>
 	public IReadOnlyDictionary<AirwayAltitudeClass, CrcSymbolDefaults> SymbolDefaults { get; init; } =
 		new Dictionary<AirwayAltitudeClass, CrcSymbolDefaults>();
 
 	/// <summary>
 	/// CRC text property defaults, keyed by altitude class. Holds every class a Text file in
-	/// <see cref="VnasFileChoices.CrcDefaultsFiles"/> needs.
+	/// <see cref="CrcDefaultsFiles"/> needs.
 	/// </summary>
 	public IReadOnlyDictionary<AirwayAltitudeClass, CrcTextDefaults> TextDefaults { get; init; } =
 		new Dictionary<AirwayAltitudeClass, CrcTextDefaults>();

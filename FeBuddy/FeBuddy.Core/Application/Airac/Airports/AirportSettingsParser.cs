@@ -89,9 +89,9 @@ public static class AirportSettingsParser
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(airportSettings);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(airportSettings);
 
-		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
-			airportSettings, AirportOutputFiles.Alias, AirportOutputFiles.IsGeojsonKey,
-			example: $"{AirportOutputFiles.AirportsSymbols}, {AirportOutputFiles.Alias}");
+		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(
+			airportSettings, AirportOutputFiles.IsGeojsonKey,
+			example: $"{AirportOutputFiles.AirportsSymbols}, {AirportOutputFiles.RunwaysLines}");
 
 		// A file's defaults are needed only when it gets CRC-ERAM defaults AND is actually
 		// written; only then are its values required.
@@ -99,19 +99,19 @@ public static class AirportSettingsParser
 		Dictionary<AirportCrcClass, CrcSymbolDefaults> symbolDefaults = [];
 		Dictionary<AirportCrcClass, CrcTextDefaults> textDefaults = [];
 
-		if (generateGeojson && emitSymbols && vnas.HasCrcDefaults(AirportOutputFiles.AirportsSymbols))
+		if (generateGeojson && emitSymbols && crcFiles.HasCrcDefaults(AirportOutputFiles.AirportsSymbols))
 		{
 			symbolDefaults[AirportCrcClass.Airports] =
 				CrcDefaultsReader.ReadSymbol(airportSettings, $"Crc.{AirportCrcClass.Airports}.Symbol");
 		}
 
-		if (generateGeojson && emitText && vnas.HasCrcDefaults(AirportOutputFiles.AirportsText))
+		if (generateGeojson && emitText && crcFiles.HasCrcDefaults(AirportOutputFiles.AirportsText))
 		{
 			textDefaults[AirportCrcClass.Airports] =
 				CrcDefaultsReader.ReadText(airportSettings, $"Crc.{AirportCrcClass.Airports}.Text");
 		}
 
-		if (generateGeojson && emitRunways && vnas.HasCrcDefaults(AirportOutputFiles.RunwaysLines))
+		if (generateGeojson && emitRunways && crcFiles.HasCrcDefaults(AirportOutputFiles.RunwaysLines))
 		{
 			lineDefaults[AirportCrcClass.Runways] =
 				CrcDefaultsReader.ReadLine(airportSettings, $"Crc.{AirportCrcClass.Runways}.Line");
@@ -131,7 +131,7 @@ public static class AirportSettingsParser
 			GenerateAliasFile = generateAliasFile,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			Vnas = vnas,
+			CrcDefaultsFiles = crcFiles,
 			Roi = roi,
 			CoordinatePrecision = coordinatePrecision,
 			LineDefaults = lineDefaults,

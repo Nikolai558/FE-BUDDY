@@ -43,13 +43,6 @@ public sealed record ProcedureSettings
 	public bool GenerateAliasFile { get; init; } = true;
 
 	/// <summary>
-	/// Whether the alias file goes to vNAS: copied into <c>Upload_to_vNAS\vNAS_Alias.txt</c> as well as
-	/// written to the <c>Aliases</c> folder. Its only possible file key is <c>Faa_Chart_Recall.txt</c>;
-	/// nothing Procedures writes carries CRC-ERAM defaults.
-	/// </summary>
-	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
-
-	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
 	/// block: <see cref="ProcedureService.Run"/> takes it from the AIRAC Service. Default: none
 	/// renamed.

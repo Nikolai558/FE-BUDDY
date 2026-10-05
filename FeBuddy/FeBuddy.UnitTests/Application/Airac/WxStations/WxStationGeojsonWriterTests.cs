@@ -13,7 +13,7 @@ namespace FeBuddy.UnitTests.Application.Airac.WxStations;
 /// <summary>
 /// Covers <see cref="WxStationGeojsonWriter"/>: the ROI filter, that a Symbols Feature carries no
 /// properties at all, the Text Feature's two-line label, the Emit flags, CRC-ERAM defaults, and
-/// vNAS folder routing.
+/// that every file goes in the GeoJSON folder.
 /// </summary>
 public sealed class WxStationGeojsonWriterTests : IDisposable
 {
@@ -162,7 +162,7 @@ public sealed class WxStationGeojsonWriterTests : IDisposable
 	{
 		WxStationSettings settings = Settings() with
 		{
-			Vnas = new VnasFileChoices([WxStationOutputFiles.Symbols], [WxStationOutputFiles.Symbols]),
+			CrcDefaultsFiles = new CrcDefaultsFiles([WxStationOutputFiles.Symbols]),
 			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				[WxStationOutputFiles.AllClass] = SymbolDefaults(),
@@ -185,7 +185,7 @@ public sealed class WxStationGeojsonWriterTests : IDisposable
 	{
 		WxStationSettings settings = Settings() with
 		{
-			Vnas = new VnasFileChoices([WxStationOutputFiles.Text], [WxStationOutputFiles.Text]),
+			CrcDefaultsFiles = new CrcDefaultsFiles([WxStationOutputFiles.Text]),
 			TextDefaults = new Dictionary<string, CrcTextDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				[WxStationOutputFiles.AllClass] = TextDefaults(),
@@ -203,23 +203,23 @@ public sealed class WxStationGeojsonWriterTests : IDisposable
 		Assert.Single(symbolFeatures);
 	}
 
-	// ---- vNAS folder routing ----
+	// ---- GeoJSON folder ----
 
 	[Fact]
-	public void a_file_marked_for_vnas_goes_under_upload_to_vnas_while_the_other_does_not()
+	public void a_file_chosen_for_crc_defaults_goes_in_the_geojson_folder_like_the_other()
 	{
 		WxStationSettings settings = Settings() with
 		{
-			Vnas = new VnasFileChoices([WxStationOutputFiles.Symbols], []),
+			CrcDefaultsFiles = new CrcDefaultsFiles([WxStationOutputFiles.Symbols]),
+			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
+			{
+				[WxStationOutputFiles.AllClass] = SymbolDefaults(),
+			},
 		};
 
 		WxStationGeojsonGenerateResult result = WxStationGeojsonWriter.Generate([WxStationTestData.Dtw()], settings);
 
-		Assert.Contains(
-			result.Files.FilesWritten,
-			f => f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("Wx_Symbols.geojson", StringComparison.Ordinal));
-		Assert.Contains(
-			result.Files.FilesWritten,
-			f => !f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("Wx_Text.geojson", StringComparison.Ordinal));
+		Assert.Equal(2, result.Files.FilesWritten.Count);
+		Assert.All(result.Files.FilesWritten, f => Assert.Equal(Path.Combine(_outputDirectory, "Geojson"), Path.GetDirectoryName(f)));
 	}
 }

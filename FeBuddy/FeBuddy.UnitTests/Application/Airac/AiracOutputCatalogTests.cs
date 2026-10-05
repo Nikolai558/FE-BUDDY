@@ -56,18 +56,19 @@ public sealed class AiracOutputCatalogTests : IDisposable
 		Assert.Equal(["2610"], AiracOutputCatalog.FindCycleIds(_output, addFeBuddyOutputFolder: false));
 	}
 
-	/// <summary>A GeoJSON folder that cannot be listed gives nothing, and the other folder is still listed.</summary>
+	/// <summary>A GeoJSON folder that cannot be listed gives nothing, rather than failing.</summary>
 	[Fact]
-	public void a_geojson_folder_that_cannot_be_read_does_not_hide_the_other()
+	public void a_geojson_folder_that_cannot_be_read_has_no_files()
 	{
 		string cycle = Path.Combine(_output, "AIRAC_2610");
 		Write(cycle, "Geojson", "Fixes_Symbols.geojson");
-		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson"), "ARTCC_High_Lines.geojson");
 
 		using (DenyListing(Path.Combine(cycle, "Geojson")))
 		{
-			Assert.Equal(["ARTCC_High_Lines"], AiracOutputCatalog.FindGeojsonFiles(cycle).Select(f => f.Name));
+			Assert.Empty(AiracOutputCatalog.FindGeojsonFiles(cycle));
 		}
+
+		Assert.Equal(["Fixes_Symbols"], AiracOutputCatalog.FindGeojsonFiles(cycle).Select(f => f.Name));
 	}
 
 	[Fact]
@@ -77,13 +78,12 @@ public sealed class AiracOutputCatalogTests : IDisposable
 	}
 
 	[Fact]
-	public void geojson_files_are_listed_ordinary_folder_first_each_in_name_order()
+	public void geojson_files_are_listed_in_name_order()
 	{
 		string cycle = Path.Combine(_output, "AIRAC_2610");
 		Write(cycle, "Geojson", "Fixes_Symbols.geojson");
 		Write(cycle, "Geojson", "Airways_High_Lines.geojson");
 		Write(cycle, "Geojson", "notes.txt");
-		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson"), "ARTCC_High_Lines.geojson");
 		Write(cycle, string.Empty, "Airways.txt");
 
 		IReadOnlyList<AiracOutputGeojsonFile> files = AiracOutputCatalog.FindGeojsonFiles(cycle);
@@ -92,10 +92,20 @@ public sealed class AiracOutputCatalogTests : IDisposable
 			[
 				Path.Combine("Geojson", "Airways_High_Lines.geojson"),
 				Path.Combine("Geojson", "Fixes_Symbols.geojson"),
-				Path.Combine("Upload_to_vNAS", "Geojson", "ARTCC_High_Lines.geojson"),
 			],
 			files.Select(f => f.RelativePath));
-		Assert.Equal([false, false, true], files.Select(f => f.UploadToVnas));
+	}
+
+	/// <summary>Only the cycle's <c>Geojson</c> folder is listed, not a folder an earlier version wrote GeoJSON to.</summary>
+	[Fact]
+	public void geojson_files_outside_the_geojson_folder_are_not_listed()
+	{
+		string cycle = Path.Combine(_output, "AIRAC_2610");
+		Write(cycle, "Geojson", "Fixes_Symbols.geojson");
+		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson"), "ARTCC_High_Lines.geojson");
+		Write(cycle, string.Empty, "Stray.geojson");
+
+		Assert.Equal(["Fixes_Symbols"], AiracOutputCatalog.FindGeojsonFiles(cycle).Select(f => f.Name));
 	}
 
 	[Fact]
@@ -111,20 +121,6 @@ public sealed class AiracOutputCatalogTests : IDisposable
 		Assert.Equal(["Fixes_Symbols", "ABQ_ADYOS_Lines", "CLE_ALPHE_Lines"], files.Select(f => f.Name));
 		Assert.Equal([string.Empty, Path.Combine("ZAB", "ABQ"), Path.Combine("ZOB", "CLE")], files.Select(f => f.SubFolder));
 		Assert.Equal(Path.Combine("Geojson", "ZAB", "ABQ", "ABQ_ADYOS_Lines.geojson"), files[1].RelativePath);
-	}
-
-	[Fact]
-	public void sub_folders_under_upload_to_vnas_are_listed_too()
-	{
-		string cycle = Path.Combine(_output, "AIRAC_2610");
-		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson", "ZOB", "CLE"), "CLE_ALPHE_Lines.geojson");
-		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson"), "ARTCC_High_Lines.geojson");
-
-		IReadOnlyList<AiracOutputGeojsonFile> files = AiracOutputCatalog.FindGeojsonFiles(cycle);
-
-		Assert.Equal(["ARTCC_High_Lines", "CLE_ALPHE_Lines"], files.Select(f => f.Name));
-		Assert.All(files, f => Assert.True(f.UploadToVnas));
-		Assert.Equal(Path.Combine("ZOB", "CLE"), files[1].SubFolder);
 	}
 
 	/// <summary>A sub-folder that cannot be read is skipped; every other file is still listed.</summary>

@@ -38,8 +38,17 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   sub-service doesn't make is greyed out, and each box has a tooltip.
 - A sub-service left out stays in the list to the left, greyed out, with a tooltip saying what it
   is and how to include it.
-- vNAS Alias Upload is no longer ticked on the General tab. It comes in by itself once an alias file
-  is ticked on an Upload to vNAS card.
+- The Upload to vNAS card is gone: every file is ready for vNAS. GeoJSON always goes in `Geojson`
+  and alias files in `Aliases`; there is no `Upload_to_vNAS` folder.
+- CRC-ERAM defaults are chosen at the top of each tab's **CRC ERAM Defaults** card - none (the
+  default), every GeoJSON file, or specific files - and can go on any GeoJSON file. A saved "every
+  vNAS file" choice now covers every GeoJSON file.
+- vNAS Alias Upload is now **Concatenate Aliases**. It combines every alias file the run makes, then
+  your own, into `Aliases\Combined_Alias.txt`, which you can rename on the File Names tab (a name you
+  gave `vNAS_Alias.txt` carries over). Combining is on until you turn it off. The tab is no longer
+  ticked on the General tab: it comes in by itself while a sub-service makes an alias file.
+- With no custom alias files, the Review tab warns that `Combined_Alias.txt` holds only FE-Buddy's
+  aliases, since uploading it would remove your facility's own from vNAS.
 - Airways no longer has **None** under "split into". Turn GeoJSON off for Airways on the General tab
   instead; a saved None still works.
 

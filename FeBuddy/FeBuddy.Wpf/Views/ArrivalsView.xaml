@@ -125,8 +125,11 @@
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 
-            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
-            <cards:VnasUploadCard />
-            <cards:CrcDefaultsCard LinesTitle="Arrivals — Lines" SymbolsTitle="Arrivals — Symbols" TextTitle="Arrivals — Text" />
+            <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
+            <cards:CrcDefaultsCard LinesTitle="Arrivals — Lines" SymbolsTitle="Arrivals — Symbols" TextTitle="Arrivals — Text">
+                <cards:CrcDefaultsCard.Choice>
+                    <cards:CrcFileChoice />
+                </cards:CrcDefaultsCard.Choice>
+            </cards:CrcDefaultsCard>
     </StackPanel>
 </UserControl>

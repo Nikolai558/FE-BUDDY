@@ -11,8 +11,8 @@ public enum AliasSourceKind
 }
 
 /// <summary>
-/// One of the user's own alias files, merged into <c>vNAS_Alias.txt</c> after FE-Buddy's by the vNAS
-/// Alias Upload sub-service.
+/// One of the user's own alias files, merged into <c>Combined_Alias.txt</c> after FE-Buddy's by the
+/// Concatenate Aliases sub-service.
 /// </summary>
 /// <param name="Number">Its number on the tab (1 is merged first).</param>
 /// <param name="Kind">Whether it is a file on this PC or a web address.</param>

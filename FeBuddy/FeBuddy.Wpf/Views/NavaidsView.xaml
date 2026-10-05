@@ -85,9 +85,6 @@
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 
-            <!-- ============ upload to vNAS ============ -->
-            <cards:VnasUploadCard />
-
             <!-- ============ symbol style ============ -->
             <ctl:Card Header="NAVAID Symbol Style" Visibility="{Binding ShowSymbolStyleChoice, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
@@ -113,7 +110,11 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ CRC ERAM defaults ============ -->
-            <cards:CrcDefaultsCard SymbolsTitle="NAVAIDs — Symbols" TextTitle="NAVAIDs — Text" />
+            <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
+            <cards:CrcDefaultsCard SymbolsTitle="NAVAIDs — Symbols" TextTitle="NAVAIDs — Text">
+                <cards:CrcDefaultsCard.Choice>
+                    <cards:CrcFileChoice />
+                </cards:CrcDefaultsCard.Choice>
+            </cards:CrcDefaultsCard>
     </StackPanel>
 </UserControl>

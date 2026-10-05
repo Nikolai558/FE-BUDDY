@@ -2,10 +2,11 @@ using FeBuddy.Core.Application.Models;
 
 namespace FeBuddy.Core.Application.Airac.VnasAlias.Models;
 
-/// <summary>The outcome of parsing the raw vNAS Alias Upload settings dictionary.</summary>
-/// <param name="Sources">The user's custom alias files, in the order they are merged.</param>
+/// <summary>The outcome of parsing the raw Concatenate Aliases settings dictionary.</summary>
+/// <param name="Sources">The user's custom alias files, in the order they are merged; none while combining is off.</param>
 /// <param name="Messages">Non-fatal parsing messages (e.g. unrecognized keys that were ignored).</param>
-public sealed record VnasAliasSettingsParseResult(IReadOnlyList<AliasSource> Sources, IReadOnlyList<ServiceMessage> Messages);
+/// <param name="Combine">Whether to combine the alias files into <c>Combined_Alias.txt</c>.</param>
+public sealed record VnasAliasSettingsParseResult(IReadOnlyList<AliasSource> Sources, IReadOnlyList<ServiceMessage> Messages, bool Combine = true);
 
 /// <summary>
 /// What reading one custom alias file produced: its text, or why it could not be read. A problem is
@@ -36,12 +37,12 @@ public sealed record AliasSourceLoad(AliasSource Source, string? Text, string? P
 }
 
 /// <summary>
-/// What writing <c>vNAS_Alias.txt</c> produced: the file, what went into it, and every message along
+/// What writing <c>Combined_Alias.txt</c> produced: the file, what went into it, and every message along
 /// the way - including the custom alias files that could not be read and were left out.
 /// </summary>
 public sealed record VnasAliasResult : ServiceResult
 {
-	/// <summary>Full path of <c>vNAS_Alias.txt</c>, or <see langword="null"/> when there was nothing to put in it.</summary>
+	/// <summary>Full path of <c>Combined_Alias.txt</c>, or <see langword="null"/> when there was nothing to put in it.</summary>
 	public string? FilePath { get; init; }
 
 	/// <summary>How many custom alias files there were.</summary>
@@ -53,7 +54,7 @@ public sealed record VnasAliasResult : ServiceResult
 	/// <summary>How many alias commands the merged custom files hold.</summary>
 	public int CustomCommandCount { get; init; }
 
-	/// <summary>The names of FE-Buddy's alias files marked for vNAS, in the order they were added (e.g. <c>Airways.txt</c>).</summary>
+	/// <summary>The names of FE-Buddy's alias files, in the order they were added (e.g. <c>Airways.txt</c>).</summary>
 	public IReadOnlyList<string> FeBuddyFiles { get; init; } = [];
 
 	/// <summary>How many alias commands FE-Buddy's files added.</summary>

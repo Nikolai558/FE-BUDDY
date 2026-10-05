@@ -10,7 +10,7 @@ FE-Buddy downloads the data and writes the files for you:
   ARTCC boundaries and weather stations.
 - **Alias files** of dot-commands for controllers - airport, NAVAID and airline information, the
   fixes of an airway or procedure, and FAA chart recall.
-- **One `vNAS_Alias.txt`**, ready to upload, with your facility's own aliases merged in.
+- **One `Combined_Alias.txt`**, ready to upload to vNAS, with your facility's own aliases merged in.
 - **Procedure change reports** for the airports you care about.
 
 You choose what to make and how it looks, and a **Region of Interest** keeps the maps to your area.
@@ -53,15 +53,15 @@ Open **Settings**:
    **Airways** (and anything else you like). Each one you tick gets a tab.
 2. Open the **Airways** tab. On **High and Low Files**, choose High, Low or Both for each airway type
    that's still blank (J and Q start in High, V and T in Low), or untick the types you don't want
-   under **Designations to Include**; the tab stays red until you do. Near the end, on **Upload to
-   vNAS**, tick the files you'll upload to vNAS. If you tick a GeoJSON file, choose whether it gets CRC-ERAM defaults,
-   then fill every box on the **CRC ERAM Defaults** card that appears. Press **Save**.
+   under **Designations to Include**; the tab stays red until you do. At the end, on **CRC ERAM
+   Defaults**, choose which files get CRC-ERAM defaults, if any, and fill every box that appears.
+   Press **Save**.
 3. Open **Preview Settings**, check what the run will do, and press **Run AIRAC Service**.
 4. The **Review** tab shows progress, then what was written. **Open output folder** takes you to
    your files.
 
-To add your facility's own aliases to `vNAS_Alias.txt`, tick **vNAS Alias Upload** on the General
-tab and add your files on its tab.
+To add your facility's own aliases to `Combined_Alias.txt`, add your files on the **Concatenate
+Aliases** tab.
 
 ## 5. Every cycle after
 

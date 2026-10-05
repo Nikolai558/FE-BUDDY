@@ -44,8 +44,11 @@
             <!-- ============ region of interest ============ -->
             <cards:RoiOverrideCard IsEnabled="{Binding GenerateGeojson}" />
 
-            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
-            <cards:VnasUploadCard />
-            <cards:CrcDefaultsCard LinesTitle="Runways — Lines" SymbolsTitle="Airports — Symbols" TextTitle="Airports — Text" />
+            <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
+            <cards:CrcDefaultsCard LinesTitle="Runways — Lines" SymbolsTitle="Airports — Symbols" TextTitle="Airports — Text">
+                <cards:CrcDefaultsCard.Choice>
+                    <cards:CrcFileChoice />
+                </cards:CrcDefaultsCard.Choice>
+            </cards:CrcDefaultsCard>
     </StackPanel>
 </UserControl>

@@ -15,7 +15,7 @@ namespace FeBuddy.Core.Application.Settings;
 /// </para>
 /// <para>
 /// A service calls these only for the defaults a file it is writing actually needs: one that
-/// is uploaded to vNAS and chosen for CRC-ERAM defaults (<c>CrcDefaultsFor</c>).
+/// is chosen for CRC-ERAM defaults (<c>CrcDefaultsFor</c>).
 /// </para>
 /// </remarks>
 public static class CrcDefaultsReader

@@ -48,7 +48,7 @@ website can never collect a user's token.
 ## Using a credential in a feature
 
 Everything goes through `CredentialStore` (`FeBuddy.Core/Infrastructure/Credentials`); a feature
-never reads or stores a secret itself. vNAS Alias Upload is the working example: `VnasAliasViewModel`
+never reads or stores a secret itself. Concatenate Aliases is the working example: `VnasAliasViewModel`
 offers the drop-down and saves `Sources.<n>.CredentialId`, and `AliasSourceLoader` downloads with it.
 
 ```csharp
@@ -90,7 +90,7 @@ switch (store.Authorize(request, credentialId))
 - **Never log, toast, show or put in an exception a secret** or a request's headers. Name the
   credential instead.
 - **Never put a secret in a URL.** `UrlSecrets.Describe` finds a user name and password or a token
-  in an address the user types; vNAS Alias Upload refuses one.
+  in an address the user types; Concatenate Aliases refuses one.
 - **Never copy a secret into `UserConfig`, a file or an environment variable.**
 - **Never let a record print a secret:** a record's `ToString` prints every member, so one holding a
   secret must leave it out, as `CredentialDraft` does.

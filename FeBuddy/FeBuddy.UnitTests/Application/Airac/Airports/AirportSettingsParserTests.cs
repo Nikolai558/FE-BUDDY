@@ -7,9 +7,9 @@ namespace FeBuddy.UnitTests.Application.Airac.Airports;
 /// <summary>
 /// Covers the Airports settings parser: the combinations of output choices that would produce
 /// nothing at all are rejected up front, the FE-Buddy custom-property list is validated against
-/// the known names, the vNAS file keys are Airports' own, an unrecognized key is a warning rather
-/// than a failure, and CRC property defaults are demanded only for the files that get them and
-/// are actually being emitted.
+/// the known names, the CrcDefaultsFor file keys are Airports' own, an unrecognized key is a warning
+/// rather than a failure, and CRC property defaults are demanded only for the files that get them
+/// and are actually being emitted.
 /// </summary>
 public sealed class AirportSettingsParserTests
 {
@@ -191,8 +191,7 @@ public sealed class AirportSettingsParserTests
 		Assert.True(result.Settings.EmitAirportText);
 		Assert.True(result.Settings.EmitRunwayLines);
 		Assert.False(result.Settings.IncludeFebCustomProperties);
-		Assert.Empty(result.Settings.Vnas.UploadFiles);
-		Assert.Empty(result.Settings.Vnas.CrcDefaultsFiles);
+		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
 		Assert.Empty(result.Settings.LineDefaults);
 		Assert.Empty(result.Settings.SymbolDefaults);
 		Assert.Empty(result.Settings.TextDefaults);
@@ -200,43 +199,46 @@ public sealed class AirportSettingsParserTests
 		Assert.Equal(6, result.Settings.CoordinatePrecision);
 	}
 
-	/// <summary>Marks every Airports file for vNAS, and every GeoJSON one for CRC-ERAM defaults.</summary>
-	private static void UploadEverythingWithCrcDefaults(Dictionary<string, string> settings)
+	/// <summary>Chooses every Airports GeoJSON file for CRC-ERAM defaults.</summary>
+	private static void ChooseEveryFileForCrcDefaults(Dictionary<string, string> settings)
 	{
-		settings["UploadToVnas"] = "Runways_Lines,Airports_Symbols,Airports_Text,Airports.txt";
 		settings["CrcDefaultsFor"] = "Runways_Lines,Airports_Symbols,Airports_Text";
 	}
 
 	[Fact]
-	public void every_airports_file_key_is_accepted_ignoring_case()
+	public void every_airports_geojson_file_key_is_accepted_ignoring_case()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "runways_lines, AIRPORTS_SYMBOLS, Airports_Text, airports.txt";
+		settings["CrcDefaultsFor"] = "runways_lines, AIRPORTS_SYMBOLS, Airports_Text";
+		AddCrcDefaults(settings, "Airports", "Symbol");
+		AddCrcDefaults(settings, "Airports", "Text");
+		AddCrcDefaults(settings, "Runways", "Line");
 
 		AirportSettings parsed = AirportSettingsParser.Parse(settings).Settings;
 
-		Assert.True(parsed.Vnas.IsUploaded(AirportOutputFiles.RunwaysLines));
-		Assert.True(parsed.Vnas.IsUploaded(AirportOutputFiles.AirportsSymbols));
-		Assert.True(parsed.Vnas.IsUploaded(AirportOutputFiles.AirportsText));
-		Assert.True(parsed.Vnas.IsUploaded(AirportOutputFiles.Alias));
-		Assert.Empty(parsed.Vnas.CrcDefaultsFiles);
+		Assert.True(parsed.CrcDefaultsFiles.HasCrcDefaults(AirportOutputFiles.RunwaysLines));
+		Assert.True(parsed.CrcDefaultsFiles.HasCrcDefaults(AirportOutputFiles.AirportsSymbols));
+		Assert.True(parsed.CrcDefaultsFiles.HasCrcDefaults(AirportOutputFiles.AirportsText));
 	}
 
-	[Fact]
-	public void a_file_airports_does_not_write_is_rejected_for_vnas()
+	/// <summary>Only a GeoJSON file Airports writes can get CRC-ERAM defaults: not another sub-service's, not its alias file.</summary>
+	[Theory]
+	[InlineData("Airways_High_Lines")]
+	[InlineData("Airports.txt")]
+	public void a_file_that_is_not_an_airports_geojson_file_is_rejected_for_crc_defaults(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Airways_High_Lines";
+		settings["CrcDefaultsFor"] = key;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => AirportSettingsParser.Parse(settings));
-		Assert.Contains("Airways_High_Lines", ex.Message);
+		Assert.Contains(key, ex.Message);
 	}
 
 	[Fact]
 	public void crc_defaults_are_only_required_for_the_files_actually_being_emitted()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 		settings["EmitAirportText"] = "N";
 		settings["EmitRunwayLines"] = "N";
 		AddCrcDefaults(settings, "Airports", "Symbol");
@@ -259,7 +261,7 @@ public sealed class AirportSettingsParserTests
 	public void crc_defaults_parse_for_every_emitted_file_when_fully_specified()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 		AddCrcDefaults(settings, "Airports", "Symbol");
 		AddCrcDefaults(settings, "Airports", "Text");
 		AddCrcDefaults(settings, "Runways", "Line");
@@ -278,7 +280,7 @@ public sealed class AirportSettingsParserTests
 	public void a_text_default_missing_x_offset_throws_naming_the_key_only_when_text_is_emitted()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 		AddCrcDefaults(settings, "Airports", "Symbol");
 		AddCrcDefaults(settings, "Airports", "Text");
 		AddCrcDefaults(settings, "Runways", "Line");
@@ -299,10 +301,9 @@ public sealed class AirportSettingsParserTests
 	public void only_the_files_chosen_for_crc_defaults_have_their_defaults_read()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Runways_Lines,Airports_Symbols,Airports_Text";
 		settings["CrcDefaultsFor"] = "Airports_Symbols";
 		AddCrcDefaults(settings, "Airports", "Symbol");
-		// No Crc.Airports.Text.* or Crc.Runways.Line.* keys: those files go to vNAS without defaults.
+		// No Crc.Airports.Text.* or Crc.Runways.Line.* keys: those files are written without defaults.
 
 		AirportSettingsParseResult result = AirportSettingsParser.Parse(settings);
 
@@ -316,7 +317,6 @@ public sealed class AirportSettingsParserTests
 	public void crc_defaults_for_a_file_that_is_not_emitted_are_not_required()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Runways_Lines";
 		settings["CrcDefaultsFor"] = "Runways_Lines";
 		settings["EmitRunwayLines"] = "N";
 		// No Crc.Runways.Line.* keys: runway lines are not written, so their defaults are not needed.
@@ -331,7 +331,7 @@ public sealed class AirportSettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["GenerateGeojson"] = "N";
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 		// No Crc.* keys at all: no GeoJSON is written, so no defaults are needed.
 
 		AirportSettings parsed = AirportSettingsParser.Parse(settings).Settings;
@@ -345,6 +345,7 @@ public sealed class AirportSettingsParserTests
 	[InlineData("IncludeCrcEramPropertyDefaults")]
 	[InlineData("IncludeCrcLineDefaults")]
 	[InlineData("AddFeBuddyOutputFolder")]
+	[InlineData("UploadToVnas")]
 	public void a_retired_key_produces_a_warning_and_changes_nothing(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
@@ -353,7 +354,7 @@ public sealed class AirportSettingsParserTests
 		AirportSettingsParseResult result = AirportSettingsParser.Parse(settings);
 
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains(key));
-		Assert.Empty(result.Settings.Vnas.CrcDefaultsFiles);
+		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
 		Assert.Empty(result.Settings.LineDefaults);
 	}
 }

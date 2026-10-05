@@ -33,9 +33,9 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <remarks>
 /// <para>
 /// Unlike every other AIRAC sub-service, Procedures writes no GeoJSON and has no FE-Buddy
-/// properties - it still derives from <see cref="GeojsonSubServiceViewModel"/> for the alias file,
-/// the Upload to vNAS card and the Region of Interest override plumbing, but never shows the GeoJSON Files,
-/// FE-Buddy Properties or CRC ERAM Defaults cards: <see cref="EmitKeys"/> is
+/// properties - it still derives from <see cref="GeojsonSubServiceViewModel"/> for the alias file
+/// and the Region of Interest override plumbing, but never shows the GeoJSON Files, FE-Buddy
+/// Properties or CRC ERAM Defaults cards: <see cref="EmitKeys"/> is
 /// <c>(null, null, null)</c>, and <see cref="OutputFiles"/> offers only the alias file.
 /// </para>
 /// <para>
@@ -622,7 +622,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			new ServicePreviewRow("Documents", DescribeDocuments()),
 			new ServicePreviewRow("Alias file",
 				GenerateAliasFile ? $"{ProcedureOutputFiles.Alias}, every chart at every airport in the d-TPP metafile - the choices below never limit it" : "No"),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("Facilities", DescribeFacilities()),
 			new ServicePreviewRow("Airports", Airports.Count > 0 ? string.Join(", ", Airports) : "None"),
 			new ServicePreviewRow("Procedures", ProcedureNames.Count > 0 ? string.Join(", ", ProcedureNames) : "None"),
@@ -761,8 +760,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// Only the alias file: the documents are never uploaded to vNAS, and with no GeoJSON there is
-	/// nothing to carry CRC-ERAM defaults.
+	/// Only the alias file: with no GeoJSON there is nothing to carry CRC-ERAM defaults.
 	/// </remarks>
 	protected override IEnumerable<OutputFileOption> OutputFiles()
 	{
@@ -773,7 +771,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <inheritdoc />
-	/// <remarks>The two documents as well as the alias file: they can be renamed, though they never go to vNAS.</remarks>
+	/// <remarks>The two documents as well as the alias file: they can be renamed too.</remarks>
 	public override IEnumerable<OutputFileEntry> OutputFileEntries()
 	{
 		if (GenerateChangesDocument)

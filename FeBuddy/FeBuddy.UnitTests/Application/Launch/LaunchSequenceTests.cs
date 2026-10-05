@@ -392,12 +392,12 @@ public sealed class LaunchSequenceTests : IDisposable
 	}
 
 	/// <summary>
-	/// With vNAS Alias Upload selected, the single-settings overload reads the custom alias files
-	/// before any sub-service runs: a readable one is merged into vNAS_Alias.txt, one that cannot be
-	/// read is left out with a warning, and the block's own parsing messages reach the run.
+	/// With Concatenate Aliases selected, the single-settings overload reads the custom alias files
+	/// before any sub-service runs: a readable one is merged into Combined_Alias.txt, one that cannot
+	/// be read is left out with a warning, and the block's own parsing messages reach the run.
 	/// </summary>
 	[Fact]
-	public async Task airac_service_reads_the_custom_alias_files_first_when_vnas_alias_upload_is_selected()
+	public async Task airac_service_reads_the_custom_alias_files_first_when_concatenate_aliases_is_selected()
 	{
 		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
 		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
@@ -424,7 +424,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			},
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
-		Assert.Contains(reports, r => r.SubService == "vNAS Alias Upload" && r.Message == "Reading your custom alias files");
+		Assert.Contains(reports, r => r.SubService == "Concatenate Aliases" && r.Message == "Reading your custom alias files");
 
 		VnasAliasResult merged = result.VnasAlias!;
 		Assert.Equal(2, merged.CustomFileCount);
@@ -434,6 +434,34 @@ public sealed class LaunchSequenceTests : IDisposable
 
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("'Colour'", StringComparison.Ordinal));
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains($"{missingFile} was not found", StringComparison.Ordinal));
+	}
+
+	/// <summary>With combining off, the custom alias files are not read at all, and no combined file is written.</summary>
+	[Fact]
+	public async Task airac_service_does_not_read_the_custom_alias_files_while_combining_is_off()
+	{
+		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
+		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
+		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+
+		List<AiracServiceProgress> reports = [];
+		AiracServiceResult result = await AiracService.RunAsync(
+			new AiracServiceSettings
+			{
+				SelectedCycle = current,
+				OutputDirectory = Path.Combine(_root, "output"),
+				VnasAlias = new Dictionary<string, string>
+				{
+					["CombineAliasFiles"] = "N",
+					["Sources.1.FilePath"] = Path.Combine(_root, "Missing-Alias.txt"),
+				},
+			},
+			new SynchronousProgress<AiracServiceProgress>(reports.Add));
+
+		Assert.DoesNotContain(reports, r => r.Message == "Reading your custom alias files");
+		Assert.Null(result.VnasAlias);
+		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("was not found", StringComparison.Ordinal));
 	}
 
 	private sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>

@@ -11,8 +11,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Airports;
 
 /// <summary>
 /// Runs the whole Airports pipeline (<see cref="AirportService.Run"/>) and checks what lands on
-/// disk, and where - the Symbols, Text and Runways files, the alias file, the vNAS folder - and
-/// the advisory when the region of interest leaves no airports for the GeoJSON.
+/// disk, and where - the Symbols, Text and Runways files, the alias file - and the advisory when
+/// the region of interest leaves no airports for the GeoJSON.
 /// </summary>
 public sealed class AirportServiceTests : IDisposable
 {
@@ -60,9 +60,6 @@ public sealed class AirportServiceTests : IDisposable
 	private string GeojsonPath(string fileName) =>
 		Path.Combine(_outputDirectory, "Geojson", fileName);
 
-	private string VnasGeojsonPath(string fileName) =>
-		Path.Combine(_outputDirectory, "Upload_to_vNAS", "Geojson", fileName);
-
 	[Fact]
 	public void run_writes_symbols_text_runways_and_the_alias_file()
 	{
@@ -83,15 +80,13 @@ public sealed class AirportServiceTests : IDisposable
 		Assert.Equal(4, result.AliasCommandCount);
 		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airports.txt"), result.AliasFilePath);
 		Assert.Contains(".aptKSEA ", File.ReadAllText(result.AliasFilePath!), StringComparison.Ordinal);
-		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Upload_to_vNAS")));
 	}
 
 	[Fact]
-	public void vnas_files_go_to_upload_to_vnas_and_only_the_chosen_ones_get_crc_defaults()
+	public void every_geojson_file_goes_in_geojson_and_only_the_chosen_ones_get_crc_defaults()
 	{
-		// Every GeoJSON file goes to vNAS; Symbols and Text get CRC defaults, Runways does not.
+		// Every GeoJSON file goes in Geojson; Symbols and Text get CRC defaults, Runways does not.
 		AirportServiceResult result = AirportService.Run(SeattleData(), Settings(
-			("UploadToVnas", "Airports_Symbols,Airports_Text,Runways_Lines,Airports.txt"),
 			("CrcDefaultsFor", "Airports_Symbols,Airports_Text"),
 			("Crc.Airports.Symbol.bcg", "3"), ("Crc.Airports.Symbol.filters", "3"),
 			("Crc.Airports.Symbol.style", "airport"), ("Crc.Airports.Symbol.size", "1"),
@@ -104,11 +99,10 @@ public sealed class AirportServiceTests : IDisposable
 
 		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airports.txt"), result.AliasFilePath);
 		Assert.Equal(
-			[VnasGeojsonPath("Airports_Symbols.geojson"), VnasGeojsonPath("Airports_Text.geojson"), VnasGeojsonPath("Runways_Lines.geojson")],
+			[GeojsonPath("Airports_Symbols.geojson"), GeojsonPath("Airports_Text.geojson"), GeojsonPath("Runways_Lines.geojson")],
 			result.GeojsonFilesWritten);
-		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Geojson")));
 
-		using JsonDocument symbols = JsonDocument.Parse(File.ReadAllText(VnasGeojsonPath("Airports_Symbols.geojson")));
+		using JsonDocument symbols = JsonDocument.Parse(File.ReadAllText(GeojsonPath("Airports_Symbols.geojson")));
 		JsonElement[] features = [.. symbols.RootElement.GetProperty("features").EnumerateArray()];
 		Assert.True(features[0].GetProperty("properties").GetProperty("isSymbolDefaults").GetBoolean());
 
@@ -124,8 +118,8 @@ public sealed class AirportServiceTests : IDisposable
 		Assert.Equal("TWR", sea.GetProperty("feb.twrType").GetString());
 		Assert.False(sea.TryGetProperty("feb.rwyId", out _));
 
-		// Uploaded without defaults: the runway Feature comes first, with no isLineDefaults before it.
-		using JsonDocument runways = JsonDocument.Parse(File.ReadAllText(VnasGeojsonPath("Runways_Lines.geojson")));
+		// Written without defaults: the runway Feature comes first, with no isLineDefaults before it.
+		using JsonDocument runways = JsonDocument.Parse(File.ReadAllText(GeojsonPath("Runways_Lines.geojson")));
 		JsonElement runway = Assert.Single(runways.RootElement.GetProperty("features").EnumerateArray()).GetProperty("properties");
 		Assert.Equal("16L/34R", Assert.Single(runway.GetProperty("feb.rwyId").EnumerateArray()).GetString());
 	}

@@ -252,6 +252,24 @@ public sealed class FileNamesViewModelTests : IDisposable
 		Assert.Equal("ZOB High", Row(tab, "Airways_High_Lines").NewName);
 	}
 
+	/// <summary>The combined alias file was vNAS_Alias.txt: a name the user gave it then carries over.</summary>
+	[Fact]
+	public void a_name_saved_for_vnas_alias_txt_carries_over_to_combined_alias_txt()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.FileNames.RenameFiles", "Y");
+		UserConfigFile.TrySetValue("Services.AiracService.FileNames.Files.1.Key", "vNAS_Alias.txt");
+		UserConfigFile.TrySetValue("Services.AiracService.FileNames.Files.1.Rename", "Y");
+		UserConfigFile.TrySetValue("Services.AiracService.FileNames.Files.1.Name", "ZOB Aliases");
+		_files.Add(OutputFileEntry.Renamable("Combined_Alias.txt", "Aliases", "Concatenate Aliases"));
+
+		FileNamesViewModel tab = NewTab();
+
+		FileNameRow combined = Row(tab, "Combined_Alias.txt");
+		Assert.True(combined.Rename);
+		Assert.Equal("ZOB Aliases", combined.NewName);
+		Assert.Null(combined.Error);
+	}
+
 	/// <summary>Putting a change back the way it was clears the unsaved mark.</summary>
 	[Fact]
 	public void undoing_an_edit_by_hand_leaves_the_tab_clean()

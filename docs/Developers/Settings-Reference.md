@@ -17,7 +17,7 @@ says so; a blank there means the same name.
 [New file names](#new-file-names) · [CRC defaults](#crc-defaults) · [Airports](#airports) ·
 [Airways](#airways) · [Departures and Arrivals](#departures-and-arrivals) · [NAVAIDs](#navaids) ·
 [ARTCC Boundaries](#artcc-boundaries) · [Fixes](#fixes) · [Wx Stations](#wx-stations) ·
-[Procedures](#procedures) · [Telephony](#telephony) · [vNAS Alias Upload](#vnas-alias-upload) ·
+[Procedures](#procedures) · [Telephony](#telephony) · [Concatenate Aliases](#concatenate-aliases) ·
 [File conversions](#file-conversions) · [Settings export and import](#settings-export-and-import) ·
 [Adding a setting](#adding-a-setting)
 
@@ -122,14 +122,14 @@ Saved by the Map (`MapLayersState`) the moment a choice is made; the Map has no 
 | Wx Stations | `Services.AiracService.WxStations` |
 | Procedures | `Services.AiracService.Procedures` |
 | Telephony | `Services.AiracService.Telephony` |
-| vNAS Alias Upload | `Services.AiracService.VnasAlias` |
+| Concatenate Aliases | `Services.AiracService.VnasAlias` (its name was vNAS Alias Upload) |
 | DAT to GeoJSON | `Services.FileConversions.DatToGeojson` |
 | SCT2 to GeoJSON | `Services.FileConversions.SctToGeojson` |
 | ERAM to GeoJSON | `Services.FileConversions.EramToGeojson` |
 
 ## Keys every AIRAC sub-service shares
 
-Read by `SubServiceSettingsReader`; saved by `GeojsonSubServiceViewModel`. vNAS Alias Upload reads
+Read by `SubServiceSettingsReader`; saved by `GeojsonSubServiceViewModel`. Concatenate Aliases reads
 none of them.
 
 | Block key | Saved as | Values | Default |
@@ -138,15 +138,17 @@ none of them.
 | `CoordinatePrecision` | `Services.AiracService.CoordinatePrecision` | `1`-`15`, or `0` not to round (`GeojsonFileWriter.NoRounding`) | `6` |
 | `IncludeFebCustomProperties` | | `Y` / `N` | `N` |
 | `FebProperties` | | list of the sub-service's `feb.*` names; **required** when the above is `Y` | none |
-| `UploadToVnas` | `Vnas.UploadFiles` | list of [file keys](#file-keys) marked for vNAS | none |
-| `CrcDefaultsFor` | `Vnas.CrcDefaults` (`None`, `AllVnasFiles`, `SpecificFiles`) and `Vnas.CrcFiles` | list of GeoJSON file keys that get CRC-ERAM defaults; each must also be in `UploadToVnas` | none |
+| `CrcDefaultsFor` | `Vnas.CrcDefaults` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `Vnas.CrcFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
 | `FilterByRoi` | `Roi.OverrideDefaultRoi` | `Y` / `N` | `N` |
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCoordindates.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees; **required** with `FilterByRoi = Y` | none |
 | `Crc.<Class>.<Kind>.<field>` | `CrcEramPropertyDefaults.<row>.<field>` | see [CRC defaults](#crc-defaults) | none |
 
 - The app sends the override box when a tab overrides the ROI, otherwise the default ROI.
-- `Vnas.UploadFiles` and `Vnas.CrcFiles` keep every choice, even for files the current settings
-  don't write, so a file switched off and on keeps its choice. A run sends only the files written.
+- `Vnas.CrcFiles` keeps every choice, even for files the current settings don't write, so a file
+  switched off and on keeps its choice. A run sends only the files written.
+- Every file is ready for vNAS, so nothing is marked for it any more. A saved `AllVnasFiles` loads as
+  `AllGeojsonFiles`; a save drops `Vnas.UploadFiles`; and an `UploadToVnas` block key is warned about
+  as unrecognized.
 - A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedures' two documents) are
   set on the General tab and saved there, under `Services.AiracService.Outputs` - never in the
   sub-service's own node, so saving or undoing its tab can't change them.
@@ -159,19 +161,18 @@ none of them.
 
 | File | Goes in |
 |---|---|
-| Alias file | `Aliases\` - and, when marked for vNAS, also merged into `Upload_to_vNAS\vNAS_Alias.txt` |
+| Alias file | `Aliases\` |
+| `Combined_Alias.txt` | `Aliases\`, when [Concatenate Aliases](#concatenate-aliases) combines the alias files |
 | GeoJSON | `Geojson\` (Departures and Arrivals: `Geojson\<ARTCC>\<airport>\`) |
-| GeoJSON marked for vNAS | `Upload_to_vNAS\Geojson\` instead |
 | Procedures' documents | `Publication_Docs\` |
 | `Duplicate_Alias_Commands.txt` | the cycle folder itself, whenever the run wrote an alias file |
 
 ## File keys
 
 A **file key** names one output file: a GeoJSON file's name without `.geojson`, or the alias file's
-name. `UploadToVnas`, `CrcDefaultsFor` and the File Names tab use them, matching case-insensitively.
-A key the sub-service can't write, a `CrcDefaultsFor` key missing from `UploadToVnas`, or an alias
-file in `CrcDefaultsFor`, throws. A key for a file that isn't written this run does nothing. Each
-sub-service's keys are in its `*OutputFiles` class.
+name. `CrcDefaultsFor` and the File Names tab use them, matching case-insensitively. A
+`CrcDefaultsFor` key that isn't one of the sub-service's GeoJSON keys throws. A key for a file that
+isn't written this run does nothing. Each sub-service's keys are in its `*OutputFiles` class.
 
 | Sub-service | GeoJSON keys | Alias key |
 |---|---|---|
@@ -196,7 +197,7 @@ tests.
 
 - A renamed file keeps its folder and extension: `ZOB High.geojson`.
 - Every file key above can be renamed except the Departures and Arrivals GeoJSON keys, whose files
-  are named per procedure. So can `Procedure_Changes.md`, `Procedures.json`, `vNAS_Alias.txt` and
+  are named per procedure. So can `Procedure_Changes.md`, `Procedures.json`, `Combined_Alias.txt` and
   `Duplicate_Alias_Commands.txt`, each keyed by its own name.
 - Any other key is a warning and is ignored; a blank name keeps FE-Buddy's.
 - A bad name throws before the run starts: `\ / : * ? " < > |` or a control character, ending in a
@@ -204,8 +205,9 @@ tests.
   than 100 characters after trimming, or the same new name and extension for two files.
   `OutputFileNames.Problem` holds the rules; the File Names tab also refuses another file's
   FE-Buddy name.
-- Everything else still knows the file by its key: `UploadToVnas`, `CrcDefaultsFor`, the vNAS merge
-  and the duplicate report.
+- Everything else still knows the file by its key: `CrcDefaultsFor`, the combined alias file and the
+  duplicate report. The File Names tab carries a name given to `vNAS_Alias.txt`, the combined file's
+  old key, over to `Combined_Alias.txt`.
 
 ## CRC defaults
 
@@ -412,13 +414,16 @@ tab's ROI override if it has one, otherwise the default ROI.
 - The AIRAC Service checks `IncludeVatsimRadarVirtualAirlines` before the run
   (`TelephonySettingsParser.IncludesVatsimRadarList`) to know whether to download the list.
 
-## vNAS Alias Upload
+## Concatenate Aliases
 
-Numbered keys, one group per custom alias file (`<n>` from 1), merged in number order. Saved the same
-way; every save removes the `Sources` subtree first.
+Whether to combine the run's alias files into `Aliases\Combined_Alias.txt`, then numbered keys, one
+group per custom alias file (`<n>` from 1), merged in number order. Saved the same way; every save
+removes the `Sources` subtree first. The block is only in a run while an included sub-service makes
+an alias file; without it, no combined file is written.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
+| `CombineAliasFiles` | | `Y` / `N` | `Y` |
 | `Sources.<n>.FilePath` | | full path of an alias file on this PC | none |
 | `Sources.<n>.Url` | | `http://` or `https://` address, with no sign-in written into it | none |
 | `Sources.<n>.CredentialId` | | a saved credential's id (`"N"` GUID format), never the secret | none |
@@ -429,8 +434,11 @@ way; every save removes the `Sources` subtree first.
   a `CredentialId` (an empty group is skipped); a relative `FilePath`; a `Url` that isn't http(s) or
   has a sign-in in it (`UrlSecrets` - the message never repeats the address); a `Url` group's
   `CredentialId` that isn't a GUID. A `CredentialId` on a `FilePath` is ignored, with an Info message.
-- No sources is fine: `vNAS_Alias.txt` then holds FE-Buddy's aliases only. The tab is invalid when
-  there is nothing to merge at all, or a listed file has a problem.
+- With `CombineAliasFiles = N` the `Sources` keys are not read or checked, the app doesn't send them,
+  and no combined file is written; one an earlier run left is deleted when this run rewrites the
+  alias files.
+- No sources is allowed: `Combined_Alias.txt` then holds FE-Buddy's aliases only, with an advisory
+  warning. The tab is invalid only while combining and a listed file has a problem.
 
 ## File conversions
 

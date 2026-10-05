@@ -79,7 +79,7 @@ FeBuddy.Core/
     │   ├── Airports/ Airways/ Departures/ Arrivals/ Navaids/ ArtccBoundaries/ Fixes/
     │   │   WxStations/ Procedures/ Telephony/
     │   │                 one folder per sub-service (see "Adding a sub-service" below)
-    │   └── VnasAlias/    vNAS Alias Upload: VnasAliasSettingsParser, AliasSourceLoader,
+    │   └── VnasAlias/    Concatenate Aliases: VnasAliasSettingsParser, AliasSourceLoader,
     │                     VnasAliasFileWriter
     ├── AliasGuide/       the Alias Command Guide (AliasGuideContent, AliasGuideHtmlWriter,
     │                     AliasGuideMarkdownWriter) and the Alias Command Practice page
@@ -139,7 +139,8 @@ FeBuddy.Wpf/
 └── Views/               ShellWindow, TabbedServiceView (both tabbed screens), one view per tab,
     │                    MapWorkspace (every map), the dialog windows
     └── Cards/           the shared cards (Outputs, What Files Do You Want?, FE-Buddy Properties,
-                         Region of Interest, Upload to vNAS, CRC ERAM Defaults, Source Files, Run), and
+                         Region of Interest, CRC ERAM Defaults, Source Files, Run); CrcFileChoice,
+                         the AIRAC tabs' choice of files at the top of CRC ERAM Defaults; and
                          OutputStatusRow, an output's On/Off line
 ```
 
@@ -151,11 +152,11 @@ FeBuddy.Wpf/
 - **AIRAC Service and File Conversions are one view**, `TabbedServiceView`; each screen's
   view-model says what differs. Tabs are data (`TabbedServiceViewModel`), not hand-placed XAML.
 - **A sub-service tab** derives from `GeojsonSubServiceViewModel`, which brings the shared cards'
-  logic: outputs, file choices, `feb.*` properties, ROI override, vNAS files and CRC defaults. A tab
-  without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry). Which outputs are
-  on comes from the sub-service's row on the General tab (`SubServiceRow`, read through
+  logic: outputs, file choices, `feb.*` properties, ROI override, and which files get CRC defaults.
+  A tab without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry). Which outputs
+  are on comes from the sub-service's row on the General tab (`SubServiceRow`, read through
   `ISubServiceOutputs`), so the tab's own save and undo never change them. A sub-service left out
-  keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). vNAS Alias Upload is the exception:
+  keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Concatenate Aliases is the exception:
   it derives from `SubServiceSettingsViewModel`, uses none of the shared cards and has no row.
 - **A conversion tab** derives from `FileConversionTabViewModel` (on `ConversionTabViewModel`):
   source files, CRC defaults and its own run button.

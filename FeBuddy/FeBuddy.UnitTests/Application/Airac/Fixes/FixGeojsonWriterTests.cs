@@ -13,8 +13,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Fixes;
 /// <summary>
 /// Covers <see cref="FixGeojsonWriter"/>: the ROI filter, how each <see cref="FixOutputBy"/> value
 /// groups fixes into files, which <c>feb.*</c> properties land on the Symbols file vs. the Text
-/// file, that no per-Feature <c>style</c> is ever written, CRC-ERAM defaults, and vNAS folder
-/// routing.
+/// file, that no per-Feature <c>style</c> is ever written, CRC-ERAM defaults, and that every file
+/// goes in the GeoJSON folder.
 /// </summary>
 public sealed class FixGeojsonWriterTests : IDisposable
 {
@@ -384,7 +384,7 @@ public sealed class FixGeojsonWriterTests : IDisposable
 	{
 		FixSettings settings = Settings() with
 		{
-			Vnas = new VnasFileChoices([FixOutputFiles.Text], [FixOutputFiles.Text]),
+			CrcDefaultsFiles = new CrcDefaultsFiles([FixOutputFiles.Text]),
 			TextDefaults = new Dictionary<string, CrcTextDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				[FixOutputFiles.AllClass] = TextDefaults(),
@@ -407,7 +407,7 @@ public sealed class FixGeojsonWriterTests : IDisposable
 	{
 		FixSettings settings = Settings() with
 		{
-			Vnas = new VnasFileChoices([FixOutputFiles.Symbols], [FixOutputFiles.Symbols]),
+			CrcDefaultsFiles = new CrcDefaultsFiles([FixOutputFiles.Symbols]),
 			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				[FixOutputFiles.AllClass] = SymbolDefaults("otherWaypoints"),
@@ -435,7 +435,7 @@ public sealed class FixGeojsonWriterTests : IDisposable
 		{
 			OutputBy = FixOutputBy.ChartAndFixUse,
 			Combinations = [new FixCombination("ENROUTE-LOW", "RADAR")],
-			Vnas = new VnasFileChoices([$"Fix_{group}_Symbols"], [$"Fix_{group}_Symbols"]),
+			CrcDefaultsFiles = new CrcDefaultsFiles([$"Fix_{group}_Symbols"]),
 			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				[group] = SymbolDefaults("otherWaypoints"),
@@ -447,34 +447,43 @@ public sealed class FixGeojsonWriterTests : IDisposable
 		Assert.Empty(result.Files.FilesWritten);
 	}
 
-	// ---- vNAS folder routing ----
+	// ---- GeoJSON folder ----
 
 	[Fact]
-	public void a_file_marked_for_vnas_goes_under_upload_to_vnas_while_others_do_not()
+	public void a_file_chosen_for_crc_defaults_goes_in_the_geojson_folder_like_the_others()
 	{
 		FixSettings settings = Settings() with
 		{
-			Vnas = new VnasFileChoices([FixOutputFiles.Symbols], []),
+			CrcDefaultsFiles = new CrcDefaultsFiles([FixOutputFiles.Symbols]),
+			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
+			{
+				[FixOutputFiles.AllClass] = SymbolDefaults("otherWaypoints"),
+			},
 		};
 
 		FixGeojsonGenerateResult result = FixGeojsonWriter.Generate([FixTestData.Acme()], settings);
 
-		Assert.Contains(result.Files.FilesWritten, f => f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("Fix_Symbols.geojson", StringComparison.Ordinal));
-		Assert.Contains(result.Files.FilesWritten, f => !f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("Fix_Text.geojson", StringComparison.Ordinal));
+		Assert.Equal(2, result.Files.FilesWritten.Count);
+		Assert.All(result.Files.FilesWritten, f => Assert.Equal(Path.Combine(_outputDirectory, "Geojson"), Path.GetDirectoryName(f)));
 	}
 
 	[Fact]
-	public void non_all_layout_routes_each_groups_files_to_vnas_independently()
+	public void non_all_layout_gives_each_groups_files_crc_defaults_independently_in_the_geojson_folder()
 	{
 		FixSettings settings = Settings() with
 		{
 			OutputBy = FixOutputBy.FixUse,
-			Vnas = new VnasFileChoices(["Fix_WYPNT_Symbols"], []),
+			CrcDefaultsFiles = new CrcDefaultsFiles(["Fix_WYPNT_Symbols"]),
+			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
+			{
+				["WYPNT"] = SymbolDefaults("otherWaypoints"),
+			},
 		};
 
 		FixGeojsonGenerateResult result = FixGeojsonWriter.Generate([FixTestData.Acme(), FixTestData.Bravo()], settings);
 
-		Assert.Contains(result.Files.FilesWritten, f => f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("Fix_WYPNT_Symbols.geojson", StringComparison.Ordinal));
-		Assert.Contains(result.Files.FilesWritten, f => !f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("Fix_COMPUTER-NAV_Symbols.geojson", StringComparison.Ordinal));
+		Assert.All(result.Files.FilesWritten, f => Assert.Equal(Path.Combine(_outputDirectory, "Geojson"), Path.GetDirectoryName(f)));
+		Assert.True(FeaturesOf(FileNamed(result, "Fix_WYPNT_Symbols.geojson"))[0].GetProperty("properties").TryGetProperty("isSymbolDefaults", out _));
+		Assert.False(FeaturesOf(FileNamed(result, "Fix_COMPUTER-NAV_Symbols.geojson"))[0].GetProperty("properties").TryGetProperty("isSymbolDefaults", out _));
 	}
 }

@@ -6,9 +6,9 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 namespace FeBuddy.UnitTests.Application.Airac.VnasAlias;
 
 /// <summary>
-/// Covers <see cref="VnasAliasSettingsParser"/>: numbered custom alias files, each a file on this PC
-/// or a web address with an optional credential id, merged in number order; and the settings it
-/// refuses.
+/// Covers <see cref="VnasAliasSettingsParser"/>: combining, on unless turned off; numbered custom
+/// alias files, each a file on this PC or a web address with an optional credential id, merged in
+/// number order and not read at all while combining is off; and the settings it refuses.
 /// </summary>
 public sealed class VnasAliasSettingsParserTests
 {
@@ -32,6 +32,7 @@ public sealed class VnasAliasSettingsParserTests
 			],
 			result.Sources);
 		Assert.Empty(result.Messages);
+		Assert.True(result.Combine);
 	}
 
 	[Fact]
@@ -44,15 +45,43 @@ public sealed class VnasAliasSettingsParserTests
 		Assert.Equal(new AliasSource(1, AliasSourceKind.Url, "https://example.com/a.txt", CredentialId), Assert.Single(result.Sources));
 	}
 
+	/// <summary>Uploading FE-Buddy's aliases alone would remove the facility's own from vNAS, so the Review tab says so.</summary>
 	[Fact]
-	public void no_sources_notes_that_only_fe_buddy_aliases_are_written()
+	public void no_sources_warns_that_only_fe_buddy_aliases_are_written()
 	{
 		VnasAliasSettingsParseResult result = VnasAliasSettingsParser.Parse(Block(("Sources.1.FilePath", " "), ("Sources.1.Url", "")));
 
 		Assert.Empty(result.Sources);
-		ServiceMessage note = Assert.Single(result.Messages);
-		Assert.Equal(LogLevel.Info, note.Level);
-		Assert.Contains("holds only FE-Buddy's aliases", note.Text, StringComparison.Ordinal);
+		ServiceMessage warning = Assert.Single(result.Messages);
+		Assert.Equal(LogLevel.Warning, warning.Level);
+		Assert.True(warning.IsAdvisory);
+		Assert.StartsWith("No custom alias files are set, so Combined_Alias.txt holds only FE-Buddy's aliases.", warning.Text, StringComparison.Ordinal);
+		Assert.EndsWith("add your facility's alias file on the Concatenate Aliases tab.", warning.Text, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void combining_is_on_unless_turned_off()
+	{
+		Assert.True(VnasAliasSettingsParser.CombinesAliasFiles(Block()));
+		Assert.True(VnasAliasSettingsParser.CombinesAliasFiles(Block(("CombineAliasFiles", " "))));
+		Assert.True(VnasAliasSettingsParser.CombinesAliasFiles(Block(("combinealiasfiles", "y"))));
+		Assert.False(VnasAliasSettingsParser.CombinesAliasFiles(Block(("CombineAliasFiles", "N"))));
+		Assert.Throws<ArgumentException>(() => VnasAliasSettingsParser.CombinesAliasFiles(Block(("CombineAliasFiles", "maybe"))));
+		Assert.Throws<ArgumentNullException>(() => VnasAliasSettingsParser.CombinesAliasFiles(null!));
+	}
+
+	/// <summary>Off, nothing reads the custom alias files, so they are neither returned nor checked.</summary>
+	[Fact]
+	public void with_combining_off_the_custom_files_are_not_read()
+	{
+		VnasAliasSettingsParseResult result = VnasAliasSettingsParser.Parse(Block(
+			("CombineAliasFiles", "N"),
+			("Sources.1.FilePath", "not a full path"),
+			("Colour", "x")));
+
+		Assert.False(result.Combine);
+		Assert.Empty(result.Sources);
+		Assert.Contains("'Colour'", Assert.Single(result.Messages).Text, StringComparison.Ordinal);
 	}
 
 	[Theory]

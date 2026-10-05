@@ -29,15 +29,17 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>vNAS Alias Upload</b> sub-service tab inside the AIRAC Service screen: the facility's own
-/// custom alias files - on this PC, or on the web (GitHub, private or public) - merged into
-/// <c>Upload_to_vNAS\vNAS_Alias.txt</c> after every FE-Buddy alias file ticked for vNAS, so theirs win.
+/// The <b>Concatenate Aliases</b> sub-service tab inside the AIRAC Service screen (key and config node
+/// <c>VnasAlias</c>, from its old name, vNAS Alias Upload): whether to combine every alias file the run
+/// writes into <c>Aliases\Combined_Alias.txt</c>, and the facility's own custom alias files - on this
+/// PC, or on the web (GitHub, private or public) - to add after them, so theirs win.
 /// </summary>
 /// <remarks>
 /// <para>
 /// vNAS takes one alias file, so the facility's own aliases and FE-Buddy's have to be merged before
-/// every upload. The run reads each custom file (see <see cref="AliasSourceLoader"/>); one that cannot
-/// be read is left out with a warning, and the rest are merged.
+/// every upload. Combining is on until the user turns it off. The run reads each custom file (see
+/// <see cref="AliasSourceLoader"/>); one that cannot be read is left out with a warning, and the rest
+/// are merged. The tab is greyed out while no included sub-service makes an alias file.
 /// </para>
 /// <para>
 /// A web address may name a saved credential (Settings ▸ Credentials). Only its id is saved with the
@@ -61,6 +63,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	private readonly CredentialStore _store;
 	private readonly Dispatcher _dispatcher;
 	private bool _loading;
+	private bool _combineAliasFiles = true;
 	private Func<SubServiceDescriptor, ServiceTabViewModel?>? _openTabFor;
 	private Action<ServiceTabViewModel>? _showTab;
 
@@ -106,10 +109,27 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	public override string NodePath => Node;
 
 	/// <inheritdoc />
-	public override string Title => "vNAS Alias Upload";
+	public override string Title => "Concatenate Aliases";
 
-	/// <summary>Where the merged file goes, for the Outputs card.</summary>
-	public static string OutputFile => $@"{AiracOutputPaths.VnasFolder}\{AiracOutputPaths.VnasAliasFileName}";
+	/// <summary>Where the combined file goes, inside the cycle folder.</summary>
+	public static string OutputFile => $@"{AiracOutputPaths.AliasFolder}\{AiracOutputPaths.CombinedAliasFileName}";
+
+	/// <summary>
+	/// Whether to combine the alias files into <c>Combined_Alias.txt</c>. On by default; off, each alias
+	/// file stays on its own and the custom alias files are not used.
+	/// </summary>
+	public bool CombineAliasFiles
+	{
+		get => _combineAliasFiles;
+		set
+		{
+			if (SetProperty(ref _combineAliasFiles, value))
+			{
+				MarkDirty();
+				RefreshFeBuddyAliasFiles();
+			}
+		}
+	}
 
 	/// <summary>The custom alias files, in merge order.</summary>
 	public ObservableCollection<AliasSourceRow> Sources { get; } = [];
@@ -121,8 +141,8 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	public ObservableCollection<CredentialChoice> Credentials { get; } = [];
 
 	/// <summary>
-	/// Every FE-Buddy alias file, and whether it goes into <c>vNAS_Alias.txt</c> with the settings on
-	/// the other tabs right now. Refreshed each time this tab is shown.
+	/// Every FE-Buddy alias file, and whether it goes into <c>Combined_Alias.txt</c> with the settings
+	/// on the other tabs right now. Refreshed each time this tab is shown.
 	/// </summary>
 	public ObservableCollection<FeBuddyAliasFileRow> FeBuddyAliasFiles { get; } = [];
 
@@ -133,15 +153,17 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 		{
 			int added = FeBuddyAliasFiles.Count(row => row.IsAdded);
 
-			return added == 0
-				? $"None of FE-Buddy's alias files go into {AiracOutputPaths.VnasAliasFileName}, so it will hold only your custom aliases. " +
-					"To add one, include its sub-service and its alias file on the General tab, and tick the alias file on that tab's Upload to vNAS card."
-				: $"{added} of {FeBuddyAliasFiles.Count} FE-Buddy alias files go in, ahead of your custom aliases.";
+			return !CombineAliasFiles
+				? $@"Combining is off, so each alias file stays on its own in {AiracOutputPaths.AliasFolder}\."
+				: added == 0
+					? $"None of FE-Buddy's alias files go into {AiracOutputPaths.CombinedAliasFileName}, so it will hold only your custom aliases. " +
+						"To add one, tick its sub-service and its Alias box on the General tab."
+					: $"{added} of {FeBuddyAliasFiles.Count} FE-Buddy alias files go in, ahead of your custom aliases.";
 		}
 	}
 
-	/// <summary>Whether no FE-Buddy alias file goes into <c>vNAS_Alias.txt</c>.</summary>
-	public bool HasNoFeBuddyAliasFiles => FeBuddyAliasFiles.All(row => !row.IsAdded);
+	/// <summary>Whether combining is on but no FE-Buddy alias file goes into <c>Combined_Alias.txt</c>.</summary>
+	public bool HasNoFeBuddyAliasFiles => CombineAliasFiles && FeBuddyAliasFiles.All(row => !row.IsAdded);
 
 	/// <summary>Adds files on this PC, chosen in a file dialog.</summary>
 	public ICommand AddFileCommand { get; }
@@ -154,10 +176,21 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	// ================= ISubServiceRunTarget =================
 
 	/// <inheritdoc />
-	/// <remarks>The block goes on <see cref="AiracServiceSettings.VnasAlias"/>.</remarks>
+	/// <remarks>
+	/// The block goes on <see cref="AiracServiceSettings.VnasAlias"/>. The custom alias files go in
+	/// only while combining: nothing else reads them.
+	/// </remarks>
 	public IReadOnlyDictionary<string, string> BuildSettingsBlock()
 	{
-		Dictionary<string, string> block = new(StringComparer.OrdinalIgnoreCase);
+		Dictionary<string, string> block = new(StringComparer.OrdinalIgnoreCase)
+		{
+			[VnasAliasSettingsParser.CombineAliasFilesKey] = YesNo(CombineAliasFiles),
+		};
+
+		if (!CombineAliasFiles)
+		{
+			return block;
+		}
 
 		foreach (AliasSourceRow row in Sources)
 		{
@@ -189,17 +222,19 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 
 		if (result.VnasAlias is not { } merged)
 		{
-			return null;
+			return CombineAliasFiles
+				? null
+				: new SubServiceRunResult(Title, $"Combining is off, so {AiracOutputPaths.CombinedAliasFileName} was not written", []);
 		}
 
 		string feBuddy = merged.FeBuddyFiles.Count > 0
 			? $"{merged.FeBuddyCommandCount:N0} command(s) from {string.Join(", ", merged.FeBuddyFiles)}"
-			: "no FE-Buddy alias file ticked for vNAS";
+			: "no FE-Buddy alias file";
 
 		// Named as it was written: the user may have renamed it on the File Names tab. In the
 		// file's own order: FE-Buddy's aliases, then the custom files.
 		string summary = merged.FilePath is null
-			? $"{AiracOutputPaths.VnasAliasFileName} not written"
+			? $"{AiracOutputPaths.CombinedAliasFileName} not written"
 			: $"{Path.GetFileName(merged.FilePath)}: {feBuddy}, then {merged.CustomCommandCount:N0} command(s) from " +
 				$"{merged.CustomFilesMerged} of {merged.CustomFileCount} custom alias file(s)";
 
@@ -209,9 +244,14 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
+		if (!CombineAliasFiles)
+		{
+			return [new ServicePreviewSection(Title, [new ServicePreviewRow("Combine alias files", $@"No: each alias file stays on its own in {AiracOutputPaths.AliasFolder}\")])];
+		}
+
 		List<ServicePreviewRow> rows =
 		[
-			new ServicePreviewRow("Output", $"{OutputFile}: every FE-Buddy alias file ticked for vNAS, then these files"),
+			new ServicePreviewRow("Combine alias files", $"Yes: {OutputFile}, every FE-Buddy alias file this run writes, then these files"),
 		];
 
 		if (Sources.Count == 0)
@@ -287,6 +327,8 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			}
 
 			Renumber();
+			_combineAliasFiles = GetBool(VnasAliasSettingsParser.CombineAliasFilesKey, true);
+			OnPropertyChanged(nameof(CombineAliasFiles));
 		}
 		finally
 		{
@@ -300,6 +342,8 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
+		Set(VnasAliasSettingsParser.CombineAliasFilesKey, YesNo(CombineAliasFiles));
+
 		// The list is written whole: a removed row must not leave its numbered keys behind.
 		RemoveSubtree(SourcesKey);
 
@@ -315,18 +359,10 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
 	{
-		// Custom files are optional, but vNAS_Alias.txt needs something in it: without a custom file,
-		// at least one FE-Buddy alias file has to be ticked for vNAS.
-		if (Sources.Count == 0 && HasNoFeBuddyAliasFiles)
-		{
-			validation.Add(
-				$"{AiracOutputPaths.VnasAliasFileName} would be empty: there is no custom alias file, and no FE-Buddy alias file is ticked " +
-				"for vNAS. Add a custom alias file, or tick an alias file on a sub-service's Upload to vNAS card.");
-		}
-
+		// The custom alias files are only read while combining, so only then held against the user.
 		foreach (AliasSourceRow row in Sources)
 		{
-			row.Error = ErrorOf(row);
+			row.Error = CombineAliasFiles ? ErrorOf(row) : null;
 
 			if (row.Error is { } error)
 			{
@@ -339,7 +375,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 
 	/// <summary>
 	/// Lets the tab see the AIRAC Service's other tabs, to list which alias files they put into
-	/// <c>vNAS_Alias.txt</c>, and open one.
+	/// <c>Combined_Alias.txt</c>, and open one.
 	/// </summary>
 	/// <param name="openTabFor">The sub-service's tab when it is included on the General tab, otherwise <see langword="null"/>.</param>
 	/// <param name="showTab">Shows a tab.</param>
@@ -350,7 +386,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 		RefreshFeBuddyAliasFiles();
 	}
 
-	/// <summary>Re-reads, from the other tabs, which of FE-Buddy's alias files go into <c>vNAS_Alias.txt</c>.</summary>
+	/// <summary>Re-reads, from the other tabs, which of FE-Buddy's alias files go into <c>Combined_Alias.txt</c>.</summary>
 	internal void RefreshFeBuddyAliasFiles()
 	{
 		FeBuddyAliasFiles.Clear();
@@ -364,8 +400,8 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			{
 				null => ("Not included on the General tab", false),
 				GeojsonSubServiceViewModel { WritesAliasFile: false } => ("Alias file turned off on the General tab", false),
-				GeojsonSubServiceViewModel geojson when !geojson.IsMarkedForVnas(fileName) => ("Not ticked on its Upload to vNAS card", false),
-				_ => ($"Added to {AiracOutputPaths.VnasAliasFileName}", true),
+				_ when !CombineAliasFiles => ("Written on its own: combining is off", false),
+				_ => ($"Goes into {AiracOutputPaths.CombinedAliasFileName}", true),
 			};
 
 			if (tab is { IsDirty: true })

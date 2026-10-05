@@ -4,9 +4,8 @@
     action bar, and the tab host owns the page's single scroller.
 
     Unlike every other AIRAC sub-service tab, this one writes no GeoJSON and has no FE-Buddy
-    properties or CRC cards - see ProceduresViewModel's class remarks. Its Upload to vNAS card
-    offers only the alias file, so it shows only while the alias file is on. The selection cards
-    pick what the two documents cover, so they grey out while neither document is on.
+    properties or CRC cards - see ProceduresViewModel's class remarks. The selection cards pick
+    what the two documents cover, so they grey out while neither document is on.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ProceduresView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -45,7 +44,7 @@
                                            Description="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile,&#xA;Ex: .dtwI22Lc for ILS OR LOC RWY 22L at DTW.&#xA;The choices below pick what the documents cover; they never limit the alias file." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               bhv:InlineCode.Text="The documents are written to `Publication_Docs\` in the cycle's folder, and the alias file to `Aliases\`. Ticked below, it is also added to `Upload_to_vNAS\vNAS_Alias.txt`." />
+                               bhv:InlineCode.Text="The documents are written to `Publication_Docs\` in the cycle's folder, and the alias file to `Aliases\`. The Concatenate Aliases tab also adds the alias file to `Aliases\Combined_Alias.txt`." />
                 </StackPanel>
             </ctl:Card>
 
@@ -302,7 +301,5 @@
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 
-            <!-- ============ upload to vNAS (the alias file only) ============ -->
-            <cards:VnasUploadCard Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
     </StackPanel>
 </UserControl>

@@ -9,8 +9,9 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Airports</b> sub-service tab inside the AIRAC Service screen: which outputs to write,
-/// which GeoJSON files, which FE-Buddy properties, the CRC ERAM defaults, and the ROI override.
+/// The <b>Airports</b> sub-service tab inside the AIRAC Service screen: which outputs are on (set
+/// on the General tab), which GeoJSON files, which FE-Buddy properties, the CRC ERAM defaults, and
+/// the ROI override.
 /// </summary>
 /// <remarks>
 /// Save, Undo and navigation come from the tab host's action bar; the run is launched by

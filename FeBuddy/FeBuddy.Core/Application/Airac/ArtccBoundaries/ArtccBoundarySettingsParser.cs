@@ -14,9 +14,9 @@ namespace FeBuddy.Core.Application.Airac.ArtccBoundaries;
 /// </summary>
 /// <remarks>
 /// The only place in the ARTCC Boundaries sub-service that touches the raw dictionary; everything
-/// downstream works with <see cref="ArtccBoundarySettings"/>. Unlike every other AIRAC sub-service,
-/// there is no <c>GenerateGeojson</c> toggle and no <c>GenerateAliasFile</c>: the sub-service
-/// always writes GeoJSON Lines and has no alias file.
+/// downstream works with <see cref="ArtccBoundarySettings"/>. Like Fixes and Wx Stations, there is
+/// no <c>GenerateGeojson</c> toggle and no <c>GenerateAliasFile</c>: the sub-service always writes
+/// GeoJSON Lines and has no alias file.
 /// </remarks>
 public static class ArtccBoundarySettingsParser
 {

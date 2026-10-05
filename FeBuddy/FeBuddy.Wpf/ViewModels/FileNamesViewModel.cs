@@ -15,7 +15,7 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>File Names</b> tab inside the AIRAC Service screen, just before Preview Settings: every file
-/// the selected sub-services will write, by folder, and - when the user chooses to rename files - a
+/// the included sub-services will write, by folder, and - when the user chooses to rename files - a
 /// name of their own for any of them.
 /// </summary>
 /// <remarks>
@@ -112,7 +112,7 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 	/// <summary>
 	/// Lets the tab see what the AIRAC Service's other tabs will write, and the cycle folder it goes in.
 	/// </summary>
-	/// <param name="listFiles">Every file the selected sub-services' settings write right now.</param>
+	/// <param name="listFiles">Every file the included sub-services' settings write right now.</param>
 	/// <param name="cycleFolderName">The selected cycle's folder name, e.g. <c>AIRAC_2610</c>.</param>
 	internal void AttachToService(Func<IEnumerable<OutputFileEntry>> listFiles, Func<string> cycleFolderName)
 	{

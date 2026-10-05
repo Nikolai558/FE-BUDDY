@@ -18,8 +18,8 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// sub-services, and one Preview Settings tab that runs them all together. File Conversions has
 /// neither - every conversion is always on the rail and runs on its own from its own tab. Data
 /// Viewers and File Health Services are expected to take one of those two shapes, and AIRAC
-/// Service alone is expected to reach roughly twenty sub-services - so tabs are data, created
-/// and destroyed as the screen needs them, never hand-placed in XAML.
+/// Service alone is expected to reach roughly twenty sub-services - so tabs are data, built in
+/// code and put in the rail as the screen needs them, never hand-placed in XAML.
 /// </para>
 /// <para>
 /// Navigation goes through <see cref="NextCommand"/> / <see cref="PreviousCommand"/> /
@@ -83,7 +83,7 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 		}
 	}
 
-	/// <summary>The open tabs, in rail order: General, the selected sub-services, Preview Settings, then Review after a run.</summary>
+	/// <summary>The tabs in the rail, in order: General, the sub-services (greyed out while left out), Preview Settings, then Review after a run.</summary>
 	public ObservableCollection<ServiceTabViewModel> Tabs { get; } = [];
 
 	/// <summary>Saves the selected tab (validates first).</summary>
@@ -140,8 +140,8 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 	protected virtual ServiceTabViewModel? GeneralTab => null;
 
 	/// <summary>
-	/// The settings-preview tab that runs every sub-service together, present once at least one
-	/// is open; or <see langword="null"/> for a screen whose sub-services each run from their own tab.
+	/// The settings-preview tab that runs every sub-service together, present while at least one
+	/// takes part; or <see langword="null"/> for a screen whose sub-services each run from their own tab.
 	/// </summary>
 	protected virtual ServicePreviewTabViewModel? PreviewTab => null;
 
@@ -152,12 +152,12 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 	protected virtual ServiceTabViewModel? PostRunTab => null;
 
 	/// <summary>
-	/// Reconciles <see cref="Tabs"/> with the sub-service tabs that should currently be open.
+	/// Reconciles <see cref="Tabs"/> with the sub-service tabs that should currently be in the rail.
 	/// Existing tab instances are kept (so their state and their place in the rail survive), the
 	/// Preview Settings and Review tabs are added or removed to match, and the selection is moved
-	/// only if the tab it pointed at is gone.
+	/// only if the tab it pointed at is gone or greyed out.
 	/// </summary>
-	/// <param name="subServiceTabs">The tabs for the open sub-services, in display order.</param>
+	/// <param name="subServiceTabs">The sub-service tabs for the rail, greyed-out ones included, in display order.</param>
 	protected void RebuildTabs(IEnumerable<ServiceTabViewModel> subServiceTabs)
 	{
 		List<ServiceTabViewModel> desired = [.. subServiceTabs];

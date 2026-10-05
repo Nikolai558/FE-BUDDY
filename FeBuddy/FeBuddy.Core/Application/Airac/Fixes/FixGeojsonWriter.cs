@@ -11,7 +11,7 @@ using NetTopologySuite.Features;
 namespace FeBuddy.Core.Application.Airac.Fixes;
 
 /// <summary>
-/// Generates the Fixes GeoJSON output: Symbols and Text only, one Point per fix.
+/// Generates the Fixes GeoJSON output: Symbols and Text only, a symbol and a label per fix.
 /// </summary>
 /// <remarks>
 /// <para>

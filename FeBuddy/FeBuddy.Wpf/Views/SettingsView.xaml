@@ -1,6 +1,7 @@
 <!--
     SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates /
-    Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to UserConfig.json.
+    Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to UserConfig.json
+    but the credentials, which go to Windows Credential Manager.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

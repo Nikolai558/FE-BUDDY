@@ -310,8 +310,9 @@ public sealed class AiracCycleDataCache(
 	}
 
 	/// <summary>
-	/// Where a cycle's FAA d-TPP Metafile is, if it has one - so the Procedures sub-service can
-	/// say up front that it has nothing to run on, rather than let a run fail on it.
+	/// Where a cycle's FAA d-TPP Metafile is, if it has one - so the GUI can say up front that
+	/// Procedures has nothing to run on (the General tab shows such a cycle as partial), rather than
+	/// let a run fail on it.
 	/// </summary>
 	/// <param name="cycleId">The cycle ID.</param>
 	/// <returns>

@@ -25,18 +25,18 @@ using CoreFebProperties = FeBuddy.Core.Application.Airac.FebProperties;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Procedures</b> sub-service tab inside the AIRAC Service screen: which documents to
-/// write and whether to write the FAA Chart Recall alias file, which facilities/airports/procedures
-/// the documents include, the chart types a whole included airport is limited to, and the optional
-/// <c>Procedures.json</c> fields.
+/// The <b>Procedures</b> sub-service tab inside the AIRAC Service screen: which of the two documents
+/// and the FAA Chart Recall alias file are on (set on the General tab), which
+/// facilities/airports/procedures the documents include, the chart types a whole included airport
+/// is limited to, and the optional <c>Procedures.json</c> fields.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Unlike every other AIRAC sub-service, Procedures writes no GeoJSON and has no FE-Buddy
-/// properties - it still derives from <see cref="GeojsonSubServiceViewModel"/> for the alias file
-/// and the Region of Interest override plumbing, but never shows the GeoJSON Files, FE-Buddy
-/// Properties or CRC ERAM Defaults cards: <see cref="EmitKeys"/> is
-/// <c>(null, null, null)</c>, and <see cref="OutputFiles"/> offers only the alias file.
+/// Like Telephony, Procedures writes no GeoJSON and has no FE-Buddy properties - it still derives
+/// from <see cref="GeojsonSubServiceViewModel"/> for the alias file and the Region of Interest
+/// override plumbing, but never shows the What Files Do You Want?, FE-Buddy Properties or CRC ERAM
+/// Defaults cards: <see cref="EmitKeys"/> is <c>(null, null, null)</c>, and
+/// <see cref="OutputFiles"/> offers only the alias file.
 /// </para>
 /// <para>
 /// The alias file covers every airport in the d-TPP Metafile; the facility, airport, procedure and
@@ -250,7 +250,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		_dtppStatus = dtpp is not null
 			? $"Cycle {cycleId}: {airportCount:N0} airports, {procedureCount:N0} procedures, downloaded {downloadedLocal:d MMM yyyy}."
-			: $"Cycle {cycleId}'s metafile isn't published yet (or couldn't be downloaded). FE-Buddy checks again at each launch; until then a run writes no Procedures documents.";
+			: $"Cycle {cycleId}'s metafile isn't published yet (or couldn't be downloaded). FE-Buddy checks again at each launch; until then a run writes none of Procedures' files (Procedure_Changes.md, Procedures.json, Faa_Chart_Recall.txt).";
 
 		_dtppPreviousStatus = previousAvailable
 			? $"Deleted procedures link to cycle {previousCycleId}'s charts."

@@ -12,16 +12,16 @@ using FeBuddy.Core.Infrastructure.WxStations;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Wx Stations</b> sub-service tab inside the AIRAC Service screen: which outputs to
+/// The <b>Wx Stations</b> sub-service tab inside the AIRAC Service screen: which GeoJSON files to
 /// write, the optional region of interest, and the CRC ERAM defaults for the merged Symbols and
 /// Text files.
 /// </summary>
 /// <remarks>
 /// The simplest GeoJSON sub-service tab: there is no file layout choice, no alias file and no
 /// FE-Buddy properties - a station's label is always its ICAO ID, then its IATA ID and site name.
-/// Unlike every other AIRAC sub-service, its data does not come from the selected cycle's NASR
-/// data at all, but from aviationweather.gov's station list, which every run downloads fresh into
-/// one kept copy - see <see cref="RefreshStationData"/>. Save, Undo and navigation come from the
+/// Like Telephony, its data does not come from the selected cycle's NASR data at all, but from
+/// aviationweather.gov's station list, which every run downloads fresh into one kept copy - see
+/// <see cref="RefreshStationData"/>. Save, Undo and navigation come from the
 /// tab host's action bar; the run is launched by <b>Run AIRAC Service</b> on the Preview Settings
 /// tab, and its results are shown on the Review tab, described by this tab through
 /// <see cref="ISubServiceRunTarget"/>.
@@ -89,8 +89,8 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// Does nothing: unlike every other AIRAC sub-service, Wx Stations has no lists built from the
-	/// selected cycle's NASR data. Its own data is downloaded by the run itself.
+	/// Does nothing: Wx Stations has no lists built from the selected cycle's NASR data. Its own
+	/// data is downloaded by the run itself.
 	/// </remarks>
 	public void LoadCycleDependentLists(NasrCsvDataCollection data)
 	{

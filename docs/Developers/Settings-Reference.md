@@ -55,7 +55,7 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and 
 
 | Key | Values | Default |
 |---|---|---|
-| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha`. Saved by the first launch (not a `-dev` build's), then changed only in Settings | the running build's channel (`UpdateChannelSetting`) |
+| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha`. Saved by the first launch (not a `-dev` build's), then changed only in Settings | the running build's channel; `Stable` for a `-dev` build (`UpdateChannelSetting.DefaultFor`) |
 | `NewsLastOpen` | the newest News `PostId` the user has seen, e.g. `2026-08-30.3` | none |
 | `PrettyPrintGeojson` | `Y` / `N` (`OutputFormatting`) | `N` |
 | `DefaultOutputDirectory` | a folder | the Desktop |
@@ -148,6 +148,8 @@ none of them.
 - A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedures' two documents) are
   set on the General tab and saved there, under `Services.AiracService.Outputs` - never in the
   sub-service's own node, so saving or undoing its tab can't change them.
+- Where a sub-service has both, `GenerateGeojson` and `GenerateAliasFile` can't both be `N`, and
+  `GenerateGeojson = Y` needs at least one `Emit…`.
 
 ### Where files go
 
@@ -245,8 +247,6 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 
 - **`FebProperties`:** `faaId`, `icaoId`, `name`, `elev`, `respArtcc`, `tfcPtrnAlt`, `fssId`, `twrType`,
   `rwyId`.
-- `GenerateGeojson` and `GenerateAliasFile` can't both be `N`, and `GenerateGeojson = Y` needs at
-  least one `Emit…`.
 
 ## Airways
 
@@ -265,8 +265,6 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 | `HighDesignations`, `LowDesignations`, `BothDesignations` | | lists: the designations in the High file, the Low file, or both | `J,Q` High, `V,T` Low |
 
 - **`FebProperties`:** `awyId`, `pointId`, `waypoints`.
-- `GenerateGeojson` and `GenerateAliasFile` can't both be `N`, and `GenerateGeojson = Y` needs at
-  least one `Emit…`.
 - The buffer distances are read only when `BufferAirwayWaypoints = Y` and `GenerateGeojson = Y`.
 - **High and Low files:** with `HighLow`, an airway goes in the file its designation is listed
   for, not by its published altitudes. A designation may be in only one list. One in none is left
@@ -296,8 +294,6 @@ unknown-key warning).
 
 - **`FebProperties`:** Departures `dpName`, Arrivals `arrivalName`; both `pointId`, `arptId`, `artcc`,
   `amendmentNo`, `amendEffDate`, `waypoints`.
-- `GenerateGeojson` and `GenerateAliasFile` can't both be `N`, and `GenerateGeojson = Y` needs at
-  least one `Emit…`.
 - Only the chosen amendment mode's value is read.
 
 ## NAVAIDs
@@ -314,8 +310,6 @@ unknown-key warning).
 
 - **`FebProperties`:** `navId`, `navType`, `name`, `freq`, `lowAltArtccId`, `highAltArtccId`. The Text
   file never carries `navId`, `navType` or `name`; its label already shows them.
-- `GenerateGeojson` and `GenerateAliasFile` can't both be `N`; `GenerateGeojson = Y` needs `EmitSymbols`
-  or `EmitText`.
 - An unknown name in `ExcludedTypes` warns but is still excluded, so a type NASR adds can be
   unticked. Excluding every known type throws.
 - A fan marker with no `FanMarkerStyle` gets no style, with a warning; an invalid style throws. The
@@ -395,7 +389,7 @@ tab's ROI override if it has one, otherwise the default ROI.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `GenerateAliasFile` | not saved: always `Y` while Telephony is included | must be `Y`: `Telephony.txt` is Telephony's only output | `Y` |
+| `GenerateAliasFile` | `Outputs.Telephony.Alias` (General tab, where it can't be unticked) | must be `Y`: `Telephony.txt` is Telephony's only output | `Y` |
 | `VirtualAirlines.<n>.Designator` | | a virtual airline's three-letter designator (`<n>` from 1) | none |
 | `VirtualAirlines.<n>.Telephony` | | its telephony | none |
 | `VirtualAirlines.<n>.Organization` | | its virtual organization | none |

@@ -11,8 +11,8 @@
     Implicit styles (no x:Key) so a bare control never falls back to the OS look:
         TextBox      -> Field
         PasswordBox  -> the Field look (no placeholder: put the hint beside it)
-        CheckBox     -> 16px sunken box, amber when checked
-        RadioButton  -> 16px sunken disc, amber dot when checked
+        CheckBox     -> 18px square sunken box (Radius.Box), amber when checked
+        RadioButton  -> 18px round sunken disc, amber dot when checked
     A control that sets its own Style="{StaticResource ...}" (Nav.Item,
     LogChip) opts out of these automatically.
 

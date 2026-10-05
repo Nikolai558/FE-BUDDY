@@ -59,7 +59,7 @@ public static class WxStationSettingsParser
 		{
 			throw new ArgumentException(
 				"'EmitSymbols' and 'EmitText' are both \"N\", so the Wx Stations sub-service would produce nothing. " +
-				"Turn at least one back on, or deselect Wx Stations.");
+				"Turn at least one back on, or leave Wx Stations out of the run.");
 		}
 
 		List<ServiceMessage> messages = [];

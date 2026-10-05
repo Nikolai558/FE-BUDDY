@@ -99,7 +99,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		_ = LoadCycleDataAsync();
 	}
 
-	/// <summary>Runs the AIRAC Service for every selected sub-service. Hosted on the Preview Settings tab.</summary>
+	/// <summary>Runs the AIRAC Service for every included sub-service. Hosted on the Preview Settings tab.</summary>
 	public ICommand RunCommand { get; }
 
 	/// <inheritdoc />
@@ -127,40 +127,40 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	protected override ServiceTabViewModel? PostRunTab => _runReviewShown ? _runReview : null;
 
-	/// <summary>The Airways tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Airways tab while it is included, otherwise <see langword="null"/>.</summary>
 	private AirwaysViewModel? AirwaysTab => TabFor<AirwaysViewModel>(AiracSubServices.AirwaysKey);
 
-	/// <summary>The Airports tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Airports tab while it is included, otherwise <see langword="null"/>.</summary>
 	private AirportsViewModel? AirportsTab => TabFor<AirportsViewModel>(AiracSubServices.AirportsKey);
 
-	/// <summary>The Departures tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Departures tab while it is included, otherwise <see langword="null"/>.</summary>
 	private DeparturesViewModel? DeparturesTab => TabFor<DeparturesViewModel>(AiracSubServices.DeparturesKey);
 
-	/// <summary>The Arrivals tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Arrivals tab while it is included, otherwise <see langword="null"/>.</summary>
 	private ArrivalsViewModel? ArrivalsTab => TabFor<ArrivalsViewModel>(AiracSubServices.ArrivalsKey);
 
-	/// <summary>The NAVAIDs tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The NAVAIDs tab while it is included, otherwise <see langword="null"/>.</summary>
 	private NavaidsViewModel? NavaidsTab => TabFor<NavaidsViewModel>(AiracSubServices.NavaidsKey);
 
-	/// <summary>The ARTCC Boundaries tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The ARTCC Boundaries tab while it is included, otherwise <see langword="null"/>.</summary>
 	private ArtccBoundariesViewModel? ArtccBoundariesTab => TabFor<ArtccBoundariesViewModel>(AiracSubServices.ArtccBoundariesKey);
 
-	/// <summary>The Fixes tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Fixes tab while it is included, otherwise <see langword="null"/>.</summary>
 	private FixesViewModel? FixesTab => TabFor<FixesViewModel>(AiracSubServices.FixesKey);
 
-	/// <summary>The Wx Stations tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Wx Stations tab while it is included, otherwise <see langword="null"/>.</summary>
 	private WxStationsViewModel? WxStationsTab => TabFor<WxStationsViewModel>(AiracSubServices.WxStationsKey);
 
-	/// <summary>The Procedures tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Procedures tab while it is included, otherwise <see langword="null"/>.</summary>
 	private ProceduresViewModel? ProceduresTab => TabFor<ProceduresViewModel>(AiracSubServices.ProceduresKey);
 
-	/// <summary>The Telephony tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Telephony tab while it is included, otherwise <see langword="null"/>.</summary>
 	private TelephonyViewModel? TelephonyTab => TabFor<TelephonyViewModel>(AiracSubServices.TelephonyKey);
 
-	/// <summary>The Concatenate Aliases tab while it is open, otherwise <see langword="null"/>.</summary>
+	/// <summary>The Concatenate Aliases tab while it takes part (an alias file is being made), otherwise <see langword="null"/>.</summary>
 	private ConcatenateAliasesViewModel? ConcatenateAliasesTab => TabFor<ConcatenateAliasesViewModel>(AiracSubServices.ConcatenateAliasesKey);
 
-	/// <summary>Every sub-service tab that runs: for readiness and the cycle's lists, which every tab follows.</summary>
+	/// <summary>Every sub-service tab, included or not: for readiness and the cycle's lists, which every tab follows.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
 
@@ -359,9 +359,10 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	}
 
 	/// <summary>
-	/// Tells the open Wx Stations and Telephony tabs how old FE-Buddy's kept copies of their data
+	/// Tells the included Wx Stations and Telephony tabs how old FE-Buddy's kept copies of their data
 	/// are. That data is not part of any AIRAC cycle - every run downloads the latest copy - so it
-	/// is re-read when the tabs open and after every run, not when the selected cycle changes.
+	/// is re-read when the sub-services change on the General tab and after every run, not when the
+	/// selected cycle changes.
 	/// </summary>
 	private void RefreshDownloadedDataStatus()
 	{
@@ -370,7 +371,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	}
 
 	/// <summary>
-	/// Tells the open Procedures tab about the selected cycle's FAA d-TPP Metafile (and the
+	/// Tells the included Procedures tab about the selected cycle's FAA d-TPP Metafile (and the
 	/// previous cycle's, for linking deleted procedures back to their chart). Unlike the NASR
 	/// cycle data <see cref="ISubServiceRunTarget.LoadCycleDependentLists"/> hands out, the
 	/// metafile is loaded here, off the UI thread - it is up to 16 MB and takes about 0.3 s to
@@ -419,7 +420,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	/// <summary>
 	/// Saves anything unsaved (with the user's blessing), refuses to start while a tab is invalid,
-	/// asks what to do with an earlier run's files, then runs every selected sub-service that has
+	/// asks what to do with an earlier run's files, then runs every included sub-service that has
 	/// a backend.
 	/// </summary>
 	private async Task RunAsync()
@@ -791,7 +792,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		return true;
 	}
 
-	/// <summary>Blocks the run while any tab that takes part still has a validation failure, and shows the first one.</summary>
+	/// <summary>Blocks the run while any tab that takes part still has a validation failure, and shows the first such tab.</summary>
 	/// <returns><see langword="true"/> when every tab is valid.</returns>
 	private bool EnsureNoInvalidTabs()
 	{

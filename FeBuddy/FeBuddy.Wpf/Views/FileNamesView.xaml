@@ -1,6 +1,6 @@
 <!--
     FileNamesView  -  the File Names tab inside the AIRAC Service screen, just before Preview
-    Settings: every file the selected sub-services will write, by folder, and - when the user
+    Settings: every file the included sub-services will write, by folder, and - when the user
     chooses Yes - a new name for any of them. Save / Undo / Previous / Next / Preview settings come
     from the tab host's shared action bar, and the tab host owns the page's single scroller.
 
@@ -60,7 +60,7 @@
                 </StackPanel>
 
                 <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,0"
-                           Text="The selected sub-services' settings write no files yet."
+                           Text="The included sub-services' settings write no files yet."
                            Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
                 <ItemsControl ItemsSource="{Binding Folders}">

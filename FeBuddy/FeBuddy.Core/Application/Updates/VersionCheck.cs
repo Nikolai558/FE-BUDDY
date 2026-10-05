@@ -13,9 +13,10 @@ using FeBuddy.Versioning.Models;
 namespace FeBuddy.Core.Application.Updates;
 
 /// <summary>
-/// Asks GitHub whether a newer FE-Buddy release exists on the user's chosen channel. The
-/// launch sequence runs this only to populate the title-bar tooltip and version chip; the
-/// actual update is a new MSI installer the user downloads and runs.
+/// Asks GitHub whether a newer FE-Buddy release exists on the user's chosen channel. The launch
+/// sequence runs it (and <see cref="Launch.AppEnvironment.RecheckAsync"/> again on request); its
+/// result feeds the title bar's version chip and tooltip and the update window, whose "Update now"
+/// installs the release's MSI (see <see cref="UpdateInstaller"/>).
 /// </summary>
 /// <remarks>
 /// <para>

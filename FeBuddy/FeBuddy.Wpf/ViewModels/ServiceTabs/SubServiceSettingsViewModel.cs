@@ -267,9 +267,9 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	/// </summary>
 	/// <remarks>
 	/// <see cref="LoadFromConfig"/> restores values with its change events suppressed, which is
-	/// right while a tab is being built but leaves anything driven by those values - the open
-	/// tab rail, the loaded cycle - still showing the discarded state. A tab whose settings
-	/// reach outside itself re-announces them here.
+	/// right while a tab is being built but leaves anything driven by those values - which tabs
+	/// are greyed out in the rail, the loaded cycle - still showing the discarded state. A tab
+	/// whose settings reach outside itself re-announces them here.
 	/// </remarks>
 	protected virtual void OnReloadedFromConfig()
 	{

@@ -74,7 +74,7 @@
             <ctl:Card Header="Split GeoJSON at the Antimeridian">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. ZAK, ZAN and ZAP cross it. Leave this on unless a downstream tool needs the un-split geometry." />
+                               Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. ZAK, ZAN, ZAP and ZOA cross it. Leave this on unless a downstream tool needs the un-split geometry." />
                     <CheckBox Content="Split boundary lines at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
             </ctl:Card>

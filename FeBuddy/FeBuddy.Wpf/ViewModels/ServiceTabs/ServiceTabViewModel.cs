@@ -6,15 +6,15 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
 /// One tab inside a first-tier service screen (see <see cref="TabbedServiceViewModel"/>): the
-/// General tab, one tab per selected sub-service, the Preview Settings tab, and (once a run
-/// has started) the Review tab.
+/// General tab, one tab per sub-service, the Preview Settings tab, and (once a run has started)
+/// the Review tab.
 /// </summary>
 /// <remarks>
 /// The base owns the two things every tab needs and the rail reads: the dirty flag and the
 /// validation state, collapsed into <see cref="Status"/>. Validation is continuous rather than
 /// save-time, so a tab turns amber the moment the user edits it and red the moment a value goes
 /// missing or invalid - which is what makes the rail usable as an at-a-glance checklist when a
-/// service has twenty sub-services open. Inside a red tab, <see cref="ValidationErrors"/> lists
+/// service has twenty sub-services. Inside a red tab, <see cref="ValidationErrors"/> lists
 /// every problem at the top, and the card each one is on is outlined.
 /// </remarks>
 public abstract class ServiceTabViewModel : ObservableObject
@@ -42,8 +42,8 @@ public abstract class ServiceTabViewModel : ObservableObject
 	public ServiceFieldErrors FieldErrors { get; } = new();
 
 	/// <summary>
-	/// <see langword="false"/> for a tab the run cannot act on - a placeholder for a sub-service
-	/// whose backend does not exist yet. Such a tab is never counted as blocking a run.
+	/// <see langword="false"/> for a tab the run cannot act on - the Review tab. Such a tab is never
+	/// counted as blocking a run.
 	/// </summary>
 	public virtual bool IsRunnable => true;
 

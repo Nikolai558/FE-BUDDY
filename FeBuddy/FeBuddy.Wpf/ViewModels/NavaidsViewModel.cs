@@ -17,10 +17,10 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>NAVAIDs</b> sub-service tab inside the AIRAC Service screen: which outputs to write, how
-/// the GeoJSON is laid out (one merged file set or one per NAVAID type), which NAVAID types to
-/// include, the symbol style choice, the optional region of interest, which FE-Buddy properties
-/// and the CRC ERAM defaults.
+/// The <b>NAVAIDs</b> sub-service tab inside the AIRAC Service screen: which outputs are on (set on
+/// the General tab), how the GeoJSON is laid out (one merged file set or one per NAVAID type), which
+/// NAVAID types to include, the symbol style choice, the optional region of interest, which FE-Buddy
+/// properties and the CRC ERAM defaults.
 /// </summary>
 /// <remarks>
 /// Save, Undo and navigation come from the tab host's action bar; the run is launched by

@@ -10,8 +10,7 @@ namespace FeBuddy.Core.Infrastructure.Dtpp;
 
 /// <summary>
 /// Downloads and places one AIRAC cycle's FAA d-TPP Metafile (<see cref="DtppFiles.FileName"/>)
-/// into that cycle's cache folder, alongside its NASR CSVs and (if downloaded) its Wx Stations
-/// file.
+/// into that cycle's cache folder, alongside its NASR CSVs.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -17,9 +17,8 @@ namespace FeBuddy.Core.Application.Airac.Departures;
 /// and alias output.
 /// </summary>
 /// <remarks>
-/// The only Departures type <c>FeBuddy.Harness</c>, the GUI, or <c>AiracService</c> calls
-/// directly. Everything else in <c>Services.Airac.Departures</c> is an implementation detail of
-/// this pipeline.
+/// The only Departures type <c>AiracService</c> and <c>FeBuddy.Harness</c> call directly; every
+/// other type in this folder is a step of this pipeline.
 /// </remarks>
 public static class DepartureService
 {

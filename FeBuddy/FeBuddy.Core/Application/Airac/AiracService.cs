@@ -201,16 +201,18 @@ public static class AiracService
 
 	/// <summary>
 	/// Runs every selected sub-service against the supplied parsed cycle data and supplemental
-	/// data (Wx station data, the FAA telephony pages and, when Procedures is selected, the FAA
-	/// d-TPP Metafile). The other <c>RunAsync</c> loads all of that first, then calls this.
+	/// data (Wx station data, the FAA telephony pages, the FAA d-TPP Metafiles when Procedures is
+	/// selected, and the custom alias files when Concatenate Aliases combines). The other
+	/// <c>RunAsync</c> loads all of that first, then calls this.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="nasrData">
 	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
 	/// </param>
 	/// <param name="supplementalData">
-	/// The Wx station, telephony and d-TPP Metafile data the selected sub-services need beyond the
-	/// NASR data, and what getting it produced for the Review tab (added to the run's messages).
+	/// The Wx station, telephony and d-TPP Metafile data and the custom alias files the selected
+	/// sub-services need beyond the NASR data, and what getting it produced for the Review tab
+	/// (added to the run's messages).
 	/// </param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
 	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>

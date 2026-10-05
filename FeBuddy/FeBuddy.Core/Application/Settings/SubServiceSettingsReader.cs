@@ -25,8 +25,8 @@ public static partial class SubServiceSettingsReader
 	/// The keys every sub-service understands. A parser adds its own keys to these when looking
 	/// for unrecognized settings.
 	/// </summary>
-	// "GenerateAliasFile" is deliberately not here: every sub-service reads it except ARTCC
-	// Boundaries, which has no alias file, so each of the others lists it in its own OwnKeys.
+	// "GenerateAliasFile" is deliberately not here: ARTCC Boundaries, Fixes and Wx Stations have no
+	// alias file, so only the sub-services that have one list it in their own OwnKeys.
 	public static readonly IReadOnlySet<string> CommonKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"OutputDirectory", "CoordinatePrecision",

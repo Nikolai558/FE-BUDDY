@@ -5,7 +5,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 
 namespace FeBuddy.Wpf.Views.Cards;
 
-/// <summary>One file's CRC ERAM defaults inside the CRC ERAM Defaults card. See CrcDefaultsPanel.xaml.</summary>
+/// <summary>One kind's (Lines, Symbols or Text) CRC ERAM defaults inside the CRC ERAM Defaults card. See CrcDefaultsPanel.xaml.</summary>
 public partial class CrcDefaultsPanel : UserControl
 {
 	/// <summary>Control width with one class: the panel has room for wide boxes.</summary>

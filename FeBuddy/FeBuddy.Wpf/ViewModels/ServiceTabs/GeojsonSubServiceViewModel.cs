@@ -24,7 +24,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// shared alias file and outputs plumbing (and Procedures the Region of Interest override), so
 /// they derive from this class too, with <see cref="EmitKeys"/>
 /// <c>(null, null, null)</c> and <see cref="OutputFiles"/> listing only the alias file - they never
-/// show the GeoJSON Files, FE-Buddy Properties or CRC ERAM Defaults cards.
+/// show the What Files Do You Want?, FE-Buddy Properties or CRC ERAM Defaults cards.
 /// </para>
 /// <para>
 /// A derived tab builds <see cref="FebProperties"/> and the three CRC defaults lists in its

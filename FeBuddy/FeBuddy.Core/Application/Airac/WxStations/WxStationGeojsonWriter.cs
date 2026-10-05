@@ -10,12 +10,14 @@ using NetTopologySuite.Features;
 namespace FeBuddy.Core.Application.Airac.WxStations;
 
 /// <summary>
-/// Generates the Wx Stations GeoJSON output: Symbols and Text only, one Point per station.
+/// Generates the Wx Stations GeoJSON output: Symbols and Text only, a symbol and a label per
+/// station.
 /// </summary>
 /// <remarks>
 /// <para>
-/// There is no grouping (no <c>OutputBy</c>) and no <c>feb.*</c> properties: a Symbol Feature
-/// carries no attributes at all, and a Text Feature carries only its <c>text</c> array.
+/// There is no grouping into files (no <c>OutputBy</c>) and no <c>feb.*</c> properties: a symbol
+/// carries no attributes at all, so the Symbols file's symbols become one MultiPoint Feature (see
+/// <see cref="GeojsonFileSet"/>), and a Text Feature carries only its <c>text</c> array.
 /// </para>
 /// <para>
 /// The ROI limits this output only: the caller filters with <see cref="FilterToRoi"/> before

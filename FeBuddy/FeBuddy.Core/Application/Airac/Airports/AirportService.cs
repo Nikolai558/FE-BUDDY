@@ -16,9 +16,8 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 /// generates the requested GeoJSON and alias output.
 /// </summary>
 /// <remarks>
-/// The only Airports type <c>FeBuddy.Harness</c>, the GUI, or <c>AiracService</c> calls
-/// directly. Everything else in <c>Services.Airac.Airports</c> is an implementation detail of
-/// this pipeline.
+/// The only Airports type <c>AiracService</c> and <c>FeBuddy.Harness</c> call directly; every
+/// other type in this folder is a step of this pipeline.
 /// </remarks>
 public static class AirportService
 {

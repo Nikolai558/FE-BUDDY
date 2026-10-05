@@ -18,7 +18,7 @@ namespace FeBuddy.Core.Infrastructure.Markdown;
 /// <item>HTML comments are dropped, as GitHub does. Images become a link to the image.</item>
 /// </list>
 /// Anything it does not recognise comes through as plain text, so the worst case is the raw
-/// Markdown the window used to show.
+/// Markdown.
 /// </summary>
 public static partial class MarkdownParser
 {

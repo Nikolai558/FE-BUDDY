@@ -21,7 +21,8 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// <para>
 /// A GitHub address is shown as the file's Raw link (<see cref="TidyLocation"/>), whatever form it
 /// was pasted in. When <b>Check</b> finds GitHub refused or hid the file, the row asks whether the
-/// repository is private and points to the GitHub token guide (<see cref="Troubleshooting"/>).
+/// repository is private and points to the GitHub token guide - or, with a credential chosen, to the
+/// guide's troubleshooting (<see cref="Troubleshooting"/>).
 /// </para>
 /// </remarks>
 public sealed class AliasSourceRow : ObservableObject

@@ -21,7 +21,7 @@ namespace FeBuddy.Core.Infrastructure.Geojson;
 /// <para>
 /// Properties match as <see cref="AttributesSignature"/> says: the same names and values, in any
 /// order. So a property unique to each point, such as <c>feb.navId</c>, leaves every symbol a
-/// Feature of its own, exactly as before.
+/// Feature of its own.
 /// </para>
 /// </remarks>
 public static class SymbolFeatureMerger

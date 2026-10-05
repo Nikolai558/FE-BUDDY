@@ -104,8 +104,9 @@ switch (store.Authorize(request, credentialId))
 - The update check, News and the update download (`GitHubAuth`) need no token: the repository is
   public. A token only lifts GitHub's limit of 60 requests an hour.
 - Settings ▸ FE-Buddy's GitHub Requests: *Don't use a GitHub token* (the default) or *Use a GitHub
-  token for update checks, News and update downloads*. Only the id is saved, in `General.FeBuddyGitHub.CredentialId`, and only a GitHub token
-  allowed on `api.github.com` can be chosen.
+  token for update checks, News and update downloads*. Only the id is saved, in
+  `General.FeBuddyGitHub.CredentialId`, and only a GitHub token allowed on `api.github.com` can be
+  chosen.
 - With one chosen, News goes through the Contents API and the update download through the
   release-assets API, both of which honour a token. Only `GitHubAuth.TryAuthorize` puts it on one of
   these requests, through the store's checks.

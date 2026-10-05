@@ -109,6 +109,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   `vNAS_Alias.txt` rename, Airways' `None`, ERAM's `ByFilter`/`ByObject`, Airports' `lat`/`lon`), the
   clean-up of the retired per-cycle `stations.cache.xml`, and the two `AiracService.RunAsync`
   overloads without supplemental data.
+- Removed the unused placeholder sub-service tab (`PlaceholderSubServiceViewModel`/`View`) and
+  `SubServiceDescriptor.IsImplemented`, which every sub-service set to `true`.
 
 ---
 

@@ -11,8 +11,7 @@ using FeBuddy.Core.Application.Airac.Telephony;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The AIRAC Service sub-service catalogue: every data topic the service can produce output for,
-/// whether or not its backend exists yet.
+/// The AIRAC Service sub-service catalogue: every data topic the service can produce output for.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,10 +23,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// <see cref="SubServiceDescriptor.Key"/> is persisted in <c>UserConfig</c> under
 /// <c>Services.AiracService.SelectedSubServices</c> and <c>Services.AiracService.Outputs.&lt;Key&gt;</c>,
-/// so a key may not be renamed without migrating those values.
-/// <see cref="SubServiceDescriptor.IsImplemented"/> is <see langword="false"/> for a sub-service that
-/// has no library code behind it yet: its tab opens and explains itself, and it contributes nothing
-/// to a run.
+/// so renaming a key loses what was saved under the old one.
 /// </para>
 /// </remarks>
 public static class AiracSubServices
@@ -74,13 +70,13 @@ public static class AiracSubServices
 	/// </summary>
 	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
 	[
-		new SubServiceDescriptor(ArtccBoundariesKey, "ARTCC Boundaries", 10, true, () => new ArtccBoundariesViewModel(),
+		new SubServiceDescriptor(ArtccBoundariesKey, "ARTCC Boundaries", 10, () => new ArtccBoundariesViewModel(),
 			Outputs: SubServiceOutputKinds.Geojson,
 			Help: new SubServiceHelp(
 				"Each ARTCC's boundary from the FAA's NASR data, drawn as lines. GeoJSON only.",
 				Geojson: "ARTCC boundary lines: ARTCC-Boundary_High_Lines and _Low_Lines (with _Unlimited_Lines if you like), " +
 					"or one file per ARTCC and altitude. Narrow them by ARTCC and by the region of interest, which clips them at its edge.")),
-		new SubServiceDescriptor(AirportsKey, "Airports", 20, true, () => new AirportsViewModel(), AirportOutputFiles.Alias, AliasAndGeojson,
+		new SubServiceDescriptor(AirportsKey, "Airports", 20, () => new AirportsViewModel(), AirportOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
 				"Every airport in the FAA's NASR data: its runways, a symbol and a label for the map, and an alias command that shows its details in CRC.",
 				Alias: "Airports.txt: an .apt command for each airport's FAA ID, and its ICAO ID when that's different, showing its name, " +
@@ -88,7 +84,7 @@ public static class AiracSubServices
 					"It covers every open airport; the region of interest doesn't narrow it.",
 				Geojson: "Runways_Lines, Airports_Symbols and Airports_Text (FAA ID and name). Choose which of those files, " +
 					"FE-Buddy properties, and the region of interest: an airport is in when its reference point is inside it.")),
-		new SubServiceDescriptor(AirwaysKey, "Airways", 30, true, () => new AirwaysViewModel(), AirwayOutputFiles.Alias, AliasAndGeojson,
+		new SubServiceDescriptor(AirwaysKey, "Airways", 30, () => new AirwaysViewModel(), AirwayOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
 				"Every airway in the FAA's NASR data: its line, waypoint symbols and labels for the map, and an alias command that draws its fixes on the scope.",
 				Alias: "Airways.txt: a command per airway that draws its fixes, e.g. .J3F. It covers every FAA airway, " +
@@ -96,34 +92,34 @@ public static class AiracSubServices
 				Geojson: "Airways_High and Airways_Low, or a set per designation (J, V, Q, T, …), each with Lines, Symbols and Text. " +
 					"Choose the designations, which file each goes in, buffering lines short of their waypoints, " +
 					"FE-Buddy properties and the region of interest.")),
-		new SubServiceDescriptor(ArrivalsKey, "Arrivals", 40, true, () => new ArrivalsViewModel(), ArrivalOutputFiles.Alias, AliasAndGeojson,
+		new SubServiceDescriptor(ArrivalsKey, "Arrivals", 40, () => new ArrivalsViewModel(), ArrivalOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
 				"STARs from the FAA's NASR data: each one's lines, points and labels in a folder per airport, and an alias command per airport and STAR that draws its fixes.",
 				Alias: "Arrivals.txt: a command per airport and STAR, e.g. .lasBLAIDf, that draws its fixes, transitions first. " +
 					"The ARTCCs, amendment date and region of interest narrow it, as they do the GeoJSON.",
 				Geojson: "Lines, Symbols and Text for each airport and STAR, in Geojson\\<ARTCC>\\<airport>\\. " +
 					"Narrow them by ARTCC, amendment date and region of interest; add FE-Buddy properties.")),
-		new SubServiceDescriptor(DeparturesKey, "Departures", 50, true, () => new DeparturesViewModel(), DepartureOutputFiles.Alias, AliasAndGeojson,
+		new SubServiceDescriptor(DeparturesKey, "Departures", 50, () => new DeparturesViewModel(), DepartureOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
 				"SIDs, and obstacle departures (ODPs) if you like, from the FAA's NASR data: each one's lines, points and labels in a folder per airport, and an alias command per airport and departure that draws its fixes.",
 				Alias: "Departures.txt: a command per airport and departure, e.g. .laxDOTSSf, that draws its fixes. " +
 					"The ARTCCs, amendment date and region of interest narrow it, as they do the GeoJSON.",
 				Geojson: "Lines, Symbols and Text for each airport and departure, in Geojson\\<ARTCC>\\<airport>\\. " +
 					"Narrow them by ARTCC, amendment date and region of interest; add FE-Buddy properties.")),
-		new SubServiceDescriptor(NavaidsKey, "NAVAIDs", 60, true, () => new NavaidsViewModel(), NavaidOutputFiles.Alias, AliasAndGeojson,
+		new SubServiceDescriptor(NavaidsKey, "NAVAIDs", 60, () => new NavaidsViewModel(), NavaidOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
 				"NAVAIDs from the FAA's NASR data: a symbol and a label for the map, and alias commands that show each one's name, type, frequency and ARTCCs.",
 				Alias: "Navaids.txt: a .nav command for each identifier and each name. The NAVAID types you untick are left out of it too; " +
 					"the region of interest doesn't narrow it.",
 				Geojson: "NAVAIDs_Symbols and NAVAIDs_Text, or a pair per NAVAID type. Choose the NAVAID types, the file layout, " +
 					"how symbols are styled, FE-Buddy properties and the region of interest.")),
-		new SubServiceDescriptor(FixesKey, "Fixes", 70, true, () => new FixesViewModel(),
+		new SubServiceDescriptor(FixesKey, "Fixes", 70, () => new FixesViewModel(),
 			Outputs: SubServiceOutputKinds.Geojson,
 			Help: new SubServiceHelp(
 				"A symbol and a label for every fix in the FAA's NASR data. GeoJSON only.",
 				Geojson: "Fix_Symbols and Fix_Text, or files per fix use, per chart, or per chart and fix use. " +
 					"Choose the fix uses and charts, FE-Buddy properties and the region of interest.")),
-		new SubServiceDescriptor(ProceduresKey, "Procedures", 80, true, () => new ProceduresViewModel(), ProcedureOutputFiles.Alias,
+		new SubServiceDescriptor(ProceduresKey, "Procedures", 80, () => new ProceduresViewModel(), ProcedureOutputFiles.Alias,
 			SubServiceOutputKinds.Alias | SubServiceOutputKinds.ProcedureChanges | SubServiceOutputKinds.ProceduresJson,
 			new SubServiceHelp(
 				"The FAA's terminal procedure charts, from the d-TPP Metafile: what changed this cycle, a list of every chart, and alias commands that open a chart.",
@@ -132,18 +128,18 @@ public static class AiracSubServices
 				ProcedureChanges: "Procedure_Changes.md: every chart added, changed or deleted this cycle at the facilities, airports and " +
 					"procedures you pick, grouped by facility, with links to the FAA's comparison PDFs and charts.",
 				ProceduresJson: "Procedures.json: every current chart at the airports you pick, with the fields you choose, for other tools to read.")),
-		new SubServiceDescriptor(TelephonyKey, "Telephony", 90, true, () => new TelephonyViewModel(), TelephonyOutputFiles.Alias,
+		new SubServiceDescriptor(TelephonyKey, "Telephony", 90, () => new TelephonyViewModel(), TelephonyOutputFiles.Alias,
 			SubServiceOutputKinds.Alias,
 			new SubServiceHelp(
 				"Operators' call signs from the FAA's telephony list, and your facility's virtual airlines, as alias commands. Alias file only.",
 				Alias: "Telephony.txt: an .id command for each operator's designator and its telephony, e.g. .idAVA and .idAVIANCA, " +
 					"showing who it is. Add your virtual airlines, and VATSIM-Radar's list if you like; the region of interest doesn't narrow it.")),
-		new SubServiceDescriptor(WxStationsKey, "Wx Stations", 100, true, () => new WxStationsViewModel(),
+		new SubServiceDescriptor(WxStationsKey, "Wx Stations", 100, () => new WxStationsViewModel(),
 			Outputs: SubServiceOutputKinds.Geojson,
 			Help: new SubServiceHelp(
 				"A symbol and a label for every US and US-territory station that reports METAR, from aviationweather.gov. GeoJSON only.",
 				Geojson: "Wx_Symbols and Wx_Text (the ICAO ID, then the IATA ID and site name). The region of interest narrows them.")),
-		new SubServiceDescriptor(ConcatenateAliasesKey, "Concatenate Aliases", 110, true, () => new ConcatenateAliasesViewModel(),
+		new SubServiceDescriptor(ConcatenateAliasesKey, "Concatenate Aliases", 110, () => new ConcatenateAliasesViewModel(),
 			Help: new SubServiceHelp(
 				"Combines every alias file the run makes, then your facility's own alias files, into Combined_Alias.txt: " +
 				"vNAS takes one alias file per facility.")),

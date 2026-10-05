@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting this! **Only the first box is required**, and a sentence or two is plenty.
+        Thanks for reporting this! **Only the first box and the two ticks at the end are required**, and a sentence or two is plenty.
         If you're not sure about something, leave it out. We'll ask if we need more.
 
   - type: textarea
@@ -15,7 +15,7 @@ body:
       label: What went wrong?
       description: What happened, and what you expected to happen instead. Rough notes are fine.
       placeholder: |
-        e.g. I ran the AIRAC Service for ZLC with Airways turned on. It finished, but V21 is missing
+        e.g. I ran the AIRAC Service for ZLC with Airways included. It finished, but V21 is missing
         from the airway file. I expected V21 to be there like it was last cycle.
 
         If you saw an error message, paste its exact text here.
@@ -39,8 +39,8 @@ body:
       label: Log, screenshots, and files (optional)
       description: |
         Drag files into this box, or paste a screenshot with Ctrl+V.
-        - **Log:** today's log is `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log`. Paste that path into File Explorer's address bar to open it.
-        - **Crash on launch:** also attach `febuddy-wpf-crash.txt` from the same folder if it exists.
+        - **Log:** today's log is `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log`.
+        - **Crash:** also attach `febuddy-wpf-crash.txt` from the same folder if it exists.
       placeholder: Drop files or screenshots here.
 
   - type: checkboxes

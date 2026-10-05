@@ -28,7 +28,7 @@ public sealed record ArrivalSettings
 	/// <summary>Emit <c>&lt;ARPT&gt;_&lt;CODE&gt;_STAR_Lines.geojson</c> - one MultiLineString per airport and procedure.</summary>
 	public bool EmitLines { get; init; } = true;
 
-	/// <summary>Emit <c>&lt;ARPT&gt;_&lt;CODE&gt;_STAR_Symbols.geojson</c> - one Point per procedure point.</summary>
+	/// <summary>Emit <c>&lt;ARPT&gt;_&lt;CODE&gt;_STAR_Symbols.geojson</c> - a symbol per procedure point.</summary>
 	public bool EmitSymbols { get; init; } = true;
 
 	/// <summary>Emit <c>&lt;ARPT&gt;_&lt;CODE&gt;_STAR_Text.geojson</c> - one labelled Point per procedure point.</summary>

@@ -1,8 +1,8 @@
 <!--
-    OutputsCard  -  the first card on the tabs that write GeoJSON and an alias file: whether each is
-    on, and what it writes. They are turned on and off on the General tab, so the card shows the
-    state and says where to change it. Binds to the tab's view model through IOutputSettings; the
-    tab supplies the wording.
+    OutputsCard  -  the first card (under the AttentionCard) on the tabs that write GeoJSON and an
+    alias file: whether each is on, and what it writes. They are turned on and off on the General
+    tab, so the card only shows the state and says where to change it. Binds to the tab's view
+    model through IOutputSettings; the tab supplies the wording.
 
     GeojsonOptions and AliasOptions, when set, show under their output and grey out while it is off
     (Airways: how the GeoJSON is split into files, and which airways the alias file covers).

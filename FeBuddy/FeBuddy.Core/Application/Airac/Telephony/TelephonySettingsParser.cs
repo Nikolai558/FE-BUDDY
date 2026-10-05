@@ -79,7 +79,7 @@ public static class TelephonySettingsParser
 		{
 			throw new ArgumentException(
 				"'GenerateAliasFile' is \"N\", but the alias file is the Telephony sub-service's only output, so it would produce " +
-				"nothing. Turn it back on, or deselect Telephony.");
+				"nothing. Turn it back on, or leave Telephony out of the run.");
 		}
 
 		List<ServiceMessage> messages = [];

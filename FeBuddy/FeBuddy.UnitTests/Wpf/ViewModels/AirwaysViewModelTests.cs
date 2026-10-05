@@ -13,8 +13,9 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
 /// Covers the High and Low Files card of <see cref="AirwaysViewModel"/>: the file each designation
-/// goes in, its defaults, the designations that still need one, and what is saved and sent - against
-/// a throwaway config and a stand-in cycle.
+/// goes in, its defaults, the designations that still need one, and what is saved and sent - plus
+/// what the run gets with GeoJSON off on the General tab, and an unknown saved split - against a
+/// throwaway config and a stand-in cycle.
 /// </summary>
 [Collection("AppLog")]
 public sealed class AirwaysViewModelTests : IDisposable

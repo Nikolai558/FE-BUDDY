@@ -55,7 +55,7 @@ public partial class GeojsonFilesCard : UserControl
 	/// <summary>Optional small print under the options, e.g. where the files are written.</summary>
 	public string? Footnote { get => (string?)GetValue(FootnoteProperty); set => SetValue(FootnoteProperty, value); }
 
-	/// <summary>Whether the Lines option is offered. Default <see langword="true"/>; off for a sub-service with no Lines file (NAVAIDs).</summary>
+	/// <summary>Whether the Lines option is offered. Default <see langword="true"/>; off for a sub-service with no Lines file (Fixes, NAVAIDs, Wx Stations).</summary>
 	public bool ShowLines { get => (bool)GetValue(ShowLinesProperty); set => SetValue(ShowLinesProperty, value); }
 
 	private static DependencyProperty Register(string name, string? defaultValue) =>

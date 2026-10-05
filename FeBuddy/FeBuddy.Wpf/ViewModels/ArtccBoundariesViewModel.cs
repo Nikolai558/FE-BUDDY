@@ -20,7 +20,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 /// <remarks>
 /// Unlike every other AIRAC sub-service, ARTCC Boundaries writes GeoJSON Lines only: there is no
-/// output toggle, no file-kind choice and no alias file. Save, Undo and navigation come from the
+/// Outputs card, no file-kind choice and no alias file. Save, Undo and navigation come from the
 /// tab host's action bar; the run is launched by <b>Run AIRAC Service</b> on the Preview Settings
 /// tab, and its results are shown on the Review tab, described by this tab through
 /// <see cref="ISubServiceRunTarget"/>.

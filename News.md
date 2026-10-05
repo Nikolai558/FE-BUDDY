@@ -11,7 +11,9 @@ PostId format =  yyyy-mm-dd.#
 
 News concerning all things FE-Buddy will be posted here with the most recent post at the top.
 
-## 2026-10-5
+---
+
+## 2026-10-05
 <!--
 PostId: 2026-10-05.1
 -->
@@ -22,7 +24,7 @@ Built from your beta.1 feedback
 
 - **Uninstall FE-Buddy completely (removing its settings) before installing** - beta.1's settings aren't read
 - The **General** tab is now one table: pick the sub-services and the files each one makes
-- **Upload to vNAS is gone**, all files are assumed to be uploaded to vNAS
+- **Upload to vNAS is gone**: every file is ready for vNAS
 - **Concatenate Aliases** builds the one `Combined_Alias.txt` to upload to vNAS
 - Each tab lists its problems at the top and outlines the cards to fix in red
 - Much smaller Symbols files, a new ERAM **Raw Plus** layout, and zoom shown as a percentage on the map

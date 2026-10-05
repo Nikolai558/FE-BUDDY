@@ -57,8 +57,10 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
   early).
 - **Sub-Services** - tick **Include** for each sub-service to run, and the files it makes:
   **Alias**, **GeoJSON**, and Procedures' **Procedure Changes** and **Procedures JSON**. All are on
-  until you first save. One left out is greyed out in the list to the left and keeps its settings.
-  Concatenate Aliases comes in by itself while an alias file is ticked.
+  until you first save. Unticking **Include** unticks its files, and ticking it ticks them all; untick
+  its last file and it's left out, tick one and it's back in. One left out is greyed out in the list
+  to the left and keeps its settings. Concatenate Aliases comes in by itself while an alias file is
+  ticked.
 
 ### The cards most tabs share
 

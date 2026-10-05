@@ -18,6 +18,11 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### AIRAC Service
+- Feature #308 - On the General tab, a sub-service's **Include** now matches its files: untick its
+  last file and it's left out, tick a file and it's back in. Unticking **Include** unticks its files,
+  and ticking it ticks them all.
+
 ### File Conversions
 - File Conversions opens on a picker: choose the **Source** (FAA Radar Video Map .dat files, Legacy
   Sector File (.sct2) or FAA ERAM Adaptation Files, then Geomaps.xml) and the **Output**, then

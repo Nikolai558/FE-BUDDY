@@ -1,7 +1,9 @@
 <!--
     AiracGeneralTabView  -  the General tab of the AIRAC Service screen: which cycle, and the table of
-    sub-services - which are in the run, and which of their outputs each makes. A sub-service left
-    out is greyed out in the rail rather than taken away. Every box has a tooltip: the sub-service or
+    sub-services - which are in the run, and which of their outputs each makes. Include always
+    matches "at least one output ticked" (SubServiceRow), so an output's box is greyed out only when
+    the sub-service doesn't make that kind of file. A sub-service left out is greyed out in the rail
+    rather than taken away. Every box has a tooltip: the sub-service or
     the file, where its settings are, or that the sub-service doesn't make that kind of file. Save /
     navigation come from the tab host's action bar.
 
@@ -149,13 +151,13 @@
                                           Margin="0,0,6,0" ToolTip="{Binding IncludeToolTip}"
                                           ToolTipService.InitialShowDelay="250" ToolTipService.ShowDuration="60000" />
                                 <CheckBox Grid.Column="1" Style="{StaticResource OutputBox}"
-                                          IsChecked="{Binding Alias}" IsEnabled="{Binding CanEditAlias}" ToolTip="{Binding AliasToolTip}" />
+                                          IsChecked="{Binding Alias}" IsEnabled="{Binding OffersAlias}" ToolTip="{Binding AliasToolTip}" />
                                 <CheckBox Grid.Column="2" Style="{StaticResource OutputBox}"
-                                          IsChecked="{Binding Geojson}" IsEnabled="{Binding CanEditGeojson}" ToolTip="{Binding GeojsonToolTip}" />
+                                          IsChecked="{Binding Geojson}" IsEnabled="{Binding OffersGeojson}" ToolTip="{Binding GeojsonToolTip}" />
                                 <CheckBox Grid.Column="3" Style="{StaticResource OutputBox}"
-                                          IsChecked="{Binding ProcedureChanges}" IsEnabled="{Binding CanEditProcedureChanges}" ToolTip="{Binding ProcedureChangesToolTip}" />
+                                          IsChecked="{Binding ProcedureChanges}" IsEnabled="{Binding OffersProcedureChanges}" ToolTip="{Binding ProcedureChangesToolTip}" />
                                 <CheckBox Grid.Column="4" Style="{StaticResource OutputBox}"
-                                          IsChecked="{Binding ProceduresJson}" IsEnabled="{Binding CanEditProceduresJson}" ToolTip="{Binding ProceduresJsonToolTip}" />
+                                          IsChecked="{Binding ProceduresJson}" IsEnabled="{Binding OffersProceduresJson}" ToolTip="{Binding ProceduresJsonToolTip}" />
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -163,7 +165,7 @@
 
                 <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="A sub-service left out is greyed out in the list to the left and keeps its settings for next time. An included one keeps at least one file on. Concatenate Aliases, which combines the alias files into one for vNAS, comes in by itself while an alias file is ticked." />
+                           Text="Untick a sub-service's last file and it's left out; tick one of its files and it's back in. One left out is greyed out in the list to the left and keeps its settings for next time. Concatenate Aliases, which combines the alias files into one for vNAS, comes in by itself while an alias file is ticked." />
             </StackPanel>
         </ctl:Card>
     </StackPanel>

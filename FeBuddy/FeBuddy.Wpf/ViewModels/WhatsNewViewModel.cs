@@ -69,7 +69,7 @@ public sealed class WhatsNewViewModel(Action back, Action openGuide) : Observabl
 		new("Sharing your preferences", "Uh... what preferences?!", "Export/import your preferences and settings"),
 		new("Merging FEB alias commands with your custom commands", "Not available", "Not only available, but it can reach out to your GitHub repo for the current file(s), even a private repo (using your GitHub token)"),
 		new("Duplicate commands", "Many", "Almost none"),
-		new("IAP type syntax", "Many variables to mentally parse", "8 types, each with a `*/DME` and a `* BC` (back course) variant"),
+		new("IAP type syntax", "Many variables to mentally parse", "8 base types, plus `D` for the DME variants and `BC` for back course"),
 		new("DP/STAR/IAP syntax with no computer code", "A mix of the first letter of each word in the base name, or its first 5 characters", "Simply writes out the full base name"),
 		new("d-TPP procedures (changes)", "Limited output options; not context-aware", "Monitor changes for chosen facilities, approaches, airports, or any combination of those"),
 		new("d-TPP procedures (file types)", "Simple `.txt` files", "Procedures: `.json`; changes: `.md`"),
@@ -79,7 +79,7 @@ public sealed class WhatsNewViewModel(Action back, Action openGuide) : Observabl
 	/// <summary>What a facility engineer gets.</summary>
 	public IReadOnlyList<Point> ForEngineers { get; } =
 	[
-		new("Pick what you need", "11 sub-services, each with its own options."),
+		new("Pick what you need", "10 sub-services, each with its own options, plus Concatenate Aliases to build your one vNAS alias file."),
 		new("Region of Interest", "Draw one box and your maps stay in your area. Commands like `.apt`, `.nav` and chart recalls still cover the whole FAA."),
 		new("vNAS-ready", "Every file is ready to upload. GeoJSON can carry your CRC ERAM defaults; alias files combine with your facility's own (local or private GitHub) into one `Combined_Alias.txt`. Your commands win."),
 		new("Procedure changes", "`Procedure_Changes.md` lists New, Changed and Deleted charts with links."),

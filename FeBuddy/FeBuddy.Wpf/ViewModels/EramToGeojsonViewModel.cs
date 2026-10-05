@@ -14,7 +14,7 @@ using FeBuddy.Core.Infrastructure.Eram;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>ERAM to GeoJSON</b> tab on the File Conversions screen: converts the
+/// The <b>ERAM to GeoJSON</b> page on the File Conversions screen: converts the
 /// <c>Geomaps.xml</c> of an ERAM adaptation export into CRC-ready GeoJSON in
 /// <c>ERAM_TO_GEOJSON</c>, in the original ERAM_2_GEOJSON tool's three layouts - By Filters, By
 /// Attributes and Raw - with its names, or Raw Plus, plus its <c>ConsoleCommandControl.txt</c>
@@ -23,13 +23,13 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <remarks>
 /// <para>
 /// The source, save contract and run description come from <see cref="FileConversionTabViewModel"/>.
-/// This tab adds the output layout, where the CRC defaults come from (the CRC ERAM Defaults card
-/// is in use only when the tab's defaults are one of the sources) and the <c>feb.*</c> properties.
+/// This page adds the output layout, where the CRC defaults come from (the CRC ERAM Defaults card
+/// is in use only when the page's defaults are one of the sources) and the <c>feb.*</c> properties.
 /// </para>
 /// <para>
 /// One Geomaps file per run (<see cref="OneSourceFileOnly"/>). A source folder may be the whole
 /// unzipped export: only its Geomaps file is counted and converted. Each run empties
-/// <c>ERAM_TO_GEOJSON</c> first, so the tab asks before a run that would delete anything
+/// <c>ERAM_TO_GEOJSON</c> first, so the page asks before a run that would delete anything
 /// (<see cref="ConfirmRun"/>).
 /// </para>
 /// </remarks>
@@ -42,7 +42,7 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 	private EramDefaultsSource _defaultsSource = EramDefaultsSource.Xml;
 	private bool _includeFebCustomProperties;
 
-	/// <summary>Builds the tab and restores its saved settings.</summary>
+	/// <summary>Builds the page and restores its saved settings.</summary>
 	public EramToGeojsonViewModel()
 		: base(EramToGeojsonSettingsParser.CrcClassName, writesSymbols: true, writesText: true)
 	{

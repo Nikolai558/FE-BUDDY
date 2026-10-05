@@ -102,7 +102,7 @@
             <ctl:Card Header="Airports" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Include every procedure at these airports." />
+                               Text="{Binding Source={x:Static vm:ProceduresViewModel.MaxAirports}, StringFormat='Include every procedure at these airports, up to {0}. Type or paste FAA or ICAO IDs, separated by spaces, commas or new lines, then press Enter or Add.'}" />
 
                     <ItemsControl ItemsSource="{Binding Airports}" Margin="0,0,0,8">
                         <ItemsControl.ItemTemplate>
@@ -120,12 +120,28 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox MinWidth="140" Text="{Binding NewAirportText, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Content="Add" Style="{StaticResource Button.Primary}" Margin="10,0,0,0"
-                                Command="{Binding AddAirportCommand}" />
-                    </StackPanel>
+                    <!-- The box fills the card up to a readable width and wraps a long list; a pasted
+                         column of IDs arrives as one line (bhv:PasteOnOneLine). What Add can't take
+                         stays in the box, with a line per reason under it. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MaxWidth="460" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding NewAirportText, UpdateSourceTrigger=PropertyChanged}"
+                                 TextWrapping="Wrap" Tag="e.g. KCLE, CAK, DTW" bhv:PasteOnOneLine.IsEnabled="True">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding AddAirportCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <Button Grid.Column="1" Content="Add" Style="{StaticResource Button.Primary}" Margin="10,0,0,0"
+                                VerticalAlignment="Top" Command="{Binding AddAirportCommand}" />
+                        <Button Grid.Column="2" Content="Clear" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
+                                VerticalAlignment="Top" Command="{Binding ClearAirportTextCommand}" />
+                    </Grid>
                     <TextBlock Text="{Binding NewAirportHint}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
+                               TextWrapping="Wrap" MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Foreground="{StaticResource Brush.Danger}"
                                Visibility="{Binding NewAirportHint, Converter={StaticResource StringToVis}}" />
 

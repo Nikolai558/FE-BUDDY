@@ -16,12 +16,13 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// The <b>Review</b> tab: everything about a run, in one place.
 /// </summary>
 /// <remarks>
-/// It appears only once a run has started, at the very end of the rail. The sub-service tabs
-/// hold settings only; what happened when the service ran lives here - the live step feed,
-/// anything that went wrong at <see cref="LogLevel.Error"/> level, the advisories
+/// In AIRAC Services it appears only once a run has started, at the very end of the rail. The
+/// sub-service tabs hold settings only; what happened when the service ran lives here - the live
+/// step feed, anything that went wrong at <see cref="LogLevel.Error"/> level, the advisories
 /// (<see cref="ServiceMessage.IsAdvisory"/>) that explain missing output such as "nothing
 /// matched your filters", each sub-service's results with its warnings and its routine notices
 /// collapsed behind a toggle, and how many files were written with the way out to the output folder.
+/// File Conversions has no Review tab: it shows this same content under a conversion's Run card.
 /// </remarks>
 public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 {

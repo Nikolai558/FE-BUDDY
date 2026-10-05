@@ -123,8 +123,8 @@ public abstract class ServiceTabViewModel : ObservableObject
 
 	/// <summary>The line above <see cref="ValidationErrors"/>: how many things need fixing, and where to look.</summary>
 	public string ValidationSummary => ValidationErrors.Count == 1
-		? "One thing on this tab needs your attention. Its area is outlined in red below."
-		: $"{ValidationErrors.Count} things on this tab need your attention. Their areas are outlined in red below.";
+		? "One thing on this page needs your attention. Its area is outlined in red below."
+		: $"{ValidationErrors.Count} things on this page need your attention. Their areas are outlined in red below.";
 
 	/// <summary>How the rail should present this tab. Derived from dirty + validation state.</summary>
 	public ServiceTabStatus Status

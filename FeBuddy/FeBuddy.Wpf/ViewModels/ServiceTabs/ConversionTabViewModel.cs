@@ -8,15 +8,15 @@ using FeBuddy.Core.Application.Models;
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// Base for one conversion tab on the File Conversions screen. Unlike an AIRAC sub-service,
-/// a conversion is always on the rail and runs on its own, from the run button at the foot of
-/// its own tab; the screen does the running and shows the outcome on its Review tab.
+/// Base for one conversion's page on the File Conversions screen, opened from its picker. Unlike
+/// an AIRAC sub-service, a conversion runs on its own, from the run button at the foot of its own
+/// page; the screen does the running and shows the outcome under that button.
 /// </summary>
 /// <remarks>
 /// A run happens in three steps, split by thread: <see cref="BuildSettingsBlock"/> reads the
-/// tab on the UI thread, <see cref="Execute"/> does the work on a background thread from that
-/// block alone, and <see cref="DescribeRun"/> turns the result into the Review tab's content back
-/// on the UI thread.
+/// page on the UI thread, <see cref="Execute"/> does the work on a background thread from that
+/// block alone, and <see cref="DescribeRun"/> turns the result into the run's results back on the
+/// UI thread.
 /// </remarks>
 public abstract class ConversionTabViewModel : SubServiceSettingsViewModel, IRunAction
 {
@@ -38,7 +38,7 @@ public abstract class ConversionTabViewModel : SubServiceSettingsViewModel, IRun
 	public abstract string RunLabel { get; }
 
 	/// <summary>
-	/// Whether the run button is live. The screen turns it off on every tab while any conversion
+	/// Whether the run button is live. The screen turns it off on every page while any conversion
 	/// is running, so two runs never overlap.
 	/// </summary>
 	public bool CanRun
@@ -72,25 +72,25 @@ public abstract class ConversionTabViewModel : SubServiceSettingsViewModel, IRun
 	/// <returns><see langword="false"/> to not run.</returns>
 	public virtual bool ConfirmRun(IReadOnlyDictionary<string, string> settings) => true;
 
-	/// <summary>Builds the raw settings block the library's parser reads, from the tab as it stands.</summary>
+	/// <summary>Builds the raw settings block the library's parser reads, from the page as it stands.</summary>
 	/// <param name="outputDirectory">The run's output directory.</param>
 	/// <param name="addFeBuddyOutputFolder">Whether to wrap output in a <c>FE-Buddy_Output</c> folder.</param>
 	/// <returns>The settings block.</returns>
 	public abstract IReadOnlyDictionary<string, string> BuildSettingsBlock(string outputDirectory, bool addFeBuddyOutputFolder);
 
 	/// <summary>
-	/// Runs the conversion. Called on a background thread, so it must read nothing from the tab -
+	/// Runs the conversion. Called on a background thread, so it must read nothing from the page -
 	/// only <paramref name="settings"/>.
 	/// </summary>
 	/// <param name="settings">The block <see cref="BuildSettingsBlock"/> returned.</param>
 	/// <param name="reportStep">
-	/// Reports progress for the Review tab's run feed: the step's name (e.g. a file name), what it
+	/// Reports progress for the run's live feed: the step's name (e.g. a file name), what it
 	/// is doing, and whether it has finished. Safe to call from any thread.
 	/// </param>
 	/// <returns>The library's result.</returns>
 	public abstract ServiceResult Execute(IReadOnlyDictionary<string, string> settings, Action<string, string, bool> reportStep);
 
-	/// <summary>Describes a finished run for the Review tab.</summary>
+	/// <summary>Describes a finished run for its results under the run button.</summary>
 	/// <param name="result">What <see cref="Execute"/> returned.</param>
 	/// <returns>The summary, results block, files and output folder.</returns>
 	public abstract ConversionRunOutcome DescribeRun(ServiceResult result);

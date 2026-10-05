@@ -1,8 +1,8 @@
 <!--
-    AttentionCard  -  the red card at the top of a settings tab while something on it needs
-    fixing: how many things, and each one's message. The cards they belong to are outlined in
-    red (ctl:Card.NeedsAttention). Binds to the tab's ServiceTabViewModel; hidden while the tab
-    is valid.
+    AttentionCard  -  the red card at the top of a settings tab or conversion page while
+    something on it needs fixing: how many things, and each one's message. The cards they
+    belong to are outlined in red (ctl:Card.NeedsAttention). Binds to its ServiceTabViewModel;
+    hidden while nothing needs fixing.
 
     Usage:
         <cards:AttentionCard />

@@ -1,8 +1,8 @@
 <!--
-    SctToGeojsonView  -  the SCT2 to GeoJSON tab on the File Conversions screen.
-    Save / Undo come from the tab host's shared action bar, and the tab
-    host owns the page's single scroller. The Convert card at the foot of the page starts the
-    run, and the outcome appears on the screen's Review tab.
+    SctToGeojsonView  -  the SCT2 to GeoJSON page on the File Conversions screen.
+    Save / Undo come from the screen's (FileConversionsView) action bar, and the screen
+    owns the page's single scroller. The Convert card at the foot of the page starts the
+    run, and the outcome appears under that card.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SctToGeojsonView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -15,7 +15,7 @@
              d:DataContext="{d:DesignInstance vm:SctToGeojsonViewModel}"
              d:DesignWidth="900" d:DesignHeight="900">
 
-    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <!-- No ScrollViewer here: the File Conversions screen owns the one page-level scroller. -->
     <StackPanel>
 
         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"

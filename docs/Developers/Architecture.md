@@ -296,8 +296,9 @@ Argued out once; don't re-open them without a reason.
 - **Developer mode is a code constant** (`App.DevModeEnabled`), never a user setting. Pretty
   printing is a user setting, forced on in developer mode.
 - **"Unsaved" means different from the last save**, everywhere.
-- **The Review tab is the one place** for a run's results, warnings and output folder.
-- **Every sub-service is a tab of the AIRAC Service**, and every file conversion a tab of File
+- **A run's results, warnings and output folder are in one place**: the Review tab, or, for a file
+  conversion, under its Run card.
+- **Every sub-service is a tab of the AIRAC Service**, and every file conversion a page of File
   Conversions, built from the same shared cards where they apply.
 - **Output folders are laid out in one place** (`ServiceOutputPaths`), so AIRAC output and
   conversions sit side by side.

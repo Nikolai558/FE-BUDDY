@@ -19,6 +19,28 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 ## Unreleased
 
+## 3.0.0-beta.3
+### AIRAC Service
+- Feature #308 - On the General tab, a sub-service's **Include** now matches its files: untick its
+  last file and it's left out, tick a file and it's back in. Unticking **Include** unticks its files,
+  and ticking it ticks them all.
+- Feature #309 - Procedures ▸ Airports takes a list: type or paste up to 100 FAA or ICAO IDs
+  (separated by spaces, commas or new lines) and press **Enter** or **Add**. Any it can't add stay in
+  the box with the reason under it: not an airport this cycle, already listed, or already included
+  by a ticked facility or the region of interest.
+
+### File Conversions
+- File Conversions opens on a picker: choose the **Source** (FAA Radar Video Map .dat files, Legacy
+  Sector File (.sct2) or FAA ERAM Adaptation Files, then Geomaps.xml) and the **Output**, then
+  **Continue** to that conversion's settings. The back arrow returns to the picker, and a
+  conversion's results now show under its **Convert** button.
+
+### Dev notes
+- File Conversions has its own screen, `FileConversionsView`, instead of `TabbedServiceView`: the
+  picker is a tree of `ConversionChoice`s in `FileConversionsViewModel`, and each conversion keeps
+  its last run's results. `TabbedServiceViewModel.HasStepNavigation` is gone (only File Conversions
+  turned it off).
+
 ---
 
 ## 3.0.0-beta.2

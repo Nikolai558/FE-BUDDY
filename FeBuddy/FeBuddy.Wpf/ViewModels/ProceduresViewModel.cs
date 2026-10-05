@@ -10,6 +10,8 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
@@ -57,6 +59,12 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
+	/// <summary>
+	/// The most airports the Airports card holds. Past this many, ticking their ARTCC under
+	/// Facilities, or the region of interest, is the better tool, and the list stays readable.
+	/// </summary>
+	public const int MaxAirports = 100;
+
 	private const string Node = "Services.AiracService.Procedures";
 
 	private const string NotAnAirportHint = "Not an airport in this cycle.";
@@ -81,6 +89,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private HashSet<string> _savedFacilities = new(StringComparer.OrdinalIgnoreCase);
 
 	private readonly Dictionary<string, string> _nasrAirportsByIdent = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, AptCsvDataModel.AptBase> _nasrAirportsByFaaId = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, DtppAirport> _metafileAirportsByIdent = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, List<string>> _procedureNamesByAirport = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, string> _procedureNamesByCanonical = new(StringComparer.OrdinalIgnoreCase);
@@ -114,6 +123,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			.Select(o => new ProcedureOptionToggle(CoreFebProperties.Name(o.Field), o.Label, isSelected: false, OnListToggleChanged))];
 
 		AddAirportCommand = new RelayCommand(AddAirport, CanAddAirport);
+		ClearAirportTextCommand = new RelayCommand(() => NewAirportText = string.Empty, () => _newAirportText.Length > 0);
 		DeleteAirportCommand = new RelayCommand<string>(DeleteAirport);
 
 		AddProcedureCommand = new RelayCommand(AddProcedure, CanAddProcedure);
@@ -290,7 +300,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <summary>Whether any airport has been added.</summary>
 	public bool HasAirports => Airports.Count > 0;
 
-	/// <summary>The text typed into the Airports card's Add box.</summary>
+	/// <summary>
+	/// The text typed or pasted into the Airports card's Add box: one or more FAA or ICAO IDs,
+	/// separated by anything but letters and digits (spaces, commas, new lines).
+	/// </summary>
 	public string NewAirportText
 	{
 		get => _newAirportText;
@@ -303,29 +316,41 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		}
 	}
 
-	/// <summary>"Not an airport in this cycle." or "Already in the list.", or empty when the typed text is fine to add.</summary>
+	/// <summary>
+	/// Why entries in the Add box can't be added, a line per reason with the IDs it applies to -
+	/// e.g. <c>Not an airport in this cycle: KXYZ</c> - or empty when every entry can be.
+	/// </summary>
 	public string NewAirportHint
 	{
 		get
 		{
-			string trimmed = _newAirportText.Trim();
+			List<AirportEntry> entries = ReadAirportEntries();
+			List<string> lines = [];
 
-			if (trimmed.Length == 0)
+			AddHintLine(lines, "Not an airport in this cycle", entries.Where(e => e.Outcome == AirportEntryOutcome.NotFound));
+			AddHintLine(lines, "Already in the list", entries.Where(e => e.Outcome == AirportEntryOutcome.AlreadyListed));
+
+			foreach (IGrouping<string?, AirportEntry> group in entries
+				.Where(e => e.Outcome == AirportEntryOutcome.AlreadyIncluded)
+				.GroupBy(e => e.IncludedBy))
 			{
-				return string.Empty;
+				AddHintLine(lines, $"Already included {group.Key}", group);
 			}
 
-			if (!TryResolveAirportId(trimmed, out string faaId))
-			{
-				return NotAnAirportHint;
-			}
+			AddHintLine(lines, $"Over the {MaxAirports}-airport limit", entries.Where(e => e.Outcome == AirportEntryOutcome.OverLimit));
 
-			return Airports.Any(a => a.Equals(faaId, StringComparison.OrdinalIgnoreCase)) ? AlreadyInListHint : string.Empty;
+			return string.Join('\n', lines);
 		}
 	}
 
-	/// <summary>Adds <see cref="NewAirportText"/> to <see cref="Airports"/>.</summary>
+	/// <summary>
+	/// Adds every airport in <see cref="NewAirportText"/> that can be added, in order, up to
+	/// <see cref="MaxAirports"/>. What can't be added stays in the box, with why under it.
+	/// </summary>
 	public ICommand AddAirportCommand { get; }
+
+	/// <summary>Empties the Add box.</summary>
+	public ICommand ClearAirportTextCommand { get; }
 
 	/// <summary>Removes an airport from <see cref="Airports"/>.</summary>
 	public ICommand DeleteAirportCommand { get; }
@@ -537,6 +562,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		}
 
 		_nasrAirportsByIdent.Clear();
+		_nasrAirportsByFaaId.Clear();
 
 		foreach (AptCsvDataModel.AptBase row in data.Apt?.AptBase ?? [])
 		{
@@ -548,6 +574,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			}
 
 			_nasrAirportsByIdent.TryAdd(faaId, faaId);
+			_nasrAirportsByFaaId.TryAdd(faaId, row);
 
 			string icao = (row.IcaoId ?? string.Empty).Trim();
 
@@ -724,6 +751,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
 	{
+		// The Add box's hint depends on the facilities, the region and the list, and any change to
+		// them re-validates.
+		OnPropertyChanged(nameof(NewAirportHint));
+
 		// The choices below only pick what the documents cover; the alias file covers every airport.
 		if (GeneratesDocument)
 		{
@@ -837,21 +868,116 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		return false;
 	}
 
-	private bool CanAddAirport() =>
-		TryResolveAirportId(_newAirportText.Trim(), out string faaId)
-		&& !Airports.Any(a => a.Equals(faaId, StringComparison.OrdinalIgnoreCase));
+	private bool CanAddAirport() => ReadAirportEntries().Any(e => e.Outcome == AirportEntryOutcome.Add);
 
 	private void AddAirport()
 	{
-		if (!TryResolveAirportId(_newAirportText.Trim(), out string faaId)
-			|| Airports.Any(a => a.Equals(faaId, StringComparison.OrdinalIgnoreCase)))
+		List<AirportEntry> entries = ReadAirportEntries();
+
+		if (!entries.Any(e => e.Outcome == AirportEntryOutcome.Add))
 		{
 			return;
 		}
 
-		Airports.Add(faaId);
-		NewAirportText = string.Empty;
+		foreach (AirportEntry entry in entries.Where(e => e.Outcome == AirportEntryOutcome.Add))
+		{
+			Airports.Add(entry.FaaId);
+		}
+
+		// What wasn't added stays in the box, so the hint says why and a typo can be fixed in place.
+		NewAirportText = string.Join(", ", entries
+			.Where(e => e.Outcome is not (AirportEntryOutcome.Add or AirportEntryOutcome.Repeat))
+			.Select(e => e.Text));
+
 		MarkDirty();
+	}
+
+	/// <summary>
+	/// Works out what Add would do with each entry in the Add box, in order: add it, skip a repeat
+	/// of one it adds, or leave it with a reason.
+	/// </summary>
+	private List<AirportEntry> ReadAirportEntries()
+	{
+		List<AirportEntry> entries = [];
+
+		// Anything but a letter or digit separates the IDs.
+		string[] texts = new string([.. _newAirportText.Select(c => char.IsAsciiLetterOrDigit(c) ? char.ToUpperInvariant(c) : ' ')])
+			.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+		if (texts.Length == 0)
+		{
+			return entries;
+		}
+
+		HashSet<string> listed = new(Airports, StringComparer.OrdinalIgnoreCase);
+		HashSet<string> adding = new(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> facilities = new(SelectedFacilityIds(), StringComparer.OrdinalIgnoreCase);
+		RegionOfInterest? region = _includeRoiAirports ? RoiInUse() : null;
+
+		foreach (string text in texts)
+		{
+			if (!TryResolveAirportId(text, out string faaId))
+			{
+				entries.Add(new AirportEntry(text, faaId, AirportEntryOutcome.NotFound));
+			}
+			else if (listed.Contains(faaId))
+			{
+				entries.Add(new AirportEntry(text, faaId, AirportEntryOutcome.AlreadyListed));
+			}
+			else if (adding.Contains(faaId))
+			{
+				entries.Add(new AirportEntry(text, faaId, AirportEntryOutcome.Repeat));
+			}
+			else if (IncludedBy(faaId, facilities, region) is { } includedBy)
+			{
+				entries.Add(new AirportEntry(text, faaId, AirportEntryOutcome.AlreadyIncluded, includedBy));
+			}
+			else if (listed.Count + adding.Count >= MaxAirports)
+			{
+				entries.Add(new AirportEntry(text, faaId, AirportEntryOutcome.OverLimit));
+			}
+			else
+			{
+				adding.Add(faaId);
+				entries.Add(new AirportEntry(text, faaId, AirportEntryOutcome.Add));
+			}
+		}
+
+		return entries;
+	}
+
+	/// <summary>
+	/// How the run already includes the whole airport, the way the library decides it: its
+	/// responsible ARTCC is ticked under Facilities, or it is inside the region of interest while
+	/// that box is ticked. <see langword="null"/> when nothing does.
+	/// </summary>
+	private string? IncludedBy(string faaId, HashSet<string> facilities, RegionOfInterest? region)
+	{
+		if (!_nasrAirportsByFaaId.TryGetValue(faaId, out AptCsvDataModel.AptBase? row))
+		{
+			return null;
+		}
+
+		string artcc = (row.RespArtccId ?? string.Empty).Trim();
+
+		if (artcc.Length > 0 && facilities.Contains(artcc))
+		{
+			return $"by {artcc.ToUpperInvariant()} under Facilities";
+		}
+
+		return region is not null && RoiFilter.Contains(region, row.BaseLatDecimal, row.BaseLongDecimal)
+			? "by the region of interest"
+			: null;
+	}
+
+	private static void AddHintLine(List<string> lines, string reason, IEnumerable<AirportEntry> entries)
+	{
+		string[] texts = [.. entries.Select(e => e.Text)];
+
+		if (texts.Length > 0)
+		{
+			lines.Add($"{reason}: {string.Join(", ", texts)}");
+		}
 	}
 
 	private void DeleteAirport(string? airport)
@@ -1114,4 +1240,22 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		string[] selected = [.. ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)];
 		return selected.Length > 0 ? string.Join(", ", selected) : "None";
 	}
+
+	/// <summary>What Add does with one entry in the Airports card's Add box.</summary>
+	private enum AirportEntryOutcome
+	{
+		Add,
+		Repeat,
+		NotFound,
+		AlreadyListed,
+		AlreadyIncluded,
+		OverLimit,
+	}
+
+	/// <summary>One entry in the Add box, and what Add does with it.</summary>
+	/// <param name="Text">The entry as typed, upper-cased.</param>
+	/// <param name="FaaId">Its FAA ID, or empty when it isn't an airport in this cycle.</param>
+	/// <param name="Outcome">What Add does with it.</param>
+	/// <param name="IncludedBy">For <see cref="AirportEntryOutcome.AlreadyIncluded"/>, e.g. <c>by ZOB under Facilities</c>.</param>
+	private readonly record struct AirportEntry(string Text, string FaaId, AirportEntryOutcome Outcome, string? IncludedBy = null);
 }

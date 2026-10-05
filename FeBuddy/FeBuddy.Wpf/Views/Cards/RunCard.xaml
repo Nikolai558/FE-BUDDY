@@ -1,8 +1,8 @@
 <!--
-    RunCard  -  the card at the foot of a tab that starts a run: a note on the left, the one
-    primary button on the right. Used by the Preview Settings tab (Run AIRAC Service) and by
-    every conversion tab (Convert ...). Binds to the tab's view model through IRunAction; the
-    tab supplies the wording.
+    RunCard  -  the card at the foot of a tab or page that starts a run: a note on the left, the
+    one primary button on the right. Used by the Preview Settings tab (Run AIRAC Service) and by
+    every conversion page (Convert ...), whose run results show under it. Binds to the view
+    model through IRunAction; the view model supplies the wording.
 
     Blocker, when set, is shown above the note in the warning colour: why the button is off
     right now (e.g. no files picked). The button's own CanExecute is what turns it off.

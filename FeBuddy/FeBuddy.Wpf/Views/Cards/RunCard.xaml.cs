@@ -3,7 +3,7 @@ using System.Windows.Controls;
 
 namespace FeBuddy.Wpf.Views.Cards;
 
-/// <summary>The shared Run card at the foot of a tab that starts a run. See RunCard.xaml.</summary>
+/// <summary>The shared Run card at the foot of a tab or page that starts a run. See RunCard.xaml.</summary>
 public partial class RunCard : UserControl
 {
 	/// <summary>Identifies the <see cref="Note"/> dependency property.</summary>

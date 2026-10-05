@@ -109,8 +109,8 @@ FeBuddy.Core/
 ## FeBuddy.Wpf
 
 MVVM, with no packages beyond Core: `ObservableObject` and `RelayCommand` are in `Mvvm/`. Every
-sub-service is a tab on the AIRAC Service screen and every file conversion a tab on the File
-Conversions screen; neither is ever a screen of its own.
+sub-service is a tab on the AIRAC Service screen and every file conversion a page of the File
+Conversions screen, opened from its picker; neither is ever a screen of its own.
 
 ```
 FeBuddy.Wpf/
@@ -120,8 +120,8 @@ FeBuddy.Wpf/
 ├── Assets/              FE-BUDDY.ico, Brand/ (the logo's sizes) and BaseMap/ (us-states.json,
 │                        coastlines.json, from Natural Earth, built by FeBuddy/Tools/BuildBaseMap.cs)
 ├── Behaviors/           attached properties a view opts into (FieldState, InlineCode, InlineMarkdown,
-│                        WheelScroll, ScrollToTop, ComboBoxDropDownFocus), and MaximizeToWorkArea, a
-│                        window hook the chrome windows install from code
+│                        WheelScroll, ScrollToTop, BringIntoView, ComboBoxDropDownFocus), and
+│                        MaximizeToWorkArea, a window hook the chrome windows install from code
 ├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView,
 │                        MapCanvas, AliasGuideDocumentView, BesideOrBelow, CommandTablePanel,
 │                        ChromeWindow, BrandMark
@@ -138,8 +138,8 @@ FeBuddy.Wpf/
 │                        ConversionTabViewModel and FileConversionTabViewModel, the Preview
 │                        Settings and Review tabs, the General tab's SubServiceRow, validation
 │                        (ServiceValidation, ServiceAreas), the card interfaces (IOutputSettings, …)
-└── Views/               ShellWindow, TabbedServiceView (both tabbed screens), one view per tab,
-    │                    MapWorkspace (every map), the dialog windows
+└── Views/               ShellWindow, TabbedServiceView (AIRAC Service), FileConversionsView, one view
+    │                    per tab or conversion page, MapWorkspace (every map), the dialog windows
     └── Cards/           the shared cards (Attention, Outputs, What Files Do You Want?, FE-Buddy
                          Properties, Region of Interest, CRC ERAM Defaults, Source Files, Run);
                          CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
@@ -149,10 +149,14 @@ FeBuddy.Wpf/
 ### How the screens are built
 
 - **Navigation** is a `ContentControl` with a `DataTemplate` per view-model. Each page's view-model
-  is built once and kept; a page with places inside it (`IOpensAtStart`: the tabbed screens, Info)
-  goes back to its first tab or main page each time it is chosen in the side nav.
-- **AIRAC Service and File Conversions are one view**, `TabbedServiceView`; each screen's
-  view-model says what differs. Tabs are data (`TabbedServiceViewModel`), not hand-placed XAML.
+  is built once and kept; a page with places inside it (`IOpensAtStart`: AIRAC Service, File
+  Conversions, Info) goes back to its first tab, picker or main page each time it is chosen in the
+  side nav.
+- **AIRAC Service is `TabbedServiceView`.** Tabs are data (`TabbedServiceViewModel`), not
+  hand-placed XAML.
+- **File Conversions** (`FileConversionsView`) opens on a picker - Source, File, Output, a tree of
+  `ConversionChoice`s built in `FileConversionsViewModel` - and Continue opens that conversion's page
+  in its place, with its last run's results under its Run card.
 - **A sub-service tab** derives from `GeojsonSubServiceViewModel`, which brings the shared cards'
   logic: outputs, file choices, `feb.*` properties, ROI override, and which files get CRC defaults.
   A tab without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry). Which outputs
@@ -160,7 +164,7 @@ FeBuddy.Wpf/
   `ISubServiceOutputs`), so the tab's own save and undo never change them. A sub-service left out
   keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Concatenate Aliases is the exception:
   it derives from `SubServiceSettingsViewModel`, uses none of the shared cards and has no row.
-- **A conversion tab** derives from `FileConversionTabViewModel` (on `ConversionTabViewModel`):
+- **A conversion page** derives from `FileConversionTabViewModel` (on `ConversionTabViewModel`):
   source files, CRC defaults and its own run button.
 - **Saving.** Each tab saves its own config node. "Unsaved" means different from the last save:
   `SubServiceSettingsViewModel` runs the tab's own `WriteToConfig()` into a buffer and compares it
@@ -234,8 +238,9 @@ Say, vSTARS video maps:
    `Infrastructure/<Format>/`; if it finds a file isn't its format, it should throw
    `InvalidDataException` (as the ERAM readers do), which fails that file only.
 2. **App:** a view-model deriving from `FileConversionTabViewModel`, added in
-   `FileConversionsViewModel`'s constructor, and a view built from `SourceFilesCard`,
-   `CrcDefaultsCard` and `RunCard`, with its `DataTemplate` in `TabbedServiceView.xaml`.
+   `FileConversionsViewModel`'s constructor with its place in the picker (an output of a source, or
+   of one of its files), and a view built from `SourceFilesCard`, `CrcDefaultsCard` and `RunCard`,
+   with its `DataTemplate` in `FileConversionsView.xaml`.
 
 ## Tests
 

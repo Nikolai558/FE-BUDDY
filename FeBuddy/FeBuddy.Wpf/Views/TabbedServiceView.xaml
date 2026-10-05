@@ -1,12 +1,11 @@
 <!--
-    TabbedServiceView  -  every tabbed service screen: AIRAC Services and File Conversions.
+    TabbedServiceView  -  a tabbed service screen: AIRAC Services.
 
     Built as tabs (TabbedServiceViewModel): a rail down the left, the selected tab's page
     on the right. AIRAC Services has a permanent General tab (the cycle, and which
     sub-services and outputs the run makes), a tab per sub-service (greyed out in the rail
     while it takes no part), a File Names tab, and a Preview Settings tab that summarises
-    everything and runs the service. File Conversions has one tab per conversion, each
-    with its own run button. Either way, once a run has started a Review tab shows how it
+    everything and runs the service. Once a run has started, a Review tab shows how it
     went. The rail runs down the left because AIRAC Service is expected to reach roughly
     twenty sub-services.
 
@@ -68,15 +67,6 @@
         <DataTemplate DataType="{x:Type vm:FileNamesViewModel}">
             <local:FileNamesView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
-            <local:DatToGeojsonView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:SctToGeojsonViewModel}">
-            <local:SctToGeojsonView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:EramToGeojsonViewModel}">
-            <local:EramToGeojsonView />
-        </DataTemplate>
         <DataTemplate DataType="{x:Type tabs:ServicePreviewTabViewModel}">
             <local:ServicePreviewTabView />
         </DataTemplate>
@@ -105,11 +95,9 @@
                 <WrapPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
                            Orientation="Horizontal" Margin="0,-4,0,-4">
                     <Button Style="{StaticResource Button.Ghost}" Content="Previous"
-                            Command="{Binding PreviousCommand}" Margin="8,4,0,4"
-                            Visibility="{Binding HasStepNavigation, Converter={StaticResource BoolToVis}}" />
+                            Command="{Binding PreviousCommand}" Margin="8,4,0,4" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Next"
-                            Command="{Binding NextCommand}" Margin="8,4,0,4"
-                            Visibility="{Binding HasStepNavigation, Converter={StaticResource BoolToVis}}" />
+                            Command="{Binding NextCommand}" Margin="8,4,0,4" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Preview settings"
                             Command="{Binding GoToPreviewCommand}" Margin="8,4,0,4"
                             Visibility="{Binding HasPreviewTab, Converter={StaticResource BoolToVis}}" />

@@ -1,0 +1,188 @@
+<!--
+    FileConversionsView  -  the File Conversions screen (FileConversionsViewModel).
+
+    It opens on a picker: Source, then File when the source has a choice of them, then Output -
+    each a list of radio rows with a line under each, the next list appearing once the one above
+    has a pick - and Continue under the conversion picked. Continue opens that conversion's page
+    in place of the picker, with a back arrow beside its name, its Save / Undo bar pinned under
+    that, and the page's own view, whose Run card at the foot starts the conversion. The last
+    run's results appear under the Run card, scrolled into view when a run starts.
+
+    The radio rows have no GroupName: ConversionChoice and its screen keep one ticked per list.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.FileConversionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:vmm="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:local="clr-namespace:FeBuddy.Wpf.Views"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:FileConversionsViewModel}"
+             d:DesignWidth="1100" d:DesignHeight="760">
+
+    <UserControl.Resources>
+        <!-- one conversion view-model -> its page -->
+        <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
+            <local:DatToGeojsonView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SctToGeojsonViewModel}">
+            <local:SctToGeojsonView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:EramToGeojsonViewModel}">
+            <local:EramToGeojsonView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type tabs:ServiceRunReviewTabViewModel}">
+            <local:ServiceRunReviewTabView />
+        </DataTemplate>
+
+        <!-- one row of a picker list: its radio button, and the line under it -->
+        <DataTemplate x:Key="ChoiceRow" DataType="{x:Type vmm:ConversionChoice}">
+            <ctl:Option Margin="0,4,0,6" Description="{Binding Description}">
+                <RadioButton Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+            </ctl:Option>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+
+        <!-- ============ the picker, while no conversion is open ============ -->
+        <Grid>
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Page}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- pinned page header -->
+            <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+                <TextBlock Text="{Binding ScreenTitle}" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
+                <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          bhv:WheelScroll.Amplify="3">
+                <StackPanel Margin="28,18,28,28">
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
+                               Text="Pick what you're converting and what you want from it, then Continue to its settings." />
+
+                    <ctl:Card Header="Source">
+                        <ItemsControl ItemsSource="{Binding Sources}" ItemTemplate="{StaticResource ChoiceRow}" Focusable="False" />
+                    </ctl:Card>
+
+                    <ctl:Card Header="File" Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl ItemsSource="{Binding Files}" ItemTemplate="{StaticResource ChoiceRow}" Focusable="False" />
+                    </ctl:Card>
+
+                    <ctl:Card Header="Output" Visibility="{Binding HasOutputs, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl ItemsSource="{Binding Outputs}" ItemTemplate="{StaticResource ChoiceRow}" Focusable="False" />
+                    </ctl:Card>
+
+                    <!-- the conversion picked, and the button that opens it -->
+                    <ctl:Card Visibility="{Binding HasOutputs, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" VerticalAlignment="Center"
+                                    Margin="16,0,0,0" MinWidth="110" Content="Continue" Command="{Binding ContinueCommand}" />
+                            <TextBlock Text="{Binding PickSummary}" Style="{StaticResource Text.Body.Strong}"
+                                       TextWrapping="Wrap" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </ctl:Card>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ============ the open conversion, in place of the picker ============ -->
+        <Grid>
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Page}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- pinned page header: back, then the conversion's name -->
+            <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+                <StackPanel Orientation="Horizontal" Margin="16,24,28,14">
+                    <Button Style="{StaticResource Button.Icon}" VerticalAlignment="Center" Margin="0,4,4,0"
+                            Content="{StaticResource Icon.Chevron.Left}" FontFamily="{StaticResource Font.Icon}" FontSize="15.5"
+                            Command="{Binding BackCommand}" ToolTip="Back to File Conversions" />
+                    <TextBlock Text="{Binding Page.Title}" Style="{StaticResource Text.Display}" />
+                </StackPanel>
+                <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+            </Grid>
+
+            <!-- pinned action bar: the page's own Save and Undo. The label takes the width it needs
+                 first, and the buttons flow onto a second row when the window is too narrow. -->
+            <Grid Grid.Row="1" Background="{StaticResource Brush.Bg.Base}">
+                <Grid Margin="28,16,28,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0"
+                               Style="{StaticResource Text.Caption}" TextWrapping="NoWrap"
+                               Foreground="{StaticResource Brush.Warn}" Text="Unsaved changes"
+                               Visibility="{Binding Page.IsDirty, Converter={StaticResource BoolToVis}}" />
+
+                    <WrapPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Orientation="Horizontal" Margin="0,-4,0,-4">
+                        <Button Style="{StaticResource Button.Ghost}" Content="Undo all changes"
+                                Command="{Binding Page.RevertChangesCommand}" Margin="8,4,0,4"
+                                ToolTip="Discard the unsaved edits on this page and go back to its last saved settings." />
+                        <Button Style="{StaticResource Button.Ghost}" Content="Undo last save"
+                                Command="{Binding Page.UndoLastSaveCommand}" Margin="8,4,0,4"
+                                ToolTip="Step this page's saved settings back to the previous save." />
+                        <Button Style="{StaticResource Button.Primary}" Content="Save" MinWidth="90"
+                                Command="{Binding Page.SaveCommand}" Margin="8,4,0,4" />
+                    </WrapPanel>
+                </Grid>
+                <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+            </Grid>
+
+            <!-- one scroller for every page, so opening a page starts it at the top -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          bhv:WheelScroll.Amplify="3" bhv:ScrollToTop.When="{Binding Page}">
+                <StackPanel Margin="28,18,28,28">
+                    <ContentControl Content="{Binding Page}" Focusable="False" />
+
+                    <!-- the page's last run, under its Run card -->
+                    <StackPanel bhv:BringIntoView.When="{Binding Results.IsRunning}">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Results}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <ctl:SectionHeader Label="Last run" Margin="0,10,0,10" />
+                        <ContentControl Content="{Binding Results}" Focusable="False" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

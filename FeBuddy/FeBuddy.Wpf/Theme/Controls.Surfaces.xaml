@@ -357,8 +357,8 @@
     </Style>
 
     <!-- ========================== TAB RAIL ========================== -->
-    <!-- The vertical tab strip inside a first-tier service screen (AIRAC Service and
-         File Conversions today; Data Viewers / Health Services later). It runs
+    <!-- The vertical tab strip inside a first-tier service screen (AIRAC Service
+         today; perhaps Data Viewers / Health Services later). It runs
          down the left of the page rather than across the top because a service is
          expected to reach roughly twenty sub-service tabs: a column keeps every
          tab visible and readable at full width, where a horizontal strip would

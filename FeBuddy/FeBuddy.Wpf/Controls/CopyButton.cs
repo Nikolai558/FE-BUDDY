@@ -24,7 +24,7 @@ public sealed class CopyButton : Button
 	/// <summary>Creates the button. Its "Copy" tooltip comes from the Copy.Button style.</summary>
 	/// <remarks>
 	/// Not set here: a value set in the constructor is a local value, which outranks one set on the
-	/// button inside a template (a Review tab message group's "Copy these 3 messages"), so that
+	/// button inside a template (a run review's message group's "Copy these 3 messages"), so that
 	/// one would never show. A style's value gives way to both.
 	/// </remarks>
 	public CopyButton()

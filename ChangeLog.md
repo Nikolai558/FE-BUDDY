@@ -18,6 +18,17 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### File Conversions
+- File Conversions opens on a picker: choose the **Source** (FAA Radar Video Map .dat files, Legacy
+  Sector File (.sct2) or FAA ERAM Adaptation Files, then Geomaps.xml) and the **Output**, then
+  **Continue** to that conversion's settings. The back arrow returns to the picker, and a
+  conversion's results now show under its **Convert** button.
+
+### Dev notes
+- File Conversions has its own screen, `FileConversionsView`, instead of `TabbedServiceView`: the
+  picker is a tree of `ConversionChoice`s in `FileConversionsViewModel`, and each conversion keeps
+  its last run's results. `TabbedServiceViewModel.HasStepNavigation` is gone (only File Conversions
+  turned it off).
 
 ---
 

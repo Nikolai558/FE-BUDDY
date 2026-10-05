@@ -24,6 +24,6 @@ public interface ICrcDefaultsSettings
 	/// <summary>The Text defaults in use: one row per class.</summary>
 	IReadOnlyList<EramClassDefault> TextDefaultsInUse { get; }
 
-	/// <summary>The tab's validation messages; the card is outlined while <see cref="ServiceAreas.CrcDefaults"/> has one.</summary>
+	/// <summary>The tab's or page's validation messages; the card is outlined while <see cref="ServiceAreas.CrcDefaults"/> has one.</summary>
 	ServiceFieldErrors FieldErrors { get; }
 }

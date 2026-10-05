@@ -4,7 +4,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
 /// The Run card (<c>Views/Cards/RunCard</c>): the one button that starts a run, at the foot of
-/// the tab that owns it - the Preview Settings tab of AIRAC Services, or a conversion tab.
+/// the tab or page that owns it - the Preview Settings tab of AIRAC Services, or a conversion's page.
 /// </summary>
 public interface IRunAction
 {

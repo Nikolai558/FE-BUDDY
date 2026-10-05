@@ -1,8 +1,8 @@
 <!--
-    SourceFilesCard  -  the first card (under the AttentionCard) on every file-conversion tab: what
+    SourceFilesCard  -  the first card (under the AttentionCard) on every file-conversion page: what
     to convert. Either every matching file in a folder (remembered) or files picked one or several
-    at a time (not remembered). Binds to the tab's view model through ISourceFileSettings; the
-    tab's FileTypeLabel supplies the wording (".dat", ".sct2 / .sct"). A conversion that takes one
+    at a time (not remembered). Binds to the page's view model through ISourceFileSettings; the
+    page's FileTypeLabel supplies the wording (".dat", ".sct2 / .sct"). A conversion that takes one
     file per run (OneSourceFileOnly: ERAM's Geomaps file) is worded for one file.
 
     Usage:

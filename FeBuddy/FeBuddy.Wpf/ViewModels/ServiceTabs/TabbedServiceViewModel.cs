@@ -15,11 +15,10 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// <remarks>
 /// <para>
 /// The model is deliberately generic. AIRAC Service uses every part of it: a General tab to pick
-/// sub-services, and one Preview Settings tab that runs them all together. File Conversions has
-/// neither - every conversion is always on the rail and runs on its own from its own tab. Data
-/// Viewers and File Health Services are expected to take one of those two shapes, and AIRAC
-/// Service alone is expected to reach roughly twenty sub-services - so tabs are data, built in
-/// code and put in the rail as the screen needs them, never hand-placed in XAML.
+/// sub-services, and one Preview Settings tab that runs them all together. AIRAC Service alone is
+/// expected to reach roughly twenty sub-services - so tabs are data, built in code and put in the
+/// rail as the screen needs them, never hand-placed in XAML. (File Conversions is not tabbed: it
+/// opens one conversion at a time from a picker - see <see cref="FileConversionsViewModel"/>.)
 /// </para>
 /// <para>
 /// Navigation goes through <see cref="NextCommand"/> / <see cref="PreviousCommand"/> /
@@ -63,12 +62,6 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 	/// <b>Preview settings</b> button only when it does.
 	/// </summary>
 	public bool HasPreviewTab => PreviewTab is not null;
-
-	/// <summary>
-	/// Whether the action bar shows <b>Previous</b> / <b>Next</b>. They suit a screen whose tabs
-	/// are steps towards one run; a screen of standalone tabs leaves moving between them to the rail.
-	/// </summary>
-	public virtual bool HasStepNavigation => true;
 
 	/// <summary><see langword="true"/> while a run is in progress.</summary>
 	public bool IsRunning
@@ -135,13 +128,13 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 
 	/// <summary>
 	/// The permanent first tab - the service's own settings and the sub-service picker - or
-	/// <see langword="null"/> for a screen whose sub-services are always on the rail.
+	/// <see langword="null"/> for a screen whose tabs are always on the rail.
 	/// </summary>
 	protected virtual ServiceTabViewModel? GeneralTab => null;
 
 	/// <summary>
 	/// The settings-preview tab that runs every sub-service together, present while at least one
-	/// takes part; or <see langword="null"/> for a screen whose sub-services each run from their own tab.
+	/// takes part; or <see langword="null"/> for a screen with no such tab.
 	/// </summary>
 	protected virtual ServicePreviewTabViewModel? PreviewTab => null;
 
@@ -205,11 +198,11 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 	}
 
 	/// <summary>
-	/// Offers to save <paramref name="tab"/> when it is dirty.
+	/// Offers to save <paramref name="tab"/> when it is dirty. Also used by File Conversions' back arrow.
 	/// </summary>
 	/// <param name="tab">The tab being left.</param>
 	/// <returns><see langword="true"/> when it is safe to leave the tab.</returns>
-	protected static bool ConfirmLeave(ServiceTabViewModel? tab)
+	internal static bool ConfirmLeave(ServiceTabViewModel? tab)
 	{
 		if (tab is null || !tab.IsDirty)
 		{

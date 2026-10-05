@@ -17,14 +17,14 @@ using Microsoft.Win32;
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// Base for a conversion tab that turns source files into GeoJSON (DAT to GeoJSON, SCT2 to
-/// GeoJSON): everything those tabs share - the source (a saved folder, or files picked one or
+/// Base for a conversion page that turns source files into GeoJSON (DAT to GeoJSON, SCT2 to
+/// GeoJSON): everything those pages share - the source (a saved folder, or files picked one or
 /// several at a time and not saved), the CRC ERAM defaults for the kinds the conversion writes,
 /// the save contract, the settings block's common keys and the run's description.
 /// </summary>
 /// <remarks>
 /// <para>
-/// A derived tab passes its CRC class and whether it writes text to the constructor, calls
+/// A derived page passes its CRC class and whether it writes text to the constructor, calls
 /// <see cref="SubServiceSettingsViewModel.LoadFromConfig"/> at the end of its own constructor,
 /// and adds only what is its own through <see cref="LoadOwnSettings"/>,
 /// <see cref="SaveOwnSettings"/>, <see cref="ValidateOwnSettings"/>, <see cref="AddOwnSettings"/>
@@ -75,7 +75,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		});
 	}
 
-	// ================= for the derived tab =================
+	// ================= for the derived page =================
 
 	/// <inheritdoc />
 	public abstract string FileTypeLabel { get; }
@@ -88,7 +88,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 
 	/// <summary>
 	/// Whether a folder file with the right extension is one this conversion reads; the folder
-	/// summary counts only those. Every one, unless a tab looks closer - ERAM picks
+	/// summary counts only those. Every one, unless a page looks closer - ERAM picks
 	/// <c>Geomaps.xml</c> out of a whole adaptation export, as its service does.
 	/// </summary>
 	/// <param name="path">The file.</param>
@@ -96,7 +96,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	protected virtual bool IsSourceFile(string path) => true;
 
 	/// <inheritdoc />
-	/// <remarks>Off unless a tab turns it on: most conversions take any number of files.</remarks>
+	/// <remarks>Off unless a page turns it on: most conversions take any number of files.</remarks>
 	public virtual bool OneSourceFileOnly => false;
 
 	// ================= source =================
@@ -184,10 +184,10 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	/// <summary>Every conversion writes lines; always <see langword="true"/>.</summary>
 	public bool EmitLines { get => true; set { } }
 
-	/// <summary>Whether the conversion writes symbols; fixed by the tab.</summary>
+	/// <summary>Whether the conversion writes symbols; fixed by the page.</summary>
 	public bool EmitSymbols { get => SymbolDefaults.Count > 0; set { } }
 
-	/// <summary>Whether the conversion writes labels; fixed by the tab.</summary>
+	/// <summary>Whether the conversion writes labels; fixed by the page.</summary>
 	public bool EmitText { get => TextDefaults.Count > 0; set { } }
 
 	/// <summary>The Line defaults: one row, for the conversion's CRC class.</summary>
@@ -223,7 +223,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	public IReadOnlyList<EramClassDefault> TextDefaultsInUse => TextDefaults;
 
 	/// <summary>
-	/// Whether the CRC ERAM Defaults card is in use. Always, unless a tab takes its defaults from
+	/// Whether the CRC ERAM Defaults card is in use. Always, unless a page takes its defaults from
 	/// somewhere else - ERAM can carry over the source file's own - in which case the card is
 	/// hidden, nothing on it is required, and nothing on it is sent.
 	/// </summary>
@@ -318,7 +318,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 
 	/// <summary>
 	/// Passes the library's progress straight on, on the thread it arrives on, for a derived
-	/// tab's <see cref="ConversionTabViewModel.Execute"/>.
+	/// page's <see cref="ConversionTabViewModel.Execute"/>.
 	/// </summary>
 	/// <param name="reportStep">The screen's step reporter.</param>
 	/// <returns>The progress sink to hand the library.</returns>
@@ -403,23 +403,23 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		}
 	}
 
-	/// <summary>Restores the tab's own settings from config, without marking it dirty. The base has none.</summary>
+	/// <summary>Restores the page's own settings from config, without marking it dirty. The base has none.</summary>
 	protected virtual void LoadOwnSettings()
 	{
 	}
 
-	/// <summary>Writes the tab's own settings with <c>Set</c>. The base has none.</summary>
+	/// <summary>Writes the page's own settings with <c>Set</c>. The base has none.</summary>
 	protected virtual void SaveOwnSettings()
 	{
 	}
 
-	/// <summary>Checks the tab's own settings. The base has none.</summary>
+	/// <summary>Checks the page's own settings. The base has none.</summary>
 	/// <param name="validation">The collector to add failures to.</param>
 	protected virtual void ValidateOwnSettings(ServiceValidation validation)
 	{
 	}
 
-	/// <summary>Adds the tab's own keys to the settings block. The base adds none.</summary>
+	/// <summary>Adds the page's own keys to the settings block. The base adds none.</summary>
 	/// <param name="settings">The settings block being built.</param>
 	protected virtual void AddOwnSettings(Dictionary<string, string> settings)
 	{

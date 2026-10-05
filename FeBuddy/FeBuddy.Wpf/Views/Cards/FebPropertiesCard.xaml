@@ -1,7 +1,7 @@
 <!--
     FebPropertiesCard  -  the FE-Buddy Properties card on the GeoJSON sub-service tabs (all but Wx
     Stations, which has no feb.* properties) and ERAM to GeoJSON: the master switch, then one box
-    per feb.* property the tab can write. Binds to the tab's view model through
+    per feb.* property it can write. Binds to the tab's or page's view model through
     IFebPropertySettings; the property list is the only thing that differs.
 
     Usage:

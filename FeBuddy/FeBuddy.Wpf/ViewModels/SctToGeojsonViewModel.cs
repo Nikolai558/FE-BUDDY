@@ -6,19 +6,19 @@ using FeBuddy.Core.Application.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>SCT2 to GeoJSON</b> tab on the File Conversions screen: converts VRC sector files into
+/// The <b>SCT2 to GeoJSON</b> page on the File Conversions screen: converts VRC sector files into
 /// CRC-ready GeoJSON - a folder per sector file holding its boundaries, airways, GEO, labels,
 /// regions and a file per SID and STAR diagram.
 /// </summary>
 /// <remarks>
-/// Everything this tab offers comes from <see cref="FileConversionTabViewModel"/>: the source, and
+/// Everything this page offers comes from <see cref="FileConversionTabViewModel"/>: the source, and
 /// CRC ERAM defaults for lines and for the labels' text.
 /// </remarks>
 public sealed class SctToGeojsonViewModel : FileConversionTabViewModel
 {
 	private const string Node = "Services.FileConversions.SctToGeojson";
 
-	/// <summary>Builds the tab and restores its saved settings.</summary>
+	/// <summary>Builds the page and restores its saved settings.</summary>
 	public SctToGeojsonViewModel()
 		: base(SctToGeojsonSettingsParser.CrcClassName, writesSymbols: false, writesText: true)
 	{

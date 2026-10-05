@@ -23,7 +23,7 @@ public sealed class ServiceTabValidationTests
 		Assert.Equal("No files are ticked.", tab.FieldErrors["Files"]);
 		Assert.Equal("Set a region.", tab.FieldErrors["Roi"]);
 		Assert.Equal(ServiceTabStatus.Invalid, tab.Status);
-		Assert.Equal("3 things on this tab need your attention. Their areas are outlined in red below.", tab.ValidationSummary);
+		Assert.Equal("3 things on this page need your attention. Their areas are outlined in red below.", tab.ValidationSummary);
 	}
 
 	[Fact]
@@ -33,7 +33,7 @@ public sealed class ServiceTabValidationTests
 
 		tab.Revalidate();
 
-		Assert.Equal("One thing on this tab needs your attention. Its area is outlined in red below.", tab.ValidationSummary);
+		Assert.Equal("One thing on this page needs your attention. Its area is outlined in red below.", tab.ValidationSummary);
 	}
 
 	/// <summary>Validation runs on every keystroke, so the list is only replaced when it changes.</summary>

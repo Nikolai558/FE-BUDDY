@@ -9,11 +9,11 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// One sub-service's block on the Review tab after a finished run: what it produced, and its
-/// warnings and routine notices, each behind its own toggle.
+/// One sub-service's block in a finished run's review (the Review tab, or under a conversion's
+/// Run card): what it produced, and its warnings and routine notices, each behind its own toggle.
 /// </summary>
 /// <remarks>
-/// Errors and advisories (<see cref="ServiceMessage.IsAdvisory"/>) are left out: the Review tab
+/// Errors and advisories (<see cref="ServiceMessage.IsAdvisory"/>) are left out: the run's review
 /// already lists them in its own ERRORS and ADVISORIES cards, for every sub-service at once.
 /// The warnings and routine notices both start collapsed on every run, like the Dashboard
 /// activity log - a run can report hundreds of them.

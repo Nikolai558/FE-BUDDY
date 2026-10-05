@@ -1,7 +1,7 @@
 <!--
     CrcDefaultsCard  -  the CRC ERAM Defaults card: a CrcDefaultsPanel per kind of file, always
-    Lines | Symbols | Text. Binds to the tab's view model through ICrcDefaultsSettings; the tab
-    supplies only the panel titles.
+    Lines | Symbols | Text. Binds to the tab's or page's view model through ICrcDefaultsSettings;
+    it supplies only the panel titles.
 
     An AIRAC sub-service puts a CrcFileChoice in Choice: which of its GeoJSON files get CRC-ERAM
     defaults. The card shows while the tab writes a GeoJSON file, a panel only while a file of its

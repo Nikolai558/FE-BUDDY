@@ -57,8 +57,10 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
   early).
 - **Sub-Services** - tick **Include** for each sub-service to run, and the files it makes:
   **Alias**, **GeoJSON**, and Procedures' **Procedure Changes** and **Procedures JSON**. All are on
-  until you first save. One left out is greyed out in the list to the left and keeps its settings.
-  Concatenate Aliases comes in by itself while an alias file is ticked.
+  until you first save. Unticking **Include** unticks its files, and ticking it ticks them all; untick
+  its last file and it's left out, tick one and it's back in. One left out is greyed out in the list
+  to the left and keeps its settings. Concatenate Aliases comes in by itself while an alias file is
+  ticked.
 
 ### The cards most tabs share
 
@@ -176,6 +178,9 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
   **Airports** you list (FAA or ICAO ID), plus every airport in the region if ticked; **Procedures at
   Any Airport**, by name; and **Airport + Procedure** pairs. **Chart Types** sets which kinds of chart
   a whole airport adds; a procedure picked by name is always included.
+- **Airports** takes a list: type or paste up to 100 IDs, separated by spaces, commas or new lines,
+  and press Enter or **Add**. Any it can't add stay in the box, with why underneath: not an airport
+  this cycle, already listed, or already included by a ticked facility or the region.
 - **Procedures.json Fields** - the optional fields the JSON carries.
 - **Region of Interest** - only decides which airports *Also include every airport inside the region
   of interest* adds. Nothing is clipped.
@@ -277,15 +282,17 @@ many files were written, with **Open output folder**.
 
 ## File Conversions
 
-Converts files you already have into GeoJSON; it doesn't need the AIRAC data. Each tab runs on its
-own from its **Convert…** button (offering to save first), and shows the outcome on a **Review** tab.
-Each has **Source Files** - every matching file in a folder (remembered), or files you pick
-(forgotten when FE-Buddy closes) - and **CRC ERAM Defaults**, written into every file unless you
-untick **Include**. A record that can't be read is skipped and listed on the Review tab.
+Converts files you already have into GeoJSON; it doesn't need the AIRAC data. Pick the **Source**
+(for ERAM, then the **File**) and the **Output**, then **Continue** to that conversion's page; the
+back arrow returns to the picker. Each page has **Source Files** - every matching file in a folder
+(remembered), or files you pick (forgotten when FE-Buddy closes) - and **CRC ERAM Defaults**,
+written into every file unless you untick **Include**. **Convert…** at the foot runs it (offering to
+save first), and the results show under it. A record that can't be read is skipped and listed there.
 
 ### DAT to GeoJSON
 
-FAA `.dat` RADAR Video Maps, one `.geojson` each, with the same name. CRC ERAM Defaults: Lines only.
+Source **FAA Radar Video Map .dat files**: FAA `.dat` RADAR Video Maps, one `.geojson` each, with the
+same name. CRC ERAM Defaults: Lines only.
 
 - **Cropping** - keep only what's within this many NM of the map's point of tangency; blank converts
   the whole map. A line crossing the edge is cut there, not dropped. The distance applies to every
@@ -293,16 +300,18 @@ FAA `.dat` RADAR Video Maps, one `.geojson` each, with the same name. CRC ERAM D
 
 ### SCT2 to GeoJSON
 
-VRC sector files (`.sct2` or `.sct`), each into a folder of its own: `ARTCC`, `ARTCC-HIGH`,
-`ARTCC-LOW`, `LOW-AIRWAY`, `HIGH-AIRWAY`, `GEO`, `LABELS` and `REGIONS` (as filled areas), plus a
-file per diagram in `SID\` and `STAR\`. Airports, VORs, NDBs and fixes aren't written; their names
-only locate points. Lines are joined back up, so files stay small and dashes stay dashed. CRC ERAM
-Defaults has a Lines panel and a Labels panel. VRC colours aren't carried over.
+Source **Legacy Sector File (.sct2)**: VRC sector files (`.sct2` or `.sct`), each into a folder of
+its own: `ARTCC`, `ARTCC-HIGH`, `ARTCC-LOW`, `LOW-AIRWAY`, `HIGH-AIRWAY`, `GEO`, `LABELS` and
+`REGIONS` (as filled areas), plus a file per diagram in `SID\` and `STAR\`. Airports, VORs, NDBs and
+fixes aren't written; their names only locate points. Lines are joined back up, so files stay small
+and dashes stay dashed. CRC ERAM Defaults has a Lines panel and a Labels panel. VRC colours aren't
+carried over.
 
 ### ERAM to GeoJSON
 
-The `Geomaps.xml` of an ERAM adaptation export, into an `ERAM_TO_GEOJSON` folder. Each map is named
-after its `GeomapId` and button label: `CENTER_CENTER-MAP`.
+Source **FAA ERAM Adaptation Files**, file **Geomaps.xml**: the `Geomaps.xml` of an ERAM adaptation
+export, into an `ERAM_TO_GEOJSON` folder. Each map is named after its `GeomapId` and button label:
+`CENTER_CENTER-MAP`.
 
 - **Source Files** - `Geomaps.xml`, or a folder (the whole unzipped export works). One per run.
 - **Output Layout** (hover each for the files it writes):
@@ -325,7 +334,7 @@ after its `GeomapId` and button label: `CENTER_CENTER-MAP`.
 - **Each run empties `ERAM_TO_GEOJSON` first** (it asks before it does). Move out anything you want
   to keep.
 
-A value CRC can't draw (a `DME` symbol, say) is left out, and the Review tab says what CRC will draw
+A value CRC can't draw (a `DME` symbol, say) is left out, and the results say what CRC will draw
 instead. Text ERAM keeps hidden is left out, and ERAM's colours aren't carried over.
 
 ## Output files

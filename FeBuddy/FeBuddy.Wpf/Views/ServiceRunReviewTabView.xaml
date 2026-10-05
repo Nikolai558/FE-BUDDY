@@ -4,7 +4,8 @@
     how far each sub-service has got, anything that went wrong, the advisories, each
     sub-service's results with its warnings and routine notices (each collapsed behind a toggle,
     in groups that can each be copied), and the way out to the files. The sub-service tabs hold
-    settings only.
+    settings only. File Conversions has no Review tab: it shows this same content under a
+    conversion's Run card.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ServiceRunReviewTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -123,7 +124,7 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <!-- No ScrollViewer here: the host (the tab host, or the File Conversions screen) owns the one page-level scroller. -->
     <StackPanel>
 
         <!-- how far each sub-service has got -->
@@ -159,7 +160,7 @@
             </StackPanel>
         </ctl:Card>
 
-        <!-- the run finished and reported nothing: say so rather than showing an empty tab -->
+        <!-- the run finished and reported nothing: say so rather than showing an empty review -->
         <ctl:Card>
             <ctl:Card.Style>
                 <Style TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">

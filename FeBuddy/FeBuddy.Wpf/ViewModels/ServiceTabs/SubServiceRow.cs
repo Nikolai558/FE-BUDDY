@@ -1,8 +1,6 @@
 using System.Runtime.CompilerServices;
-using System.Windows;
 
 using FeBuddy.Wpf.Mvvm;
-using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
@@ -14,9 +12,10 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// <remarks>
 /// <para>
 /// An output the sub-service doesn't offer is always off, and its box is greyed out with a
-/// tooltip saying so. An included sub-service keeps at least one output on: unticking the last is
-/// refused, with a reminder that unticking Include is how to make nothing for it. The outputs of a
-/// sub-service that isn't included are kept as they were and greyed out.
+/// tooltip saying so. Include always matches "at least one output on" (issue #308): unticking
+/// Include unticks every output, and ticking it ticks every output the sub-service offers;
+/// unticking the last output unticks Include, and ticking an output of a sub-service left out
+/// ticks Include with just that output on.
 /// </para>
 /// <para>
 /// The tooltips come from the sub-service's <see cref="SubServiceHelp"/>, each ending with where
@@ -27,9 +26,6 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// <param name="onChanged">Called after the user changes anything on the row.</param>
 public sealed class SubServiceRow(SubServiceDescriptor descriptor, Action onChanged) : ObservableObject, ISubServiceOutputs
 {
-	private static readonly string[] EditStateNames =
-		[nameof(CanEditAlias), nameof(CanEditGeojson), nameof(CanEditProcedureChanges), nameof(CanEditProceduresJson)];
-
 	private readonly Action _onChanged = onChanged;
 	private bool _isIncluded = true;
 	private bool _alias = true;
@@ -46,17 +42,24 @@ public sealed class SubServiceRow(SubServiceDescriptor descriptor, Action onChan
 	/// <summary>The name shown in the table.</summary>
 	public string DisplayName => Descriptor.DisplayName;
 
-	/// <summary>Whether the sub-service is in the run. Its tab is greyed out in the rail while it is not.</summary>
+	/// <summary>
+	/// Whether the sub-service is in the run. Ticking it ticks every output it offers, and unticking
+	/// it unticks them all. Its tab is greyed out in the rail while it is not.
+	/// </summary>
 	public bool IsIncluded
 	{
 		get => _isIncluded;
 		set
 		{
-			if (SetProperty(ref _isIncluded, value))
+			if (_isIncluded == value)
 			{
-				RaiseEditStates();
-				_onChanged();
+				return;
 			}
+
+			_isIncluded = value;
+			_alias = _geojson = _procedureChanges = _proceduresJson = value;
+			RaiseRow();
+			_onChanged();
 		}
 	}
 
@@ -105,18 +108,6 @@ public sealed class SubServiceRow(SubServiceDescriptor descriptor, Action onChan
 	/// <summary>Whether the sub-service writes <c>Procedures.json</c> (Procedures).</summary>
 	public bool OffersProceduresJson => Descriptor.Outputs.HasFlag(SubServiceOutputKinds.ProceduresJson);
 
-	/// <summary>Whether the Alias box can be changed: offered, and the sub-service included.</summary>
-	public bool CanEditAlias => OffersAlias && IsIncluded;
-
-	/// <summary>Whether the GeoJSON box can be changed.</summary>
-	public bool CanEditGeojson => OffersGeojson && IsIncluded;
-
-	/// <summary>Whether the Procedure Changes box can be changed.</summary>
-	public bool CanEditProcedureChanges => OffersProcedureChanges && IsIncluded;
-
-	/// <summary>Whether the Procedures JSON box can be changed.</summary>
-	public bool CanEditProceduresJson => OffersProceduresJson && IsIncluded;
-
 	/// <summary>What the sub-service is, and where its settings are: the Include box's and the name's tooltip.</summary>
 	public string IncludeToolTip => $"{Descriptor.Help?.Summary}\n{WhereSettingsAre}";
 
@@ -142,59 +133,47 @@ public sealed class SubServiceRow(SubServiceDescriptor descriptor, Action onChan
 	public void Load(bool included, SubServiceOutputKinds outputsOn)
 	{
 		_isIncluded = included;
-		_alias = outputsOn.HasFlag(SubServiceOutputKinds.Alias);
-		_geojson = outputsOn.HasFlag(SubServiceOutputKinds.Geojson);
-		_procedureChanges = outputsOn.HasFlag(SubServiceOutputKinds.ProcedureChanges);
-		_proceduresJson = outputsOn.HasFlag(SubServiceOutputKinds.ProceduresJson);
+		_alias = included && outputsOn.HasFlag(SubServiceOutputKinds.Alias);
+		_geojson = included && outputsOn.HasFlag(SubServiceOutputKinds.Geojson);
+		_procedureChanges = included && outputsOn.HasFlag(SubServiceOutputKinds.ProcedureChanges);
+		_proceduresJson = included && outputsOn.HasFlag(SubServiceOutputKinds.ProceduresJson);
 
-		// Settings saved with every output off (by hand) would leave it making nothing: all back on.
-		if (CountOn == 0)
+		// Included with every output off (settings edited by hand) would make nothing: all on, as
+		// ticking Include does.
+		if (included && CountOn == 0)
 		{
 			_alias = _geojson = _procedureChanges = _proceduresJson = true;
 		}
 
-		foreach (string name in new[] { nameof(IsIncluded), nameof(Alias), nameof(Geojson), nameof(ProcedureChanges), nameof(ProceduresJson) })
-		{
-			OnPropertyChanged(name);
-		}
-
-		RaiseEditStates();
+		RaiseRow();
 	}
 
 	private string OutputToolTip(bool offered, string? help, string what) => offered
 		? $"{help}\n{WhereSettingsAre}"
 		: $"{DisplayName} doesn't make {what}.";
 
+	/// <summary>Sets an output, then keeps Include matching "at least one output on".</summary>
 	private void SetOutput(ref bool field, bool value, [CallerMemberName] string? propertyName = null)
 	{
-		if (!value && field && CountOn == 1)
+		if (!SetProperty(ref field, value, propertyName))
 		{
-			Toast.Warn(
-				"Keep one output",
-				$"{DisplayName} needs at least one output on. To make nothing for it, untick it under Include.");
-
-			// The box has already changed; put it back once WPF has finished pushing the value in.
-			if (Application.Current?.Dispatcher is { } dispatcher)
-			{
-				dispatcher.BeginInvoke(() => OnPropertyChanged(propertyName));
-			}
-			else
-			{
-				OnPropertyChanged(propertyName);
-			}
-
 			return;
 		}
 
-		if (SetProperty(ref field, value, propertyName))
+		bool included = CountOn > 0;
+
+		if (_isIncluded != included)
 		{
-			_onChanged();
+			_isIncluded = included;
+			OnPropertyChanged(nameof(IsIncluded));
 		}
+
+		_onChanged();
 	}
 
-	private void RaiseEditStates()
+	private void RaiseRow()
 	{
-		foreach (string name in EditStateNames)
+		foreach (string name in new[] { nameof(IsIncluded), nameof(Alias), nameof(Geojson), nameof(ProcedureChanges), nameof(ProceduresJson) })
 		{
 			OnPropertyChanged(name);
 		}

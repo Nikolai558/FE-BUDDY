@@ -10,13 +10,13 @@ using FeBuddy.Core.Application.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>DAT to GeoJSON</b> tab on the File Conversions screen: converts FAA <c>.dat</c> RADAR
+/// The <b>DAT to GeoJSON</b> page on the File Conversions screen: converts FAA <c>.dat</c> RADAR
 /// Video Maps into CRC-ready GeoJSON, one file per map, optionally cropped to a distance from
 /// each map's point of tangency.
 /// </summary>
 /// <remarks>
 /// The source, CRC ERAM defaults (a video map is lines only), save contract and run description
-/// come from <see cref="FileConversionTabViewModel"/>; this tab adds the cropping distance.
+/// come from <see cref="FileConversionTabViewModel"/>; this page adds the cropping distance.
 /// </remarks>
 public sealed class DatToGeojsonViewModel : FileConversionTabViewModel
 {
@@ -24,7 +24,7 @@ public sealed class DatToGeojsonViewModel : FileConversionTabViewModel
 
 	private string _croppingDistance = string.Empty;
 
-	/// <summary>Builds the tab and restores its saved settings.</summary>
+	/// <summary>Builds the page and restores its saved settings.</summary>
 	public DatToGeojsonViewModel()
 		: base(DatToGeojsonSettingsParser.CrcClassName, writesSymbols: false, writesText: false)
 	{

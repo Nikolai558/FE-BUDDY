@@ -530,17 +530,11 @@ public sealed class ShellViewModel : ObservableObject
 			switch (item.CreatedViewModel)
 			{
 				case TabbedServiceViewModel service:
-					if (service.IsRunning)
-					{
-						work.Add($"A {service.ScreenTitle} run is in progress.");
-					}
+					AddServiceWork(work, service.ScreenTitle, service.IsRunning, service.Tabs);
+					break;
 
-					string[] dirty = [.. service.Tabs.Where(t => t.IsDirty).Select(t => t.Title)];
-					if (dirty.Length > 0)
-					{
-						work.Add($"{service.ScreenTitle}: {string.Join(", ", dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes.");
-					}
-
+				case FileConversionsViewModel conversions:
+					AddServiceWork(work, conversions.ScreenTitle, conversions.IsRunning, conversions.Conversions);
 					break;
 
 				case SettingsViewModel settings when settings.IsDirty:
@@ -550,6 +544,21 @@ public sealed class ShellViewModel : ObservableObject
 		}
 
 		return work;
+	}
+
+	// A service screen's part of DescribeUnfinishedWork: its run, and its pages with unsaved edits.
+	private static void AddServiceWork(List<string> work, string screenTitle, bool isRunning, IEnumerable<ServiceTabViewModel> pages)
+	{
+		if (isRunning)
+		{
+			work.Add($"A {screenTitle} run is in progress.");
+		}
+
+		string[] dirty = [.. pages.Where(t => t.IsDirty).Select(t => t.Title)];
+		if (dirty.Length > 0)
+		{
+			work.Add($"{screenTitle}: {string.Join(", ", dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes.");
+		}
 	}
 
 	private void UpdateZulu()

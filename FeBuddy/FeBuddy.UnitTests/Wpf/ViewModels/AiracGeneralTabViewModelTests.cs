@@ -84,30 +84,35 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		fixes.Load(included: true, SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson);
 
 		Assert.False(fixes.Alias);
-		Assert.False(fixes.CanEditAlias);
+		Assert.False(fixes.OffersAlias);
 		Assert.Equal("Fixes doesn't make an alias file.", fixes.AliasToolTip);
 		Assert.Equal("Fixes doesn't make Procedure_Changes.md; only Procedures does.", fixes.ProcedureChangesToolTip);
 		Assert.EndsWith("Its settings are on the Fixes tab, in the list to the left.", fixes.GeojsonToolTip);
 	}
 
 	[Fact]
-	public void the_last_output_of_an_included_sub_service_stays_on()
+	public void unticking_the_last_output_leaves_the_sub_service_out()
 	{
 		AiracGeneralTabViewModel general = new();
 		SubServiceRow airports = Row(general, AiracSubServices.AirportsKey);
 		SubServiceRow fixes = Row(general, AiracSubServices.FixesKey);
+		int changes = 0;
+		general.SubServicesChanged += (_, _) => changes++;
 
 		airports.Geojson = false;
+		Assert.True(airports.IsIncluded);
+
 		airports.Alias = false;
 		fixes.Geojson = false;
 
-		Assert.True(airports.Alias);
-		Assert.False(airports.Geojson);
-		Assert.True(fixes.Geojson);
+		Assert.False(general.IsIncluded(AiracSubServices.AirportsKey));
+		Assert.Equal(SubServiceOutputKinds.None, airports.OutputsOn);
+		Assert.False(general.IsIncluded(AiracSubServices.FixesKey));
+		Assert.Equal(3, changes);
 	}
 
 	[Fact]
-	public void leaving_a_sub_service_out_greys_out_its_outputs_and_keeps_them()
+	public void leaving_a_sub_service_out_unticks_its_outputs()
 	{
 		AiracGeneralTabViewModel general = new();
 		SubServiceRow airports = Row(general, AiracSubServices.AirportsKey);
@@ -117,12 +122,40 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		airports.IsIncluded = false;
 
 		Assert.False(general.IsIncluded(AiracSubServices.AirportsKey));
-		Assert.False(airports.CanEditAlias);
-		Assert.False(airports.CanEditGeojson);
-		Assert.True(airports.Alias);
-		Assert.True(airports.Geojson);
+		Assert.False(airports.Alias);
+		Assert.False(airports.Geojson);
+		Assert.True(airports.OffersAlias);
 		Assert.Equal(1, changes);
 		Assert.True(general.IsDirty);
+	}
+
+	[Fact]
+	public void including_a_sub_service_again_ticks_every_output_it_offers()
+	{
+		AiracGeneralTabViewModel general = new();
+		SubServiceRow procedures = Row(general, AiracSubServices.ProceduresKey);
+		procedures.ProceduresJson = false;
+		procedures.IsIncluded = false;
+
+		procedures.IsIncluded = true;
+
+		Assert.Equal(procedures.Descriptor.Outputs, procedures.OutputsOn);
+	}
+
+	[Fact]
+	public void ticking_an_output_of_a_sub_service_left_out_brings_it_in_with_just_that_output()
+	{
+		AiracGeneralTabViewModel general = new();
+		SubServiceRow airports = Row(general, AiracSubServices.AirportsKey);
+		airports.IsIncluded = false;
+		int changes = 0;
+		general.SubServicesChanged += (_, _) => changes++;
+
+		airports.Geojson = true;
+
+		Assert.True(general.IsIncluded(AiracSubServices.AirportsKey));
+		Assert.Equal(SubServiceOutputKinds.Geojson, airports.OutputsOn);
+		Assert.Equal(1, changes);
 	}
 
 	[Fact]
@@ -143,6 +176,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		AiracGeneralTabViewModel reloaded = new();
 		Assert.False(reloaded.IsIncluded(AiracSubServices.WxStationsKey));
+		Assert.Equal(SubServiceOutputKinds.None, Row(reloaded, AiracSubServices.WxStationsKey).OutputsOn);
 		Assert.False(Row(reloaded, AiracSubServices.AirportsKey).Geojson);
 		Assert.False(Row(reloaded, AiracSubServices.ProceduresKey).ProceduresJson);
 		Assert.True(Row(reloaded, AiracSubServices.ProceduresKey).ProcedureChanges);

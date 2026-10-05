@@ -18,6 +18,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+## 3.0.0-beta.3
 ### AIRAC Service
 - Feature #308 - On the General tab, a sub-service's **Include** now matches its files: untick its
   last file and it's left out, tick a file and it's back in. Unticking **Include** unticks its files,

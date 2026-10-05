@@ -15,6 +15,23 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ## 2026-10-05
 <!--
+PostId: 2026-10-05.2
+-->
+
+**Version 3.0.0-beta.3 Compiled!**
+
+More from your beta feedback
+
+- **File Conversions** starts by asking what you have: pick the source and output, then **Continue** to its settings. Results show right under **Convert**
+- **General** tab: untick a sub-service's last file and it's left out; tick any file and it's back in
+- **Procedures ▸ Airports** takes a list: paste up to 100 airport IDs and press **Enter**
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.3)!!!
+
+---
+
+## 2026-10-05
+<!--
 PostId: 2026-10-05.1
 -->
 

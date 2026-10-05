@@ -2,12 +2,13 @@
     TabbedServiceView  -  every tabbed service screen: AIRAC Services and File Conversions.
 
     Built as tabs (TabbedServiceViewModel): a rail down the left, the selected tab's page
-    on the right. AIRAC Services has a permanent General tab (cycle, facility, which
-    sub-services to produce), one tab per selected sub-service, and a Preview Settings
-    tab that summarises everything and runs the service. File Conversions has one tab
-    per conversion, each with its own run button. Either way, once a run has started a
-    Review tab shows how it went. The rail runs down the left because AIRAC Service is
-    expected to reach roughly twenty sub-services.
+    on the right. AIRAC Services has a permanent General tab (the cycle, and which
+    sub-services and outputs the run makes), a tab per sub-service (greyed out in the rail
+    while it takes no part), a File Names tab, and a Preview Settings tab that summarises
+    everything and runs the service. File Conversions has one tab per conversion, each
+    with its own run button. Either way, once a run has started a Review tab shows how it
+    went. The rail runs down the left because AIRAC Service is expected to reach roughly
+    twenty sub-services.
 
     The screen owns the single page-level scroller and the shared action bar
     (Save / Undo / Previous / Next / Preview), which is why the tab views themselves
@@ -75,9 +76,6 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:EramToGeojsonViewModel}">
             <local:EramToGeojsonView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type tabs:PlaceholderSubServiceViewModel}">
-            <local:PlaceholderSubServiceView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type tabs:ServicePreviewTabViewModel}">
             <local:ServicePreviewTabView />

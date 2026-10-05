@@ -94,7 +94,6 @@
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
     </Style>
 
-    <!-- Tiny uppercase section label ("OUTPUT MODE"). -->
     <!-- Multi-sentence explanatory copy: wraps, and stops at the prose measure so
          it stays readable when the window is maximised. Short one-line labels and
          values keep Text.Body / Text.Caption - capping those would do nothing but
@@ -105,6 +104,8 @@
         <Setter Property="HorizontalAlignment" Value="Left" />
     </Style>
 
+    <!-- Small bold label: a heading inside a card (SectionHeader.Group upper-cases it: "AMENDMENT
+         DATE"), and the column headings of the General tab's table and the Alias Command Guide's. -->
     <Style x:Key="Text.Label" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
         <Setter Property="FontSize" Value="11.5" />

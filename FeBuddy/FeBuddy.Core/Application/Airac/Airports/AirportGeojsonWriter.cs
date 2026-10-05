@@ -10,7 +10,8 @@ using NetTopologySuite.Geometries;
 namespace FeBuddy.Core.Application.Airac.Airports;
 
 /// <summary>
-/// Generates the Airports GeoJSON output: <c>Airports_Symbols.geojson</c>,
+/// Generates the Airports GeoJSON output: <c>Airports_Symbols.geojson</c> (a symbol per airport,
+/// those with the same properties grouped into one Feature, see <see cref="GeojsonFileSet"/>),
 /// <c>Airports_Text.geojson</c> (one Point per airport) and <c>Runways_Lines.geojson</c> (one
 /// MultiLineString per airport that has drawable runways).
 /// </summary>

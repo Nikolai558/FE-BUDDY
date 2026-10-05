@@ -21,10 +21,12 @@ using FeBuddy.UnitTests.Application.Airac.WxStations.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac;
 
 /// <summary>
-/// Exercises the <see cref="AiracService"/> orchestrator: it dispatches each sub-service
-/// (Airways, Airports, Departures) whose block is present and aggregates its result, writes every
-/// sub-service into the one <c>AIRAC_&lt;cycle&gt;</c> folder, handles an earlier run's files as
-/// asked, and is a safe no-op (with a warning) when nothing is selected.
+/// Exercises the <see cref="AiracService"/> orchestrator: it dispatches each sub-service whose
+/// block is present, with the supplemental data it needs, and aggregates its result, writes every
+/// sub-service into the one <c>AIRAC_&lt;cycle&gt;</c> folder with the duplicate-alias report,
+/// combines the alias files into <c>Combined_Alias.txt</c> as Concatenate Aliases asks, writes
+/// renamed files under their new names, handles an earlier run's files as asked, and is a safe
+/// no-op (with a warning) when nothing is selected.
 /// </summary>
 public sealed class AiracServiceTests : IDisposable
 {
@@ -985,9 +987,9 @@ public sealed class AiracServiceTests : IDisposable
 			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
 		};
 
-		// The two-argument overload supplies no supplemental data at all, so Dtpp is null: the
-		// Procedures sub-service must complete with its advisory rather than throwing, even
-		// though the NasrCsvDataCollection below has no Apt/ClsArsp parsed.
+		// Empty supplemental data has no Dtpp: the Procedures sub-service must complete with its
+		// advisory rather than throwing, even though the NasrCsvDataCollection below has no
+		// Apt/ClsArsp parsed.
 		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 
 		Assert.NotNull(result.Procedures);

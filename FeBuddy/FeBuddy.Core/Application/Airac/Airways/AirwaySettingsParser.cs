@@ -81,7 +81,7 @@ public static class AirwaySettingsParser
 		{
 			throw new ArgumentException(
 				"GenerateGeojson and GenerateAliasFile are both \"N\", so the Airways sub-service would produce nothing. " +
-				"Turn one back on, or deselect Airways.");
+				"Turn one back on, or leave Airways out of the run.");
 		}
 
 		// How the files are split only matters while they are written.

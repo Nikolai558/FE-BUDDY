@@ -18,10 +18,10 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// the FAA Chart Recall alias file <c>Faa_Chart_Recall.txt</c> for every airport in the metafile.
 /// </summary>
 /// <remarks>
-/// Unlike every other AIRAC sub-service, its data does not come from the NASR cycle alone - it also
-/// needs the selected cycle's FAA d-TPP Metafile (<c>dtpp</c> on <see cref="Run"/>), which the FAA
-/// publishes only 15-18 days before the cycle's effective date. A missing metafile is not an error:
-/// the run still completes, with an advisory warning and nothing written.
+/// Its data does not come from the NASR cycle alone - it also needs the selected cycle's FAA d-TPP
+/// Metafile (<c>dtpp</c> on <see cref="Run"/>), which the FAA publishes only 15-18 days before the
+/// cycle's effective date. A missing metafile is not an error: the run still completes, with an
+/// advisory warning and nothing written.
 /// </remarks>
 public static class ProcedureService
 {

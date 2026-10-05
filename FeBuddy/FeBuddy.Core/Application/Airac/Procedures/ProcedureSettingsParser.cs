@@ -13,8 +13,8 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// supplies for the Procedures sub-service into a typed, validated <see cref="ProcedureSettings"/>.
 /// </summary>
 /// <remarks>
-/// The only place in the Procedures sub-service that touches the raw dictionary. Unlike every
-/// other AIRAC sub-service, there is no GeoJSON and no <c>feb.*</c> properties -
+/// The only place in the Procedures sub-service that touches the raw dictionary. As with
+/// Telephony, there is no GeoJSON and no <c>feb.*</c> properties -
 /// <c>IncludeFebCustomProperties</c> is read only so it can say so.
 /// </remarks>
 public static class ProcedureSettingsParser
@@ -76,7 +76,7 @@ public static class ProcedureSettingsParser
 		{
 			throw new ArgumentException(
 				"'GenerateChangesDocument', 'GenerateProceduresJson' and 'GenerateAliasFile' are all \"N\", so the Procedures " +
-				"sub-service would produce nothing. Turn at least one back on, or deselect Procedures.");
+				"sub-service would produce nothing. Turn at least one back on, or leave Procedures out of the run.");
 		}
 
 		// The selection settings below pick what the two documents cover; the alias file covers every

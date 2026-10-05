@@ -5,7 +5,7 @@ using System.Windows.Controls;
 namespace FeBuddy.Wpf.Controls;
 
 /// <summary>
-/// The small uppercase heading that titles a block ("OUTPUT MODE", "RECENT OUTPUT").
+/// The small uppercase heading that titles a block ("NEWS", "AMENDMENT DATE").
 /// Lookless: its look lives in
 /// Theme/Controls.Surfaces.xaml, in two levels -
 /// <list type="bullet">
@@ -15,11 +15,11 @@ namespace FeBuddy.Wpf.Controls;
 /// </list>
 /// Write <see cref="Label"/> in normal case; the style upper-cases it.
 /// <code>
-/// &lt;ctl:SectionHeader Label="Output Mode" /&gt;
+/// &lt;ctl:SectionHeader Label="News" /&gt;
 ///
-/// &lt;ctl:SectionHeader Label="Recent Output"&gt;
+/// &lt;ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Lines"&gt;
 ///     &lt;ctl:SectionHeader.Aside&gt;
-///         &lt;Button Style="{StaticResource Button.Subtle}" Content="Open folder" /&gt;
+///         &lt;CheckBox Content="Include" IsChecked="{Binding IsIncluded}" /&gt;
 ///     &lt;/ctl:SectionHeader.Aside&gt;
 /// &lt;/ctl:SectionHeader&gt;
 /// </code>
@@ -46,7 +46,7 @@ public sealed class SectionHeader : Control
 	}
 
 	/// <summary>
-	/// Optional element shown right-aligned next to the label (e.g. a link button). It is this
+	/// Optional element shown right-aligned next to the label (e.g. an Include box). It is this
 	/// header's logical child, so its bindings find names and data from where it is declared even
 	/// before the template shows it - a header inside something hidden is never templated, and an
 	/// <c>ElementName</c> binding that fails then never recovers.

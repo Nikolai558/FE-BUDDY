@@ -16,8 +16,10 @@ Open work only. When an item is done, delete it - the commit is the record.
 ## Testing
 
 - **Test more of `FeBuddy.Wpf`.** Tested today (`FeBuddy.UnitTests/Wpf`): the map's logic and
-  `MapCanvas`, `BesideOrBelow`, `CommandTablePanel`, `InlineCode`, `InlineMarkdown`, and the view-models
-  of the Airways, File Names, Telephony and ERAM to GeoJSON tabs, the sub-service order, the Review
-  tab, Info, What's New, the Alias Command Guide, the Reset, Uninstall and update windows. The rest of
-  the view-model logic - the other tabs' settings blocks, dirty tracking, validation - could be
-  tested the same way, without a window.
+  `MapCanvas`, `BesideOrBelow`, `CommandTablePanel`, `InlineCode`, `InlineMarkdown`, the side nav,
+  the AIRAC Service and File Conversions screens, the view-models of the General, Airways,
+  Concatenate Aliases, File Names, Telephony and ERAM to GeoJSON tabs, the CRC-ERAM file choice, the
+  list of a tab's problems, the sub-service order, the Review tab, Info, What's New, the Alias
+  Command Guide, the Reset, Uninstall and update windows. The rest of the view-model logic - the
+  other tabs' settings blocks, dirty tracking, validation - could be tested the same way, without a
+  window.

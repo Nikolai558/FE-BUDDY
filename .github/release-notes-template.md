@@ -10,7 +10,7 @@
 
 <!-- END IF PRERELEASE -->
 ## Instructions to install:
-- **Already have FE-BUDDY 2.9 or newer:** Launch FE-BUDDY and accept the update prompt. It downloads and runs the new installer for you.
+- **Already have FE-BUDDY 2.9 or newer:** click **Update available!** at the top of FE-BUDDY's window (in 2.9.x, accept the update prompt). It downloads and runs the new installer for you.
 - **New install, or auto-update isn't working:** [Download {{MSI_NAME}}]({{MSI_URL}}), run it, and follow the prompts.
 
 

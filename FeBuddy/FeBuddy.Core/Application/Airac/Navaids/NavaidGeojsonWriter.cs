@@ -13,8 +13,8 @@ using NetTopologySuite.Features;
 namespace FeBuddy.Core.Application.Airac.Navaids;
 
 /// <summary>
-/// Generates the NAVAIDs GeoJSON output: Symbols and Text only, one Point per NAVAID. There is no
-/// Lines file.
+/// Generates the NAVAIDs GeoJSON output: Symbols and Text only, a symbol and a label per NAVAID.
+/// There is no Lines file.
 /// </summary>
 /// <remarks>
 /// <para>

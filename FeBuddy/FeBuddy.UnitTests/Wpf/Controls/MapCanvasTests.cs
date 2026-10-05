@@ -12,8 +12,9 @@ namespace FeBuddy.UnitTests.Wpf.Controls;
 
 /// <summary>
 /// Covers <see cref="MapCanvas"/>: which copies of the world a shape is drawn in, framing layers
-/// the short way round the 180th meridian, and letting go of a map whose layer list lives on.
-/// Each test runs on a WPF thread of its own (<see cref="StaThread"/>).
+/// the short way round the 180th meridian, the zoom as a percentage of the home view, and letting
+/// go of a map whose layer list lives on. Each test runs on a WPF thread of its own
+/// (<see cref="StaThread"/>).
 /// </summary>
 public sealed class MapCanvasTests
 {

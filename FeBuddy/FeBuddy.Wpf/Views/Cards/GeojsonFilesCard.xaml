@@ -1,9 +1,9 @@
 <!--
-    GeojsonFilesCard  -  the "What files do you want?" card every GeoJSON sub-service tab shows:
-    one option per file, always in the order Lines, Symbols, Text. Binds to the tab's view model
-    through IGeojsonFileChoices; the tab supplies only the wording, and ShowLines="False" for a
-    sub-service with no Lines file. Footnote shows folder names between backticks in the code
-    look (bhv:InlineCode).
+    GeojsonFilesCard  -  the "What files do you want?" card the GeoJSON sub-service tabs show (all
+    but ARTCC Boundaries, which writes Lines only): one option per file, always in the order
+    Lines, Symbols, Text. Binds to the tab's view model through IGeojsonFileChoices; the tab
+    supplies only the wording, and ShowLines="False" for a sub-service with no Lines file.
+    Footnote shows folder names between backticks in the code look (bhv:InlineCode).
 
     Usage:
         <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"

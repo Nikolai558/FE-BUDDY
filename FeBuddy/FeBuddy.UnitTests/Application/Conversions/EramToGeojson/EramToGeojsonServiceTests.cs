@@ -12,8 +12,9 @@ namespace FeBuddy.UnitTests.Application.Conversions.EramToGeojson;
 /// <summary>
 /// Runs the whole ERAM to GeoJSON conversion (<see cref="EramToGeojsonService.Run"/>) against
 /// small made-up Geomaps files written to a temp folder - in the original ERAM_2_GEOJSON tool's
-/// three layouts, named as it named them, and with each defaults source, plus the
-/// <c>ConsoleCommandControl.txt</c> rundown - and checks what lands on disk and what is reported.
+/// three layouts, named as it named them, and Raw Plus (matching symbols grouped where the layout
+/// does it), with each defaults source, plus the <c>ConsoleCommandControl.txt</c> rundown - and
+/// checks what lands on disk and what is reported.
 /// </summary>
 public sealed class EramToGeojsonServiceTests : IDisposable
 {

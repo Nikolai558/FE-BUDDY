@@ -18,7 +18,8 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 
 /// <summary>
 /// Writes one converted ERAM <c>Geomaps.xml</c> into <c>…\ERAM_TO_GEOJSON\</c>, in the layouts
-/// and with the names of the original ERAM_2_GEOJSON tool (<see cref="EramOutputLayout"/>).
+/// and with the names of the original ERAM_2_GEOJSON tool, or as Raw Plus
+/// (<see cref="EramOutputLayout"/>).
 /// </summary>
 /// <remarks>
 /// <para>

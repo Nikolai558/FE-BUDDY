@@ -18,17 +18,17 @@ using DomainFixUses = FeBuddy.Core.Domain.Fixes.FixUses;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Fixes</b> sub-service tab inside the AIRAC Service screen: which outputs to write, how
-/// the GeoJSON is laid out (one merged file set, one per fix use, one per chart, or one per
-/// chart + fix use combination the user lists), which fix uses/charts/combinations to include, the
-/// optional region of interest, which FE-Buddy properties and the CRC ERAM defaults.
+/// The <b>Fixes</b> sub-service tab inside the AIRAC Service screen: how the GeoJSON is laid out
+/// (one merged file set, one per fix use, one per chart, or one per chart + fix use combination the
+/// user lists), which fix uses/charts/combinations to include, the optional region of interest,
+/// which FE-Buddy properties and the CRC ERAM defaults.
 /// </summary>
 /// <remarks>
 /// Save, Undo and navigation come from the tab host's action bar; the run is launched by
 /// <b>Run AIRAC Service</b> on the Preview Settings tab, and its results are shown on the Review
 /// tab, described by this tab through <see cref="ISubServiceRunTarget"/>. Unlike most other AIRAC
-/// sub-services, there is no <c>GenerateGeojson</c> toggle and no alias file: the sub-service
-/// always writes GeoJSON.
+/// sub-services, it has no alias file and no Outputs card, and its settings block has no
+/// <c>GenerateGeojson</c>: while included, the sub-service always writes GeoJSON.
 /// </remarks>
 public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {

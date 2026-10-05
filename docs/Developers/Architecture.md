@@ -25,7 +25,9 @@ FeBuddy.Wpf (FE-BUDDY.exe)   FeBuddy.Harness   FeBuddy.UnitTests
 runs `LaunchSequence.RunAsync` off the UI thread. A step that fails is logged and only disables what
 needs it; launch never stops.
 
-1. Clear `%TEMP%\FE-Buddy`, then read `UserConfig.json`.
+1. Clear `%TEMP%\FE-Buddy`, read `UserConfig.json` and, at the first launch, save the update
+   channel (`UpdateChannelSetting.SaveDefaultIfUnset`;
+   [Versioning](VERSIONING.md#pre-releases-and-channels)).
 2. Look for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` variable - its name only, never its value - and,
    if it is set, show a one-time notice (`LegacyGitHubTokenNotice`).
 3. Uninstall a copy of FE-Buddy 2.x that Squirrel installed in `%LOCALAPPDATA%\FE-BUDDY`, by running
@@ -82,8 +84,9 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
   with a warning.
 - **The d-TPP Metafile** is keyed by cycle, so each cycle folder gets its own
   (`DtppDownloader.EnsureCycleHasMetafileAsync`). The FAA posts it only 15-18 days before the cycle
-  starts; a 404 is `NotYetPublished`, retried at the next launch. `AiracCycleDataCache.GetDtppAsync`
-  returns `null` when there is no copy, and Procedures treats that as an advisory, not an error.
+  starts; a 404 is `NotYetPublished`, retried at the next launch, and the General tab shows the
+  cycle as *partial*. `AiracCycleDataCache.GetDtppAsync` returns `null` when there is no copy, and
+  Procedures treats that as an advisory, not an error.
 
 ## A run
 
@@ -142,8 +145,7 @@ Not every sub-service has all four steps:
   ARTCC). It is written whenever an
   alias file was written, even with no duplicates, so an old report never misleads.
 - **Every file is ready for vNAS**, so nothing is marked for upload: GeoJSON goes in `Geojson`,
-  alias files in `Aliases`, and CRC-ERAM defaults go on whichever GeoJSON files `CrcDefaultsFor`
-  names.
+  alias files in `Aliases`.
 - **`Combined_Alias.txt`** is written last, into `Aliases`, while Concatenate Aliases is in the run
   and combining (`CombineAliasFiles`, on by default). vNAS takes one alias file per facility, so
   `CombinedAliasFileWriter` writes:
@@ -182,9 +184,9 @@ Not every sub-service has all four steps:
   each feature. Every value is checked first (`CrcPropertyValidator`), so FE-Buddy never writes a
   value CRC can't draw. See
   [CRC GeoJSON concepts](https://github.com/KCSanders7070/CRC_GeoJson_Concepts/blob/main/CRC_Geojsons.md).
-- **In the AIRAC Service, defaults go on the GeoJSON files the user picks** on each tab's CRC ERAM
-  Defaults card (`CrcDefaultsFor`, read as `CrcDefaultsFiles`). A file conversion writes them when
-  its panel's **Include** is ticked.
+- **In the AIRAC Service, the top of each tab's CRC ERAM Defaults card picks the files** that get
+  defaults - none (the default), every GeoJSON file, or specific files - sent as `CrcDefaultsFor`.
+  A file conversion writes them when its panel's **Include** is ticked.
 - **Defaults are never guessed.** An empty value a chosen file needs is a validation error.
 - **A symbol's style can live on each feature.** `CrcSymbolDefaults.Style` may be `null`: NAVAIDs'
   merged Symbols file styled by type gives each feature its own style (`NavaidTypes.SymbolStyleFor`).
@@ -243,9 +245,9 @@ The FAA's data has quirks. Each rule lives in one class.
   ring) and after a point described "POINT OF BEGINNING" (ZOA's four UTA rings in one run). A ring is
   closed back to its first point. A location with no `ARB_SEG` rows - the Canadian, foreign and
   CERAP entries - draws nothing.
-- **Fix use and chart names** (`FixTokens`): `FIX_USE_CODE` maps to a name (`WP` → `WYPNT`); `CHARTS`
-  splits on commas, each name collapsing punctuation and spaces to `-` (`ENROUTE LOW` →
-  `ENROUTE-LOW`); a fix on no chart is `NO-CHART`.
+- **Fix use and chart names** (`FixUses`, `FixCharts`): `FIX_USE_CODE` maps to a name (`WP` →
+  `WYPNT`); `CHARTS` splits on commas, each name collapsing punctuation and spaces to `-`
+  (`ENROUTE LOW` → `ENROUTE-LOW`); a fix on no chart is `NO-CHART`.
 - **Wx stations** (`WxStationBuilder`): a US or US-territory station with an ICAO ID that reports
   METAR and has real coordinates (the feed's `-99.99` placeholder is left out).
 - **Alias text uses `\t`, `\n` and `\s`**, never real tabs, newlines or spaces: CRC splits an alias on
@@ -294,7 +296,7 @@ Argued out once; don't re-open them without a reason.
 - **Developer mode is a code constant** (`App.DevModeEnabled`), never a user setting. Pretty
   printing is a user setting, forced on in developer mode.
 - **"Unsaved" means different from the last save**, everywhere.
-- **The Review tab is the one place** for a run's results, warnings and files.
+- **The Review tab is the one place** for a run's results, warnings and output folder.
 - **Every sub-service is a tab of the AIRAC Service**, and every file conversion a tab of File
   Conversions, built from the same shared cards where they apply.
 - **Output folders are laid out in one place** (`ServiceOutputPaths`), so AIRAC output and

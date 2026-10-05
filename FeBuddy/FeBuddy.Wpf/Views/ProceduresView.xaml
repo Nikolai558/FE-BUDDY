@@ -3,9 +3,10 @@
     Save / Undo / Previous / Next / Preview settings come from the tab host's shared
     action bar, and the tab host owns the page's single scroller.
 
-    Unlike every other AIRAC sub-service tab, this one writes no GeoJSON and has no FE-Buddy
-    properties or CRC cards - see ProceduresViewModel's class remarks. The selection cards pick
-    what the two documents cover, so they grey out while neither document is on.
+    Unlike the GeoJSON sub-service tabs, this one writes no GeoJSON and has no FE-Buddy
+    properties or CRC cards - see ProceduresViewModel's class remarks. Its Outputs card shows its
+    three outputs' state (they are turned on and off on the General tab). The selection cards
+    pick what the two documents cover, so they grey out while neither document is on.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ProceduresView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

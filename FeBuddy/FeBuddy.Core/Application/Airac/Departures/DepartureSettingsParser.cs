@@ -56,13 +56,13 @@ public static class DepartureSettingsParser
 		bool generateGeojson = SettingsValueReader.YesNo(departureSettings, "GenerateGeojson", defaultValue: true);
 		bool generateAliasFile = SettingsValueReader.YesNo(departureSettings, "GenerateAliasFile", defaultValue: true);
 
-		// The GUI blocks this at the tab; the parser is the backstop for the harness and for a
-		// hand-edited UserConfig.
+		// The GUI blocks this on the General tab; the parser is the backstop for the harness and
+		// for a hand-edited UserConfig.
 		if (!generateGeojson && !generateAliasFile)
 		{
 			throw new ArgumentException(
 				"GenerateGeojson and GenerateAliasFile are both \"N\", so the Departures sub-service would produce nothing. " +
-				"Turn one back on, or deselect Departures.");
+				"Turn one back on, or leave Departures out of the run.");
 		}
 
 		bool emitLines = SettingsValueReader.YesNo(departureSettings, "EmitLines", defaultValue: true);

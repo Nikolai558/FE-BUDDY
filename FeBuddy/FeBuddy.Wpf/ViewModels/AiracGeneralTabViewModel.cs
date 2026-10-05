@@ -391,7 +391,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			private set => SetProperty(ref _label, value);
 		}
 
-		/// <summary><c>ready</c> / <c>partial</c> / <c>parsing…</c> / <c>failed</c> / <c>not yet published</c>.</summary>
+		/// <summary><c>ready</c> / <c>partial</c> / <c>preparing…</c> / <c>downloading…</c> / <c>parsing…</c> / <c>failed</c> / <c>not yet published</c>.</summary>
 		public string State
 		{
 			get => _state;

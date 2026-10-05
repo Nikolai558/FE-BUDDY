@@ -6,10 +6,10 @@ using FeBuddy.Core.Infrastructure.WxStations.Parsers;
 namespace FeBuddy.Harness;
 
 /// <summary>
-/// Exercises the Wx Stations service exactly the way the GUI "Run" button will: parse
-/// <see cref="HarnessSettings.WxStationsSourceFile"/>, build the settings dictionary, call the one
-/// public entry point, and hand the result back for reporting. Contains no Wx Stations logic of
-/// its own.
+/// Exercises the Wx Stations service the way an AIRAC Service run does, from a local station file:
+/// parse <see cref="HarnessSettings.WxStationsSourceFile"/>, build the settings dictionary, call
+/// the one public entry point, and hand the result back for reporting. Contains no Wx Stations
+/// logic of its own.
 /// </summary>
 /// <remarks>
 /// Unlike every other runner, this does not take <c>NasrCsvDataCollection</c>: Wx Stations' data

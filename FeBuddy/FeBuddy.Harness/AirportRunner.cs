@@ -7,9 +7,9 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Harness;
 
 /// <summary>
-/// Exercises the Airports service exactly the way a future GUI "Run" button would: build the
-/// settings dictionary, call the one public entry point, and hand the result back for
-/// reporting. Contains no airport logic of its own.
+/// Exercises the Airports service the way an AIRAC Service run does: build the settings
+/// dictionary, call the one public entry point, and hand the result back for reporting. Contains
+/// no airport logic of its own.
 /// </summary>
 internal static class AirportRunner
 {

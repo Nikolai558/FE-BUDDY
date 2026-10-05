@@ -21,7 +21,7 @@ public sealed record AirportSettings
 	/// <summary>Whether to write GeoJSON at all. <see langword="false"/> means alias output only.</summary>
 	public required bool GenerateGeojson { get; init; }
 
-	/// <summary>Emit <c>Airports_Symbols.geojson</c> - one Point per airport.</summary>
+	/// <summary>Emit <c>Airports_Symbols.geojson</c> - a symbol per airport.</summary>
 	public bool EmitAirportSymbols { get; init; } = true;
 
 	/// <summary>Emit <c>Airports_Text.geojson</c> - one labelled Point per airport.</summary>

@@ -63,8 +63,10 @@ Everything else comes from it:
 | GitHub release tag | `3.0.0-alpha.1` | the version check (3.x's, and 2.x's) |
 
 `IncludeSourceRevisionInInformationalVersion` is `false`, so the Product version is exactly
-`<Version>`, with no `+<commit>` on the end. An unreleased build carries `-dev` (`3.0.0-dev`): it is
-ahead of every 2.x release, and its tag counts as Alpha, though its default update channel is Stable.
+`<Version>`, with no `+<commit>` on the end. Between releases it stays at the last release's version
+(step 2 of [Releasing](RELEASING.md#part-1---get-v3-development-ready) changes it). A `-dev` version
+(`3.0.0-dev`) is ahead of every 2.x release, and its tag counts as Alpha, though its default update
+channel is Stable.
 
 ## How the app uses it
 

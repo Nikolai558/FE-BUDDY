@@ -29,9 +29,9 @@ public static class ConfigPages
 
 	/// <summary>Has every page re-read <c>UserConfig</c>, dropping unsaved edits.</summary>
 	/// <remarks>
-	/// Works on a copy of the list: a page that reloads can open tabs, which register as they are
-	/// built (and read the new file themselves). One page failing to reload is logged, not allowed
-	/// to stop the rest, and named in the result so the user can be told.
+	/// Works on a copy of the list, so a page that registers while the others reload (and reads the
+	/// new file itself as it is built) cannot upset the loop. One page failing to reload is logged,
+	/// not allowed to stop the rest, and named in the result so the user can be told.
 	/// </remarks>
 	/// <returns>
 	/// The names of the pages that could not reload. They still show the settings from before, and

@@ -11,8 +11,8 @@ namespace FeBuddy.Core.Application.Airac.Procedures.Models;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Unlike every other AIRAC sub-service, there is no GeoJSON and no <c>feb.*</c> properties. The
-/// outputs are two documents, <c>Procedure_Changes.md</c> and <c>Procedures.json</c>, written to
+/// As with Telephony, there is no GeoJSON and no <c>feb.*</c> properties. The outputs are two
+/// documents, <c>Procedure_Changes.md</c> and <c>Procedures.json</c>, written to
 /// <see cref="AiracOutputPaths.PublicationDocsFolder"/>, and the FAA Chart Recall alias file,
 /// <c>Faa_Chart_Recall.txt</c>, written where every alias file goes.
 /// </para>

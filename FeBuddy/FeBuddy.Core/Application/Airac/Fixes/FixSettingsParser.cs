@@ -67,7 +67,7 @@ public static class FixSettingsParser
 		{
 			throw new ArgumentException(
 				"'EmitSymbols' and 'EmitText' are both \"N\", so the Fixes sub-service would produce nothing. " +
-				"Turn at least one back on, or deselect Fixes.");
+				"Turn at least one back on, or leave Fixes out of the run.");
 		}
 
 		FixOutputBy outputBy = SettingsValueReader.OptionalEnum(fixSettings, "OutputBy", FixOutputBy.All);

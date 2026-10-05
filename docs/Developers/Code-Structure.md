@@ -117,13 +117,14 @@ FeBuddy.Wpf/
 ├── App.xaml(.cs)        startup: a pending reset, the log, then LaunchSequence off the UI thread
 ├── Theme/               the design system - the only place colours, fonts and control looks are
 │                        defined (Palette, Typography, Icons, Controls.*.xaml), merged by Theme.xaml
-├── Assets/BaseMap/      us-states.json, coastlines.json (from Natural Earth, built by
-│                        FeBuddy/Tools/BuildBaseMap.cs)
+├── Assets/              FE-BUDDY.ico, Brand/ (the logo's sizes) and BaseMap/ (us-states.json,
+│                        coastlines.json, from Natural Earth, built by FeBuddy/Tools/BuildBaseMap.cs)
 ├── Behaviors/           attached properties a view opts into (FieldState, InlineCode, InlineMarkdown,
-│                        WheelScroll, ScrollToTop, ComboBoxDropDownFocus), and MaximizeToWorkArea, a window hook
-│                        the chrome windows install from code
-├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView, MapCanvas,
-│                        AliasGuideDocumentView, BesideOrBelow, CommandTablePanel, ChromeWindow, BrandMark
+│                        WheelScroll, ScrollToTop, ComboBoxDropDownFocus), and MaximizeToWorkArea, a
+│                        window hook the chrome windows install from code
+├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView,
+│                        MapCanvas, AliasGuideDocumentView, BesideOrBelow, CommandTablePanel,
+│                        ChromeWindow, BrandMark
 ├── Converters/          one IValueConverter per file
 ├── Map/                 GeoJsonReader, WebMercator, ProjectedLayer, AiracMapLayers, BaseMap
 ├── Mvvm/                ObservableObject, RelayCommand
@@ -135,7 +136,8 @@ FeBuddy.Wpf/
 │   └── ServiceTabs/     the tabbed-screen framework: TabbedServiceViewModel, ServiceTabViewModel,
 │                        SubServiceSettingsViewModel, GeojsonSubServiceViewModel,
 │                        ConversionTabViewModel and FileConversionTabViewModel, the Preview
-│                        Settings and Review tabs, and the card interfaces (IOutputSettings, …)
+│                        Settings and Review tabs, the General tab's SubServiceRow, validation
+│                        (ServiceValidation, ServiceAreas), the card interfaces (IOutputSettings, …)
 └── Views/               ShellWindow, TabbedServiceView (both tabbed screens), one view per tab,
     │                    MapWorkspace (every map), the dialog windows
     └── Cards/           the shared cards (Attention, Outputs, What Files Do You Want?, FE-Buddy

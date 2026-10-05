@@ -138,7 +138,7 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		Assert.True(tab.ConfirmRun(tab.BuildSettingsBlock(Path.Combine(_root, "Out"), addFeBuddyOutputFolder: false)));
 	}
 
-	/// <summary>ConsoleCommandControl.txt is named in the summary and listed with the GeoJSON on the Review tab.</summary>
+	/// <summary>ConsoleCommandControl.txt is named in the summary and counted with the GeoJSON among the files written.</summary>
 	[Fact]
 	public void the_run_summary_names_the_console_command_control_rundown()
 	{

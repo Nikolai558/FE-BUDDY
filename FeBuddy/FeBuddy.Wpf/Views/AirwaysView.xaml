@@ -65,7 +65,7 @@
             <ctl:Card Header="Designations to Include">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Derived from the selected cycle's AWY_IDs. All on by default; the deselected set is saved as ExcludedDesignations." />
+                               Text="Every designation in the selected cycle, all on to start. Untick one to leave it out of everything." />
                     <TextBlock Style="{StaticResource Text.Caption}"
                                Text="Waiting for AIRAC data…"
                                Visibility="{Binding IsCycleReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />

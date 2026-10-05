@@ -37,7 +37,7 @@ FE-Buddy 3.0 is a from-scratch rewrite. It makes:
 |---|---|---|
 | **ARTCC Boundaries** | Every ARTCC's boundary, by high/low altitude, high/low/unlimited, or one file per ARTCC and altitude | - |
 | **Airports** | Airport symbols and labels, runway lines | `Airports.txt` |
-| **Airways** | Airway lines, waypoint symbols and labels - by high/low altitude or by designation | `Airways.txt` |
+| **Airways** | Airway lines, waypoint symbols and labels - high/low by airway type, or by designation | `Airways.txt` |
 | **Arrivals** | STARs, per airport | `Arrivals.txt` |
 | **Departures** | SIDs (and ODPs if you want them), per airport | `Departures.txt` |
 | **NAVAIDs** | VOR, NDB, TACAN and every other NASR NAVAID type | `Navaids.txt` |
@@ -59,6 +59,7 @@ quiz for your controllers. Some 2.x tools aren't in 3.0 yet - see
 - **New to FE-Buddy?** [Getting started](docs/Users/Getting-Started.md).
 - **Every screen and option:** the [user guide](docs/Users/User-Guide.md).
 - **Something wrong?** [FAQ and troubleshooting](docs/Users/FAQ-and-Troubleshooting.md).
+- **Everything else:** [all docs](docs/README.md), including the [glossary](docs/Users/Glossary.md).
 
 FE-Buddy 2.x: [instructions](https://docs.google.com/presentation/d/e/2PACX-1vRMd6PIRrj0lPb4sAi9KB7iM3u5zn0dyUVLqEcD9m2e71nf0UPyEmkOs4ZwYsQdl7smopjdvw_iWEyP/embed)
 and [reducing CRC output before vNAS upload](https://docs.google.com/presentation/d/e/2PACX-1vQ2y4m6S31lMc6DuJ9HxzW3k76w6fWrVDxomRQSwGiCS176g5kMrdRpTJi_pSwgEndRbvOXG9w5aoyM/embed)
@@ -72,14 +73,6 @@ and [reducing CRC output before vNAS upload](https://docs.google.com/presentatio
 - An internet connection (to download the FAA data)
 
 Nothing else - FE-Buddy carries its own .NET runtime.
-
----
-
-## Documentation
-
-Everything is in [`docs/`](docs/README.md). Users: [Getting started](docs/Users/Getting-Started.md) ·
-[User guide](docs/Users/User-Guide.md) · [FAQ](docs/Users/FAQ-and-Troubleshooting.md) ·
-[Glossary](docs/Users/Glossary.md). Developers: [Developer guide](docs/Developers/README.md).
 
 ---
 

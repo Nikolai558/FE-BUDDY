@@ -11,8 +11,8 @@ namespace FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 /// this typed object, never the raw dictionary.
 /// </summary>
 /// <remarks>
-/// Unlike every other AIRAC sub-service, there is no <c>GenerateGeojson</c> toggle and no alias
-/// file: the sub-service always writes GeoJSON Lines.
+/// Like Fixes and Wx Stations, there is no <c>GenerateGeojson</c> toggle and no alias file: the
+/// sub-service always writes GeoJSON Lines.
 /// </remarks>
 public sealed record ArtccBoundarySettings
 {

@@ -63,13 +63,13 @@ public static class NavaidSettingsParser
 		bool generateAliasFile = SettingsValueReader.YesNo(navaidSettings, "GenerateAliasFile", defaultValue: true);
 
 		// Selecting the sub-service and then turning off both of its outputs asks for a run that
-		// writes nothing. The GUI blocks this at the tab; the parser is the backstop for the
-		// harness and for a hand-edited UserConfig.
+		// writes nothing. The GUI blocks this on the General tab; the parser is the backstop for
+		// the harness and for a hand-edited UserConfig.
 		if (!generateGeojson && !generateAliasFile)
 		{
 			throw new ArgumentException(
 				"GenerateGeojson and GenerateAliasFile are both \"N\", so the NAVAIDs sub-service would produce nothing. " +
-				"Turn one back on, or deselect NAVAIDs.");
+				"Turn one back on, or leave NAVAIDs out of the run.");
 		}
 
 		bool emitSymbols = SettingsValueReader.YesNo(navaidSettings, "EmitSymbols", defaultValue: true);

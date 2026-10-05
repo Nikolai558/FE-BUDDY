@@ -52,9 +52,8 @@ alias files.
 
 ![Repository access set to Only select repositories, with one repository selected](Media/GitHub-Token/02-repository-access.png)
 
-Don't choose **All repositories**. **Public repositories** is only for a token in Settings ▸
-FE-Buddy's GitHub Requests, which just lifts GitHub's limit of 60 requests an hour for FE-Buddy's
-update checks.
+Don't choose **All repositories**. **Public repositories** is only for the optional token in
+Settings ▸ FE-Buddy's GitHub Requests.
 
 ### 4. Permissions: Contents, read-only
 
@@ -118,7 +117,7 @@ files that use it.
 
 ## If something goes wrong
 
-What **Check** says, and what to do:
+What FE-Buddy says, and what to do:
 
 | FE-Buddy says | Most likely | Fix |
 |---|---|---|
@@ -129,15 +128,11 @@ What **Check** says, and what to do:
 | GitHub needs the credential … authorized for this organization's single sign-on (SSO) | The organization uses SAML single sign-on | Authorize the token for the organization on GitHub, then **Check** again |
 | GitHub is limiting how often it can be asked right now | Too many requests in a short time | Wait a few minutes and **Check** again |
 | This address has a sign-in token (token=) in it | The address was copied while viewing a private file's raw text | Use the file's page or its Raw link without the `token=`, and choose your token as its credential |
+| GitHub limits downloads made without a token, and the limit has been reached | No token chosen, and GitHub's 60-an-hour limit is used up | Choose your GitHub token for the file, or try again in an hour |
 | … a GitHub page, not a file | The address is a repository's front page or a folder | Open the alias file itself on GitHub and copy its address, or its Raw link |
-
-Without any token, a 403 can also mean GitHub's hourly limit for anonymous downloads was reached:
-choose a token, or try again in an hour.
 
 ## Keeping the token safe
 
 - Treat it like a password: don't paste it into Discord, an email or a shared document.
 - If it may have leaked, delete it on GitHub (the token's page ▸ **Delete**) and make a new one. A
   deleted token stops working at once.
-- One token per purpose is easiest - for example one for your alias file and, only if you need it, a
-  public-repositories-only one for FE-Buddy's update checks.

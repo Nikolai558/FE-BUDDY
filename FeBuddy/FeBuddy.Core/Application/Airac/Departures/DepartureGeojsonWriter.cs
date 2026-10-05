@@ -13,7 +13,9 @@ namespace FeBuddy.Core.Application.Airac.Departures;
 /// Generates the Departures GeoJSON output: for every airport + procedure, up to three files in
 /// <c>…\Geojson\&lt;ARTCC&gt;\&lt;ARPT&gt;\</c> -
 /// <c>&lt;ARPT&gt;_&lt;CODE&gt;_Lines.geojson</c> (one MultiLineString),
-/// <c>_Symbols.geojson</c> and <c>_Text.geojson</c> (one Point per procedure point).
+/// <c>_Symbols.geojson</c> (a symbol per procedure point, those with the same properties grouped
+/// into one Feature, see <see cref="GeojsonFileSet"/>) and <c>_Text.geojson</c> (one Point per
+/// procedure point).
 /// </summary>
 /// <remarks>
 /// <para>

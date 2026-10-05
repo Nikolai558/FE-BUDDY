@@ -17,8 +17,8 @@ namespace FeBuddy.Core.Application.Airac.ArtccBoundaries;
 /// </summary>
 /// <remarks>
 /// The only ARTCC Boundaries type <c>AiracService</c> and <c>FeBuddy.Harness</c> call directly;
-/// every other type in this folder is a step of this pipeline. Unlike every other AIRAC
-/// sub-service, there is no alias file.
+/// every other type in this folder is a step of this pipeline. Like Fixes and Wx Stations, there
+/// is no alias file.
 /// </remarks>
 public static class ArtccBoundaryService
 {

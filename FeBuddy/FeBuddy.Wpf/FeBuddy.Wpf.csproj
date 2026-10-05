@@ -41,7 +41,7 @@
     <LangVersion>latest</LangVersion>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <!-- Treat XAML/code warnings seriously in a greenfield project. -->
+    <!-- Warnings don't fail the build, but keep it at zero: the analyzers below report them. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>

@@ -14,8 +14,8 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 /// <summary>
 /// Public entry point for the ERAM to GeoJSON conversion: turns an ERAM <c>Geomaps.xml</c> (from
 /// an ERAM adaptation export) into CRC-ready GeoJSON in <c>ERAM_TO_GEOJSON</c>, laid out as the
-/// original ERAM_2_GEOJSON tool laid it out (see <see cref="EramGeojsonWriter"/>), with a rundown of
-/// the export's <c>ConsoleCommandControl.xml</c> map menus beside it.
+/// original ERAM_2_GEOJSON tool laid it out or as Raw Plus (see <see cref="EramGeojsonWriter"/>),
+/// with a rundown of the export's <c>ConsoleCommandControl.xml</c> map menus beside it.
 /// </summary>
 /// <remarks>
 /// <para>

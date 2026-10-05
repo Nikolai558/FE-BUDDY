@@ -123,7 +123,8 @@ public sealed class AirportAliasWriterTests : IDisposable
 
 	/// <summary>
 	/// Many airports outside the US have their ICAO ID as their FAA ID too (CYAM/CYAM in NASR).
-	/// They get one command and no warning; until beta.1 every cycle warned about 108 of them.
+	/// They get one command and no warning; up to and including beta.1, every cycle warned about
+	/// 108 of them.
 	/// </summary>
 	[Fact]
 	public void an_icao_id_equal_to_the_faa_id_gives_one_command_one_identifier_and_no_message()

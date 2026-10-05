@@ -4,7 +4,9 @@ namespace FeBuddy.Wpf.Behaviors;
 
 /// <summary>
 /// <c>bhv:FieldState.Error="{Binding FieldErrors[SwLat]}"</c> on an input - marks that box as
-/// carrying a validation failure so the themed styles can highlight it and show the reason.
+/// carrying a validation failure so the themed styles can highlight it and show the reason. On a
+/// <c>ctl:Card</c> it marks the card as a whole; either way the card outlines itself in red (see
+/// <c>Card.NeedsAttention</c>).
 /// </summary>
 /// <remarks>
 /// The bound value is the message itself (or <see langword="null"/> when the field is fine), which

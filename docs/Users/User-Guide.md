@@ -127,6 +127,10 @@ covers STARs. Otherwise the two tabs work the same.
   (`LAS_BLAID_STAR_Lines.geojson`).
 - **Alias file** - `Departures.txt` or `Arrivals.txt`: a command per airport and procedure that draws
   its fixes. A STAR lists its transitions first, then its bodies.
+- **Routes** - each airport gets the bodies the FAA's data assigns it (all of them when the
+  procedure has no assignments), plus every transition. When the data assigns bodies to some
+  airports but not others, a departure's left-out airport gets only the transitions, and a STAR's
+  gets every body.
 - **ARTCCs** - tick the ones you want; none means all. A STAR serving airports in two ARTCCs goes
   with each airport's own.
 - **Amendment Date** - every procedure, or only those amended in the last *N* cycles (counting the

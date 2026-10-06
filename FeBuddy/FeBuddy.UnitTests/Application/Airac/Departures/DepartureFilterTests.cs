@@ -342,7 +342,7 @@ public sealed class DepartureFilterTests
 	public void airport_mode_drops_an_airport_with_no_apt_base_row_with_an_info_message()
 	{
 		DepartureAirportProcedure atUnknown = DepartureTestData.AirportProcedure(
-			DepartureTestData.Procedure(codeId: "CYQG"), "CYQG",
+			DepartureTestData.Procedure(codeId: "GHOST"), "NOAPT",
 			new DeparturePoint("NEARB", "WP", 34.0, -118.0));
 		List<ServiceMessage> messages = [];
 
@@ -355,7 +355,7 @@ public sealed class DepartureFilterTests
 		Assert.Empty(kept);
 		ServiceMessage message = Assert.Single(messages);
 		Assert.Equal(LogLevel.Info, message.Level);
-		Assert.Contains("CYQG", message.Text);
+		Assert.Contains("Airport 'NOAPT' has no APT_BASE record", message.Text);
 	}
 
 	[Fact]

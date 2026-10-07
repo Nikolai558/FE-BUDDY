@@ -19,23 +19,29 @@ internal sealed class ProjectedLayer
 {
 	private static readonly ConditionalWeakTable<MapLayer, ProjectedLayer> Cache = [];
 
+	private Dictionary<int, (List<ProjectedRun> Runs, List<ProjectedPoint> Points)>? _byGeometry;
+
 	private ProjectedLayer(MapLayer layer)
 	{
 		List<ProjectedRun> runs = [];
 		List<ProjectedPoint> points = [];
 
-		foreach (MapGeometry geometry in layer.Geometries)
+		for (int index = 0; index < layer.Geometries.Count; index++)
 		{
+			MapGeometry geometry = layer.Geometries[index];
 			if (geometry.Kind == MapGeometryKind.Point)
 			{
-				foreach (IReadOnlyList<GeoPoint> run in geometry.Parts)
+				for (int part = 0; part < geometry.Parts.Count; part++)
 				{
+					IReadOnlyList<GeoPoint> run = geometry.Parts[part];
 					if (run.Count > 0)
 					{
 						points.Add(new ProjectedPoint(
 							WebMercator.LonToWorldX(WebMercator.NormalizeLon(run[0].Lon)),
 							WebMercator.LatToWorldY(run[0].Lat),
-							geometry.Label));
+							geometry.Label,
+							index,
+							part));
 					}
 				}
 
@@ -47,7 +53,7 @@ internal sealed class ProjectedLayer
 			{
 				if (run.Count >= 2)
 				{
-					runs.Add(ProjectedRun.From(run, closed));
+					runs.Add(ProjectedRun.From(run, closed, index));
 				}
 			}
 		}
@@ -95,6 +101,18 @@ internal sealed class ProjectedLayer
 	/// <summary>The x range each line, ring and point covers, for <see cref="Covering"/>.</summary>
 	public IEnumerable<(double Min, double Max)> XSpans =>
 		Runs.Select(run => (run.MinX, run.MaxX)).Concat(Points.Select(point => (point.X, point.X)));
+
+	/// <summary>
+	/// The lines, rings and points of one of the layer's shapes, to draw it highlighted. Looked up
+	/// from a table built on the first call.
+	/// </summary>
+	/// <param name="geometry">The shape's index in <see cref="MapLayer.Geometries"/>.</param>
+	/// <returns>Its runs and points; none for an index the layer doesn't have.</returns>
+	public (IReadOnlyList<ProjectedRun> Runs, IReadOnlyList<ProjectedPoint> Points) Of(int geometry)
+	{
+		_byGeometry ??= BuildByGeometry();
+		return _byGeometry.TryGetValue(geometry, out var parts) ? (parts.Runs, parts.Points) : ([], []);
+	}
 
 	/// <summary>The projection of <paramref name="layer"/>, built on the first call.</summary>
 	/// <param name="layer">The layer.</param>
@@ -183,6 +201,33 @@ internal sealed class ProjectedLayer
 			: (joined[0].Start, joined[widest].End);
 	}
 
+	private Dictionary<int, (List<ProjectedRun> Runs, List<ProjectedPoint> Points)> BuildByGeometry()
+	{
+		Dictionary<int, (List<ProjectedRun> Runs, List<ProjectedPoint> Points)> table = [];
+
+		foreach (ProjectedRun run in Runs)
+		{
+			Entry(run.Geometry).Runs.Add(run);
+		}
+
+		foreach (ProjectedPoint point in Points)
+		{
+			Entry(point.Geometry).Points.Add(point);
+		}
+
+		return table;
+
+		(List<ProjectedRun> Runs, List<ProjectedPoint> Points) Entry(int geometry)
+		{
+			if (!table.TryGetValue(geometry, out var parts))
+			{
+				table[geometry] = parts = ([], []);
+			}
+
+			return parts;
+		}
+	}
+
 	private void Grow(double x, double y)
 	{
 		MinX = Math.Min(MinX, x);
@@ -195,11 +240,12 @@ internal sealed class ProjectedLayer
 /// <summary>One projected line or ring, with its bounding box for quick off-screen culling.</summary>
 internal sealed class ProjectedRun
 {
-	private ProjectedRun(double[] xs, double[] ys, bool closed)
+	private ProjectedRun(double[] xs, double[] ys, bool closed, int geometry)
 	{
 		Xs = xs;
 		Ys = ys;
 		Closed = closed;
+		Geometry = geometry;
 		MinX = xs.Min();
 		MaxX = xs.Max();
 		MinY = ys.Min();
@@ -215,6 +261,9 @@ internal sealed class ProjectedRun
 	/// <summary>Whether the run is a ring (drawn closed).</summary>
 	public bool Closed { get; }
 
+	/// <summary>The index of the shape it belongs to in <see cref="MapLayer.Geometries"/>.</summary>
+	public int Geometry { get; }
+
 	/// <summary>The run's bounding box, in world units.</summary>
 	public double MinX { get; }
 
@@ -227,7 +276,7 @@ internal sealed class ProjectedRun
 	/// <inheritdoc cref="MinX" />
 	public double MaxY { get; }
 
-	public static ProjectedRun From(IReadOnlyList<GeoPoint> run, bool closed)
+	public static ProjectedRun From(IReadOnlyList<GeoPoint> run, bool closed, int geometry)
 	{
 		double[] xs = new double[run.Count];
 		double[] ys = new double[run.Count];
@@ -247,7 +296,7 @@ internal sealed class ProjectedRun
 			previousLon = lon;
 		}
 
-		return new ProjectedRun(xs, ys, closed);
+		return new ProjectedRun(xs, ys, closed, geometry);
 	}
 }
 
@@ -258,4 +307,6 @@ internal sealed class ProjectedRun
 /// <param name="X">World x, in 0..1.</param>
 /// <param name="Y">World y.</param>
 /// <param name="Label">Its text, or <see langword="null"/> for a plain dot.</param>
-internal readonly record struct ProjectedPoint(double X, double Y, string? Label);
+/// <param name="Geometry">The index of the shape it belongs to in <see cref="MapLayer.Geometries"/>.</param>
+/// <param name="Part">Which of that shape's points it is (a MultiPoint has several).</param>
+internal readonly record struct ProjectedPoint(double X, double Y, string? Label, int Geometry, int Part);

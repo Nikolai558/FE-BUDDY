@@ -418,6 +418,11 @@ A map for checking GeoJSON files and setting your Region of Interest. **Set ROIâ
   one**. **Reset** takes them all off the map.
 - **Home View** - **Use current view** sets where **Home** takes you (and where the very first map
   opens); **Reset** goes back to the contiguous US.
+- **Properties** - **Ctrl + click** a line, dot or label to see what it is: a file's properties as
+  written (and where it is in the file), or what the AIRAC data says about a live airport, runway,
+  NAVAID or boundary. Overlapping shapes are all listed, top first, and drawn highlighted. A
+  polygon is picked at its outline. The copy button copies a file's properties as JSON. **Esc**
+  closes the panel.
 
 ## Settings
 

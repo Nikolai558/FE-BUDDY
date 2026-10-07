@@ -4,8 +4,9 @@
     the Map page: the same layers (MapLayersState is shared), the same tools, the same ROI card.
     Only the ROI it edits differs (MapViewModel.Target).
 
-    Left: the map, with a floating toolbar, the cursor read-out, the editing banner and the
-    zoom-in hint. Right: the ROI card, then the layers - AIRAC data, run output, the user's files.
+    Left: the map, with a floating toolbar, the cursor read-out, the editing banner, the
+    properties panel a Ctrl + click opens and the zoom-in hint. Right: the ROI card, then the
+    layers - AIRAC data, run output, the user's files.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.MapWorkspace"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -19,7 +20,8 @@
              d:DesignWidth="1200" d:DesignHeight="800">
 
     <UserControl.InputBindings>
-        <KeyBinding Key="Escape" Command="{Binding CancelRoiCommand}" />
+        <!-- Closes the properties panel, or else cancels an ROI edit. -->
+        <KeyBinding Key="Escape" Command="{Binding EscapeCommand}" />
     </UserControl.InputBindings>
 
     <UserControl.Resources>
@@ -75,6 +77,7 @@
                                Roi="{Binding DraftRoi, Mode=TwoWay}"
                                ReferenceRoi="{Binding ReferenceRoi}"
                                RoiEditing="{Binding IsEditingRoi}"
+                               Highlighted="{Binding Highlighted}"
                                HomeZoom="{Binding State.Home.Zoom, FallbackValue=NaN}" />
 
                 <!-- toolbar, with the editing banner under it. The toolbar wraps onto a second row when
@@ -156,6 +159,64 @@
                         Visibility="{Binding CursorText, ElementName=Map, Converter={StaticResource StringToVis}}">
                     <TextBlock Text="{Binding CursorText, ElementName=Map}" Style="{StaticResource Text.Caption}"
                                FontFamily="{StaticResource Font.Mono}" />
+                </Border>
+
+                <!-- properties of what a Ctrl + click landed on (issue #327), under the cursor read-out.
+                     It grows with its cards up to the map's height, then scrolls. -->
+                <Border Style="{StaticResource Map.Overlay}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Width="340" Margin="12,54,12,54" Padding="12,10,4,10"
+                        Visibility="{Binding IsInspecting, Converter={StaticResource BoolToVis}}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,8,8">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon.Small}" VerticalAlignment="Top"
+                                    Content="{StaticResource Icon.Cancel}" Command="{Binding CloseInspectCommand}"
+                                    ToolTip="Close (Esc)" />
+                            <StackPanel>
+                                <TextBlock Text="{Binding InspectTitle}" Style="{StaticResource Text.Body.Strong}" />
+                                <TextBlock Text="{Binding InspectNote}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+                            <ItemsControl ItemsSource="{Binding InspectedFeatures}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:MapFeatureCard}">
+                                        <Border Style="{StaticResource Map.ListRow}" Padding="10,8">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}" VerticalAlignment="Center"
+                                                                    Value="{Binding CopyText}" ToolTip="{Binding CopyToolTip}"
+                                                                    Visibility="{Binding CanCopy, Converter={StaticResource BoolToVis}}" />
+                                                    <Rectangle DockPanel.Dock="Left" Style="{StaticResource Map.Swatch}" Fill="{Binding Swatch}" />
+                                                    <TextBlock Text="{Binding Title}" ToolTip="{Binding Title}" Style="{StaticResource Text.Body.Strong}"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                </DockPanel>
+                                                <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="18,2,0,6" />
+                                                <ItemsControl ItemsSource="{Binding Properties}" Focusable="False">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Margin="0,2">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="104" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{Binding Name}" ToolTip="{Binding Name}" Style="{StaticResource Text.Caption}"
+                                                                           TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
+                                                                <TextBlock Grid.Column="1" Text="{Binding Value}" Style="{StaticResource Text.Caption}"
+                                                                           Foreground="{StaticResource Brush.Text.Primary}" FontFamily="{StaticResource Font.Mono}"
+                                                                           TextWrapping="Wrap" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="No properties." Style="{StaticResource Text.Caption}"
+                                                           Visibility="{Binding HasProperties, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
                 </Border>
 
                 <!-- held-back layers -->
@@ -424,7 +485,7 @@
                     </ctl:Card>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="2,0,2,8"
-                               Text="The base map (US states, coastlines, gridlines) is set from the layers button on the map's toolbar. Dense layers wait until you zoom in; the map says which." />
+                               Text="Ctrl + click a line, dot or label on the map to see its properties. The base map (US states, coastlines, gridlines) is set from the layers button on the map's toolbar. Dense layers wait until you zoom in; the map says which." />
                 </StackPanel>
             </ScrollViewer>
         </Border>

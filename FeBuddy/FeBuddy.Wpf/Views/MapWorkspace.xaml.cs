@@ -12,8 +12,9 @@ namespace FeBuddy.Wpf.Views;
 /// <summary>
 /// The one map screen, hosted by the Map page and by every map popup. See MapWorkspace.xaml.
 /// Its code-behind only does what is purely about the map control: the toolbar's zoom buttons and
-/// zoom box, framing on request, handing a Shift + drag box to the view-model, and carrying the view
-/// (centre and zoom) from one map to the next so a popup opens where the Map page was looking.
+/// zoom box, framing on request, handing a Shift + drag box and a Ctrl + click to the view-model,
+/// and carrying the view (centre and zoom) from one map to the next so a popup opens where the Map
+/// page was looking.
 /// </summary>
 public partial class MapWorkspace : UserControl
 {
@@ -24,6 +25,7 @@ public partial class MapWorkspace : UserControl
 	{
 		InitializeComponent();
 		Map.RoiQuickDrawn += (_, box) => _vm?.OnQuickDrawn(box);
+		Map.Inspected += (_, inspection) => _vm?.Inspect(inspection);
 		Loaded += OnLoaded;
 		Unloaded += OnUnloaded;
 	}

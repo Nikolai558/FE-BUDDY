@@ -59,6 +59,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ### Map
 - Feature #312 - Your Files: **Show all files** shows or hides every file at once, and right-clicking
   a file offers **Deselect all files except this one**. **Clear all** is now **Reset**.
+- Feature #327 - **Ctrl + click** a line, dot or label on the map to see its properties in a panel
+  beside it: a GeoJSON feature's properties as the file has them (with a button to copy them as
+  JSON), or what the AIRAC data says about a live airport, runway, NAVAID or ARTCC boundary. Every
+  shape under the pointer is listed, and drawn highlighted until you close the panel.
 
 ### Settings
 - Feature #324 - You no longer need to uninstall FE-Buddy between versions: settings saved by beta.2

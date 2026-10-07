@@ -181,7 +181,9 @@ FeBuddy.Wpf/
 - **One map.** `Views/MapWorkspace` is the Map page and every map window (`RoiPickerWindow`).
   `MapViewModel` holds the box being edited and where it goes (`IRoiTarget`); everything else lives
   in `MapLayersState.Shared`, so every map shows the same layers. `Controls/MapCanvas` is a
-  from-scratch Web-Mercator vector map: no tiles, no network, no map SDK.
+  from-scratch Web-Mercator vector map: no tiles, no network, no map SDK. A Ctrl + click is hit
+  tested against what was drawn (`MapCanvas.Inspect.cs`); each `MapGeometry` carries its
+  `MapFeature` (a file's properties, kept as JSON text until shown) for `MapViewModel.Inspect`.
 
 ### Conventions
 

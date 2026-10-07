@@ -23,6 +23,30 @@
              d:DataContext="{d:DesignInstance vm:ConcatenateAliasesViewModel}"
              d:DesignWidth="900" d:DesignHeight="900">
 
+    <UserControl.Resources>
+        <!-- A custom alias file's one-line heading: click anywhere on it to open or close the row. -->
+        <Style x:Key="Toggle.Row" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Root" Background="{TemplateBinding Background}"
+                                CornerRadius="{StaticResource Radius.Small}" Padding="4,3">
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{StaticResource Brush.Overlay}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside. -->
     <StackPanel x:Name="Root">
@@ -113,12 +137,16 @@
                 <ItemsControl ItemsSource="{Binding Sources}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type m:AliasSourceRow}">
-                            <Border Style="{StaticResource Panel.Inset}" Margin="0,0,0,10">
+                            <!-- One line - the file's name and its status, Check, and the order / remove
+                                 buttons - until opened with the chevron (issue #326). -->
+                            <Border Style="{StaticResource Panel.Inset}" Margin="0,0,0,6" Padding="6,5,8,5">
                                 <StackPanel>
 
-                                    <!-- heading, and the order / remove buttons -->
                                     <DockPanel>
-                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Style="{StaticResource Button.Ghost}" Content="{Binding CheckLabel}" Padding="12,4" Margin="8,0,6,0"
+                                                    ToolTip="Read the file now, the way the run will."
+                                                    Command="{Binding CheckCommand}" />
                                             <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Chevron.Up}"
                                                     ToolTip="Move this file up one place" Command="{Binding MoveUpCommand}" />
                                             <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Chevron.Down}"
@@ -126,96 +154,99 @@
                                             <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Close}"
                                                     ToolTip="Remove this file from the list" Command="{Binding RemoveCommand}" />
                                         </StackPanel>
-                                        <TextBlock Text="{Binding Header}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
+                                        <ToggleButton Style="{StaticResource Toggle.Row}" IsChecked="{Binding IsExpanded}"
+                                                      ToolTip="{Binding Location}">
+                                            <DockPanel>
+                                                <TextBlock x:Name="Chevron" DockPanel.Dock="Left" Text="{StaticResource Icon.Chevron.Right}"
+                                                           FontFamily="{StaticResource Font.Icon}" FontSize="10" Width="14"
+                                                           Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center" />
+                                                <StackPanel Margin="6,0,0,0">
+                                                    <TextBlock Text="{Binding Header}" Style="{StaticResource Text.Body.Strong}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock x:Name="Status" Text="{Binding Status}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </ToggleButton>
                                     </DockPanel>
 
-                                    <!-- where it is -->
-                                    <DockPanel Margin="0,8,0,0">
-                                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…" Margin="8,0,0,0"
-                                                Command="{Binding BrowseCommand}"
-                                                Visibility="{Binding IsFile, Converter={StaticResource BoolToVis}}" />
-                                        <TextBox Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}"
-                                                 LostFocus="OnLocationLostFocus" />
-                                    </DockPanel>
+                                    <!-- opened: where it is, its credential, and any troubleshooting -->
+                                    <StackPanel Margin="24,4,0,4" Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}">
 
-                                    <!-- the credential to download it with (web addresses only) -->
-                                    <StackPanel Margin="0,8,0,0" Visibility="{Binding IsUrl, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="Credential" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
-                                        <DockPanel>
-                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="New credential…" Margin="8,0,0,0"
-                                                    ToolTip="Add a GitHub token for a private repository, and use it for this file."
-                                                    Command="{Binding NewCredentialCommand}" />
-                                            <ComboBox Style="{StaticResource Themed.ComboBox}"
-                                                      ItemsSource="{Binding DataContext.Credentials, ElementName=Root}"
-                                                      SelectedValuePath="Id" SelectedValue="{Binding CredentialId}">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate DataType="{x:Type m:CredentialChoice}">
-                                                        <TextBlock Text="{Binding Label}" />
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
+                                        <!-- where it is -->
+                                        <DockPanel Margin="0,4,0,0">
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…" Margin="8,0,0,0"
+                                                    Command="{Binding BrowseCommand}"
+                                                    Visibility="{Binding IsFile, Converter={StaticResource BoolToVis}}" />
+                                            <TextBox Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}"
+                                                     LostFocus="OnLocationLostFocus" />
                                         </DockPanel>
-                                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                Content="{Binding SuggestionLabel}" Command="{Binding UseSuggestionCommand}"
-                                                ToolTip="Download this file with the same credential as an earlier one on the same website."
-                                                Visibility="{Binding HasSuggestion, Converter={StaticResource BoolToVis}}" />
-                                    </StackPanel>
 
-                                    <!-- what is wrong with it, and what a check found -->
-                                    <TextBlock Text="{Binding Error}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"
-                                               TextWrapping="Wrap" Margin="0,8,0,0"
-                                               Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
-                                    <TextBlock Text="{Binding Notice}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Warn}"
-                                               TextWrapping="Wrap" Margin="0,8,0,0"
-                                               Visibility="{Binding HasNotice, Converter={StaticResource BoolToVis}}" />
-
-                                    <DockPanel Margin="0,8,0,0">
-                                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="{Binding CheckLabel}" Margin="8,0,0,0"
-                                                ToolTip="Read the file now, the way the run will."
-                                                Command="{Binding CheckCommand}" />
-                                        <TextBlock Text="{Binding CheckMessage}" TextWrapping="Wrap" VerticalAlignment="Center"
-                                                   Visibility="{Binding HasCheckMessage, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
-                                                    <Setter Property="Foreground" Value="{StaticResource Brush.Positive}" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding CheckFailed}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </DockPanel>
-
-                                    <!-- after GitHub refused or hid the file: a question, then the help that fits -->
-                                    <StackPanel Margin="0,10,0,0" Visibility="{Binding AsksIfPrivate, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
-                                                   Text="Is the repository private - do you have to sign in to GitHub to see this file?" />
-                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                            <Button Style="{StaticResource Button.Ghost}" Content="Yes, it's private" Margin="0,0,8,0"
-                                                    Command="{Binding AnswerPrivateCommand}" />
-                                            <Button Style="{StaticResource Button.Ghost}" Content="No, it's public"
-                                                    Command="{Binding AnswerPublicCommand}" />
+                                        <!-- the credential to download it with (web addresses only) -->
+                                        <StackPanel Margin="0,8,0,0" Visibility="{Binding IsUrl, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="Credential" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="New credential…" Margin="8,0,0,0"
+                                                        ToolTip="Add a GitHub token for a private repository, and use it for this file."
+                                                        Command="{Binding NewCredentialCommand}" />
+                                                <ComboBox Style="{StaticResource Themed.ComboBox}"
+                                                          ItemsSource="{Binding DataContext.Credentials, ElementName=Root}"
+                                                          SelectedValuePath="Id" SelectedValue="{Binding CredentialId}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type m:CredentialChoice}">
+                                                            <TextBlock Text="{Binding Label}" />
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                            </DockPanel>
+                                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                    Content="{Binding SuggestionLabel}" Command="{Binding UseSuggestionCommand}"
+                                                    ToolTip="Download this file with the same credential as an earlier one on the same website."
+                                                    Visibility="{Binding HasSuggestion, Converter={StaticResource BoolToVis}}" />
                                         </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsPrivateHelp, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                                   Text="A private repository needs a GitHub token that can read it. The guide shows how to make one. Then choose it under Credential above, or add it with New credential…" />
-                                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                Content="Open the GitHub token guide" Command="{Binding OpenTokenGuideCommand}" />
-                                    </StackPanel>
-                                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                                               Text="Then the address is probably wrong. Open the file on GitHub and copy its address again, or its Raw link. To check the repository is public, open the address while signed out of GitHub. You'll only see the file if it is."
-                                               Visibility="{Binding ShowsPublicHelp, Converter={StaticResource BoolToVis}}" />
-                                    <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsCredentialHelp, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                                   Text="Check the credential. The GitHub token needs this repository with Contents: Read-only, and it may have expired. The guide's troubleshooting section explains each message and how to fix it." />
-                                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                Content="Open the guide's troubleshooting" Command="{Binding OpenTokenTroubleshootingCommand}" />
+
+                                        <!-- after GitHub refused or hid the file: a question, then the help that fits -->
+                                        <!-- (what is wrong with it, and what a check found, is the status line above) -->
+                                        <StackPanel Margin="0,10,0,0" Visibility="{Binding AsksIfPrivate, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                                                       Text="Is the repository private - do you have to sign in to GitHub to see this file?" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                <Button Style="{StaticResource Button.Ghost}" Content="Yes, it's private" Margin="0,0,8,0"
+                                                        Command="{Binding AnswerPrivateCommand}" />
+                                                <Button Style="{StaticResource Button.Ghost}" Content="No, it's public"
+                                                        Command="{Binding AnswerPublicCommand}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsPrivateHelp, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                                       Text="A private repository needs a GitHub token that can read it. The guide shows how to make one. Then choose it under Credential above, or add it with New credential…" />
+                                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                    Content="Open the GitHub token guide" Command="{Binding OpenTokenGuideCommand}" />
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                                   Text="Then the address is probably wrong. Open the file on GitHub and copy its address again, or its Raw link. To check the repository is public, open the address while signed out of GitHub. You'll only see the file if it is."
+                                                   Visibility="{Binding ShowsPublicHelp, Converter={StaticResource BoolToVis}}" />
+                                        <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsCredentialHelp, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                                       Text="Check the credential. The GitHub token needs this repository with Contents: Read-only, and it may have expired. The guide's troubleshooting section explains each message and how to fix it." />
+                                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                    Content="Open the guide's troubleshooting" Command="{Binding OpenTokenTroubleshootingCommand}" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                    <Setter TargetName="Chevron" Property="Text" Value="{StaticResource Icon.Chevron.Down}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding StatusTone}" Value="Positive">
+                                    <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Positive}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding StatusTone}" Value="Warn">
+                                    <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding StatusTone}" Value="Danger">
+                                    <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

@@ -48,6 +48,13 @@
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
+
+        <!-- A Your Files row's right-click. The rows share it, so its DataContext is taken from the row
+             right-clicked (PlacementTarget) rather than inherited, which a shared menu can't rely on. -->
+        <ContextMenu x:Key="UserFileMenu" d:DataContext="{d:DesignInstance vm:MapFileItem}"
+                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+            <MenuItem Header="Deselect all files except this one" Command="{Binding ShowOnlyCommand}" />
+        </ContextMenu>
     </UserControl.Resources>
 
     <Grid Background="{StaticResource Brush.Bg.Base}">
@@ -363,17 +370,29 @@
                     </ctl:Card>
 
                     <!-- ================ the user's own files ================ -->
+                    <!-- Only this list has Show all files and the right-click (issue #312); the AIRAC
+                         Cycle card's output files share the row but not these. -->
                     <ctl:Card Header="Your Files">
                         <StackPanel>
+                            <!-- Ticked while every file shows; filled while some do. A click shows them all, or hides them all. -->
+                            <CheckBox Content="Show all files" IsChecked="{Binding State.AllUserFilesShown}" Margin="8,0,0,8"
+                                      ToolTip="Show or hide every file. Right-click a file to hide all the others."
+                                      Visibility="{Binding State.HasUserFiles, Converter={StaticResource BoolToVis}}" />
                             <ScrollViewer Style="{StaticResource Map.ScrollList}">
-                                <ItemsControl ItemsSource="{Binding State.UserFiles}" ItemTemplate="{StaticResource MapFileRow}" />
+                                <ItemsControl ItemsSource="{Binding State.UserFiles}" ItemTemplate="{StaticResource MapFileRow}">
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="ContextMenu" Value="{StaticResource UserFileMenu}" />
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                </ItemsControl>
                             </ScrollViewer>
                             <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
                                        Text="Open any GeoJSON file to lay it over the map. A file that can't be read is flagged; the others still load."
                                        Visibility="{Binding State.HasUserFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                             <DockPanel Margin="0,4,0,0">
-                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Clear all"
-                                        Command="{Binding State.ClearFilesCommand}"
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Reset"
+                                        Command="{Binding State.ClearFilesCommand}" ToolTip="Take every file off the map"
                                         Visibility="{Binding State.HasUserFiles, Converter={StaticResource BoolToVis}}" />
                                 <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Command="{Binding State.LoadFilesCommand}">
                                     <StackPanel Orientation="Horizontal">

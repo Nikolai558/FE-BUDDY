@@ -47,12 +47,26 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   alias file's description shows the command to type, with an example, and Custom Alias Files on
   Concatenate Aliases says simply how to add a file. Airways' **Designations to Include** card is now
   **Airway Types to Include**, and its **Split into** list reads **High and Low** or **Airway types**.
+- Feature #326 - Concatenate Aliases: each custom alias file is one line - its name, how it stands,
+  **Check** and the order buttons - until you click it open for its address and credential. A new
+  web address, or a file **Check** has help for, opens by itself.
+
+### Map
+- Feature #312 - Your Files: **Show all files** shows or hides every file at once, and right-clicking
+  a file offers **Deselect all files except this one**. **Clear all** is now **Reset**.
 
 ### Settings
 - Feature #324 - You no longer need to uninstall FE-Buddy between versions: settings saved by beta.2
   or later are kept. When a later version changes how settings are saved, it updates yours at launch
   and keeps a copy of the old file (`UserConfig.v1.json` and so on, beside `UserConfig.json`).
   Settings exports carry the same version, so an older export still imports.
+- Bug #321 - Credentials: **Create a token on GitHub** now looks like a button, not a heading.
+
+### Look and feel
+- Bug #322 - The Systems box no longer says every cycle is ready while a d-TPP Metafile is missing:
+  AIRAC data turns amber and names the cycle, and when that's the only issue the box reads *Ready
+  except next d-TPP Metafile* rather than "1 needs attention". A next cycle the FAA hasn't published
+  is shown as such.
 
 ### Dev notes
 - `UserConfig.json` and exports are stamped with a settings layout (`UserConfigVersion`). Renaming,

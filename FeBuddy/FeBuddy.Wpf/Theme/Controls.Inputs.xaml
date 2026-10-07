@@ -307,6 +307,8 @@
                         <Trigger Property="IsChecked" Value="{x:Null}">
                             <Setter TargetName="Glyph" Property="Text" Value="{DynamicResource Icon.Dash}" />
                             <Setter TargetName="Glyph" Property="Opacity" Value="1" />
+                            <!-- on the soft amber fill, the dark tick colour would vanish -->
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
                             <Setter TargetName="Box" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
                         </Trigger>

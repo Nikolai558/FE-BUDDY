@@ -14,7 +14,8 @@ Unfamiliar words are in the [glossary](Glossary.md).
 - **Menu (left)** - the arrow at its top collapses it to icons.
 - **Systems (foot of the menu)** - one dot for the worst of Internet, AIRAC data and Updates; click
   it for a dot each. Green is fine, amber needs a look or is still working, red isn't working.
-  **Re-check** runs the checks again.
+  A cycle whose d-TPP Metafile isn't out yet turns AIRAC data amber; when that's the only thing, the
+  box says *Ready except next d-TPP Metafile*. **Re-check** runs the checks again.
 - **Top** - the version (hover it for the update status) and the AIRAC status. When there's an
   update, a red **Update available!** badge appears beside the version: click it, then **Update
   now**. FE-Buddy updates and reopens, keeping your settings.
@@ -256,7 +257,8 @@ Upload that one file. Untick **Combine the alias files into one file for vNAS** 
 file on its own. The tab is greyed out while no sub-service makes an alias file.
 
 - **FE-Buddy Alias Files** - which of FE-Buddy's alias files go in, as the General tab stands.
-- **Custom Alias Files** - your own, merged in the order listed:
+- **Custom Alias Files** - your own, merged in the order listed. Each is one line - its name, how it
+  stands, **Check** and the order buttons - until you click it open for its address and credential:
   - **Add file…** for a file on this PC (it must hold alias commands), or **Add web address**. On
     GitHub, paste the file's page or its Raw link; FE-Buddy shows it as the Raw link. Never put a
     password or token in the address: for a private repository, choose a **Credential**
@@ -397,6 +399,8 @@ A map for checking GeoJSON files and setting your Region of Interest. **Set ROI�
   - **Output of the AIRAC run** - the gear picks any GeoJSON file that cycle's run wrote. Pick
     another cycle and the same files from its run are shown.
 - **Your Files** - **Load GeoJSON…** opens files from anywhere. One that can't be drawn says why.
+  **Show all files** shows or hides them all; right-click a file for **Deselect all files except this
+  one**. **Reset** takes them all off the map.
 - **Home View** - **Use current view** sets where **Home** takes you (and where the very first map
   opens); **Reset** goes back to the contiguous US.
 

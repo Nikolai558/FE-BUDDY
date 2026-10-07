@@ -77,7 +77,7 @@ public static class AppDataReset
 
 		WaitForExit(request.WaitForProcessId, waitForExit);
 
-		// Every settings profile, Shared.json, and an older FE-Buddy's one file, kept for it.
+		// Every settings profile, Shared.json, and an older FE-Buddy's one file not yet moved in.
 		string[] settings = [UserConfigFile.ProfilesFolderName, UserConfigFile.LegacyConfigFileName];
 		List<string> notDeleted = [];
 

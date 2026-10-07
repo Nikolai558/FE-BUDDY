@@ -86,8 +86,7 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   "Changing the layout".
 - Settings are one file per profile, `%APPDATA%\FE-Buddy\User Configurations\UserConfig.<Profile>.json`,
   plus `Shared.json` for the settings every profile shares and the profile in use. `UserConfigFile`
-  hides the split. beta.3's `UserConfig.json` is copied in as Default and left in place for older
-  versions.
+  hides the split. beta.3's `UserConfig.json` is moved in as Default.
 
 ---
 

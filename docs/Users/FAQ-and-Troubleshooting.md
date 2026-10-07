@@ -109,8 +109,8 @@ Please attach these when you [report it](https://github.com/Nikolai558/FE-BUDDY/
 
 ### I want to start fresh
 
-Use Settings ▸ **Reset FE-Buddy…**, or close FE-Buddy and delete the `%APPDATA%\FE-Buddy` folder
-(it downloads the AIRAC data again as it starts).
+Use Settings ▸ **Reset FE-Buddy…**, or close FE-Buddy and delete
+`%APPDATA%\FE-Buddy\User Configurations`.
 
 ## Still stuck?
 

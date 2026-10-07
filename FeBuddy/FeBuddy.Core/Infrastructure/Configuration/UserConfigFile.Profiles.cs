@@ -37,7 +37,7 @@ public static partial class UserConfigFile
 	/// <summary>The kinds of backup a profile has.</summary>
 	private static readonly Regex BackupKind = new(@"^(previous|before-import|v\d+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-	/// <summary>Whether any settings are saved: a profile, or an older FE-Buddy's file.</summary>
+	/// <summary>Whether any settings are saved: a profile, or an older FE-Buddy's file not yet moved in.</summary>
 	public static bool HasSettings =>
 		ProfileNames().Count > 0 || File.Exists(Path.Combine(RootDirectory, LegacyConfigFileName));
 
@@ -338,13 +338,13 @@ public static partial class UserConfigFile
 	}
 
 	/// <summary>
-	/// Copies an older FE-Buddy's one settings file, <c>%APPDATA%\FE-Buddy\UserConfig.json</c>, in as the
-	/// <see cref="DefaultProfile"/> profile, with its backups - once, while there is no profile yet.
-	/// Its shared settings move into <c>Shared.json</c> as it is read. The old files stay where they
-	/// are, so an older FE-Buddy (rolled back to) still finds its settings. Never throws: when it can't
-	/// be copied, the next launch tries again.
+	/// Moves an older FE-Buddy's one settings file, <c>%APPDATA%\FE-Buddy\UserConfig.json</c>, in as the
+	/// <see cref="DefaultProfile"/> profile, with its backups - once, while there is no profile yet - so
+	/// the old file is gone once its settings are in. Its shared settings move into <c>Shared.json</c>
+	/// as it is read. Never throws: when it can't be moved, it is left where it is, and the next launch
+	/// tries again.
 	/// </summary>
-	private static void CopyLegacyFileIn()
+	private static void MoveLegacyFileIn()
 	{
 		string legacy = Path.Combine(_root, LegacyConfigFileName);
 
@@ -356,11 +356,11 @@ public static partial class UserConfigFile
 		try
 		{
 			System.IO.Directory.CreateDirectory(Directory);
-			File.Copy(legacy, ProfileFilePath(DefaultProfile));
+			File.Move(legacy, ProfileFilePath(DefaultProfile));
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
-			AppLog.Warning(LogSource, $"Could not copy '{legacy}' into '{ProfilesFolderName}': {ex.Message} FE-Buddy tries again at the next launch.");
+			AppLog.Warning(LogSource, $"Could not move '{legacy}' into '{ProfilesFolderName}': {ex.Message} FE-Buddy tries again at the next launch.");
 			return;
 		}
 
@@ -368,25 +368,12 @@ public static partial class UserConfigFile
 		{
 			if (LegacyBackupName.Match(Path.GetFileName(path)) is { Success: true } match)
 			{
-				CopyQuietly(path, BackupFilePath(DefaultProfile, match.Groups[1].Value.ToLowerInvariant()));
+				MoveQuietly(path, BackupFilePath(DefaultProfile, match.Groups[1].Value.ToLowerInvariant()));
 			}
 		}
 
 		AppLog.Info(LogSource, string.Create(CultureInfo.InvariantCulture,
-			$"Copied '{LegacyConfigFileName}' into '{ProfilesFolderName}' as the settings profile '{DefaultProfile}'. The old file is left for an older FE-Buddy."));
-	}
-
-	/// <summary>Copies a backup, logging rather than throwing when it can't: a backup is never worth failing for.</summary>
-	private static void CopyQuietly(string from, string to)
-	{
-		try
-		{
-			File.Copy(from, to, overwrite: true);
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			AppLog.Warning(LogSource, $"Could not copy '{Path.GetFileName(from)}' to '{Path.GetFileName(to)}': {ex.Message}");
-		}
+			$"Moved '{LegacyConfigFileName}' into '{ProfilesFolderName}' as the settings profile '{DefaultProfile}'."));
 	}
 
 	/// <summary>Moves a file, logging rather than throwing when it can't: a backup is never worth failing for.</summary>

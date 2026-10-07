@@ -72,7 +72,8 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
   `UserConfigFile.Profiles.cs`. The profile in use can't be deleted; Settings switches away first.
 - After a switch or an import every page reads the settings again (`ConfigPages.ReloadEverything`).
 - 3.0.0-beta.3 and earlier kept one `%APPDATA%\FE-Buddy\UserConfig.json`. While there is no profile,
-  each launch copies it in as **Default**, its backups with it, and leaves it for an older FE-Buddy.
+  a launch moves it in as **Default**, its backups with it, so the old file is gone. One that can't
+  be moved (in use, say) is left, and the next launch tries again.
 
 A profile is not a layout change: each setting keeps its dotted path, so no migration step was
 needed.

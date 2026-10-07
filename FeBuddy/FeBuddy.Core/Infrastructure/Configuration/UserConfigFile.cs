@@ -44,9 +44,8 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// </para>
 /// <para>
 /// FE-Buddy 3.0.0-beta.3 and earlier kept one file, <c>%APPDATA%\FE-Buddy\UserConfig.json</c>. The
-/// first read copies it in as the <see cref="DefaultProfile"/> profile, its shared settings into
-/// <c>Shared.json</c>, and leaves it for an older FE-Buddy (see <c>UserConfigFile.Profiles.cs</c> for
-/// the profiles themselves).
+/// first read moves it in as the <see cref="DefaultProfile"/> profile, its shared settings into
+/// <c>Shared.json</c> (see <c>UserConfigFile.Profiles.cs</c> for the profiles themselves).
 /// </para>
 /// </remarks>
 public static partial class UserConfigFile
@@ -54,10 +53,10 @@ public static partial class UserConfigFile
 	/// <summary>The folder in <c>%APPDATA%\FE-Buddy</c> that holds every profile and <c>Shared.json</c>.</summary>
 	public const string ProfilesFolderName = "User Configurations";
 
-	/// <summary>The profile FE-Buddy starts with, and the one an older FE-Buddy's settings are copied into.</summary>
+	/// <summary>The profile FE-Buddy starts with, and the one an older FE-Buddy's settings are moved into.</summary>
 	public const string DefaultProfile = "Default";
 
-	/// <summary>FE-Buddy 3.0.0-beta.3's one settings file, in <c>%APPDATA%\FE-Buddy</c>, which the first read copies in.</summary>
+	/// <summary>FE-Buddy 3.0.0-beta.3's one settings file, in <c>%APPDATA%\FE-Buddy</c>, which the first read moves in.</summary>
 	public const string LegacyConfigFileName = "UserConfig.json";
 
 	private const string LogSource = "UserConfig";
@@ -145,7 +144,7 @@ public static partial class UserConfigFile
 	/// Reads the active profile and <c>Shared.json</c> from disk into the in-memory dictionary,
 	/// replacing whatever was there. A missing or unreadable profile leaves only the shared settings
 	/// and logs a warning rather than throwing - this is the launch read path. A file in an older
-	/// layout is brought forward, and an older FE-Buddy's one file copied in (see the class remarks).
+	/// layout is brought forward, and an older FE-Buddy's one file moved in (see the class remarks).
 	/// </summary>
 	/// <returns>Whether the profile was read, missing or unreadable.</returns>
 	public static UserConfigReadResult ReadAll()
@@ -155,7 +154,7 @@ public static partial class UserConfigFile
 			Values.Clear();
 			_stampVersion = UserConfigMigrations.CurrentVersion;
 
-			CopyLegacyFileIn();
+			MoveLegacyFileIn();
 
 			Dictionary<string, string> shared = ReadShared(out string? active);
 			_profile = PickProfile(active);

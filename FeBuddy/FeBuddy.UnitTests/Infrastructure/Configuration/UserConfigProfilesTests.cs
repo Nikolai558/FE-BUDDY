@@ -9,7 +9,7 @@ namespace FeBuddy.UnitTests.Infrastructure.Configuration;
 /// <summary>
 /// Covers settings profiles (issue #324): the settings every profile shares kept in
 /// <c>Shared.json</c>, the rest in the profile's own file; an older FE-Buddy's <c>UserConfig.json</c>
-/// copied in as the Default profile; and creating, switching, renaming and deleting profiles - against
+/// moved in as the Default profile; and creating, switching, renaming and deleting profiles - against
 /// a throwaway folder standing for <c>%APPDATA%\FE-Buddy</c>.
 /// </summary>
 [Collection("AppLog")]
@@ -167,9 +167,9 @@ public sealed class UserConfigProfilesTests : IDisposable
 
 	// ---- an older FE-Buddy's file ----
 
-	/// <summary>It is copied, so an older FE-Buddy rolled back to still finds its settings.</summary>
+	/// <summary>Once its settings are in, the old file and its backups are gone from FE-Buddy's folder.</summary>
 	[Fact]
-	public void an_older_fe_buddys_settings_file_is_copied_in_as_the_default_profile()
+	public void an_older_fe_buddys_settings_file_is_moved_in_as_the_default_profile()
 	{
 		WriteRoot("UserConfig.json", """{ "ConfigVersion": 1, "General": { "UpdateChannel": "Beta", "PrettyPrintGeojson": "Y" } }""");
 		WriteRoot("UserConfig.previous.json", "{}");
@@ -186,12 +186,11 @@ public sealed class UserConfigProfilesTests : IDisposable
 		Assert.Equal(
 			["Shared.json", "UserConfig-before-import.Default.json", "UserConfig-previous.Default.json", "UserConfig-v1.Default.json", "UserConfig.Default.json"],
 			Directory.GetFiles(ProfilesFolder).Select(Path.GetFileName).Order(StringComparer.Ordinal));
-		Assert.Equal(4, Directory.GetFiles(_root, "UserConfig*.json").Length);
-		Assert.Contains("Beta", System.IO.File.ReadAllText(Path.Combine(_root, "UserConfig.json")), StringComparison.Ordinal);
+		Assert.Empty(Directory.GetFiles(_root, "UserConfig*.json"));
 	}
 
 	[Fact]
-	public void an_older_file_that_cannot_be_copied_is_tried_again_next_time()
+	public void an_older_file_that_cannot_be_moved_is_tried_again_next_time()
 	{
 		WriteRoot("UserConfig.json", """{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""");
 
@@ -200,10 +199,11 @@ public sealed class UserConfigProfilesTests : IDisposable
 			Assert.Equal(UserConfigReadResult.Missing, UserConfigFile.ReadAll());
 		}
 
-		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith($"Could not copy '{Path.Combine(_root, "UserConfig.json")}'", StringComparison.Ordinal));
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith($"Could not move '{Path.Combine(_root, "UserConfig.json")}'", StringComparison.Ordinal));
 
 		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
 		Assert.Equal("ZOB", UserConfigFile.GetValue(Artcc));
+		Assert.False(System.IO.File.Exists(Path.Combine(_root, "UserConfig.json")));
 	}
 
 	/// <summary>Once there are profiles, an older FE-Buddy's file (one run again, say) is left alone.</summary>

@@ -23,6 +23,7 @@
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:TabbedServiceViewModel}"
              d:DesignWidth="1100" d:DesignHeight="760">
@@ -73,6 +74,11 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type tabs:ServiceRunReviewTabViewModel}">
             <local:ServiceRunReviewTabView />
+        </DataTemplate>
+
+        <!-- the Preview Settings tab's run options (ServicePreviewTabViewModel.RunOptions) -->
+        <DataTemplate DataType="{x:Type vm:DuplicateAliasesCardViewModel}">
+            <cards:DuplicateAliasesCard />
         </DataTemplate>
 
         <!-- The action bar, rendered twice: pinned above the tab's content and again at

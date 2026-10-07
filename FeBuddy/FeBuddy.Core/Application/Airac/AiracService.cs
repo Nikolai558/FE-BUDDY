@@ -107,11 +107,17 @@ public static class AiracService
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
 	/// <param name="cancellationToken">Cancels the run.</param>
+	/// <param name="reviewDuplicates">
+	/// Asks the user about duplicated alias commands no saved choice settles, while
+	/// <see cref="AiracServiceSettings.ReviewDuplicateAliases"/> is on; without one, they are listed in
+	/// <c>Duplicate_Alias_Commands.txt</c>.
+	/// </param>
 	/// <returns>The aggregated result.</returns>
 	public static async Task<AiracServiceResult> RunAsync(
 		AiracServiceSettings settings,
 		IProgress<AiracServiceProgress>? progress = null,
-		CancellationToken cancellationToken = default)
+		CancellationToken cancellationToken = default,
+		DuplicateAliasReviewer? reviewDuplicates = null)
 	{
 		ArgumentNullException.ThrowIfNull(settings);
 
@@ -196,7 +202,7 @@ public static class AiracService
 			Messages = supplementalMessages,
 		};
 
-		return await RunAsync(settings, nasrData, supplementalData, progress, cancellationToken).ConfigureAwait(false);
+		return await RunAsync(settings, nasrData, supplementalData, progress, cancellationToken, reviewDuplicates).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -216,6 +222,11 @@ public static class AiracService
 	/// </param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
 	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
+	/// <param name="reviewDuplicates">
+	/// Asks the user about duplicated alias commands no saved choice settles, while
+	/// <see cref="AiracServiceSettings.ReviewDuplicateAliases"/> is on; without one, they are listed in
+	/// <c>Duplicate_Alias_Commands.txt</c>.
+	/// </param>
 	/// <returns>The aggregated result: each sub-service's result plus a combined warning list.</returns>
 	/// <exception cref="ArgumentException">
 	/// Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank, or a new name in
@@ -231,7 +242,8 @@ public static class AiracService
 		NasrCsvDataCollection nasrData,
 		AiracSupplementalData supplementalData,
 		IProgress<AiracServiceProgress>? progress = null,
-		CancellationToken cancellationToken = default)
+		CancellationToken cancellationToken = default,
+		DuplicateAliasReviewer? reviewDuplicates = null)
 	{
 		ArgumentNullException.ThrowIfNull(settings);
 		ArgumentNullException.ThrowIfNull(nasrData);
@@ -342,11 +354,17 @@ public static class AiracService
 			.Select(output => new AliasFileWritten(output.Key, output.Path!))];
 
 		DuplicateAliasReportResult? duplicateAliasReport = null;
+		DuplicateAliasOutcome duplicateOutcome = new([], [], Stopped: false);
 
 		if (aliasFiles.Length > 0)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 			progress?.Report(new AiracServiceProgress("AIRAC", "Checking the alias files for duplicate commands"));
+
+			// The user's choices first, so the report lists only what is left - or everything, when
+			// the user stopped the run.
+			duplicateOutcome = await SettleDuplicatesAsync(
+				aliasFiles, nasrData, settings, supplementalData, reviewDuplicates, progress, messages, cancellationToken).ConfigureAwait(false);
 
 			duplicateAliasReport = await Task.Run(
 				() => DuplicateAliasReport.Write(
@@ -354,9 +372,24 @@ public static class AiracService
 					fileNames.FileName(AiracOutputPaths.DuplicateAliasReportFileName)),
 				cancellationToken).ConfigureAwait(false);
 
-			ServiceMessage reportMessage = DuplicateAliasMessage(duplicateAliasReport, aliasFiles.Length);
-			messages.Add(reportMessage);
-			AppLog.Write(reportMessage.Level, reportMessage.Source, reportMessage.Text);
+			AddMessage(DuplicateAliasMessage(duplicateAliasReport, aliasFiles.Length));
+
+			if (duplicateOutcome.Stopped)
+			{
+				// Nothing the user didn't choose for goes out: this run's alias files go, and so does
+				// a combined file an earlier run left, which they would have replaced.
+				foreach (AliasFileWritten file in aliasFiles)
+				{
+					File.Delete(file.FilePath);
+				}
+
+				string earlier = CombinedAliasFileWriter.DeleteEarlierFile(outputDirectory, combinedAliasFileName).Sentence;
+
+				AddMessage(new ServiceMessage(LogLevel.Warning, LogSource,
+					$"You stopped the run at the duplicate alias commands, so it saved no alias file and no {combinedAliasFileName}.{earlier} " +
+					$"The duplicates are listed in {Path.GetFileName(duplicateAliasReport.FilePath)}; the other files the run wrote are in the cycle folder.")
+				{ IsAdvisory = true });
+			}
 		}
 
 		// vNAS takes one alias file, so every alias file the run wrote goes into Combined_Alias.txt, then
@@ -364,7 +397,14 @@ public static class AiracService
 		bool combine = settings.ConcatenateAliases is not null && ConcatenateAliasesSettingsParser.CombinesAliasFiles(settings.ConcatenateAliases);
 		CombinedAliasResult? combinedAliasResult = null;
 
-		if (combine)
+		if (duplicateOutcome.Stopped)
+		{
+			if (settings.ConcatenateAliases is not null)
+			{
+				progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, $"Stopped at the duplicate alias commands, so {combinedAliasFileName} was not written.", 100));
+			}
+		}
+		else if (combine)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 			progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, $"Writing {combinedAliasFileName}"));
@@ -427,6 +467,9 @@ public static class AiracService
 			Elapsed = stopwatch.Elapsed,
 			OutputDirectory = outputDirectory,
 			DuplicateAliasReport = duplicateAliasReport,
+			DuplicateAliasChoicesMade = duplicateOutcome.Made,
+			UnusedDuplicateAliasChoices = duplicateOutcome.Unused,
+			StoppedAtDuplicateReview = duplicateOutcome.Stopped,
 			Airways = airwaysResult,
 			Airports = airportsResult,
 			Departures = departuresResult,
@@ -477,7 +520,116 @@ public static class AiracService
 
 			return result;
 		}
+
+		void AddMessage(ServiceMessage message)
+		{
+			messages.Add(message);
+			AppLog.Write(message.Level, message.Source, message.Text);
+		}
 	}
+
+	/// <summary>
+	/// Makes the user's choices for the run's duplicated alias commands (issue #318). Saved choices that
+	/// settle a command are made as they are. While <see cref="AiracServiceSettings.ReviewDuplicateAliases"/>
+	/// is on, the run then stops - before any alias file is final - for the user to choose for the
+	/// rest; otherwise those are left for <c>Duplicate_Alias_Commands.txt</c>.
+	/// </summary>
+	/// <returns>The choices made in the review, the saved ones no duplicate needed, and whether the user stopped the run.</returns>
+	private static async Task<DuplicateAliasOutcome> SettleDuplicatesAsync(
+		AliasFileWritten[] aliasFiles,
+		NasrCsvDataCollection nasrData,
+		AiracServiceSettings settings,
+		AiracSupplementalData supplementalData,
+		DuplicateAliasReviewer? reviewDuplicates,
+		IProgress<AiracServiceProgress>? progress,
+		List<ServiceMessage> messages,
+		CancellationToken cancellationToken)
+	{
+		IReadOnlyList<DuplicateAliasCommand> duplicates = await Task.Run(
+			() => DuplicateAliasReport.Find(aliasFiles, nasrData), cancellationToken).ConfigureAwait(false);
+
+		// A choice for a file this run didn't write isn't "unused": its file is just not in the run.
+		DuplicateAliasRule[] forThisRun = [.. settings.DuplicateAliasChoices.Where(choice =>
+			aliasFiles.Any(file => file.FileKey.Equals(choice.FileKey, StringComparison.OrdinalIgnoreCase)))];
+
+		if (duplicates.Count == 0)
+		{
+			ReportUnused(forThisRun);
+			return new DuplicateAliasOutcome([], forThisRun, Stopped: false);
+		}
+
+		// A new command must not be one any line of the run uses - the custom alias files' included.
+		string[] customTexts = [.. (supplementalData.CustomAliasFiles ?? []).Where(file => file.Succeeded).Select(file => file.Text!)];
+		HashSet<string> taken = await Task.Run(
+			() => DuplicateAliasChoices.CommandsIn(aliasFiles, customTexts), cancellationToken).ConfigureAwait(false);
+
+		DuplicateAliasPlan plan = DuplicateAliasChoices.Plan(duplicates, forThisRun, taken);
+		List<DuplicateAliasRule> toMake = [.. plan.Settled.SelectMany(settled => settled.Choices)];
+		IReadOnlyList<DuplicateAliasRule> made = [];
+		int settledCount = plan.Settled.Count;
+
+		if (plan.Unsettled.Count > 0 && settings.ReviewDuplicateAliases && reviewDuplicates is not null)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			progress?.Report(new AiracServiceProgress("AIRAC", $"Waiting for your choices on {plan.Unsettled.Count:N0} duplicate alias command(s)"));
+
+			HashSet<string> takenNow = new(taken.Concat(DuplicateAliasChoices.NewCommands(toMake)), StringComparer.OrdinalIgnoreCase);
+			DuplicateAliasRule[] savedForThese = [.. forThisRun.Where(choice =>
+				plan.Unsettled.Any(duplicate => duplicate.Lines.Any(line => choice.IsFor(duplicate.Command, line))))];
+
+			IReadOnlyList<DuplicateAliasRule>? answer = await reviewDuplicates(
+				new DuplicateAliasReview(plan.Unsettled, savedForThese, takenNow), cancellationToken).ConfigureAwait(false);
+
+			if (answer is null)
+			{
+				return new DuplicateAliasOutcome([], plan.Unused, Stopped: true);
+			}
+
+			// The reviewer checks each choice as it is made; a command its answer still doesn't
+			// settle stays a duplicate, for the report.
+			DuplicateAliasPlan chosen = DuplicateAliasChoices.Plan(plan.Unsettled, answer, takenNow);
+			made = [.. chosen.Settled.SelectMany(settled => settled.Choices)];
+			toMake.AddRange(made);
+			settledCount += chosen.Settled.Count;
+		}
+
+		if (toMake.Count > 0)
+		{
+			(int leftOut, int renamed) = await Task.Run(
+				() => DuplicateAliasChoices.Apply(aliasFiles, toMake), cancellationToken).ConfigureAwait(false);
+
+			Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"Your choices settled {settledCount:N0} duplicate alias command(s): {leftOut:N0} line(s) left out and {renamed:N0} renamed." +
+				(made.Count > 0 ? " The choices you just made are saved for later runs." : string.Empty))
+			{ IsAdvisory = true });
+		}
+
+		ReportUnused(plan.Unused);
+		return new DuplicateAliasOutcome(made, plan.Unused, Stopped: false);
+
+		void ReportUnused(IReadOnlyList<DuplicateAliasRule> unused)
+		{
+			if (unused.Count > 0)
+			{
+				Add(new ServiceMessage(LogLevel.Info, LogSource,
+					$"{unused.Count:N0} saved choice(s) for duplicate alias commands matched no duplicate in this run, so they weren't used. " +
+					"Remove them on the Preview Settings tab if you no longer need them.")
+				{ IsAdvisory = true });
+			}
+		}
+
+		void Add(ServiceMessage message)
+		{
+			messages.Add(message);
+			AppLog.Write(message.Level, message.Source, message.Text);
+		}
+	}
+
+	/// <summary>What <see cref="SettleDuplicatesAsync"/> did.</summary>
+	/// <param name="Made">The choices the user made when the run stopped for them, to save.</param>
+	/// <param name="Unused">The saved choices for no duplicated command of this run's.</param>
+	/// <param name="Stopped">Whether the user stopped the run instead.</param>
+	private sealed record DuplicateAliasOutcome(IReadOnlyList<DuplicateAliasRule> Made, IReadOnlyList<DuplicateAliasRule> Unused, bool Stopped);
 
 	/// <summary>
 	/// What the run panel says about the duplicate alias report: an advisory warning when there is

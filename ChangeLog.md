@@ -50,6 +50,11 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Feature #326 - Concatenate Aliases: each custom alias file is one line - its name, how it stands,
   **Check** and the order buttons - until you click it open for its address and credential. A new
   web address, or a file **Check** has help for, opens by itself.
+- Feature #318 - Duplicate alias commands: on Preview Settings, choose to have the run stop before
+  the alias files are saved and ask which line keeps each duplicated command, and leave out or
+  rename the others (a new command is checked against every command in the run, your custom alias
+  files' included). The choices are saved and made in every later run, so only new duplicates ask
+  again; they're listed on Preview Settings, where each can be removed.
 
 ### Map
 - Feature #312 - Your Files: **Show all files** shows or hides every file at once, and right-clicking

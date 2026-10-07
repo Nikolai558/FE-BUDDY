@@ -42,7 +42,8 @@ the run goes on.
 
 Since cycle 2609 the FAA's data lists ORF's NUTIY and SWOPE departures as STARs too, so
 `.orfNUTIYf` and `.orfSWOPEf` are in both files. `Duplicate_Alias_Commands.txt` lists them with any
-other duplicates.
+other duplicates. To pick which line keeps a command once and for all, see Duplicate Alias Commands
+on the [Preview Settings tab](User-Guide.md#preview-settings-tab).
 
 ### Do I still need FE-Buddy 2.x?
 

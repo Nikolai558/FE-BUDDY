@@ -84,6 +84,18 @@ The default ROI is saved by `DefaultRoiStore`: by the Map as soon as it is set o
 Settings when **Save** is pressed. Clearing it only sets `FilterByRoi` to `N`, so the corners come
 back next time.
 
+### Services.AiracService.DuplicateAliases
+
+Saved by the Duplicate Alias Commands card on Preview Settings as soon as either changes, and the
+choices also after a run in which the user made some (`DuplicateAliasesCardViewModel`).
+
+| Key | Values | Default |
+|---|---|---|
+| `Review` | `Y` - a duplicate no saved choice settles stops the run for the user to choose; `N` - it is listed in `Duplicate_Alias_Commands.txt` | `N` |
+| `Choices` | one choice per line, `FileKey\|Command\|Occurrence\|Action\|NewCommand`: the alias file's [key](#file-keys), the duplicated command, which of that file's lines with it (from `1`), `Keep` / `Ignore` / `Rename`, and the new command for `Rename` (`DuplicateAliasChoices`). A line that isn't a whole choice is skipped | none |
+
+Every run makes the saved choices, whichever way `Review` is set.
+
 ### Services.AiracService.FileNames
 
 Saved by the File Names tab. Each file's choice is kept by its [file key](#file-keys), as a

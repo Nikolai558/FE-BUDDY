@@ -156,7 +156,9 @@ FeBuddy.Wpf/
   Conversions, Info) goes back to its first tab, picker or main page each time it is chosen in the
   side nav.
 - **AIRAC Service is `TabbedServiceView`.** Tabs are data (`TabbedServiceViewModel`), not
-  hand-placed XAML.
+  hand-placed XAML. A choice about the run itself, not any one tab's, is a card above Preview
+  Settings' run button (`ServicePreviewTabViewModel.RunOptions`, an `IPreviewOptions`): AIRAC
+  Service's Duplicate Alias Commands.
 - **File Conversions** (`FileConversionsView`) opens on a picker - Source, File, Output, a tree of
   `ConversionChoice`s built in `FileConversionsViewModel` - and Continue opens that conversion's page
   in its place, with its last run's results under its Run card.

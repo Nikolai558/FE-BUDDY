@@ -66,6 +66,9 @@
 
         <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource ReviewSection}" />
 
+        <!-- the service's own choices about the run; its DataTemplate is the service screen's -->
+        <ContentControl Content="{Binding RunOptions}" Focusable="False" />
+
         <!-- run -->
         <cards:RunCard Note="Unsaved settings are saved before the run starts." />
     </StackPanel>

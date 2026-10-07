@@ -291,6 +291,20 @@ the run; unsaved changes are saved first (you're asked). **Run AIRAC Service** s
 cycle's folder already has files, choose **Overwrite files** (other old files stay), **Delete all
 files** (emptied first, not to the Recycle Bin) or **Cancel**.
 
+**Duplicate Alias Commands** (while an alias file is in the run) - what the run does when more than
+one line of the alias files uses a command, since CRC can only run one of them:
+
+- **List them in Duplicate_Alias_Commands.txt** (to start).
+- **Stop and let me choose, before the alias files are saved** - the run opens a window with each
+  command's lines. Choose **Keep** for one, and **Leave out** or **Rename to** for the others; a new
+  command can't be one the run already uses, your custom alias files' included. **Save choices and
+  finish the run** carries on; **Stop the run** ends it with no alias file and no
+  `Combined_Alias.txt` saved.
+
+Your choices are saved and made in every later run, whichever option is picked, so only a new
+duplicate asks again. **Saved Choices** lists them; remove one to be asked again, and the Review tab
+says when one no longer matches a duplicate.
+
 ### Review tab
 
 Progress, then **Errors**, **Advisories** (output you might expect but won't find, and why),
@@ -378,7 +392,8 @@ Every AIRAC Service run of a cycle writes into one `AIRAC_<cycle>` folder in you
 
 **`Duplicate_Alias_Commands.txt`** lists every alias command that more than one line uses across the
 run's alias files (CRC runs only one of them), grouped by ARTCC - yours first - then `TELEPHONY` and
-`OTHER`. The Review tab warns when there are any.
+`OTHER`. The Review tab warns when there are any. A duplicate your choices settle (see
+[Preview Settings](#preview-settings-tab)) isn't listed.
 
 ## Map
 

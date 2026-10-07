@@ -107,6 +107,9 @@ AiracService.RunAsync
         2. XxxBuilder                 FAA rows → domain objects
         3. XxxGeojsonWriter           → .geojson files
         4. XxxAliasWriter             → alias .txt
+  DuplicateAliasChoices               the saved choices for duplicated commands; any left, with
+                                      Review on: the run asks the GUI (DuplicateAliasReviewer),
+                                      which can stop it - then no alias file is kept
   DuplicateAliasReport.Write          → Duplicate_Alias_Commands.txt
   CombinedAliasFileWriter.Write       → Aliases\Combined_Alias.txt
         │  AiracServiceResult

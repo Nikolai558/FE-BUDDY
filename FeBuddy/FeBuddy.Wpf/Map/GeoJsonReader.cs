@@ -6,8 +6,10 @@ namespace FeBuddy.Wpf.Map;
 
 /// <summary>
 /// A small, forgiving GeoJSON reader built on <see cref="System.Text.Json"/> -
-/// no NuGet dependency. It only cares about what the map draws: geometry, plus a vNAS text
-/// feature's <c>text</c> lines so they can be drawn as labels. Other properties are ignored.
+/// no NuGet dependency. It reads what the map draws: geometry, plus a vNAS text feature's
+/// <c>text</c> lines so they can be drawn as labels. Each shape also keeps its feature - its
+/// geometry type, its place in the file and its properties as written - for a Ctrl+click to show
+/// (<see cref="MapGeometry.Feature"/>).
 /// <para>
 /// Handles FeatureCollection / Feature / bare geometry, GeometryCollection, and
 /// all six primitive types. Coordinates are read as <c>[lon, lat]</c> per the
@@ -51,7 +53,7 @@ public static class GeoJsonReader
 
 			try
 			{
-				ReadNode(doc.RootElement, label: null, result, state);
+				ReadNode(doc.RootElement, label: null, feature: null, number: null, result, state);
 			}
 			catch (InvalidOperationException ex)
 			{
@@ -71,7 +73,13 @@ public static class GeoJsonReader
 		}
 	}
 
-	private static void ReadNode(JsonElement node, string? label, List<MapGeometry> into, ReadState state)
+	/// <param name="node">A FeatureCollection, Feature or geometry.</param>
+	/// <param name="label">The text its feature draws, or <see langword="null"/>.</param>
+	/// <param name="feature">The feature it belongs to; <see langword="null"/> for a bare geometry, which is its own.</param>
+	/// <param name="number">A feature's place in its collection, from 1; <see langword="null"/> outside one.</param>
+	/// <param name="into">Where the shapes go.</param>
+	/// <param name="state">What has been dropped so far.</param>
+	private static void ReadNode(JsonElement node, string? label, MapFeature? feature, int? number, List<MapGeometry> into, ReadState state)
 	{
 		if (node.ValueKind != JsonValueKind.Object
 			|| !node.TryGetProperty("type", out var typeProp)
@@ -85,9 +93,10 @@ public static class GeoJsonReader
 			case "FeatureCollection":
 				if (node.TryGetProperty("features", out var features) && features.ValueKind == JsonValueKind.Array)
 				{
-					foreach (var feature in features.EnumerateArray())
+					int n = 0;
+					foreach (var item in features.EnumerateArray())
 					{
-						ReadNode(feature, label: null, into, state);
+						ReadNode(item, label: null, feature: null, number: ++n, into, state);
 					}
 				}
 
@@ -102,7 +111,14 @@ public static class GeoJsonReader
 
 				if (node.TryGetProperty("geometry", out var geometry))
 				{
-					ReadNode(geometry, ReadLabel(properties), into, state);
+					string geometryType = geometry.ValueKind == JsonValueKind.Object
+						&& geometry.TryGetProperty("type", out var geometryTypeProp) && geometryTypeProp.ValueKind == JsonValueKind.String
+							? geometryTypeProp.GetString()!
+							: "Feature";
+					MapFeature info = MapFeature.FromGeoJson(
+						geometryType, number, properties.ValueKind == JsonValueKind.Object ? properties.GetRawText() : null);
+
+					ReadNode(geometry, ReadLabel(properties), info, number: null, into, state);
 				}
 
 				break;
@@ -112,14 +128,15 @@ public static class GeoJsonReader
 				{
 					foreach (var g in geometries.EnumerateArray())
 					{
-						ReadNode(g, label, into, state);
+						ReadNode(g, label, feature, number: null, into, state);
 					}
 				}
 
 				break;
 
 			default:
-				var parsed = ReadGeometry(typeProp.GetString(), node, label, state);
+				string type = typeProp.GetString()!;
+				var parsed = ReadGeometry(type, node, label, feature ?? MapFeature.FromGeoJson(type, null, null), state);
 				if (parsed is not null)
 				{
 					into.Add(parsed);
@@ -152,7 +169,7 @@ public static class GeoJsonReader
 	}
 
 	/// <summary>One geometry, or <see langword="null"/> when nothing in it can be drawn.</summary>
-	private static MapGeometry? ReadGeometry(string? type, JsonElement node, string? label, ReadState state)
+	private static MapGeometry? ReadGeometry(string type, JsonElement node, string? label, MapFeature feature, ReadState state)
 	{
 		if (!node.TryGetProperty("coordinates", out var coords))
 		{
@@ -163,7 +180,7 @@ public static class GeoJsonReader
 		{
 			case "Point":
 				return ReadPoint(coords, state) is { } point
-					? new MapGeometry(MapGeometryKind.Point, [[point]], label)
+					? new MapGeometry(MapGeometryKind.Point, [[point]], label) { Feature = feature }
 					: null;
 
 			case "MultiPoint":
@@ -176,19 +193,19 @@ public static class GeoJsonReader
 					}
 				}
 
-				return points.Count > 0 ? new MapGeometry(MapGeometryKind.Point, points, label) : null;
+				return points.Count > 0 ? new MapGeometry(MapGeometryKind.Point, points, label) { Feature = feature } : null;
 
 			case "LineString":
-				return Build(MapGeometryKind.Line, [ReadRun(coords, state)]);
+				return Build(MapGeometryKind.Line, [ReadRun(coords, state)], feature);
 
 			case "MultiLineString":
-				return Build(MapGeometryKind.Line, [.. Items(coords).Select(line => ReadRun(line, state))]);
+				return Build(MapGeometryKind.Line, [.. Items(coords).Select(line => ReadRun(line, state))], feature);
 
 			case "Polygon":
-				return Build(MapGeometryKind.Polygon, [.. Items(coords).Select(ring => ReadRun(ring, state))]);
+				return Build(MapGeometryKind.Polygon, [.. Items(coords).Select(ring => ReadRun(ring, state))], feature);
 
 			case "MultiPolygon":
-				return Build(MapGeometryKind.Polygon, [.. Items(coords).SelectMany(Items).Select(ring => ReadRun(ring, state))]);
+				return Build(MapGeometryKind.Polygon, [.. Items(coords).SelectMany(Items).Select(ring => ReadRun(ring, state))], feature);
 
 			default:
 				return null;
@@ -199,12 +216,12 @@ public static class GeoJsonReader
 	/// A line or polygon from the runs that can be drawn - at least two points for a line, three
 	/// for a ring - or <see langword="null"/> when none can.
 	/// </summary>
-	private static MapGeometry? Build(MapGeometryKind kind, List<IReadOnlyList<GeoPoint>> runs)
+	private static MapGeometry? Build(MapGeometryKind kind, List<IReadOnlyList<GeoPoint>> runs, MapFeature feature)
 	{
 		int fewest = kind == MapGeometryKind.Polygon ? 3 : 2;
 		List<IReadOnlyList<GeoPoint>> drawable = [.. runs.Where(run => run.Count >= fewest)];
 
-		return drawable.Count > 0 ? new MapGeometry(kind, drawable) : null;
+		return drawable.Count > 0 ? new MapGeometry(kind, drawable) { Feature = feature } : null;
 	}
 
 	private static IReadOnlyList<GeoPoint> ReadRun(JsonElement array, ReadState state) =>

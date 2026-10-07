@@ -2,7 +2,7 @@ namespace FeBuddy.Core.Infrastructure.Configuration.Models;
 
 /// <summary>
 /// What importing a <see cref="UserConfigPackage"/> would do to this PC's settings, worked out by
-/// <see cref="UserConfigTransfer.Plan(UserConfigPackage)"/> so the user can see it before
+/// <see cref="UserConfigTransfer.Plan(UserConfigPackage, UserConfigImportMode)"/> so the user can see it before
 /// <see cref="UserConfigTransfer.Apply(UserConfigImportPlan)"/> writes anything.
 /// </summary>
 /// <param name="Package">The file being imported.</param>
@@ -26,4 +26,7 @@ public sealed record UserConfigImportPlan(
 {
 	/// <summary>Whether importing would change anything at all.</summary>
 	public bool HasChanges => ChangedCount > 0;
+
+	/// <summary>Whether the file's settings replace the profile's or merge into them.</summary>
+	public UserConfigImportMode Mode { get; init; }
 }

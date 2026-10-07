@@ -96,7 +96,8 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
 		AddFileCommand = new RelayCommand(AddFiles);
-		AddUrlCommand = new RelayCommand(() => Add(new AliasSourceRow(this, AliasSourceKind.Url, string.Empty, Guid.Empty)));
+		// A new web address opens expanded: its box is where the address goes.
+		AddUrlCommand = new RelayCommand(() => Add(new AliasSourceRow(this, AliasSourceKind.Url, string.Empty, Guid.Empty) { IsExpanded = true }));
 
 		RefreshCredentials();
 		_store.Changed += (_, _) =>
@@ -726,6 +727,8 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 					? "Its credential is not on this PC: it was removed, or the settings came from another PC. Choose one of yours."
 				: null;
 
+			// Its status line names its credential, which may have been renamed.
+			row.RefreshStatus();
 			row.SetSuggestion(null, null);
 
 			if (!row.IsUrl || row.CredentialId != Guid.Empty || RequestHost(location) is not { } host)
@@ -778,6 +781,12 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		CredentialChoice.Sync(Credentials, [CredentialChoice.None, .. saved.Select(CredentialChoice.For)]);
 		RefreshRowHints();
 	}
+
+	/// <summary>The name of a saved credential, for a row's status line.</summary>
+	/// <param name="id">The credential's id.</param>
+	/// <returns>Its name, or <see langword="null"/> for none or one that is not on this PC.</returns>
+	internal string? CredentialName(Guid id) =>
+		id == Guid.Empty ? null : Credentials.FirstOrDefault(c => c.Id == id)?.Name;
 
 	/// <summary>How the Preview Settings tab describes a row.</summary>
 	private string Describe(AliasSourceRow row)

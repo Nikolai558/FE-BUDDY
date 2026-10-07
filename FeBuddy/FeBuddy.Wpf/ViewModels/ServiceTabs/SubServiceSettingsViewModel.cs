@@ -283,10 +283,11 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 
 	/// <summary>
 	/// Runs <see cref="WriteToConfig"/> against a buffer instead of the config file, giving the
-	/// tab's current values as a plain dictionary.
+	/// tab's current values as a plain dictionary. Internal so the unit tests can check that every
+	/// saved setting of every settings layout is still read and written the same way.
 	/// </summary>
-	/// <returns>Every value this tab would save right now.</returns>
-	private IReadOnlyDictionary<string, string> CaptureCurrentValues()
+	/// <returns>Every value this tab would save right now, by key under <see cref="NodePath"/>.</returns>
+	internal IReadOnlyDictionary<string, string> CaptureCurrentValues()
 	{
 		Dictionary<string, string> buffer = new(StringComparer.Ordinal);
 		_captureBuffer = buffer;

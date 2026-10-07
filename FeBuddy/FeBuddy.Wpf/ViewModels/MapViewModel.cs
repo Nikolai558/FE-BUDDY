@@ -20,10 +20,22 @@ namespace FeBuddy.Wpf.ViewModels;
 /// or <b>Cancel</b> puts the saved box back. <b>Shift + drag</b> on the map skips all that: the
 /// box is saved the moment the mouse is let go (<see cref="OnQuickDrawn"/>).
 /// </para>
+/// <para>
+/// Properties (issue #327): a <b>Ctrl + click</b> on the map opens a panel over it with what is under
+/// the pointer, one card each (<see cref="Inspect"/>), and draws those shapes highlighted until the
+/// panel closes.
+/// </para>
 /// </summary>
 public sealed class MapViewModel : ObservableObject
 {
+	/// <summary>How many shapes the properties panel shows from one Ctrl + click; it says when there are more.</summary>
+	internal const int MaxCards = 25;
+
 	private readonly Dispatcher _dispatcher;
+	private IReadOnlyList<MapFeatureCard> _inspectedFeatures = [];
+	private IReadOnlyList<MapHit>? _highlighted;
+	private string _inspectTitle = string.Empty;
+	private string _inspectNote = string.Empty;
 	private GeoBounds? _draftRoi;
 	private string _neLat = string.Empty;
 	private string _neLon = string.Empty;
@@ -52,6 +64,8 @@ public sealed class MapViewModel : ObservableObject
 		CancelRoiCommand = new RelayCommand(CancelRoi, () => IsEditingRoi);
 		ClearRoiCommand = new RelayCommand(ClearRoi, () => Target.CanClear && DraftRoi is not null);
 		ZoomToRoiCommand = new RelayCommand(() => FrameRequested?.Invoke(this, DraftRoi!.Value), () => DraftRoi is not null);
+		CloseInspectCommand = new RelayCommand(CloseInspect, () => IsInspecting);
+		EscapeCommand = new RelayCommand(Escape, () => IsInspecting || IsEditingRoi);
 
 		target.CurrentChanged += (_, _) => _dispatcher.BeginInvoke(OnTargetChanged);
 
@@ -210,6 +224,93 @@ public sealed class MapViewModel : ObservableObject
 
 	/// <summary>Frames the box on the map.</summary>
 	public ICommand ZoomToRoiCommand { get; }
+
+	// =========================== properties ==============================
+
+	/// <summary>The shapes the last Ctrl + click landed on, one card each, the one drawn on top first.</summary>
+	public IReadOnlyList<MapFeatureCard> InspectedFeatures
+	{
+		get => _inspectedFeatures;
+		private set => SetProperty(ref _inspectedFeatures, value);
+	}
+
+	/// <summary>The shapes in the panel, for the map to draw highlighted; <see langword="null"/> while it is closed.</summary>
+	public IReadOnlyList<MapHit>? Highlighted
+	{
+		get => _highlighted;
+		private set => SetProperty(ref _highlighted, value);
+	}
+
+	/// <summary>Whether the properties panel is open.</summary>
+	public bool IsInspecting => Highlighted is not null;
+
+	/// <summary>The panel's heading, e.g. <c>3 objects</c> or <c>Nothing here</c>.</summary>
+	public string InspectTitle
+	{
+		get => _inspectTitle;
+		private set => SetProperty(ref _inspectTitle, value);
+	}
+
+	/// <summary>Under the heading: where the click was, and anything left out.</summary>
+	public string InspectNote
+	{
+		get => _inspectNote;
+		private set => SetProperty(ref _inspectNote, value);
+	}
+
+	/// <summary>Closes the properties panel.</summary>
+	public ICommand CloseInspectCommand { get; }
+
+	/// <summary>Esc: closes the properties panel if it is open, or else cancels an ROI edit.</summary>
+	public ICommand EscapeCommand { get; }
+
+	/// <summary>A Ctrl + click landed: show what it landed on.</summary>
+	/// <param name="inspection">Where it was, and the shapes there.</param>
+	public void Inspect(MapInspection inspection)
+	{
+		ArgumentNullException.ThrowIfNull(inspection);
+
+		IReadOnlyList<MapHit> hits = inspection.Hits;
+		List<MapHit> shown = [.. hits.Take(MaxCards)];
+		string at = $"At {MapFeatureCard.Format(inspection.At)}.";
+
+		InspectedFeatures = [.. shown.Select(hit => new MapFeatureCard(hit))];
+		InspectTitle = hits.Count switch
+		{
+			0 => "Nothing here",
+			1 => "1 object",
+			>= MapInspection.MaxHits => $"{MapInspection.MaxHits} or more objects",
+			_ => $"{hits.Count} objects",
+		};
+		InspectNote = hits.Count == 0
+			? $"{at} Ctrl + click on a line, a dot or a label to see its properties."
+			: hits.Count > shown.Count
+				? $"{at} Showing the {shown.Count} drawn on top."
+				: at;
+		Highlighted = shown;
+		OnPropertyChanged(nameof(IsInspecting));
+		CommandManager.InvalidateRequerySuggested();
+	}
+
+	private void CloseInspect()
+	{
+		InspectedFeatures = [];
+		Highlighted = null;
+		OnPropertyChanged(nameof(IsInspecting));
+		CommandManager.InvalidateRequerySuggested();
+	}
+
+	private void Escape()
+	{
+		if (IsInspecting)
+		{
+			CloseInspect();
+		}
+		else if (IsEditingRoi)
+		{
+			CancelRoi();
+		}
+	}
 
 	/// <summary>A Shift + drag finished: take the box and save it straight away.</summary>
 	/// <param name="box">The box drawn.</param>

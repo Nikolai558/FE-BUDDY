@@ -28,7 +28,8 @@ namespace FeBuddy.Wpf.Controls;
 /// <see cref="ZoomPercent"/>, against the home view. <b>Shift + left-drag</b> draws an ROI box at any time and
 /// raises <see cref="RoiQuickDrawn"/> on release. With <see cref="RoiEditing"/> on, a left-drag
 /// draws a new box, drags the box's handles to resize it, or drags inside it to move it.
-/// Keys: arrows pan, + and - zoom.
+/// <b>Ctrl + click</b> raises <see cref="Inspected"/> with the shapes under the pointer (see
+/// MapCanvas.Inspect.cs). Keys: arrows pan, + and - zoom.
 /// </para>
 /// <para>
 /// Dense data is kept readable: a layer below its <see cref="MapLayer.MinZoom"/>, or with more
@@ -36,7 +37,7 @@ namespace FeBuddy.Wpf.Controls;
 /// <see cref="DensityHint"/> until the user zooms in.
 /// </para>
 /// </summary>
-public sealed class MapCanvas : FrameworkElement
+public sealed partial class MapCanvas : FrameworkElement
 {
 	/// <summary>The deepest zoom level (about half a metre per pixel).</summary>
 	private const double MaxZoom = 18.0;
@@ -77,6 +78,7 @@ public sealed class MapCanvas : FrameworkElement
 	private Point _lastScreen;
 	private bool _dragMoved;
 	private bool _dragIsQuick;
+	private bool _inspectOnRelease;
 	private Edges _resizeEdges;
 	private WorldRect _draft;       // the box being drawn/moved/resized, in world units
 
@@ -92,7 +94,7 @@ public sealed class MapCanvas : FrameworkElement
 	/// <summary>Creates an empty map; it frames the contiguous US on its first layout.</summary>
 	public MapCanvas()
 	{
-		_visuals = new VisualCollection(this) { _worldVisual, _roiVisual, _overlayVisual };
+		_visuals = new VisualCollection(this) { _worldVisual, _highlightVisual, _roiVisual, _overlayVisual };
 		ClipToBounds = true;
 		Focusable = true;
 		FocusVisualStyle = null;
@@ -517,16 +519,19 @@ public sealed class MapCanvas : FrameworkElement
 		_dragStartScreen = _lastScreen = pos;
 		_dragMoved = false;
 		_dragButton = e.ChangedButton;
+		_inspectOnRelease = false;
 
 		if (e.ChangedButton == MouseButton.Left)
 		{
-			if (e.ClickCount == 2 && !RoiEditing && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+			// Ctrl + clicking one thing after another in the same spot inspects, it doesn't zoom.
+			if (e.ClickCount == 2 && !RoiEditing && (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) == 0)
 			{
 				ZoomAbout(pos, 2.0);
 				e.Handled = true;
 				return;
 			}
 
+			_inspectOnRelease = Keyboard.Modifiers == ModifierKeys.Control;
 			BeginLeftDrag(pos);
 		}
 		else if (e.ChangedButton is MouseButton.Right or MouseButton.Middle)
@@ -686,6 +691,12 @@ public sealed class MapCanvas : FrameworkElement
 		RedrawRoi();
 		UpdateCursor(e.GetPosition(this));
 		e.Handled = true;
+
+		// A Ctrl + click, not a Ctrl + drag (which pans, as any drag does).
+		if (_inspectOnRelease && !_dragMoved && Inspect(e.GetPosition(this)) is { } inspection)
+		{
+			Inspected?.Invoke(this, inspection);
+		}
 	}
 
 	/// <inheritdoc />
@@ -721,12 +732,28 @@ public sealed class MapCanvas : FrameworkElement
 			case Key.Down: _centerY += step; break;
 			case Key.OemPlus or Key.Add: ZoomBy(1.5); e.Handled = true; return;
 			case Key.OemMinus or Key.Subtract: ZoomBy(1.0 / 1.5); e.Handled = true; return;
-			default: return;
+			default: RefreshCursorForModifier(e.Key); return;
 		}
 
 		ClampView();
 		InvalidateMap();
 		e.Handled = true;
+	}
+
+	/// <inheritdoc />
+	protected override void OnKeyUp(KeyEventArgs e)
+	{
+		base.OnKeyUp(e);
+		RefreshCursorForModifier(e.Key);
+	}
+
+	/// <summary>Shift (draw a box) and Ctrl (inspect) change the cursor as soon as they go down or up.</summary>
+	private void RefreshCursorForModifier(Key key)
+	{
+		if (key is Key.LeftShift or Key.RightShift or Key.LeftCtrl or Key.RightCtrl && _drag == DragMode.None && IsMouseOver)
+		{
+			UpdateCursor(Mouse.GetPosition(this));
+		}
 	}
 
 	/// <inheritdoc />
@@ -757,6 +784,7 @@ public sealed class MapCanvas : FrameworkElement
 			DragMode.MoveRoi => Cursors.SizeAll,
 			DragMode.ResizeRoi => EdgeCursor(_resizeEdges),
 			_ when (Keyboard.Modifiers & ModifierKeys.Shift) != 0 => Cursors.Cross,
+			_ when Keyboard.Modifiers == ModifierKeys.Control => Cursors.Hand,
 			_ when RoiEditing && HitTestRoi(pos, out _, out Edges edges) => edges == Edges.None ? Cursors.SizeAll : EdgeCursor(edges),
 			_ when RoiEditing => Cursors.Cross,
 			_ => Cursors.Arrow,
@@ -864,6 +892,8 @@ public sealed class MapCanvas : FrameworkElement
 
 		List<string> heldBack = [];
 		LabelPlacer labels = new();
+		_dotsHeldBack.Clear();
+		_placedLabels.Clear();
 
 		using (DrawingContext dc = _worldVisual.RenderOpen())
 		{
@@ -905,6 +935,7 @@ public sealed class MapCanvas : FrameworkElement
 			SetValue(DensityHintPropertyKey, hint);
 		}
 
+		RedrawHighlight();
 		RedrawRoi();
 		DrawScaleBar();
 	}
@@ -951,7 +982,12 @@ public sealed class MapCanvas : FrameworkElement
 	{
 		Pen pen = new(layer.Stroke, layer.Thickness) { LineJoin = PenLineJoin.Round, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
 		pen.Freeze();
+		dc.DrawGeometry(null, pen, RunsGeometry(projected.Runs, view, first, last));
+	}
 
+	/// <summary>Lines and rings as one frozen geometry, in every copy of the world from <paramref name="first"/> to <paramref name="last"/>.</summary>
+	private StreamGeometry RunsGeometry(IReadOnlyList<ProjectedRun> runs, WorldRect view, int first, int last)
+	{
 		// Clip in screen space against the view plus a margin, so a line running far off-screen
 		// never hands WPF coordinates in the millions (which it renders badly, and slowly).
 		Rect clip = new(-16, -16, ActualWidth + 32, ActualHeight + 32);
@@ -961,7 +997,7 @@ public sealed class MapCanvas : FrameworkElement
 			RunWriter writer = new(ctx, clip);
 			for (int k = first; k <= last; k++)
 			{
-				foreach (ProjectedRun run in projected.Runs)
+				foreach (ProjectedRun run in runs)
 				{
 					if (run.MaxX + k < view.X0 || run.MinX + k > view.X1 || run.MaxY < view.Y0 || run.MinY > view.Y1)
 					{
@@ -989,7 +1025,7 @@ public sealed class MapCanvas : FrameworkElement
 		}
 
 		geometry.Freeze();
-		dc.DrawGeometry(null, pen, geometry);
+		return geometry;
 	}
 
 	private void DrawPoints(
@@ -997,7 +1033,7 @@ public sealed class MapCanvas : FrameworkElement
 		LabelPlacer labels, List<string> heldBack)
 	{
 		List<Point> dots = [];
-		List<(Point At, string Text)> texts = [];
+		List<(Point At, string Text, ProjectedPoint Point)> texts = [];
 		bool dotsOver = false, textsOver = false;
 		bool wantLabels = Zoom >= layer.LabelMinZoom;
 
@@ -1021,7 +1057,7 @@ public sealed class MapCanvas : FrameworkElement
 
 				if (point.Label is not null && wantLabels && !textsOver)
 				{
-					texts.Add((at, point.Label));
+					texts.Add((at, point.Label, point));
 					textsOver = texts.Count > LabelBudget;
 				}
 			}
@@ -1032,6 +1068,11 @@ public sealed class MapCanvas : FrameworkElement
 			heldBack.Add(layer.Name);
 		}
 
+		if (dotsOver)
+		{
+			_dotsHeldBack.Add(layer);   // not drawn, so not there to Ctrl + click either
+		}
+
 		if (!dotsOver && dots.Count > 0)
 		{
 			DrawSymbols(dc, layer, dots);
@@ -1039,7 +1080,7 @@ public sealed class MapCanvas : FrameworkElement
 
 		if (!textsOver && !(layer.LabelBesideSymbol && dotsOver))
 		{
-			foreach ((Point at, string text) in texts)
+			foreach ((Point at, string text, ProjectedPoint point) in texts)
 			{
 				// Beside the symbol (an airport ID to the right of its dot), or in the point's place
 				// (a vNAS text feature is nothing but its text).
@@ -1050,6 +1091,7 @@ public sealed class MapCanvas : FrameworkElement
 				if (labels.TryPlace(box))
 				{
 					dc.DrawText(formatted, box.TopLeft);
+					_placedLabels.Add(new PlacedLabel(layer, point.Geometry, point.Part, box));
 				}
 			}
 		}

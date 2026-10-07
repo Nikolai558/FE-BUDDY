@@ -185,6 +185,184 @@ public sealed class MapCanvasTests
 			shared.Add(Layer());   // and the list carries on without it
 		});
 
+	// ============================ Ctrl + click ============================
+
+	/// <summary>The middle of the 900 x 560 map <see cref="Looking"/> builds.</summary>
+	private static readonly Point Middle = new(450, 280);
+
+	/// <summary>A line is hit within a few pixels of it, and not further off.</summary>
+	[Fact]
+	public void a_line_is_hit_near_it_and_not_further_off() =>
+		StaThread.Run(() =>
+		{
+			MapLayer layer = Layer(new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]]));
+			MapCanvas map = Looking(layer);
+
+			MapHit hit = Assert.Single(map.HitTest(Middle + new Vector(0, 4)));
+			Assert.Same(layer.Geometries[0], hit.Geometry);
+			Assert.Null(hit.Point);
+			Assert.Empty(map.HitTest(Middle + new Vector(0, 20)));
+		});
+
+	/// <summary>A polygon is drawn as its outline, so only that is hit, not its inside.</summary>
+	[Fact]
+	public void a_polygon_is_hit_at_its_outline_not_inside() =>
+		StaThread.Run(() =>
+		{
+			MapLayer layer = Layer(new MapGeometry(MapGeometryKind.Polygon,
+				[[new GeoPoint(39.9, -99.6), new GeoPoint(39.9, -99.4), new GeoPoint(40.1, -99.4), new GeoPoint(40.1, -99.6)]]));
+			MapCanvas map = Looking(layer);
+
+			Assert.Empty(map.HitTest(Middle));
+
+			// The west edge, 0.1 degrees (about 73 pixels) west: the one that closes the ring.
+			Assert.Single(map.HitTest(Middle + new Vector(-WebMercator.ZoomToScale(10) / 3600.0, 0)));
+		});
+
+	/// <summary>A dot is hit within its radius and a little more; a MultiPoint says which of its points.</summary>
+	[Fact]
+	public void a_dot_is_hit_and_says_which_point() =>
+		StaThread.Run(() =>
+		{
+			MapLayer layer = Layer(new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(41, -99)], [new GeoPoint(40, -99.5)]]));
+			MapCanvas map = Looking(layer);
+
+			Assert.Equal(new GeoPoint(40, -99.5), Assert.Single(map.HitTest(Middle + new Vector(6, 0))).Point);
+			Assert.Empty(map.HitTest(Middle + new Vector(12, 0)));
+		});
+
+	/// <summary>The shape drawn on top comes first: the last layer's.</summary>
+	[Fact]
+	public void the_shape_on_top_comes_first() =>
+		StaThread.Run(() =>
+		{
+			MapLayer below = Layer(new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]]));
+			MapLayer above = Layer(new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]]));
+			MapCanvas map = Looking(below, above);
+
+			Assert.Equal([above, below], map.HitTest(Middle).Select(h => h.Layer));
+		});
+
+	/// <summary>What isn't drawn can't be clicked: a layer below its zoom, or one not in the list (the base map).</summary>
+	[Fact]
+	public void what_is_not_drawn_is_not_hit() =>
+		StaThread.Run(() =>
+		{
+			MapLayer waiting = new("waiting", [new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]])], Brushes.Red) { MinZoom = 12 };
+			MapCanvas map = Looking(waiting);
+			map.BaseLayers = [Layer(new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]]))];
+
+			Assert.Empty(map.HitTest(Middle));
+		});
+
+	/// <summary>A ring and its label share their feature, so a click on both brings them back once.</summary>
+	[Fact]
+	public void a_ring_and_its_label_come_back_once() =>
+		StaThread.Run(() =>
+		{
+			MapFeature zob = MapFeature.FromData("ARTCC boundary", [new("ID", "ZOB")]);
+			MapFeature other = MapFeature.FromData("ARTCC boundary", [new("ID", "ZNY")]);
+
+			// The ring's edge runs through the middle, where its label is drawn.
+			MapLayer shared = Layer(
+				new MapGeometry(MapGeometryKind.Polygon, [[new GeoPoint(40, -100), new GeoPoint(40, -99), new GeoPoint(41, -99)]]) { Feature = zob },
+				new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(40, -99.5)]], "ZOB") { Feature = zob });
+			MapLayer apart = Layer(
+				new MapGeometry(MapGeometryKind.Polygon, [[new GeoPoint(40, -100), new GeoPoint(40, -99), new GeoPoint(41, -99)]]) { Feature = zob },
+				new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(40, -99.5)]], "ZOB") { Feature = other });
+
+			Assert.Same(zob, Assert.Single(Looking(shared).HitTest(Middle)).Geometry.Feature);
+			Assert.Equal(2, Looking(apart).HitTest(Middle).Count);
+		});
+
+	/// <summary>A text feature is nothing but its label: before the label is drawn there is nothing to click.</summary>
+	[Fact]
+	public void a_text_feature_is_hit_only_once_its_label_is_drawn() =>
+		StaThread.Run(() =>
+		{
+			MapLayer layer = Layer(new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(40, -99.5)]], "CLEVELAND"));
+			MapCanvas map = new() { Layers = [layer] };
+			map.Measure(new Size(900, 560));
+			map.Arrange(new Rect(0, 0, 900, 560));
+			map.GoTo(new MapHome(40, -99.5, 10));
+
+			Assert.Empty(map.HitTest(Middle));
+
+			Redrawn();
+
+			Assert.Same(layer.Geometries[0], Assert.Single(map.HitTest(Middle + new Vector(20, 0))).Geometry);
+		});
+
+	/// <summary>Dots held back for being too many in view aren't drawn, so they aren't there to click.</summary>
+	[Fact]
+	public void dots_held_back_are_not_hit() =>
+		StaThread.Run(() =>
+		{
+			List<IReadOnlyList<GeoPoint>> many = [.. Enumerable.Range(0, 8_100).Select(i => (IReadOnlyList<GeoPoint>)[new GeoPoint(40 + ((i / 90) * 0.001), -99.5 + ((i % 90) * 0.001))])];
+			MapCanvas map = Looking(Layer(new MapGeometry(MapGeometryKind.Point, many)));
+
+			Assert.Empty(map.HitTest(Middle));
+		});
+
+	/// <summary>Inspect says where the click was, as the cursor read-out does, with what is there.</summary>
+	[Fact]
+	public void inspect_gives_the_place_and_the_shapes() =>
+		StaThread.Run(() =>
+		{
+			MapLayer layer = Layer(new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]]));
+			MapCanvas map = Looking(layer);
+
+			MapInspection inspection = map.Inspect(Middle)!;
+
+			Assert.Equal(new GeoPoint(40, -99.5), inspection.At);
+			Assert.Single(inspection.Hits);
+			Assert.Null(new MapCanvas().Inspect(Middle));
+		});
+
+	/// <summary>A highlighted shape is drawn over its layer; one whose layer has gone is not.</summary>
+	[Fact]
+	public void a_highlighted_shape_is_drawn_only_while_its_layer_is() =>
+		StaThread.Run(() =>
+		{
+			MapLayer layer = Layer(
+				new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]]),
+				new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(40, -99.5)]], "CLE"));
+			MapCanvas map = Looking(layer);
+			DrawingVisual highlight = (DrawingVisual)VisualTreeHelper.GetChild(map, 1);
+
+			map.Highlighted = [.. map.HitTest(Middle), new MapHit(layer, layer.Geometries[1], new GeoPoint(40, -99.5)) { Index = 1 }];
+			Assert.NotNull(highlight.Drawing);
+			Assert.False(highlight.Drawing.Bounds.IsEmpty);
+
+			map.Highlighted = [new MapHit(Layer(), layer.Geometries[0], null)];
+			Assert.True(highlight.Drawing is null || highlight.Drawing.Bounds.IsEmpty);
+		});
+
+	/// <summary>The distance to a run is to its nearest segment, the closing one of a ring included.</summary>
+	[Fact]
+	public void the_distance_to_a_ring_includes_its_closing_edge()
+	{
+		ProjectedRun ring = ProjectedRun.From([new GeoPoint(0, 0), new GeoPoint(0, 10), new GeoPoint(10, 10)], closed: true, geometry: 0);
+		ProjectedRun line = ProjectedRun.From([new GeoPoint(0, 0), new GeoPoint(0, 10), new GeoPoint(10, 10)], closed: false, geometry: 0);
+		double x = WebMercator.LonToWorldX(4), y = WebMercator.LatToWorldY(5);
+
+		Assert.True(MapCanvas.DistanceToRun(ring, x, y) < MapCanvas.DistanceToRun(line, x, y));
+	}
+
+	/// <summary>
+	/// A sized map centred on 40N 99.5W at zoom 10 - about 2.8 pixels to 0.001 degrees of longitude -
+	/// showing <paramref name="layers"/>, redrawn once so its labels are placed.
+	/// </summary>
+	private static MapCanvas Looking(params MapLayer[] layers)
+	{
+		MapCanvas map = new() { Layers = layers };
+		map.Measure(new Size(900, 560));
+		map.Arrange(new Rect(0, 0, 900, 560));
+		map.GoTo(new MapHome(40, -99.5, 10));
+		Redrawn();
+		return map;
+	}
+
 	/// <summary>A map that has shown <paramref name="layers"/> and redrawn, which nothing but the list refers to.</summary>
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	private static WeakReference MapShowing(ObservableCollection<MapLayer> layers)

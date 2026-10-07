@@ -240,6 +240,77 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 		Assert.True(tab.Save());
 	}
 
+	// ---- the one-line rows (issue #326) ----
+
+	/// <summary>A saved file loads closed: one line with its name, and what's wrong with it in amber.</summary>
+	[Fact]
+	public void a_saved_file_is_one_line_with_its_name_and_status()
+	{
+		string missing = Path.Combine(_root, "gone", "ZOB-Alias.txt");
+		UserConfigFile.TrySetValue("Services.AiracService.ConcatenateAliases.Sources.1.FilePath", missing);
+
+		AliasSourceRow row = Assert.Single(NewTab().Sources);
+
+		Assert.False(row.IsExpanded);
+		Assert.Equal("ZOB-Alias.txt", row.Title);
+		Assert.Equal("1 · ZOB-Alias.txt", row.Header);
+		Assert.Equal("This file is not on this PC. It may have been moved or renamed.", row.Status);
+		Assert.Equal(AliasSourceTone.Warn, row.StatusTone);
+	}
+
+	/// <summary>A new web address opens, ready to be typed in; once it is, the line names its file.</summary>
+	[Fact]
+	public void a_new_web_address_opens_and_its_line_follows_what_is_typed()
+	{
+		AliasSourceRow row = TabWithCustomFile(string.Empty).Sources[0];
+		List<string?> changed = [];
+		row.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+		Assert.True(row.IsExpanded);
+		Assert.Equal("No address yet", row.Title);
+		Assert.Equal("Enter the file's web address.", row.Status);
+		Assert.Equal(AliasSourceTone.Danger, row.StatusTone);
+
+		row.Location = "https://github.com/vZOB/facility/raw/refs/heads/main/ZOB%20Alias.txt";
+
+		Assert.Equal("ZOB Alias.txt", row.Title);
+		Assert.Equal("Web address", row.Status);
+		Assert.Equal(AliasSourceTone.Neutral, row.StatusTone);
+		Assert.Contains(nameof(AliasSourceRow.Title), changed);
+		Assert.Contains(nameof(AliasSourceRow.Status), changed);
+	}
+
+	/// <summary>An address with nothing after the site is shown whole.</summary>
+	[Fact]
+	public void an_address_with_no_file_name_is_shown_whole()
+	{
+		Assert.Equal("https://example.com/", TabWithCustomFile("https://example.com/").Sources[0].Title);
+	}
+
+	[Fact]
+	public void the_line_names_the_credential_and_what_a_check_found()
+	{
+		CredentialStore store = new(new InMemoryCredentialVault());
+		Guid id = store.Save(new CredentialDraft(null, "ZOB GitHub", CredentialKind.GitHubToken, null, "github_pat_test", CredentialHosts.GitHubDefaults)).Id;
+		ConcatenateAliasesViewModel tab = new(store);
+		tab.AddUrlCommand.Execute(null);
+		AliasSourceRow row = tab.Sources[0];
+		row.Location = "https://github.com/vZOB/facility/raw/refs/heads/main/ZOB-Alias.txt";
+		row.CredentialId = id;
+		row.IsExpanded = false;
+
+		Assert.Equal("Web address, read with ZOB GitHub", row.Status);
+
+		row.SetCheck(true, "Read 12 alias command(s).");
+		Assert.Equal(("Read 12 alias command(s).", AliasSourceTone.Positive), (row.Status, row.StatusTone));
+		Assert.False(row.IsExpanded);
+
+		// The help is in the opened row, so a check that has some opens it.
+		row.SetCheck(false, "GitHub refused the credential.", AliasTroubleshooting.CredentialRefused);
+		Assert.Equal(AliasSourceTone.Danger, row.StatusTone);
+		Assert.True(row.IsExpanded);
+	}
+
 	private static (string Status, bool IsAdded) Status(ConcatenateAliasesViewModel tab, string fileName)
 	{
 		FeBuddyAliasFileRow row = tab.FeBuddyAliasFiles.Single(file => file.FileName == fileName);

@@ -63,6 +63,13 @@ public static class UserConfigPortability
 		["EramToGeojson"] = "ERAM to GeoJSON",
 	};
 
+	/// <summary>
+	/// The settings that belong to this PC rather than to a facility's setup - the update channel, which
+	/// News has been read, FE-Buddy's GitHub token and the like. They never go into an export, and every
+	/// settings profile shares them (<see cref="UserConfigFile.SharedFilePath"/>).
+	/// </summary>
+	public static IReadOnlySet<string> SharedByProfiles => LocalKeys;
+
 	/// <summary>Whether <paramref name="key"/> can travel to another PC, and how.</summary>
 	/// <param name="key">A dotted <c>UserConfig</c> key.</param>
 	/// <returns>The key's scope. A key outside the known sections is <see cref="ConfigKeyScope.Local"/>.</returns>

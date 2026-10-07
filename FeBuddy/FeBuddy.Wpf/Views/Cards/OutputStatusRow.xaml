@@ -1,11 +1,13 @@
 <!--
-    OutputStatusRow  -  one of a sub-service's outputs on its Outputs card: an On / Off chip, its
-    name, and what it writes underneath. Outputs are turned on and off on the General tab, so the
-    row only shows the state; the card says where to change it.
+    OutputStatusRow  -  one of a sub-service's outputs on its Outputs card: an On / Off chip, the
+    output's tag (the colour it has on every card), its file when the tag alone doesn't name it,
+    and what it writes underneath. Outputs are turned on and off on the General tab, so the row
+    only shows the state; the card says where to change it.
 
     Usage:
-        <cards:OutputStatusRow Label="Alias file" IsOn="{Binding GenerateAliasFile}"
+        <cards:OutputStatusRow Kind="Alias" IsOn="{Binding GenerateAliasFile}"
                                Description="Writes one alias command per airport ..." />
+        <cards:OutputStatusRow Kind="ProcedureChanges" Label="Procedure_Changes.md" IsOn="..." />
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.Cards.OutputStatusRow"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -36,8 +38,11 @@
                     </TextBlock.Style>
                 </TextBlock>
             </Border>
+            <ContentPresenter DockPanel.Dock="Left" Content="{Binding OutputTag, ElementName=Self}"
+                              VerticalAlignment="Center" Margin="0,0,10,0" />
             <TextBlock Text="{Binding Label, ElementName=Self}" Style="{StaticResource Text.Body}"
-                       Foreground="{StaticResource Brush.Text.Primary}" VerticalAlignment="Center" />
+                       Foreground="{StaticResource Brush.Text.Primary}" VerticalAlignment="Center"
+                       Visibility="{Binding Label, ElementName=Self, Converter={StaticResource StringToVis}}" />
         </DockPanel>
         <TextBlock Text="{Binding Description, ElementName=Self}" Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
                    Visibility="{Binding Description, ElementName=Self, Converter={StaticResource StringToVis}}" />

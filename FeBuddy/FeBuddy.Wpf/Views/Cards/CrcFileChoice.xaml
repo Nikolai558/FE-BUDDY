@@ -27,9 +27,9 @@
     <StackPanel>
         <RadioButton GroupName="CrcDefaultsScope" Content="No CRC-ERAM defaults" Margin="0,3"
                      IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=None}" />
-        <RadioButton GroupName="CrcDefaultsScope" Content="Every GeoJSON file this tab writes" Margin="0,3"
+        <RadioButton GroupName="CrcDefaultsScope" Content="Every GeoJSON file from this tab" Margin="0,3"
                      IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=AllGeojsonFiles}" />
-        <RadioButton GroupName="CrcDefaultsScope" Content="Specific files" Margin="0,3"
+        <RadioButton GroupName="CrcDefaultsScope" Content="Only the files I tick" Margin="0,3"
                      IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=SpecificFiles}" />
 
         <!-- a row per file group: its label on the left, then a box per file -->

@@ -38,6 +38,8 @@
                     <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Prose}"
                                Margin="0,0,0,6"
                                Visibility="{Binding Note, Converter={StaticResource StringToVis}}" />
+                    <!-- the tab's What You'll Get summary, the same lines as on the tab -->
+                    <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,0,0,4" />
                     <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource ReviewRow}" />
                 </StackPanel>
             </ctl:Card>
@@ -48,7 +50,7 @@
     <StackPanel>
 
         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
-                   Text="Everything this run will do, at a glance. Change anything by going back to its tab." />
+                   Text="What the run will do, tab by tab. To change something, go back to its tab." />
 
         <!-- something is invalid: the run is blocked until it is fixed -->
         <ctl:Card Style="{StaticResource Card.Danger}"
@@ -63,6 +65,9 @@
         </ctl:Card>
 
         <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource ReviewSection}" />
+
+        <!-- the service's own choices about the run; its DataTemplate is the service screen's -->
+        <ContentControl Content="{Binding RunOptions}" Focusable="False" />
 
         <!-- run -->
         <cards:RunCard Note="Unsaved settings are saved before the run starts." />

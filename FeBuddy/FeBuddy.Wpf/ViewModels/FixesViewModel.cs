@@ -77,7 +77,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"the GeoJSON covers every fix";
+		"the GeoJSON has every fix";
 
 	/// <inheritdoc />
 	/// <remarks>Fixes has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -376,31 +376,36 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
-		List<ServicePreviewRow> rows =
+		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
+			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
+			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
-		switch (_outputBy)
+		return [new ServicePreviewSection("Fixes", rows) { WhatYoullGet = WhatYoullGet }];
+	}
+
+	/// <inheritdoc />
+	/// <remarks>The fix uses and charts ticked count only in their own file layout.</remarks>
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		string fixes = _outputBy switch
 		{
-			case FixOutputBy.FixUse:
-				rows.Add(new ServicePreviewRow("Fix uses", DescribeFixUses()));
-				break;
+			FixOutputBy.FixUse when ExcludedFixUseTokens().Any() => $"fixes used as {SummaryLines.Join([.. IncludedFixUseTokens()], "or")}",
+			FixOutputBy.Chart when Charts.Count == 0 => "fixes on the charts you ticked, once the cycle's chart list is loaded",
+			FixOutputBy.Chart when ExcludedChartTokens().Any() => $"fixes on {SummaryLines.Join([.. IncludedChartTokens()], "or")}",
+			FixOutputBy.ChartAndFixUse => Combinations.Count > 0
+				? $"fixes in {SummaryLines.Join([.. Combinations.Select(c => c.Label)], "or")}"
+				: "no fixes until you add a chart + fix use combination",
+			_ => "every fix",
+		};
 
-			case FixOutputBy.Chart:
-				rows.Add(new ServicePreviewRow("Charts", DescribeCharts()));
-				break;
-
-			case FixOutputBy.ChartAndFixUse:
-				rows.Add(new ServicePreviewRow("Combinations", DescribeCombinations()));
-				break;
-		}
-
-		rows.Add(new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()));
-		rows.Add(new ServicePreviewRow("Region of interest", DescribeRoi()));
-		rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()));
-
-		return [new ServicePreviewSection("Fixes", rows)];
+		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
+			.Add(SummaryJoin.First, fixes)
+			.Add(SummaryJoin.And, RegionLine("inside the region"))
+			.ToList());
 	}
 
 	// ================= save contract =================
@@ -1004,38 +1009,6 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		return $"{files} - {layout}";
 	}
-
-	private string DescribeFixUses()
-	{
-		string[] included = [.. IncludedFixUseTokens()];
-
-		if (included.Length == 0)
-		{
-			return "None";
-		}
-
-		return ExcludedFixUseTokens().Any() ? string.Join(", ", included) : "Every fix use";
-	}
-
-	private string DescribeCharts()
-	{
-		if (Charts.Count == 0)
-		{
-			return "Waiting for the cycle's chart list";
-		}
-
-		string[] included = [.. IncludedChartTokens()];
-
-		if (included.Length == 0)
-		{
-			return "None";
-		}
-
-		return ExcludedChartTokens().Any() ? string.Join(", ", included) : "Every chart";
-	}
-
-	private string DescribeCombinations() =>
-		Combinations.Count > 0 ? string.Join(", ", Combinations.Select(c => c.Label)) : "None";
 
 	private void RaiseOwnSettingProperties()
 	{

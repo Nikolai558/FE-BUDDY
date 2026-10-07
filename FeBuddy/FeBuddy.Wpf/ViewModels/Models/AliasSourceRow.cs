@@ -24,6 +24,11 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// repository is private and points to the GitHub token guide - or, with a credential chosen, to the
 /// guide's troubleshooting (<see cref="Troubleshooting"/>).
 /// </para>
+/// <para>
+/// Collapsed, the row is one line - its file's name and <see cref="Status"/> - so a long list stays
+/// short (issue #326); <see cref="IsExpanded"/> opens its address, credential and troubleshooting.
+/// A new web address opens expanded, to be typed in, and so does a row with troubleshooting to show.
+/// </para>
 /// </remarks>
 public sealed class AliasSourceRow : ObservableObject
 {
@@ -40,6 +45,7 @@ public sealed class AliasSourceRow : ObservableObject
 	private CredentialChoice? _suggestion;
 	private string? _suggestionSource;
 	private AliasTroubleshooting _troubleshooting;
+	private bool _isExpanded;
 
 	/// <summary>Creates a row.</summary>
 	/// <param name="owner">The tab the row belongs to.</param>
@@ -88,8 +94,57 @@ public sealed class AliasSourceRow : ObservableObject
 		}
 	}
 
-	/// <summary>The row's heading, e.g. <c>1 · File on this PC</c>.</summary>
-	public string Header => $"{Number} · {(IsFile ? "File on this PC" : "Web address")}";
+	/// <summary>The row's heading: its place and its file's name, e.g. <c>1 · ZOB-Alias.txt</c>.</summary>
+	public string Header => $"{Number} · {Title}";
+
+	/// <summary>
+	/// The file's name: the last part of its path or web address, or - before one is given - that
+	/// there isn't one yet.
+	/// </summary>
+	public string Title
+	{
+		get
+		{
+			string location = Location.Trim();
+
+			if (location.Length == 0)
+			{
+				return IsFile ? "No file chosen yet" : "No address yet";
+			}
+
+			string? name = IsUrl
+				? Uri.TryCreate(location, UriKind.Absolute, out Uri? url) ? Uri.UnescapeDataString(url.Segments[^1].TrimEnd('/')) : null
+				: System.IO.Path.GetFileName(location.TrimEnd('\\', '/'));
+
+			return string.IsNullOrWhiteSpace(name) ? location : name;
+		}
+	}
+
+	/// <summary>
+	/// The row's one status line: why it can't be saved, what the last <b>Check</b> found, what will
+	/// make it fail to read, or - with nothing to report - where it is.
+	/// </summary>
+	public string Status =>
+		Error
+		?? CheckMessage
+		?? (HasNotice ? Notice : null)
+		?? (IsFile ? "File on this PC"
+			: _owner.CredentialName(CredentialId) is { } credential ? $"Web address, read with {credential}"
+			: "Web address");
+
+	/// <summary>The colour of <see cref="Status"/>.</summary>
+	public AliasSourceTone StatusTone =>
+		HasError ? AliasSourceTone.Danger
+		: HasCheckMessage ? (CheckSucceeded ? AliasSourceTone.Positive : AliasSourceTone.Danger)
+		: HasNotice ? AliasSourceTone.Warn
+		: AliasSourceTone.Neutral;
+
+	/// <summary>Whether the row shows its address, credential and troubleshooting, or only its one line.</summary>
+	public bool IsExpanded
+	{
+		get => _isExpanded;
+		set => SetProperty(ref _isExpanded, value);
+	}
 
 	/// <summary>What the location box asks for when it is empty.</summary>
 	public string Placeholder => IsFile
@@ -104,6 +159,8 @@ public sealed class AliasSourceRow : ObservableObject
 		{
 			if (SetProperty(ref _location, value ?? string.Empty))
 			{
+				OnPropertyChanged(nameof(Title));
+				OnPropertyChanged(nameof(Header));
 				ClearCheck();
 				_owner.RowChanged();
 			}
@@ -120,6 +177,7 @@ public sealed class AliasSourceRow : ObservableObject
 			{
 				ClearCheck();
 				_owner.RowChanged();
+				RefreshStatus();
 			}
 		}
 	}
@@ -134,6 +192,7 @@ public sealed class AliasSourceRow : ObservableObject
 			{
 				OnPropertyChanged(nameof(HasError));
 				OnPropertyChanged(nameof(HasNotice));
+				RefreshStatus();
 			}
 		}
 	}
@@ -153,6 +212,7 @@ public sealed class AliasSourceRow : ObservableObject
 			if (SetProperty(ref _notice, value))
 			{
 				OnPropertyChanged(nameof(HasNotice));
+				RefreshStatus();
 			}
 		}
 	}
@@ -170,6 +230,7 @@ public sealed class AliasSourceRow : ObservableObject
 			{
 				OnPropertyChanged(nameof(HasCheckMessage));
 				OnPropertyChanged(nameof(CheckFailed));
+				RefreshStatus();
 			}
 		}
 	}
@@ -186,6 +247,7 @@ public sealed class AliasSourceRow : ObservableObject
 			if (SetProperty(ref _checkSucceeded, value))
 			{
 				OnPropertyChanged(nameof(CheckFailed));
+				RefreshStatus();
 			}
 		}
 	}
@@ -225,6 +287,12 @@ public sealed class AliasSourceRow : ObservableObject
 				OnPropertyChanged(nameof(ShowsPrivateHelp));
 				OnPropertyChanged(nameof(ShowsPublicHelp));
 				OnPropertyChanged(nameof(ShowsCredentialHelp));
+
+				// The help is in the expanded part, so open the row to show it.
+				if (value != AliasTroubleshooting.None)
+				{
+					IsExpanded = true;
+				}
 			}
 		}
 	}
@@ -336,6 +404,13 @@ public sealed class AliasSourceRow : ObservableObject
 		OnPropertyChanged(nameof(Suggestion));
 		OnPropertyChanged(nameof(HasSuggestion));
 		OnPropertyChanged(nameof(SuggestionLabel));
+	}
+
+	/// <summary>Announces <see cref="Status"/> again: what it reports changed, or the credentials' names did.</summary>
+	internal void RefreshStatus()
+	{
+		OnPropertyChanged(nameof(Status));
+		OnPropertyChanged(nameof(StatusTone));
 	}
 
 	private void ClearCheck()

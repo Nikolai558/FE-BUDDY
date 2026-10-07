@@ -117,22 +117,23 @@
         <ctl:Card Header="Sub-Services">
             <StackPanel Grid.IsSharedSizeScope="True">
                 <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,12"
-                           Text="Tick the sub-services this run includes, and the files each one makes. Each file's settings are on its sub-service's tab, in the list to the left. Hover a box to see what it is." />
+                           Text="Tick the sub-services to run and the files each one makes. Each sub-service's settings are on its own tab, in the list to the left. Hover a box to see what it makes." />
 
                 <!-- the headings -->
                 <Grid Margin="0,0,0,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="140" SharedSizeGroup="SubService" />
-                        <ColumnDefinition Width="56" />
-                        <ColumnDefinition Width="56" />
+                        <ColumnDefinition Width="68" />
+                        <ColumnDefinition Width="68" />
                         <ColumnDefinition Width="68" />
                         <ColumnDefinition Width="68" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Include" Style="{StaticResource ColumnHeading}" HorizontalAlignment="Left" TextAlignment="Left" />
-                    <TextBlock Grid.Column="1" Text="Alias" Style="{StaticResource ColumnHeading}" />
-                    <TextBlock Grid.Column="2" Text="GeoJSON" Style="{StaticResource ColumnHeading}" />
-                    <TextBlock Grid.Column="3" Text="Procedure&#xA;Changes" Style="{StaticResource ColumnHeading}" />
-                    <TextBlock Grid.Column="4" Text="Procedures&#xA;JSON" Style="{StaticResource ColumnHeading}" />
+                    <!-- the output tags, in the colours the tabs' cards use for the same outputs -->
+                    <ContentPresenter Grid.Column="1" Content="{x:Static ctl:OutputTag.AliasHeading}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                    <ContentPresenter Grid.Column="2" Content="{x:Static ctl:OutputTag.GeojsonHeading}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                    <ContentPresenter Grid.Column="3" Content="{x:Static ctl:OutputTag.ChangesHeading}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                    <ContentPresenter Grid.Column="4" Content="{x:Static ctl:OutputTag.JsonHeading}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
                 </Grid>
                 <Border Style="{StaticResource Divider}" Margin="0,0,0,4" />
 
@@ -142,8 +143,8 @@
                             <Grid Margin="0,5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" MinWidth="140" SharedSizeGroup="SubService" />
-                                    <ColumnDefinition Width="56" />
-                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="68" />
+                                    <ColumnDefinition Width="68" />
                                     <ColumnDefinition Width="68" />
                                     <ColumnDefinition Width="68" />
                                 </Grid.ColumnDefinitions>
@@ -165,7 +166,7 @@
 
                 <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="Untick a sub-service's last file and it's left out; tick one of its files and it's back in. One left out is greyed out in the list to the left and keeps its settings for next time. Concatenate Aliases, which combines the alias files into one for vNAS, comes in by itself while an alias file is ticked." />
+                           Text="Untick all of a sub-service's files and it's left out. Tick one and it's back in. A sub-service that's left out is greyed out on the left and keeps its settings. Concatenate Aliases, which joins the alias files into one for vNAS, is included whenever an alias file is ticked." />
             </StackPanel>
         </ctl:Card>
     </StackPanel>

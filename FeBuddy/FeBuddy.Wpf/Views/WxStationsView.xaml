@@ -22,31 +22,34 @@
 
             <cards:AttentionCard />
 
+            <!-- ============ what the outputs get, every filter in one place ============ -->
+            <cards:SummaryCard />
+
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
-                                    SymbolsDescription="One symbol per weather station."
-                                    TextDescription="A two-line label per station: its ICAO ID, then its IATA ID and name (e.g. KDTW, DTW_Detroit/Metro Wayne Cnty)."
-                                    Footnote="Files are written to `Geojson\` in the cycle's folder." />
+                                    SymbolsDescription="A symbol at each weather station."
+                                    TextDescription="A two-line label at each station: its ICAO ID, then its IATA ID and name. Ex: KDTW, then DTW_Detroit/Metro Wayne Cnty"
+                                    Footnote="Files go in `Geojson\` in the cycle's folder." />
 
             <!-- ============ station data ============ -->
-            <ctl:Card Header="Station Data">
+            <ctl:Card Header="Station Data" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Weather stations come from aviationweather.gov's station list, not the FAA's AIRAC data, so every run downloads the latest list, whichever cycle you run." />
+                               Text="Weather stations come from aviationweather.gov, not the FAA's AIRAC data. Every run downloads the latest list, for any cycle." />
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Included: stations that report METARs and have an ICAO ID, in the US, Puerto Rico, the US Virgin Islands, Guam, the Northern Mariana Islands, American Samoa and the US Minor Outlying Islands." />
+                               Text="Included: stations with an ICAO ID that report METARs, in the US, Puerto Rico, the US Virgin Islands, Guam, the Northern Mariana Islands, American Samoa and the US Minor Outlying Islands." />
                     <TextBlock Text="{Binding StationDataStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
                 </StackPanel>
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard>
+            <cards:RoiOverrideCard Outputs="Geojson">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
-                               Text="The region limits which stations are written: a station outside it is left out of both files." />
+                               Text="Only stations inside the region are written, in both files." />
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 

@@ -26,8 +26,9 @@ namespace FeBuddy.Core.Application.Airac.Navaids;
 /// different one, a name command (<c>.nav&lt;name with only letters/digits&gt;</c>). Several
 /// NAVAIDs can land on the same command - duplicate identifiers are normal in NASR data, and two
 /// different NAVAIDs can alias to the same name - so a command already seen is not overwritten:
-/// its new block is appended to the existing one, joined by <c>\n---</c>, and the command is
-/// written once, in the order its command name was first seen.
+/// its new block is added after the existing one, with a <c>+</c> line between them
+/// (<see cref="EchoCards"/>), and the command is written once, in the order its command name was
+/// first seen.
 /// </para>
 /// </remarks>
 public static class NavaidAliasWriter
@@ -40,9 +41,6 @@ public static class NavaidAliasWriter
 
 	/// <summary>The literal two-character escape CRC expands into a single space.</summary>
 	private const string SpaceEscape = @"\s";
-
-	/// <summary>The literal text joining two NAVAIDs' blocks under one shared command.</summary>
-	private const string BlockSeparator = @"\n---";
 
 	/// <summary>
 	/// Writes the alias file for every included NAVAID.
@@ -91,8 +89,7 @@ public static class NavaidAliasWriter
 
 		foreach (string command in commandOrder)
 		{
-			string body = string.Join(BlockSeparator, blocksByCommand[command]);
-			builder.Append(command).Append(" .echo ").Append(body).AppendLine();
+			builder.Append(command).Append(" .echo ").Append(EchoCards.Join(blocksByCommand[command])).AppendLine();
 		}
 
 		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);

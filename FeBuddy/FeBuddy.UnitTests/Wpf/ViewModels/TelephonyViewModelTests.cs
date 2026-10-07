@@ -918,7 +918,7 @@ public sealed class TelephonyViewModelTests : IDisposable
 	{
 		string path = Path.Combine(_root, "vatsim_radar_airlines.json");
 		Directory.CreateDirectory(_root);
-		File.WriteAllText(path, """[{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }]""");
+		File.WriteAllText(path, """{ "virtual": [{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }] }""");
 		(TelephonyViewModel tab, Func<int> downloads) = TabUsing(null, new SharedDataRefreshResult(path, DateTime.UtcNow, FailureReason: null));
 		tab.IncludeVatsimRadarList = true;
 

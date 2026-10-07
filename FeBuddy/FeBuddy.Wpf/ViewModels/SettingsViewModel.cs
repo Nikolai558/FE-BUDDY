@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -38,12 +37,13 @@ using FeBuddy.Versioning.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// SYSTEM ▸ Settings. Section order: Facility Profile, Default Region of Interest, GeoJSON Files,
-/// Credentials, FE-Buddy's GitHub Requests, Updates, Reset FE-Buddy (with Uninstall FE-Buddy…
-/// across from its button). Every value persists to
-/// <c>UserConfig.json</c>, except credentials, which live in Windows Credential Manager and are
-/// saved at once (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the
-/// chosen token's id.
+/// SYSTEM ▸ Settings. Section order: Settings Profile, Facility Profile, Default Region of Interest,
+/// GeoJSON Files, Credentials, FE-Buddy's GitHub Requests, Updates, Reset FE-Buddy (with Uninstall
+/// FE-Buddy… across from its button). Every value persists to the settings profile in use
+/// (<see cref="UserConfigFile"/>), except credentials, which live in Windows Credential Manager and
+/// are saved at once (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the
+/// chosen token's id. The Settings Profile card switches, makes, renames and deletes profiles at
+/// once (<see cref="SettingsProfilesViewModel"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -188,6 +188,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		[ArtccKey] = SelectedFacility ?? string.Empty,
 		[UserConfigKeys.FeBuddyGitHubCredentialId] = GitHubCredentialValue,
 	};
+
+	// ================= 0. SETTINGS PROFILE =================
+
+	/// <summary>The Settings Profile card. Its changes take effect at once and take no part in <see cref="SaveCommand"/>.</summary>
+	public SettingsProfilesViewModel SettingsProfile { get; } = new();
 
 	// ================= 1. FACILITY PROFILE =================
 
@@ -583,7 +588,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	// ================= save =================
 
-	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>. Live only while <see cref="IsDirty"/>.</summary>
+	/// <summary>Writes every setting on the page to the settings profile in use. Live only while <see cref="IsDirty"/>.</summary>
 	public ICommand SaveCommand { get; }
 
 	// ================= export / import =================
@@ -591,13 +596,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>The file-dialog filter for settings files.</summary>
 	private const string SettingsFileFilter = "FE-Buddy settings (*.json)|*.json|All files (*.*)|*.*";
 
-	/// <summary>How many folders the import confirmation lists under each heading before "…and N more".</summary>
-	private const int ImportListLength = 8;
-
 	/// <summary>Writes every saved setting that can leave this PC to a file the user picks.</summary>
 	public ICommand ExportCommand { get; }
 
-	/// <summary>Reads a settings file the user picks, shows what it would change, and imports it once confirmed.</summary>
+	/// <summary>
+	/// Reads a settings file the user picks, asks where its settings go - a new profile, added to the
+	/// profile in use, or in place of its settings - shows what that does, and imports it once confirmed.
+	/// </summary>
 	public ICommand ImportCommand { get; }
 
 	// ================= reset =================
@@ -624,7 +629,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	public ICommand UninstallCommand { get; }
 
 	/// <inheritdoc />
-	public void ReloadFromConfig() => LoadFromConfig();
+	public void ReloadFromConfig()
+	{
+		LoadFromConfig();
+		SettingsProfile.Refresh();
+	}
 
 	private async void CheckForUpdates()
 	{
@@ -719,7 +728,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		_savedChannel = Channel;
 		_savedState = SavedStateSnapshot.Of(CurrentValues());
 		IsDirty = false;
-		Toast.Success("Settings saved", "Written to UserConfig.json.");
+		Toast.Success("Settings saved", $"Saved to the {UserConfigFile.ActiveProfile} profile.");
 
 		// A new channel is checked straight away: its newer releases, or - running a pre-release after
 		// choosing a more stable channel - its latest release to go back to.
@@ -817,10 +826,17 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			return;
 		}
 
-		UserConfigImportPlan plan;
+		ImportSettingsViewModel choice;
 		try
 		{
-			plan = UserConfigTransfer.Plan(UserConfigTransfer.Read(dialog.FileName));
+			UserConfigPackage package = UserConfigTransfer.Read(dialog.FileName);
+			choice = new ImportSettingsViewModel(
+				UserConfigTransfer.Plan(package, UserConfigImportMode.Replace),
+				UserConfigTransfer.Plan(package, UserConfigImportMode.Merge),
+				UserConfigFile.ActiveProfile,
+				UserConfigFile.Profiles(),
+				ConfigPages.WithUnsavedChanges(),
+				AppVersion.Current);
 		}
 		catch (UserConfigTransferException ex)
 		{
@@ -829,40 +845,40 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			return;
 		}
 
-		if (!plan.HasChanges)
-		{
-			Toast.Info("Nothing to import", plan.SkippedFolders.Count > 0
-				? $"{plan.Package.FileName} has the same settings as this PC, apart from folders or files that do not work on this PC."
-				: $"{plan.Package.FileName} has the same settings as this PC.");
-			return;
-		}
-
-		if (!ConfirmWindow.Show(owner, "Import settings", DescribeImport(plan, ConfigPages.WithUnsavedChanges()), confirmText: "Import"))
+		if (!ImportSettingsWindow.Ask(owner, choice))
 		{
 			return;
 		}
 
+		UserConfigImportPlan plan = choice.Plan;
+		string profile = UserConfigFile.ActiveProfile;
 		try
 		{
-			UserConfigTransfer.Apply(plan);
+			if (choice.IsNewProfile)
+			{
+				UserConfigTransfer.ApplyAsNewProfile(plan, choice.NewProfileName.Trim());
+			}
+			else
+			{
+				UserConfigTransfer.Apply(plan);
+			}
 		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
 		{
 			AppLog.Warning("Settings", $"Could not import '{dialog.FileName}': {ex.Message}");
-			Toast.Error("Import failed", $"Nothing was changed. {ex.Message}");
+			Toast.Error("Import failed", ex.Message);
 			return;
 		}
 
 		// Every page built so far read its values once; have each read the imported ones.
-		OutputFormatting.LoadFromUserConfig();
-		IReadOnlyList<string> notReloaded = ConfigPages.ReloadAll();
-		MapLayersState.ReloadFromConfigIfCreated();
-		DefaultRoiStore.NotifyReloaded();
+		IReadOnlyList<string> notReloaded = ConfigPages.ReloadEverything();
 
 		string skipped = plan.SkippedFolders.Count > 0
 			? " Folders and files that do not work on this PC were not taken, as the import summary listed."
 			: string.Empty;
-		Toast.Success("Settings imported", $"{plan.ChangedCount} settings updated from {plan.Package.FileName}.{skipped}");
+		Toast.Success("Settings imported", choice.IsNewProfile
+			? $"{plan.Package.FileName} is now the {UserConfigFile.ActiveProfile} profile, which FE-Buddy uses.{skipped}"
+			: $"{plan.ChangedCount} settings updated in {profile} from {plan.Package.FileName}.{skipped}");
 
 		if (notReloaded.Count > 0)
 		{
@@ -873,91 +889,10 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 	}
 
-	/// <summary>The import confirmation: what changes, what this PC keeps, and what is lost.</summary>
-	/// <param name="plan">The import.</param>
-	/// <param name="unsavedPages">The pages whose unsaved edits the import would drop.</param>
-	/// <returns>The dialog text.</returns>
-	private static string DescribeImport(UserConfigImportPlan plan, IReadOnlyList<string> unsavedPages)
-	{
-		UserConfigPackage package = plan.Package;
-		StringBuilder text = new();
-
-		text.Append(CultureInfo.InvariantCulture, $"Import the settings in {package.FileName}");
-		if (package.IsPlainConfigFile)
-		{
-			text.Append(" (a UserConfig.json from another PC)");
-		}
-		else if (package.AppVersion is { } version)
-		{
-			string when = package.ExportedUtc is { } exported
-				? $" on {exported.ToLocalTime().ToString("d MMM yyyy", CultureInfo.InvariantCulture)}"
-				: string.Empty;
-			text.Append(CultureInfo.InvariantCulture, $" (exported from FE-Buddy v{version.TrimStart('v', 'V')}{when})");
-		}
-
-		text.Append(CultureInfo.InvariantCulture, $"?\n\n{plan.ChangedCount} {(plan.ChangedCount == 1 ? "setting changes" : "settings change")}.");
-
-		// The same settings can produce different output on a different version of FE-Buddy.
-		string running = AppVersion.Current.TrimStart('v', 'V');
-		if (package.AppVersion?.TrimStart('v', 'V') is { } theirs && !string.Equals(theirs, running, StringComparison.OrdinalIgnoreCase))
-		{
-			text.Append(
-				$"\n\nThis PC runs FE-Buddy v{running}, the file came from v{theirs}. The settings import all the same, "
-				+ "but for identical output both PCs should run the same version.");
-		}
-
-		// Paths between backticks show in the code look (ConfirmWindow's bhv:InlineCode).
-		AppendList(text, "Folders and files:", plan.AppliedFolders, folder =>
-			folder.Path.Length == 0 ? folder.Note!
-			: folder.Note is null ? $"`{folder.Path}`"
-			: $"`{folder.Path}` ({folder.Note})");
-
-		AppendList(text, "Not taken, as they do not work on this PC:", plan.SkippedFolders, folder => $"the file's `{folder.Path}` {folder.Note}");
-
-		if (plan.KeptForThisPc.Count > 0)
-		{
-			string kept = JoinNames([.. plan.KeptForThisPc.Select(label => char.ToLowerInvariant(label[0]) + label[1..])]);
-			text.Append(CultureInfo.InvariantCulture, $"\n\nKept as they are on this PC: {kept}.");
-		}
-
-		if (unsavedPages.Count > 0)
-		{
-			text.Append(CultureInfo.InvariantCulture, $"\n\nUnsaved changes on {JoinNames(unsavedPages)} will be lost.");
-		}
-
-		text.Append(CultureInfo.InvariantCulture, $"\n\nYour current settings are kept in {Path.GetFileName(UserConfigFile.BeforeImportFilePath)} in case you want them back.");
-
-		return text.ToString();
-	}
-
-	/// <summary>
-	/// Adds a heading and one line per folder, the first <see cref="ImportListLength"/> of them, so a
-	/// file with many folders cannot grow the confirmation off the screen.
-	/// </summary>
-	private static void AppendList(StringBuilder text, string heading, IReadOnlyList<ImportedFolder> folders, Func<ImportedFolder, string> detail)
-	{
-		if (folders.Count == 0)
-		{
-			return;
-		}
-
-		text.Append(CultureInfo.InvariantCulture, $"\n\n{heading}");
-
-		foreach (ImportedFolder folder in folders.Take(ImportListLength))
-		{
-			text.Append(CultureInfo.InvariantCulture, $"\n  • {folder.Label}: {detail(folder)}");
-		}
-
-		if (folders.Count > ImportListLength)
-		{
-			text.Append(CultureInfo.InvariantCulture, $"\n  • …and {folders.Count - ImportListLength} more");
-		}
-	}
-
 	/// <summary>e.g. <c>Settings, Airways and Fixes</c>.</summary>
 	/// <param name="names">The names.</param>
 	/// <returns>The names as one phrase.</returns>
-	private static string JoinNames(IReadOnlyList<string> names) => names.Count switch
+	internal static string JoinNames(IReadOnlyList<string> names) => names.Count switch
 	{
 		0 => string.Empty,
 		1 => names[0],
@@ -973,7 +908,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		Window? owner = Application.Current?.MainWindow;
 
 		ResetViewModel choices = new(
-			hasSettings: File.Exists(UserConfigFile.ConfigFilePath),
+			hasSettings: UserConfigFile.HasSettings,
 			credentialCount: CountCredentials(),
 			unfinishedWork: _describeUnfinishedWork?.Invoke() ?? []);
 
@@ -1018,7 +953,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		Window? owner = Application.Current?.MainWindow;
 
 		UninstallViewModel choices = new(
-			hasSettings: File.Exists(UserConfigFile.ConfigFilePath),
+			hasSettings: UserConfigFile.HasSettings,
 			credentialCount: CountCredentials(),
 			unfinishedWork: _describeUnfinishedWork?.Invoke() ?? []);
 
@@ -1066,8 +1001,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	}
 
 	/// <summary>
-	/// Copies <c>UserConfig.json</c> to where the user picks, before a reset or an uninstall deletes
-	/// it. The copy is the file as saved - a full backup, which Import reads back.
+	/// Copies the profile in use to where the user picks, before a reset or an uninstall deletes it,
+	/// and every other profile beside it, named after the copy with the profile's name in brackets.
+	/// Each copy is the file as saved - a full backup of that profile, which Import reads back.
 	/// </summary>
 	/// <param name="owner">The window the file dialog belongs to.</param>
 	/// <param name="action">What is about to happen, for messages: <c>reset</c> or <c>uninstall</c>.</param>
@@ -1101,8 +1037,24 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		try
 		{
-			File.Copy(UserConfigFile.ConfigFilePath, dialog.FileName, overwrite: true);
-			AppLog.Info("Settings", $"Saved a copy of the settings to '{dialog.FileName}' before the {action}.");
+			string active = UserConfigFile.ActiveProfile;
+			string stem = Path.Combine(Path.GetDirectoryName(dialog.FileName)!, Path.GetFileNameWithoutExtension(dialog.FileName));
+			string extension = Path.GetExtension(dialog.FileName);
+			int copied = 0;
+
+			foreach (string profile in UserConfigFile.Profiles())
+			{
+				string from = UserConfigFile.ProfileFilePath(profile);
+
+				if (File.Exists(from))
+				{
+					bool inUse = profile.Equals(active, StringComparison.OrdinalIgnoreCase);
+					File.Copy(from, inUse ? dialog.FileName : $"{stem} ({profile}){extension}", overwrite: true);
+					copied++;
+				}
+			}
+
+			AppLog.Info("Settings", $"Saved a copy of {copied} settings profile(s) to '{dialog.FileName}' before the {action}.");
 			return true;
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

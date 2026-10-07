@@ -122,8 +122,9 @@ public static class ArrivalFilter
 		}
 
 		// Airport mode: the airport's own reference point decides. An airport NASR has no APT_BASE
-		// record for (a Canadian field listed as a served airport, say) has nothing to test, so it
-		// is left out - it stays a served airport for everything that does not need its location.
+		// record for has nothing to test, so it is left out - it stays a served airport for
+		// everything that does not need its location. Every served airport has one in the 2026-10
+		// cycle, Canadian fields such as CYQG included, so this is only a guard.
 		Dictionary<string, bool> inside = new(StringComparer.OrdinalIgnoreCase);
 		List<ArrivalAirportProcedure> kept = [];
 

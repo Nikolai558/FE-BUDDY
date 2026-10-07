@@ -25,7 +25,7 @@ FeBuddy.Wpf (FE-BUDDY.exe)   FeBuddy.Harness   FeBuddy.UnitTests
 runs `LaunchSequence.RunAsync` off the UI thread. A step that fails is logged and only disables what
 needs it; launch never stops.
 
-1. Clear `%TEMP%\FE-Buddy`, read `UserConfig.json` and, at the first launch, save the update
+1. Clear `%TEMP%\FE-Buddy`, read the settings profile in use and, at the first launch, save the update
    channel (`UpdateChannelSetting.SaveDefaultIfUnset`;
    [Versioning](VERSIONING.md#pre-releases-and-channels)).
 2. Look for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` variable - its name only, never its value - and,
@@ -71,7 +71,7 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
 |---|---|---|---|
 | Wx Stations' station list | aviationweather.gov | `WxStations\stations.cache.xml` | every run that includes Wx Stations |
 | Telephony's ICAO register and U.S. special call signs | FAA Order JO 7340.2, Chapter 3 | `Telephony\telephony_register.html`, `us_special_call_signs.html` | every run that includes Telephony |
-| The VATSIM-Radar Virtual Airline List | GitHub (`VATSIM-Radar/data`) | `Telephony\vatsim_radar_airlines.json` | every run whose Telephony block includes it |
+| The VATSIM-Radar Virtual Airline List | VATSIM-Radar (`data.vatsim-radar.com/airlines/all`, its `virtual` array) | `Telephony\vatsim_radar_airlines.json` | every run whose Telephony block includes it |
 | The d-TPP Metafile (Procedures) | the FAA, one per cycle | `d-tpp_Metafile.xml` in the cycle's folder | at launch, once per cycle |
 
 - **Wx Stations and Telephony** aren't published per cycle, so one copy is kept under
@@ -107,6 +107,9 @@ AiracService.RunAsync
         2. XxxBuilder                 FAA rows → domain objects
         3. XxxGeojsonWriter           → .geojson files
         4. XxxAliasWriter             → alias .txt
+  DuplicateAliasChoices               the saved choices for duplicated commands; any left, with
+                                      Review on: the run asks the GUI (DuplicateAliasReviewer),
+                                      which can stop it - then no alias file is kept
   DuplicateAliasReport.Write          → Duplicate_Alias_Commands.txt
   CombinedAliasFileWriter.Write       → Aliases\Combined_Alias.txt
         │  AiracServiceResult
@@ -166,14 +169,16 @@ Not every sub-service has all four steps:
 
 ## Settings
 
-- **`UserConfig.json`** is one JSON tree, read at launch and addressed by dotted paths
-  (`Services.AiracService.Airways.OutputBy`).
+- **Settings are profiles**, one JSON tree each (`User Configurations\UserConfig.<Profile>.json`),
+  read at launch and addressed by dotted paths (`Services.AiracService.Airways.OutputBy`). The few
+  every profile shares, and the profile in use, are in `Shared.json`; `UserConfigFile` hides the
+  split. See [Settings Reference](Settings-Reference.md#settings-profiles).
 - **Each tab saves only its own node** (`UserConfigFile.Save(nodePath)`). Before it does, the node's
-  old state goes to `UserConfig.previous.json` for **Undo last save**.
-- **An import replaces the whole file** (`UserConfigFile.ReplaceAll`), keeping the old one as
-  `UserConfig.before-import.json`. How each key travels is decided by its name; see
-  [Settings export and import](Settings-Reference.md#settings-export-and-import).
-- **Credentials** are never in `UserConfig.json`: they live in Windows Credential Manager, and
+  old state goes to `UserConfig-previous.<Profile>.json` for **Undo last save**.
+- **An import replaces or adds to the profile in use** (`UserConfigFile.ReplaceAll`), keeping the
+  old one as `UserConfig-before-import.<Profile>.json`, or makes a new profile. How each key travels
+  is decided by its name; see [Settings export and import](Settings-Reference.md#settings-export-and-import).
+- **Credentials** are never in a settings file: they live in Windows Credential Manager, and
   settings hold only their id. See [Credentials](Credentials.md).
 
 ## GeoJSON output
@@ -238,8 +243,8 @@ The FAA's data has quirks. Each rule lives in one class.
   departures as STARs too. The GeoJSON never clashes (arrival files carry `STAR`), but both alias
   files get the same commands. Left as the FAA has it; the duplicate report flags them.
 - **NAVAIDs** (`NavaidBuilder`): from `NAV_BASE`, skipping `SHUTDOWN`. Duplicate `NAV_ID`s are normal
-  (`ABQ` is a VORTAC and a VOT) and every row is kept; their alias command lists each, joined by
-  `\n---`.
+  (`ABQ` is a VORTAC and a VOT) and every row is kept; their alias command lists each, with a `+`
+  line between them (`EchoCards`, shared with Airports and Telephony).
 - **ARTCC boundary rings** (`ArtccBoundaryBuilder`): from `ARB_BASE` and `ARB_SEG`, grouped by
   location and altitude. A new ring starts wherever `POINT_SEQ` doesn't increase (ZAK's CTA then FIR
   ring) and after a point described "POINT OF BEGINNING" (ZOA's four UTA rings in one run). A ring is

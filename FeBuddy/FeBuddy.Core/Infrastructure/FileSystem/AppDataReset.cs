@@ -11,9 +11,9 @@ namespace FeBuddy.Core.Infrastructure.FileSystem;
 
 /// <summary>
 /// Resets FE-Buddy like new: deletes everything it keeps in <c>%APPDATA%\FE-Buddy</c> -
-/// downloaded AIRAC cycles, Telephony and Wx Station data, logs, settings backups and, unless they
-/// are kept, the settings (<c>UserConfig.json</c>) - and, when asked, its credentials in Windows
-/// Credential Manager.
+/// downloaded AIRAC cycles, Telephony and Wx Station data, logs and, unless they are kept, the
+/// settings (every profile in <c>User Configurations</c>) - and, when asked, its credentials in
+/// Windows Credential Manager.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -77,14 +77,15 @@ public static class AppDataReset
 
 		WaitForExit(request.WaitForProcessId, waitForExit);
 
-		string settingsFile = Path.GetFileName(UserConfigFile.ConfigFilePath);
+		// Every settings profile, Shared.json, and an older FE-Buddy's one file not yet moved in.
+		string[] settings = [UserConfigFile.ProfilesFolderName, UserConfigFile.LegacyConfigFileName];
 		List<string> notDeleted = [];
 
 		foreach (string entry in Entries(RootDirectory))
 		{
 			string name = Path.GetFileName(entry);
 
-			if (request.KeepSettings && name.Equals(settingsFile, StringComparison.OrdinalIgnoreCase))
+			if (request.KeepSettings && settings.Contains(name, StringComparer.OrdinalIgnoreCase))
 			{
 				continue;
 			}

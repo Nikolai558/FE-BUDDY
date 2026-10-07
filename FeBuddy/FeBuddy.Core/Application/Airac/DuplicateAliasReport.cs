@@ -120,6 +120,9 @@ public static class DuplicateAliasReport
 		{
 			string fileName = Path.GetFileName(file.FilePath);
 
+			// Which of this file's lines with each command a line is, for saved choices.
+			Dictionary<string, int> occurrences = new(StringComparer.OrdinalIgnoreCase);
+
 			foreach (string line in File.ReadLines(file.FilePath))
 			{
 				if (CommandOf(line) is not { } command || !duplicated.Contains(command))
@@ -134,7 +137,10 @@ public static class DuplicateAliasReport
 					order.Add(command);
 				}
 
-				entry.Lines.Add(new DuplicateAliasLine(file.FileKey, fileName, line, artccs.For(file.FileKey, command)));
+				int occurrence = occurrences.GetValueOrDefault(command) + 1;
+				occurrences[command] = occurrence;
+
+				entry.Lines.Add(new DuplicateAliasLine(file.FileKey, fileName, line, artccs.For(file.FileKey, command), occurrence));
 			}
 		}
 

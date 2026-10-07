@@ -50,7 +50,7 @@ public static class UpdateChannelSetting
 	/// is kept from the first launch on and an update can't change it.
 	/// </summary>
 	/// <remarks>
-	/// Nothing is saved when <c>UserConfig.json</c> couldn't be read, since the write would replace
+	/// Nothing is saved when the profile in use couldn't be read, since the write would replace
 	/// the whole file. Nor for a development build (<c>3.1.0-dev</c>) or a version that can't be read:
 	/// their Stable default isn't anyone's choice, so it would wrongly hold a developer's PC on
 	/// Stable. Never throws; a failed write is logged and tried again at the next launch.

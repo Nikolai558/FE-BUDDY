@@ -13,6 +13,7 @@
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             xmlns:awy="clr-namespace:FeBuddy.Core.Application.Airac.Airways.Models;assembly=FeBuddy.Core"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AirwaysViewModel, IsDesignTimeCreatable=True}"
              d:DesignWidth="900" d:DesignHeight="1200">
@@ -24,11 +25,14 @@
 
             <cards:AttentionCard />
 
+            <!-- ============ what the outputs get, every filter in one place ============ -->
+            <cards:SummaryCard />
+
             <!-- ============ outputs ============ -->
             <!-- The GeoJSON can be split two ways, and the alias file can cover every airway or just the ROI's.
                  The split choices come from x:Static, as the strata do (bug #251). -->
-            <cards:OutputsCard GeojsonDescription="Writes the airway GeoJSON files selected below, split into files as chosen here."
-                               AliasDescription="Provides a command to draw all airway waypoints on an ERAM or STARS window.&#xA;Syntax: .&lt;awyId&gt;F  &#xA;Ex Output: .J3F .FF OAK RBL LKV IMB GEG">
+            <cards:OutputsCard GeojsonDescription="Map files of airways. Choose how they're split into files here, and which files below."
+                               AliasDescription="Writes a command for each airway that shows all of its fixes on an ERAM or STARS scope.&#xA;Type . then the airway and F, Ex: .J3F runs .FF OAK RBL LKV IMB GEG">
                 <cards:OutputsCard.GeojsonOptions>
                     <ctl:Option Description="{Binding OutputModeHint}">
                         <StackPanel Orientation="Horizontal">
@@ -37,35 +41,55 @@
                                        VerticalAlignment="Center" Margin="0,0,12,0" />
                             <ComboBox Style="{StaticResource Themed.ComboBox}"
                                       ItemsSource="{x:Static vm:AirwaysViewModel.OutputByValues}"
-                                      SelectedItem="{Binding OutputBy}" Width="180" />
+                                      SelectedItem="{Binding OutputBy}" Width="180">
+                                <!-- each choice in words, not the enum's name -->
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{Binding}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding}" Value="{x:Static awy:AirwayGeojsonOutputBy.HighLow}">
+                                                            <Setter Property="Text" Value="High and Low" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding}" Value="{x:Static awy:AirwayGeojsonOutputBy.Designation}">
+                                                            <Setter Property="Text" Value="Airway types" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
                     </ctl:Option>
                 </cards:OutputsCard.GeojsonOptions>
                 <cards:OutputsCard.AliasOptions>
                     <StackPanel>
-                        <RadioButton GroupName="AliasScope" Content="All FAA airways"
+                        <RadioButton GroupName="AliasScope" Content="Every airway"
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
-                        <RadioButton GroupName="AliasScope" Content="ROI airways only" Margin="0,3,0,0"
+                        <RadioButton GroupName="AliasScope" Content="Only airways that cross the region" Margin="0,3,0,0"
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}"
-                                     ToolTip="Every airway whose line crosses the region - the same airways the GeoJSON draws - each with all of its waypoints." />
+                                     ToolTip="The same airways the GeoJSON draws. Each command still has all of the airway's fixes." />
                     </StackPanel>
                 </cards:OutputsCard.AliasOptions>
             </cards:OutputsCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
-                                    LinesDescription="One line feature per airway, running through its waypoints in order. Airway gaps resolved via a MultiLineString feature."
-                                    SymbolsDescription="One symbol per waypoint, styled as a VOR, NDB or intersection. A waypoint shared by several airways is drawn once."
-                                    TextDescription="A label per waypoint showing its identifier." />
+            <cards:GeojsonFilesCard LinesDescription="Each airway as a line through its fixes in order. An airway with a gap is drawn in pieces."
+                                    SymbolsDescription="A symbol at each fix, drawn as a VOR, NDB or intersection. A fix on several airways is drawn once."
+                                    TextDescription="A label at each fix with its identifier." />
 
             <!-- ============ FE-Buddy properties ============ -->
-            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+            <cards:FebPropertiesCard />
 
             <!-- ============ designations ============ -->
-            <ctl:Card Header="Designations to Include">
+            <ctl:Card Header="Airway Types to Include" Outputs="Alias, Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Every designation in the selected cycle, all on to start. Untick one to leave it out of everything." />
+                               Text="Every airway type in the selected cycle, all ticked to start. Untick one to leave it out of the GeoJSON and the alias file." />
                     <TextBlock Style="{StaticResource Text.Caption}"
                                Text="Waiting for AIRAC data…"
                                Visibility="{Binding IsCycleReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
@@ -88,12 +112,12 @@
                  until the user picks one. Every row's label column is as wide as the longest
                  designation (a shared size group), so the drop-downs line up and sit close to
                  their labels. -->
-            <ctl:Card Header="High and Low Files" bhv:FieldState.Error="{Binding FieldErrors[HighAndLowFiles]}"
+            <ctl:Card Header="High and Low Files" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[HighAndLowFiles]}"
                       Visibility="{Binding ShowsStrata, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Choose the file each airway type goes in: High (Airways_High), Low (Airways_Low), or Both. J and Q start in High, and V and T in Low; any other type needs your choice before the run." />
+                               Text="Choose the file each airway type goes in: High (Airways_High), Low (Airways_Low) or Both. J and Q start in High, and V and T in Low. Any other type needs a choice before you can run." />
                     <ItemsControl ItemsSource="{Binding Designations}" Grid.IsSharedSizeScope="True">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -120,10 +144,10 @@
             </ctl:Card>
 
             <!-- ============ buffer airway waypoints ============ -->
-            <ctl:Card Header="Buffer Airway Waypoints" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="Buffer Airway Waypoints" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Lines stop short of each waypoint so they don't run through the waypoint symbols." />
+                               Text="Stops each line short of its fixes, so the lines don't run through the fix symbols." />
                     <CheckBox Content="Buffer airway waypoints" IsChecked="{Binding BufferAirwayWaypoints}" />
                     <!-- How far the lines stop short: only while buffering is on. The label column is
                          as wide as the longer label, so both boxes line up. -->
@@ -151,22 +175,31 @@
                             <TextBlock Grid.Row="1" Grid.Column="2" Text="NM" Style="{StaticResource Text.Body}" VerticalAlignment="Center" Margin="0,6,0,0" />
                         </Grid>
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
-                                   Text="0 to 10 NM. A leg shorter than the distances at its two ends added together isn't drawn, so larger distances remove more short legs." />
+                                   Text="0 to 10 NM. A leg shorter than the gaps at its two ends added together isn't drawn, so bigger gaps drop more short legs." />
                     </StackPanel>
                 </StackPanel>
             </ctl:Card>
 
             <!-- ============ antimeridian ============ -->
-            <ctl:Card Header="Split GeoJSON at the Antimeridian" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="Split GeoJSON at the Antimeridian" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. Leave this on unless a downstream tool needs the un-split geometry." />
+                               Text="Splits a line that crosses 180° longitude in two, so it doesn't stretch across the whole map. Leave this on unless another tool needs the lines whole." />
                     <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard />
+            <!-- It narrows the alias file only with "ROI airways only" on the Outputs card, so the
+                 card tags the alias file only then (RoiOutputs). -->
+            <cards:RoiOverrideCard Outputs="{Binding RoiOutputs}">
+                <cards:RoiOverrideCard.AdditionalContent>
+                    <StackPanel Margin="0,10,0,0">
+                        <ctl:OutputLine Kind="Geojson" Text="Only airways that cross the region, cut off at its edge." />
+                        <ctl:OutputLine Kind="Alias" Text="{Binding RoiAliasEffect}" />
+                    </StackPanel>
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard>

@@ -21,4 +21,10 @@ public sealed class MapGeometry(MapGeometryKind kind, IReadOnlyList<IReadOnlyLis
 
 	/// <summary>The text drawn at a point, or <see langword="null"/>.</summary>
 	public string? Label { get; } = label;
+
+	/// <summary>
+	/// What a Ctrl+click shows about the shape: the feature it came from, or what the data says about
+	/// it. <see langword="null"/> when nothing is known beyond its shape.
+	/// </summary>
+	public MapFeature? Feature { get; init; }
 }

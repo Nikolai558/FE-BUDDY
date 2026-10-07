@@ -76,6 +76,35 @@ public sealed class DepartureServiceTests : IDisposable
 	}
 
 	[Fact]
+	public void an_airport_dp_apt_leaves_out_still_gets_its_files_and_alias_for_the_transitions()
+	{
+		// CONLE at FDK: SERVED_ARPT lists the airport, but DP_APT assigns it no body.
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: [DepartureTestData.Base("TESTY", "ZZZ", "TESTY1.TESTY", servedArpt: "AAA CCC")],
+			apts: [DepartureTestData.Apt("TESTY", "ZZZ", "TESTY1.TESTY", "B1", "AAA")],
+			routes:
+			[
+				.. DepartureTestData.Body("TESTY", "ZZZ", "TESTY1.TESTY", "B1", ["ALPHA", "CHRLI"]),
+				.. DepartureTestData.Transition("TESTY", "ZZZ", "TESTY1.TESTY", "DELTA TRANSITION", "TESTY1.DELTA", ["CHRLI", "DELTA"]),
+			],
+			fixes: DepartureTestData.SyntheticFixes("ALPHA", "CHRLI", "DELTA"));
+
+		DepartureServiceResult result = DepartureService.Run(data, Settings());
+
+		string directory = Path.Combine(_outputDirectory, "Geojson", "ZZZ", "CCC");
+		Assert.Equal(
+			[
+				Path.Combine(directory, "CCC_TESTY_Lines.geojson"),
+				Path.Combine(directory, "CCC_TESTY_Symbols.geojson"),
+				Path.Combine(directory, "CCC_TESTY_Text.geojson"),
+			],
+			result.GeojsonFilesWritten.Where(path => path.StartsWith(directory, StringComparison.Ordinal)));
+		Assert.Equal(
+			[".aaaTESTYf .FF ALPHA CHRLI DELTA", ".cccTESTYf .FF CHRLI DELTA"],
+			File.ReadAllLines(result.AliasFilePath!).Where(line => line.StartsWith('.')));
+	}
+
+	[Fact]
 	public void run_puts_crc_defaults_first_and_feb_properties_on_every_feature_when_asked()
 	{
 		DepartureServiceResult result = DepartureService.Run(DepartureTestData.Dotss(), Settings(

@@ -16,8 +16,8 @@ public sealed class ProjectedLayerTests
 	[Fact]
 	public void a_line_over_the_meridian_runs_the_short_way()
 	{
-		ProjectedRun east = ProjectedRun.From([new GeoPoint(50, 170), new GeoPoint(50, -170)], closed: false);
-		ProjectedRun west = ProjectedRun.From([new GeoPoint(50, -170), new GeoPoint(50, 170)], closed: false);
+		ProjectedRun east = ProjectedRun.From([new GeoPoint(50, 170), new GeoPoint(50, -170)], closed: false, geometry: 0);
+		ProjectedRun west = ProjectedRun.From([new GeoPoint(50, -170), new GeoPoint(50, 170)], closed: false, geometry: 0);
 
 		Assert.Equal(350.0 / 360.0, east.Xs[0], 1e-9);
 		Assert.Equal(370.0 / 360.0, east.Xs[1], 1e-9);
@@ -27,7 +27,7 @@ public sealed class ProjectedLayerTests
 	[Fact]
 	public void an_ordinary_line_is_left_as_it_is()
 	{
-		ProjectedRun run = ProjectedRun.From([new GeoPoint(40, -100), new GeoPoint(41, -90), new GeoPoint(42, -80)], closed: true);
+		ProjectedRun run = ProjectedRun.From([new GeoPoint(40, -100), new GeoPoint(41, -90), new GeoPoint(42, -80)], closed: true, geometry: 0);
 
 		Assert.Equal(3, run.Xs.Length);
 		Assert.Equal(80.0 / 360.0, run.Xs[0], 1e-9);
@@ -42,7 +42,7 @@ public sealed class ProjectedLayerTests
 	[Fact]
 	public void wild_longitudes_project_at_once_and_stay_near_the_world()
 	{
-		ProjectedRun run = ProjectedRun.From([new GeoPoint(0, 1e20), new GeoPoint(0, 0), new GeoPoint(0, -1e300)], closed: false);
+		ProjectedRun run = ProjectedRun.From([new GeoPoint(0, 1e20), new GeoPoint(0, 0), new GeoPoint(0, -1e300)], closed: false, geometry: 0);
 
 		Assert.All(run.Xs, x => Assert.InRange(x, -2.0, 3.0));
 	}
@@ -70,6 +70,25 @@ public sealed class ProjectedLayerTests
 		Assert.Equal((run.MinX, run.MaxX), spans[1]);
 		Assert.False(projected.IsEmpty);
 		Assert.Same(projected, ProjectedLayer.For(layer));
+	}
+
+	/// <summary>Each run and point knows its shape, so one shape's can be found to draw it highlighted.</summary>
+	[Fact]
+	public void each_shapes_runs_and_points_can_be_found()
+	{
+		MapLayer layer = new("test",
+		[
+			new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(41, -90)], [new GeoPoint(42, -100), new GeoPoint(43, -90)]]),
+			new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(40, -100)], [new GeoPoint(41, -95)]]),
+		], Brushes.Red);
+
+		ProjectedLayer projected = ProjectedLayer.For(layer);
+
+		Assert.Equal(2, projected.Of(0).Runs.Count);
+		Assert.Empty(projected.Of(0).Points);
+		Assert.Equal([0, 1], projected.Of(1).Points.Select(p => p.Part));
+		Assert.All(projected.Of(1).Points, p => Assert.Equal(1, p.Geometry));
+		Assert.Empty(projected.Of(7).Runs);
 	}
 
 	[Fact]

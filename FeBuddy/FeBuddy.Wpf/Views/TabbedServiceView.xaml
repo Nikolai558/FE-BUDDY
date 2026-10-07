@@ -21,7 +21,9 @@
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:local="clr-namespace:FeBuddy.Wpf.Views"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:TabbedServiceViewModel}"
              d:DesignWidth="1100" d:DesignHeight="760">
@@ -72,6 +74,11 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type tabs:ServiceRunReviewTabViewModel}">
             <local:ServiceRunReviewTabView />
+        </DataTemplate>
+
+        <!-- the Preview Settings tab's run options (ServicePreviewTabViewModel.RunOptions) -->
+        <DataTemplate DataType="{x:Type vm:DuplicateAliasesCardViewModel}">
+            <cards:DuplicateAliasesCard />
         </DataTemplate>
 
         <!-- The action bar, rendered twice: pinned above the tab's content and again at
@@ -162,7 +169,11 @@
                         <TextBlock Text="{Binding SelectedTabTitle}" Style="{StaticResource Text.H2}"
                                    Margin="0,0,0,14" />
 
-                        <ContentControl Content="{Binding SelectedTab}" />
+                        <!-- Every card on the tab tags the outputs it affects, and greys out while they're all off:
+                             which are on, and whose they are, are set once here for the whole page. -->
+                        <ContentControl Content="{Binding SelectedTab}"
+                                        ctl:Card.OutputsOn="{Binding SelectedTab.OutputsOn}"
+                                        ctl:Card.OutputsOwner="{Binding SelectedTab.Title}" />
 
                         <!-- the same bar again at the end of the page -->
                         <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource TabActionBar}"

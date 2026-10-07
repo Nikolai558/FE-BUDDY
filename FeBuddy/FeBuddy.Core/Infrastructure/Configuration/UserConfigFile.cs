@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -8,21 +9,26 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.Core.Infrastructure.Configuration;
 
 /// <summary>
-/// Reads and writes <c>%APPDATA%\FE-Buddy\UserConfig.json</c>, the file that stores every
-/// user preference FE-Buddy needs between runs (selected AIRAC cycle, ARTCC ID, output
-/// directory, ROI, GeoJSON options, CRC ERAM defaults, and so on).
+/// Reads and writes the settings files: the active settings profile,
+/// <c>%APPDATA%\FE-Buddy\User Configurations\UserConfig.&lt;Profile&gt;.json</c>, which stores every
+/// preference FE-Buddy needs between runs (selected AIRAC cycle, ARTCC ID, output directory, ROI,
+/// GeoJSON options, CRC ERAM defaults, and so on), and <c>Shared.json</c> beside it, which holds the
+/// few every profile shares.
 /// </summary>
 /// <remarks>
 /// <para>
-/// On disk the file is a nested JSON object. In memory it is a flat dictionary keyed by dotted
-/// path (e.g. <c>Services.AiracService.UserArtccId</c>), the same shape as the settings blocks
-/// the sub-services read. Every leaf value is a string.
+/// On disk each file is a nested JSON object. In memory the two are one flat dictionary keyed by
+/// dotted path (e.g. <c>Services.AiracService.UserArtccId</c>), the same shape as the settings blocks
+/// the sub-services read. Every leaf value is a string. A key in
+/// <see cref="UserConfigPortability.SharedByProfiles"/> - the update channel, which News has been read,
+/// FE-Buddy's GitHub token - is kept in <c>Shared.json</c>, with the name of the active profile; every
+/// other key in the profile's file. Callers never need to know which.
 /// </para>
 /// <para>
 /// Saves are per sub-service: <see cref="Save(string)"/> writes only the subtree at one node
 /// path and leaves every sibling section untouched. Before each save the previous state of
-/// that one subtree is snapshotted to <c>UserConfig.previous.json</c>, giving a single level
-/// of undo per node (<see cref="CanUndo(string)"/> / <see cref="Undo(string)"/>). A second
+/// that one subtree is snapshotted to <c>UserConfig-previous.&lt;Profile&gt;.json</c>, giving a single
+/// level of undo per node (<see cref="CanUndo(string)"/> / <see cref="Undo(string)"/>). A second
 /// save of the same node overwrites the snapshot - there is no deeper history, and there is
 /// deliberately no whole-file undo.
 /// </para>
@@ -30,13 +36,34 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// The launch read path never throws: a missing file or a missing key yields defaults and a
 /// log entry, so a first run with no config behaves exactly like a run with an empty config.
 /// </para>
+/// <para>
+/// The file carries its layout version (<see cref="UserConfigVersion"/>) at the top, outside the
+/// settings, and every write stamps it. A file read in an older layout is brought up to the current
+/// one (<see cref="UserConfigMigrations"/>) and written back at once, the file as it was kept beside
+/// it as <c>UserConfig-v&lt;old version&gt;.&lt;Profile&gt;.json</c>.
+/// </para>
+/// <para>
+/// FE-Buddy 3.0.0-beta.3 and earlier kept one file, <c>%APPDATA%\FE-Buddy\UserConfig.json</c>. The
+/// first read moves it in as the <see cref="DefaultProfile"/> profile, its shared settings into
+/// <c>Shared.json</c> (see <c>UserConfigFile.Profiles.cs</c> for the profiles themselves).
+/// </para>
 /// </remarks>
-public static class UserConfigFile
+public static partial class UserConfigFile
 {
+	/// <summary>The folder in <c>%APPDATA%\FE-Buddy</c> that holds every profile and <c>Shared.json</c>.</summary>
+	public const string ProfilesFolderName = "User Configurations";
+
+	/// <summary>The profile FE-Buddy starts with, and the one an older FE-Buddy's settings are moved into.</summary>
+	public const string DefaultProfile = "Default";
+
+	/// <summary>FE-Buddy 3.0.0-beta.3's one settings file, in <c>%APPDATA%\FE-Buddy</c>, which the first read moves in.</summary>
+	public const string LegacyConfigFileName = "UserConfig.json";
+
 	private const string LogSource = "UserConfig";
-	private const string ConfigFileName = "UserConfig.json";
-	private const string PreviousFileName = "UserConfig.previous.json";
-	private const string BeforeImportFileName = "UserConfig.before-import.json";
+	private const string SharedFileName = "Shared.json";
+	private const string ActiveProfileKey = "ActiveProfile";
+	private const string ProfileFilePrefix = "UserConfig.";
+	private const string ProfileFileExtension = ".json";
 
 	/// <summary>
 	/// The most dotted parts a key may have. FE-Buddy's own keys have fewer than ten; the limit keeps
@@ -48,10 +75,18 @@ public static class UserConfigFile
 	private static readonly Dictionary<string, string> Values = new(StringComparer.Ordinal);
 	private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
 
-	private static string _directory = AppPaths.AppDataDirectory;
+	private static string _root = AppPaths.AppDataDirectory;
+	private static string _profile = DefaultProfile;
 
 	/// <summary>
-	/// The directory holding <c>UserConfig.json</c>: <c>%APPDATA%\FE-Buddy</c> by default.
+	/// The layout every write stamps the file with: the current one, unless the file was read in a
+	/// layout it could not be fully brought out of - an older one whose update could not be written
+	/// (so the next launch tries again), or a newer one this FE-Buddy does not know.
+	/// </summary>
+	private static int _stampVersion = UserConfigVersion.Current;
+
+	/// <summary>
+	/// The directory holding every settings file: <c>%APPDATA%\FE-Buddy\User Configurations</c> by default.
 	/// </summary>
 	public static string Directory
 	{
@@ -59,39 +94,76 @@ public static class UserConfigFile
 		{
 			lock (Gate)
 			{
-				return _directory;
+				return Path.Combine(_root, ProfilesFolderName);
 			}
 		}
 	}
 
-	/// <summary>The full path of <c>UserConfig.json</c>.</summary>
-	public static string ConfigFilePath => Path.Combine(Directory, ConfigFileName);
+	/// <summary>The settings profile in use, e.g. <c>Default</c>.</summary>
+	public static string ActiveProfile
+	{
+		get
+		{
+			lock (Gate)
+			{
+				return _profile;
+			}
+		}
+	}
 
-	/// <summary>The full path of the one-step undo snapshot file, <c>UserConfig.previous.json</c>.</summary>
-	public static string PreviousFilePath => Path.Combine(Directory, PreviousFileName);
+	/// <summary>The full path of the active profile's settings file, e.g. <c>UserConfig.Default.json</c>.</summary>
+	public static string ConfigFilePath => ProfileFilePath(ActiveProfile);
+
+	/// <summary>The full path of <c>Shared.json</c>: the settings every profile shares, and the active profile's name.</summary>
+	public static string SharedFilePath => Path.Combine(Directory, SharedFileName);
+
+	/// <summary>The full path of the active profile's one-step undo snapshot, <c>UserConfig-previous.&lt;Profile&gt;.json</c>.</summary>
+	public static string PreviousFilePath => BackupFilePath(ActiveProfile, "previous");
 
 	/// <summary>
-	/// The full path of <c>UserConfig.before-import.json</c>: the whole file as it was before the
-	/// last <see cref="ReplaceAll"/>, kept so an import can be taken back by hand.
+	/// The full path of <c>UserConfig-before-import.&lt;Profile&gt;.json</c>: the active profile as it was
+	/// before the last <see cref="ReplaceAll"/>, kept so an import can be taken back by hand.
 	/// </summary>
-	public static string BeforeImportFilePath => Path.Combine(Directory, BeforeImportFileName);
+	public static string BeforeImportFilePath => BackupFilePath(ActiveProfile, "before-import");
 
 	/// <summary>
-	/// Reads <c>UserConfig.json</c> from disk into the in-memory dictionary, replacing whatever
-	/// was there. A missing or unreadable file leaves the dictionary empty and logs a warning
-	/// rather than throwing - this is the launch read path.
+	/// The full path a profile in an older layout is kept at once it has been brought forward, e.g.
+	/// <c>UserConfig-v1.Default.json</c>.
 	/// </summary>
-	/// <returns>Whether the file was read, missing or unreadable.</returns>
+	/// <param name="version">The layout the file was in.</param>
+	/// <returns>The path.</returns>
+	public static string BroughtForwardFilePath(int version) =>
+		BackupFilePath(ActiveProfile, string.Create(CultureInfo.InvariantCulture, $"v{version}"));
+
+	/// <summary>The full path of a profile's settings file.</summary>
+	/// <param name="profile">The profile's name.</param>
+	/// <returns>e.g. <c>...\User Configurations\UserConfig.ZOB.json</c>.</returns>
+	public static string ProfileFilePath(string profile) => Path.Combine(Directory, ProfileFilePrefix + profile + ProfileFileExtension);
+
+	/// <summary>
+	/// Reads the active profile and <c>Shared.json</c> from disk into the in-memory dictionary,
+	/// replacing whatever was there. A missing or unreadable profile leaves only the shared settings
+	/// and logs a warning rather than throwing - this is the launch read path. A file in an older
+	/// layout is brought forward, and an older FE-Buddy's one file moved in (see the class remarks).
+	/// </summary>
+	/// <returns>Whether the profile was read, missing or unreadable.</returns>
 	public static UserConfigReadResult ReadAll()
 	{
 		lock (Gate)
 		{
 			Values.Clear();
+			_stampVersion = UserConfigMigrations.CurrentVersion;
+
+			MoveLegacyFileIn();
+
+			Dictionary<string, string> shared = ReadShared(out string? active);
+			_profile = PickProfile(active);
 
 			string path = ConfigFilePath;
 
 			if (!File.Exists(path))
 			{
+				AddAll(shared);
 				AppLog.Warning(LogSource, $"No config file at '{path}'. Using defaults for every setting.");
 				return UserConfigReadResult.Missing;
 			}
@@ -103,16 +175,38 @@ public static class UserConfigFile
 
 				if (root is JsonObject obj)
 				{
+					int version = TakeVersion(obj, path);
 					FlattenInto(obj, prefix: string.Empty, Values);
+
+					// A profile from before Shared.json (or copied in by hand) still holds them: Shared.json
+					// takes any it lacks, and its own win over the profile's from then on.
+					AdoptSharedSettings(shared);
+					AddAll(shared);
+
+					if (version < UserConfigMigrations.CurrentVersion)
+					{
+						BringForward(path, version);
+					}
+					else if (version > UserConfigMigrations.CurrentVersion)
+					{
+						// Saves keep its stamp, so the newer FE-Buddy never takes its own settings for old ones.
+						_stampVersion = version;
+						AppLog.Warning(LogSource, $"'{Path.GetFileName(path)}' was saved by a newer FE-Buddy (settings layout {version}; this one knows up to " +
+							$"{UserConfigMigrations.CurrentVersion}). Settings it doesn't know are kept as they are.");
+					}
+
 					return UserConfigReadResult.Read;
 				}
 
+				Values.Clear();
+				AddAll(shared);
 				AppLog.Warning(LogSource, $"Config file '{path}' is not a JSON object. Using defaults.");
 				return UserConfigReadResult.Unreadable;
 			}
 			catch (Exception ex)
 			{
 				Values.Clear();
+				AddAll(shared);
 				AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Using defaults.");
 				return UserConfigReadResult.Unreadable;
 			}
@@ -120,15 +214,15 @@ public static class UserConfigFile
 	}
 
 	/// <summary>
-	/// Writes the entire in-memory dictionary to <c>UserConfig.json</c> as a nested JSON tree,
-	/// then re-reads it so the dictionary reflects exactly what is on disk.
+	/// Writes the entire in-memory dictionary - the active profile's settings to its file, the shared
+	/// ones to <c>Shared.json</c> - then re-reads them so the dictionary reflects exactly what is on disk.
 	/// </summary>
 	public static void Write()
 	{
 		lock (Gate)
 		{
-			JsonObject root = BuildTree(Values);
-			WriteObject(ConfigFilePath, root);
+			UpdateSharedFile(UserConfigPortability.SharedByProfiles);
+			WriteConfig(ConfigFilePath, BuildTree(ProfileValues(Values)), _stampVersion);
 		}
 
 		ReadAll();
@@ -210,15 +304,18 @@ public static class UserConfigFile
 	}
 
 	/// <summary>
-	/// Replaces every setting at once with <paramref name="values"/> and writes the whole file -
-	/// the one write that is not per node, used by a settings import.
+	/// Replaces every setting of the active profile at once with <paramref name="values"/> and writes
+	/// its whole file - the one write that is not per node, used by a settings import. The values must
+	/// be in the current layout (<see cref="UserConfigTransfer.Read(string)"/> brings an import's
+	/// forward). <c>Shared.json</c> is left as it is: the shared settings in <paramref name="values"/>
+	/// are not written.
 	/// </summary>
 	/// <remarks>
 	/// <para>
 	/// The new file is written beside the old one first, then swapped in with
 	/// <see cref="File.Replace(string, string, string?)"/>, which keeps the file being replaced as
 	/// <see cref="BeforeImportFilePath"/> in the same step. So a write that fails - a full disk, say -
-	/// leaves <c>UserConfig.json</c>, and the settings in memory, exactly as they were.
+	/// leaves the profile, and the settings in memory, exactly as they were.
 	/// </para>
 	/// <para>
 	/// Once the new file is in place, the per-node undo snapshots are deleted: they describe settings
@@ -227,22 +324,14 @@ public static class UserConfigFile
 	/// that <see cref="TrySetValue"/> would refuse are dropped.
 	/// </para>
 	/// </remarks>
-	/// <param name="values">Every setting the file should hold afterwards, by dotted path.</param>
+	/// <param name="values">Every setting the profile should hold afterwards, by dotted path.</param>
 	/// <exception cref="IOException">The new file could not be written or swapped in; nothing was changed.</exception>
 	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
 	public static void ReplaceAll(IReadOnlyDictionary<string, string> values)
 	{
 		ArgumentNullException.ThrowIfNull(values);
 
-		Dictionary<string, string> replacement = new(StringComparer.Ordinal);
-
-		foreach (KeyValuePair<string, string> entry in values)
-		{
-			if (IsValidKey(entry.Key))
-			{
-				replacement[entry.Key] = entry.Value ?? string.Empty;
-			}
-		}
+		Dictionary<string, string> replacement = ValidValues(values);
 
 		lock (Gate)
 		{
@@ -250,7 +339,7 @@ public static class UserConfigFile
 
 			try
 			{
-				WriteObject(incoming, BuildTree(replacement));
+				WriteConfig(incoming, BuildTree(ProfileValues(replacement)), UserConfigMigrations.CurrentVersion);
 
 				if (File.Exists(ConfigFilePath))
 				{
@@ -269,13 +358,13 @@ public static class UserConfigFile
 
 			if (!DeleteIfPresent(PreviousFilePath))
 			{
-				AppLog.Warning(LogSource, $"Could not delete '{PreviousFileName}', so Undo last save may put back a setting from before the import.");
+				AppLog.Warning(LogSource, $"Could not delete '{Path.GetFileName(PreviousFilePath)}', so Undo last save may put back a setting from before the import.");
 			}
 		}
 
 		ReadAll();
 
-		AppLog.Info(LogSource, $"Replaced every setting ({replacement.Count} values); the previous file is kept as '{BeforeImportFileName}'.");
+		AppLog.Info(LogSource, $"Replaced every setting of profile '{ActiveProfile}' ({replacement.Count} values); the previous file is kept as '{Path.GetFileName(BeforeImportFilePath)}'.");
 	}
 
 	/// <summary>Deletes a file if it is there.</summary>
@@ -294,11 +383,11 @@ public static class UserConfigFile
 	}
 
 	/// <summary>
-	/// Persists only the subtree under <paramref name="nodePath"/> to <c>UserConfig.json</c>,
-	/// leaving every sibling section on disk untouched. The previous on-disk state of that one
-	/// subtree is first snapshotted to <c>UserConfig.previous.json</c> so it can be restored
-	/// once with <see cref="Undo(string)"/>. After the write the in-memory dictionary is
-	/// refreshed from disk.
+	/// Persists only the subtree under <paramref name="nodePath"/>, leaving every sibling section on
+	/// disk untouched: the profile's part to its file, and any shared setting under it to
+	/// <c>Shared.json</c>. The previous on-disk state of the profile's subtree is first snapshotted to
+	/// <see cref="PreviousFilePath"/> so it can be restored once with <see cref="Undo(string)"/>. After
+	/// the write the in-memory dictionary is refreshed from disk.
 	/// </summary>
 	/// <param name="nodePath">
 	/// The dotted path of the node to save, e.g. <c>Services.AiracService.Airways</c>.
@@ -321,9 +410,19 @@ public static class UserConfigFile
 			WriteObject(PreviousFilePath, previous);
 
 			// Replace the subtree on disk with the in-memory version built from the flat dict.
-			JsonNode? newSubtree = BuildSubtree(Values, nodePath);
+			JsonNode? newSubtree = BuildSubtree(ProfileValues(Values), nodePath);
 			SetNodeAtPath(onDisk, nodePath, newSubtree);
-			WriteObject(ConfigFilePath, onDisk);
+			RemoveSharedSettings(onDisk);
+
+			string below = nodePath + ".";
+			string[] sharedHere = [.. UserConfigPortability.SharedByProfiles.Where(key => key == nodePath || key.StartsWith(below, StringComparison.Ordinal))];
+
+			if (sharedHere.Length > 0)
+			{
+				UpdateSharedFile(sharedHere);
+			}
+
+			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
 		}
 
 		ReadAll();
@@ -352,10 +451,10 @@ public static class UserConfigFile
 	}
 
 	/// <summary>
-	/// Restores the one snapshotted previous state of <paramref name="nodePath"/> to
-	/// <c>UserConfig.json</c> and consumes the snapshot, so a further undo of the same node is
-	/// not possible until it is saved again. A no-op (returns <see langword="false"/>) when
-	/// there is no snapshot for that node.
+	/// Restores the one snapshotted previous state of <paramref name="nodePath"/> to the active
+	/// profile and consumes the snapshot, so a further undo of the same node is not possible until it
+	/// is saved again. A no-op (returns <see langword="false"/>) when there is no snapshot for that
+	/// node. Shared settings have no undo.
 	/// </summary>
 	/// <param name="nodePath">The dotted path to restore.</param>
 	/// <returns><see langword="true"/> if a previous value was restored.</returns>
@@ -384,7 +483,8 @@ public static class UserConfigFile
 
 			JsonObject onDisk = LoadObjectOrEmpty(ConfigFilePath);
 			SetNodeAtPath(onDisk, nodePath, snapshot?.DeepClone());
-			WriteObject(ConfigFilePath, onDisk);
+			RemoveSharedSettings(onDisk);
+			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
 
 			// Consume the snapshot: undo depth is exactly one.
 			RemoveNodeAtPath(previous, nodePath);
@@ -398,7 +498,8 @@ public static class UserConfigFile
 	}
 
 	/// <summary>
-	/// Points the config directory somewhere else and clears in-memory state. Unit tests only.
+	/// Points the settings somewhere else (the folder that stands for <c>%APPDATA%\FE-Buddy</c>), back on
+	/// the <see cref="DefaultProfile"/> profile, and clears in-memory state. Unit tests only.
 	/// </summary>
 	/// <param name="directory">A throwaway directory, or <see langword="null"/> to restore the default.</param>
 	internal static void ConfigureForTesting(string? directory)
@@ -406,7 +507,9 @@ public static class UserConfigFile
 		lock (Gate)
 		{
 			Values.Clear();
-			_directory = directory ?? AppPaths.AppDataDirectory;
+			_root = directory ?? AppPaths.AppDataDirectory;
+			_profile = DefaultProfile;
+			_stampVersion = UserConfigMigrations.CurrentVersion;
 		}
 	}
 
@@ -479,6 +582,126 @@ public static class UserConfigFile
 		return root;
 	}
 
+	/// <summary>The settings a profile's own file holds: all but the shared ones.</summary>
+	private static Dictionary<string, string> ProfileValues(IReadOnlyDictionary<string, string> values) =>
+		values.Where(entry => !UserConfigPortability.SharedByProfiles.Contains(entry.Key))
+			.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+
+	/// <summary>The values whose keys <see cref="TrySetValue"/> would take.</summary>
+	private static Dictionary<string, string> ValidValues(IReadOnlyDictionary<string, string> values)
+	{
+		Dictionary<string, string> valid = new(StringComparer.Ordinal);
+
+		foreach (KeyValuePair<string, string> entry in values)
+		{
+			if (IsValidKey(entry.Key))
+			{
+				valid[entry.Key] = entry.Value ?? string.Empty;
+			}
+		}
+
+		return valid;
+	}
+
+	private static void AddAll(Dictionary<string, string> values)
+	{
+		foreach (KeyValuePair<string, string> entry in values)
+		{
+			Values[entry.Key] = entry.Value;
+		}
+	}
+
+	/// <summary>
+	/// Reads <c>Shared.json</c>: the shared settings in it, and the name of the active profile.
+	/// A missing or unreadable file has neither.
+	/// </summary>
+	private static Dictionary<string, string> ReadShared(out string? activeProfile)
+	{
+		JsonObject root = LoadObjectOrEmpty(SharedFilePath);
+		root.Remove(UserConfigVersion.FileKey);
+
+		activeProfile = root[ActiveProfileKey] is JsonValue value && value.TryGetValue(out string? name) ? name : null;
+		root.Remove(ActiveProfileKey);
+
+		Dictionary<string, string> all = new(StringComparer.Ordinal);
+		FlattenInto(root, prefix: string.Empty, all);
+
+		return all.Where(entry => UserConfigPortability.SharedByProfiles.Contains(entry.Key))
+			.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+	}
+
+	/// <summary>
+	/// Writes <paramref name="keys"/> to <c>Shared.json</c> as they are in memory - removed when unset -
+	/// with the active profile's name, leaving every other shared setting there as it is.
+	/// </summary>
+	private static void UpdateSharedFile(IEnumerable<string> keys)
+	{
+		JsonObject shared = LoadObjectOrEmpty(SharedFilePath);
+		shared.Remove(UserConfigVersion.FileKey);
+		shared.Remove(ActiveProfileKey);
+
+		foreach (string key in keys)
+		{
+			if (Values.TryGetValue(key, out string? value))
+			{
+				SetNodeAtPath(shared, key, JsonValue.Create(value));
+			}
+			else
+			{
+				RemoveLeaf(shared, key);
+			}
+		}
+
+		JsonObject root = new() { [ActiveProfileKey] = _profile };
+
+		foreach (KeyValuePair<string, JsonNode?> entry in shared.ToList())
+		{
+			shared.Remove(entry.Key);
+			root[entry.Key] = entry.Value;
+		}
+
+		WriteConfig(SharedFilePath, root, UserConfigMigrations.CurrentVersion);
+	}
+
+	/// <summary>
+	/// Moves the shared settings a profile holds and <c>Shared.json</c> lacks into <c>Shared.json</c>: a
+	/// profile written before it existed - the file an older FE-Buddy kept - or copied in by hand. The
+	/// profile keeps its copies until its next save; <c>Shared.json</c>'s win from now on. Never throws.
+	/// </summary>
+	private static void AdoptSharedSettings(Dictionary<string, string> shared)
+	{
+		string[] adopt = [.. Values.Keys.Where(key => UserConfigPortability.SharedByProfiles.Contains(key) && !shared.ContainsKey(key))];
+
+		if (adopt.Length == 0)
+		{
+			return;
+		}
+
+		foreach (string key in adopt)
+		{
+			shared[key] = Values[key];
+		}
+
+		try
+		{
+			UpdateSharedFile(adopt);
+			AppLog.Info(LogSource, $"Moved {adopt.Length} setting(s) every profile shares into '{SharedFileName}'.");
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning(LogSource, $"Could not write '{SharedFileName}': {ex.Message} FE-Buddy tries again at the next launch.");
+		}
+	}
+
+	/// <summary>Takes the shared settings out of a profile's tree, so they are only ever in <c>Shared.json</c>.</summary>
+	private static void RemoveSharedSettings(JsonObject profile)
+	{
+		foreach (string key in UserConfigPortability.SharedByProfiles)
+		{
+			RemoveLeaf(profile, key);
+		}
+	}
+
 	/// <summary>
 	/// Builds the JSON node for a single sub-service subtree from the flat dictionary: every
 	/// entry whose key equals <paramref name="nodePath"/> or starts with <c>nodePath + "."</c>.
@@ -531,6 +754,101 @@ public static class UserConfigFile
 	{
 		System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 		File.WriteAllText(path, root.ToJsonString(WriteOptions));
+	}
+
+	/// <summary>Writes a whole settings file, stamped with its layout version at the top.</summary>
+	private static void WriteConfig(string path, JsonObject root, int version)
+	{
+		JsonObject stamped = new() { [UserConfigVersion.FileKey] = version };
+
+		foreach (KeyValuePair<string, JsonNode?> entry in root.Where(entry => entry.Key != UserConfigVersion.FileKey).ToList())
+		{
+			root.Remove(entry.Key);
+			stamped[entry.Key] = entry.Value;
+		}
+
+		WriteObject(path, stamped);
+	}
+
+	/// <summary>
+	/// Takes a settings file's layout stamp out of its top level, leaving only settings: the version,
+	/// or <see cref="UserConfigVersion.Oldest"/> when the file has none (beta.2 and beta.3 wrote none)
+	/// or one that can't be read.
+	/// </summary>
+	/// <param name="root">The file's top level; the stamp is removed from it.</param>
+	/// <param name="fileName">The file, for the log.</param>
+	/// <returns>The layout the file is in.</returns>
+	internal static int TakeVersion(JsonObject root, string fileName)
+	{
+		if (!root.TryGetPropertyValue(UserConfigVersion.FileKey, out JsonNode? stamp))
+		{
+			return UserConfigVersion.Oldest;
+		}
+
+		root.Remove(UserConfigVersion.FileKey);
+
+		if (stamp is JsonValue value && value.TryGetValue(out int version) && version >= UserConfigVersion.Oldest)
+		{
+			return version;
+		}
+
+		AppLog.Warning(LogSource, $"'{fileName}' has a settings layout stamp FE-Buddy can't read ({stamp?.ToJsonString() ?? "null"}). " +
+			$"Its settings are taken to be in layout {UserConfigVersion.Oldest}.");
+		return UserConfigVersion.Oldest;
+	}
+
+	/// <summary>
+	/// Brings the settings just read in layout <paramref name="version"/> up to the current one and
+	/// writes them back, keeping the file as it was (<see cref="BroughtForwardFilePath(int)"/>). The
+	/// per-node undo snapshots are of the old layout, so they go. When the update can't be worked out,
+	/// the settings are used as they are and the file is left alone; when it can't be written, the
+	/// file keeps its old stamp so the next launch tries again. Never throws.
+	/// </summary>
+	private static void BringForward(string path, int version)
+	{
+		UserConfigMigrationResult result;
+
+		try
+		{
+			result = UserConfigMigrations.Migrate(Values, version);
+		}
+		catch (InvalidOperationException ex)
+		{
+			_stampVersion = version;
+			AppLog.Warning(LogSource, $"Could not bring the settings in '{Path.GetFileName(path)}' up from layout {version} to layout {UserConfigMigrations.CurrentVersion}: " +
+				$"{ex.Message} They are used as they are, and the file is left unchanged.");
+			return;
+		}
+
+		Values.Clear();
+
+		foreach (KeyValuePair<string, string> entry in result.Values)
+		{
+			Values[entry.Key] = entry.Value;
+		}
+
+		string keptAs = BroughtForwardFilePath(version);
+
+		try
+		{
+			File.Copy(path, keptAs, overwrite: true);
+			WriteConfig(path, BuildTree(ProfileValues(Values)), UserConfigMigrations.CurrentVersion);
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			_stampVersion = version;
+			AppLog.Warning(LogSource, $"Brought the settings up from layout {version} to layout {UserConfigMigrations.CurrentVersion}, but could not write " +
+				$"'{Path.GetFileName(path)}': {ex.Message} FE-Buddy tries again at the next launch.");
+			return;
+		}
+
+		if (!DeleteIfPresent(PreviousFilePath))
+		{
+			AppLog.Warning(LogSource, $"Could not delete '{Path.GetFileName(PreviousFilePath)}', so Undo last save may put back a setting in the old layout.");
+		}
+
+		AppLog.Info(LogSource, $"Brought the settings up from layout {version} to layout {UserConfigMigrations.CurrentVersion}: " +
+			$"{string.Join("; ", result.Applied)}. The file as it was is kept as '{Path.GetFileName(keptAs)}'.");
 	}
 
 	private static JsonNode? GetNodeAtPath(JsonObject root, string dottedPath)
@@ -611,4 +929,28 @@ public static class UserConfigFile
 
 	private static void RemoveNodeAtPath(JsonObject root, string dottedPath) =>
 		SetNodeAtPath(root, dottedPath, value: null);
+
+	/// <summary>Removes a leaf, and any object it leaves empty, without creating anything on the way.</summary>
+	private static void RemoveLeaf(JsonObject root, string dottedPath)
+	{
+		string[] segments = dottedPath.Split('.', StringSplitOptions.RemoveEmptyEntries);
+		List<JsonObject> parents = [root];
+
+		for (int i = 0; i < segments.Length - 1; i++)
+		{
+			if (parents[^1][segments[i]] is not JsonObject child)
+			{
+				return;
+			}
+
+			parents.Add(child);
+		}
+
+		parents[^1].Remove(segments[^1]);
+
+		for (int i = parents.Count - 1; i > 0 && parents[i].Count == 0; i--)
+		{
+			parents[i - 1].Remove(segments[i - 1]);
+		}
+	}
 }

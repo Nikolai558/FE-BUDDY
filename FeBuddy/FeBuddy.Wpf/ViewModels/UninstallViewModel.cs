@@ -16,16 +16,17 @@ public sealed class UninstallViewModel : ObservableObject
 {
 	/// <summary>What deleting the settings loses.</summary>
 	public const string SettingsLoss =
-		"Your output folder and facility, the default Region of Interest, every AIRAC Service tab's " +
-		"choices (CRC ERAM defaults and file names included), your custom alias files, the File " +
-		"Conversions' folders and options, the Map's files and layers, your update channel, which " +
-		"GitHub token FE-Buddy uses, and which News posts you have read.";
+		"Every settings profile - your output folder and facility, the default Region of Interest, every " +
+		"AIRAC Service tab's choices (CRC ERAM defaults and file names included), your custom alias files, " +
+		"the File Conversions' folders and options, the Map's files and layers - and your update channel, " +
+		"which GitHub token FE-Buddy uses, and which News posts you have read.";
 
 	/// <summary>How the saved copy is used, shown under the Save a copy first box.</summary>
 	public const string CopyNote =
-		"You choose where (the Desktop, to start with). If you install FE-Buddy again, Settings ▸ Import… " +
-		"brings it back, all but this PC's own choices: the update channel, the GitHub token, the " +
-		"credential for each web address and which News posts you have read.";
+		"You choose where (the Desktop, to start with); any other profile is saved beside it, its name in " +
+		"brackets. If you install FE-Buddy again, Settings ▸ Import… brings each back, all but this PC's own " +
+		"choices: the update channel, the GitHub token, the credential for each web address and which News " +
+		"posts you have read.";
 
 	/// <summary>What the uninstall leaves, one line each.</summary>
 	public static IReadOnlyList<string> Kept { get; } =
@@ -42,7 +43,7 @@ public sealed class UninstallViewModel : ObservableObject
 	private bool _saveCopyFirst = true;
 
 	/// <summary>Creates the view-model.</summary>
-	/// <param name="hasSettings">Whether there are saved settings (<c>UserConfig.json</c>) to lose.</param>
+	/// <param name="hasSettings">Whether there are saved settings (a settings profile) to lose.</param>
 	/// <param name="credentialCount">How many credentials are saved in Windows Credential Manager.</param>
 	/// <param name="unfinishedWork">What closing FE-Buddy now would lose (a running job, unsaved edits); empty when nothing.</param>
 	public UninstallViewModel(bool hasSettings, int credentialCount, IReadOnlyList<string> unfinishedWork)

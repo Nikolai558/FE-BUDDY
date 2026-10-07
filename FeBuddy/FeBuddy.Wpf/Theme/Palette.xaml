@@ -105,6 +105,23 @@
     <SolidColorBrush x:Key="Brush.Command.Page.Soft"       Color="#1F94A3B8" />
     <SolidColorBrush x:Key="Brush.Command.Page.Line"       Color="#8094A3B8" />
 
+    <!-- ========================= OUTPUT KINDS ========================= -->
+    <!-- The AIRAC Service's output tags (Controls/OutputTag): one hue per output, the same on every
+         card and in the General tab's column headings. Each has its text colour, a soft fill and a
+         line for the chip's edge. -->
+    <SolidColorBrush x:Key="Brush.Output.Alias"        Color="#5EC8F2" />
+    <SolidColorBrush x:Key="Brush.Output.Alias.Soft"   Color="#1F5EC8F2" />
+    <SolidColorBrush x:Key="Brush.Output.Alias.Line"   Color="#805EC8F2" />
+    <SolidColorBrush x:Key="Brush.Output.Geojson"      Color="#4ADE80" />
+    <SolidColorBrush x:Key="Brush.Output.Geojson.Soft" Color="#1F4ADE80" />
+    <SolidColorBrush x:Key="Brush.Output.Geojson.Line" Color="#804ADE80" />
+    <SolidColorBrush x:Key="Brush.Output.Changes"      Color="#C084FC" />
+    <SolidColorBrush x:Key="Brush.Output.Changes.Soft" Color="#1FC084FC" />
+    <SolidColorBrush x:Key="Brush.Output.Changes.Line" Color="#80C084FC" />
+    <SolidColorBrush x:Key="Brush.Output.Json"         Color="#94A3B8" />
+    <SolidColorBrush x:Key="Brush.Output.Json.Soft"    Color="#1F94A3B8" />
+    <SolidColorBrush x:Key="Brush.Output.Json.Line"    Color="#8094A3B8" />
+
     <!-- ======================== SHAPE / RADIUS ======================== -->
     <!-- Kept as CornerRadius resources so every rounded element agrees. -->
     <CornerRadius x:Key="Radius.Card">16</CornerRadius>

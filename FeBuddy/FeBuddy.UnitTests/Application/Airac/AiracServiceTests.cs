@@ -140,12 +140,13 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.True(File.Exists(result.DuplicateAliasReport.FilePath));
 	}
 
-	[Fact]
-	public async Task a_dp_and_a_star_sharing_a_command_produce_the_duplicate_report_and_an_advisory_warning()
+	/// <summary>
+	/// ORF genuinely publishes both a NUTIY departure and a NUTIY arrival (see
+	/// ArrivalAliasWriter.CommandName's remarks), so both alias files write ".orfNUTIYf" - exactly the
+	/// case the duplicate-alias check exists to catch.
+	/// </summary>
+	private static NasrCsvDataCollection NutiyAtOrf()
 	{
-		// ORF genuinely publishes both a NUTIY departure and a NUTIY arrival (see
-		// ArrivalAliasWriter.CommandName's remarks), so both alias files write ".orfNUTIYf" -
-		// exactly the case the duplicate-alias check exists to catch.
 		NasrCsvDataCollection data = DepartureTestData.Build(
 			bases: [DepartureTestData.Base("NUTIY", "ZDC", "NUTIY1.NUTIY", amendmentNo: "ONE", servedArpt: "ORF")],
 			apts: [DepartureTestData.Apt("NUTIY", "ZDC", "NUTIY1.NUTIY", "BODY", "ORF")],
@@ -169,15 +170,22 @@ public sealed class AiracServiceTests : IDisposable
 			RespArtccId = "ZDC",
 		});
 
-		AiracServiceSettings settings = new()
-		{
-			SelectedCycle = Cycle,
-			OutputDirectory = _output,
-			Departures = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
-			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
-		};
+		return data;
+	}
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
+	/// <summary>Departures and Arrivals, alias files only, for <see cref="NutiyAtOrf"/>.</summary>
+	private AiracServiceSettings NutiySettings() => new()
+	{
+		SelectedCycle = Cycle,
+		OutputDirectory = _output,
+		Departures = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+		Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+	};
+
+	[Fact]
+	public async Task a_dp_and_a_star_sharing_a_command_produce_the_duplicate_report_and_an_advisory_warning()
+	{
+		AiracServiceResult result = await AiracService.RunAsync(NutiySettings(), NutiyAtOrf(), new AiracSupplementalData());
 
 		Assert.NotNull(result.DuplicateAliasReport);
 		Assert.NotEmpty(result.DuplicateAliasReport!.Duplicates);
@@ -185,6 +193,176 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.True(File.Exists(result.DuplicateAliasReport.FilePath));
 		Assert.Contains(result.Messages, m =>
 			m.IsAdvisory && m.Text.Contains("alias command(s) are used by more than one line", StringComparison.Ordinal));
+	}
+
+	// ---- choosing for duplicate alias commands (#318) ----
+
+	private static readonly DuplicateAliasRule KeepDeparture = new("Departures.txt", ".orfNUTIYf", 1, DuplicateAliasAction.Keep);
+	private static readonly DuplicateAliasRule RenameArrival = new("Arrivals.txt", ".orfNUTIYf", 1, DuplicateAliasAction.Rename, ".orfNUTIYa");
+	private static readonly DuplicateAliasRule IgnoreArrival = new("Arrivals.txt", ".orfNUTIYf", 1, DuplicateAliasAction.Ignore);
+
+	private string AliasPath(string fileName) => Path.Combine(CycleFolder, "Aliases", fileName);
+
+	private static DuplicateAliasReviewer Answer(IReadOnlyList<DuplicateAliasRule>? choices, Action<DuplicateAliasReview>? asked = null) =>
+		(review, _) =>
+		{
+			asked?.Invoke(review);
+			return Task.FromResult(choices);
+		};
+
+	private static readonly DuplicateAliasReviewer NeverAsked = (_, _) => throw new InvalidOperationException("The run should not have asked.");
+
+	/// <summary>The run stops before its alias files are final, asks, and makes the choices - a new command checked against every command in the run.</summary>
+	[Fact]
+	public async Task with_review_on_the_run_stops_for_the_users_choices_and_makes_them()
+	{
+		DuplicateAliasReview? asked = null;
+		List<AiracServiceProgress> reports = [];
+		AiracServiceSettings settings = NutiySettings() with
+		{
+			ReviewDuplicateAliases = true,
+			ConcatenateAliases = new Dictionary<string, string>(),
+		};
+		AiracSupplementalData supplemental = new()
+		{
+			CustomAliasFiles = [AliasSourceLoad.Read(new AliasSource(1, AliasSourceKind.File, @"C:\ZOB-Alias.txt"), ".zobATIS .MSG ATIS\r\n")],
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, NutiyAtOrf(), supplemental, new SynchronousProgress(reports.Add),
+			reviewDuplicates: Answer([KeepDeparture, RenameArrival], review => asked = review));
+
+		Assert.Equal(".orfNUTIYf", Assert.Single(asked!.Duplicates).Command);
+		Assert.Empty(asked.SavedChoices);
+		Assert.Contains(".ORFNUTIYF", asked.TakenCommands);
+		Assert.Contains(".zobATIS", asked.TakenCommands);
+		Assert.Contains(reports, r => r.Message == "Waiting for your choices on 1 duplicate alias command(s)");
+
+		Assert.StartsWith(".orfNUTIYf .FF ", File.ReadAllText(AliasPath("Departures.txt")), StringComparison.Ordinal);
+		Assert.StartsWith(".orfNUTIYa .FF ", File.ReadAllText(AliasPath("Arrivals.txt")), StringComparison.Ordinal);
+		Assert.Contains(".orfNUTIYa .FF ", File.ReadAllText(CombinedAliasFile), StringComparison.Ordinal);
+		Assert.Empty(result.DuplicateAliasReport!.Duplicates);
+		Assert.Equal([KeepDeparture, RenameArrival], result.DuplicateAliasChoicesMade);
+		Assert.False(result.StoppedAtDuplicateReview);
+		Assert.Contains(result.Messages, m => m.IsAdvisory
+			&& m.Text == "Your choices settled 1 duplicate alias command(s): 0 line(s) left out and 1 renamed. The choices you just made are saved for later runs.");
+	}
+
+	/// <summary>Stopping leaves no alias file and no combined file to upload, only the list of duplicates.</summary>
+	[Fact]
+	public async Task stopping_at_the_review_saves_no_alias_file()
+	{
+		string earlierCombined = CombinedAliasFile;
+		Directory.CreateDirectory(Path.GetDirectoryName(earlierCombined)!);
+		File.WriteAllText(earlierCombined, ".old last run's aliases");
+		List<AiracServiceProgress> reports = [];
+		AiracServiceSettings settings = NutiySettings() with
+		{
+			ReviewDuplicateAliases = true,
+			ConcatenateAliases = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, NutiyAtOrf(), new AiracSupplementalData(), new SynchronousProgress(reports.Add), reviewDuplicates: Answer(null));
+
+		Assert.True(result.StoppedAtDuplicateReview);
+		Assert.False(File.Exists(AliasPath("Departures.txt")));
+		Assert.False(File.Exists(AliasPath("Arrivals.txt")));
+		Assert.False(File.Exists(earlierCombined));
+		Assert.Null(result.CombinedAlias);
+		Assert.Empty(result.DuplicateAliasChoicesMade);
+		Assert.Single(result.DuplicateAliasReport!.Duplicates);
+		Assert.True(File.Exists(result.DuplicateAliasReport.FilePath));
+		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Level == LogLevel.Warning
+			&& m.Text.StartsWith("You stopped the run at the duplicate alias commands, so it saved no alias file and no Combined_Alias.txt.", StringComparison.Ordinal));
+		Assert.Contains(reports, r => r.SubService == "Concatenate Aliases" && r.Message.StartsWith("Stopped at the duplicate alias commands", StringComparison.Ordinal));
+	}
+
+	/// <summary>Saved choices that settle every duplicate are made without asking.</summary>
+	[Fact]
+	public async Task saved_choices_are_made_without_asking()
+	{
+		AiracServiceSettings settings = NutiySettings() with
+		{
+			ReviewDuplicateAliases = true,
+			DuplicateAliasChoices = [KeepDeparture, IgnoreArrival],
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, NutiyAtOrf(), new AiracSupplementalData(), reviewDuplicates: NeverAsked);
+
+		Assert.DoesNotContain(".orfNUTIYf", File.ReadAllText(AliasPath("Arrivals.txt")), StringComparison.OrdinalIgnoreCase);
+		Assert.Empty(result.DuplicateAliasReport!.Duplicates);
+		Assert.Empty(result.DuplicateAliasChoicesMade);
+		Assert.Contains(result.Messages, m => m.Text == "Your choices settled 1 duplicate alias command(s): 1 line(s) left out and 0 renamed.");
+	}
+
+	/// <summary>A saved choice that no longer settles its command (a new command now taken) is asked about again, filled in.</summary>
+	[Fact]
+	public async Task a_saved_choice_that_no_longer_works_is_asked_about_again()
+	{
+		DuplicateAliasRule renameToTaken = RenameArrival with { NewCommand = ".zobATIS" };
+		DuplicateAliasReview? asked = null;
+		AiracServiceSettings settings = NutiySettings() with
+		{
+			ReviewDuplicateAliases = true,
+			DuplicateAliasChoices = [KeepDeparture, renameToTaken],
+		};
+		AiracSupplementalData supplemental = new()
+		{
+			CustomAliasFiles = [AliasSourceLoad.Read(new AliasSource(1, AliasSourceKind.File, @"C:\ZOB-Alias.txt"), ".zobATIS .MSG ATIS")],
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, NutiyAtOrf(), supplemental, reviewDuplicates: Answer([KeepDeparture, IgnoreArrival], review => asked = review));
+
+		Assert.Equal([KeepDeparture, renameToTaken], asked!.SavedChoices);
+		Assert.Equal([KeepDeparture, IgnoreArrival], result.DuplicateAliasChoicesMade);
+		Assert.Empty(result.DuplicateAliasReport!.Duplicates);
+	}
+
+	/// <summary>An answer that still doesn't settle a command leaves it a duplicate, for the report.</summary>
+	[Fact]
+	public async Task an_answer_that_settles_nothing_leaves_the_duplicate_in_the_report()
+	{
+		AiracServiceSettings settings = NutiySettings() with { ReviewDuplicateAliases = true };
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, NutiyAtOrf(), new AiracSupplementalData(), reviewDuplicates: Answer([KeepDeparture, KeepDeparture with { FileKey = "Arrivals.txt" }]));
+
+		Assert.Empty(result.DuplicateAliasChoicesMade);
+		Assert.Single(result.DuplicateAliasReport!.Duplicates);
+		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("Your choices settled", StringComparison.Ordinal));
+	}
+
+	/// <summary>With review off, new duplicates only go in the report; a saved choice for a gone duplicate is named.</summary>
+	[Fact]
+	public async Task with_review_off_duplicates_are_listed_and_choices_for_gone_ones_are_named()
+	{
+		DuplicateAliasRule gone = new("Departures.txt", ".orfGONEf", 1, DuplicateAliasAction.Ignore);
+		DuplicateAliasRule otherFile = new("Airports.txt", ".aptX", 1, DuplicateAliasAction.Ignore);
+		AiracServiceSettings settings = NutiySettings() with { DuplicateAliasChoices = [gone, otherFile] };
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, NutiyAtOrf(), new AiracSupplementalData(), reviewDuplicates: NeverAsked);
+
+		Assert.Single(result.DuplicateAliasReport!.Duplicates);
+		Assert.Equal([gone], result.UnusedDuplicateAliasChoices);
+		Assert.Contains(result.Messages, m => m.IsAdvisory
+			&& m.Text.StartsWith("1 saved choice(s) for duplicate alias commands matched no duplicate in this run", StringComparison.Ordinal));
+	}
+
+	/// <summary>With no duplicate at all, every saved choice for the run's files is unused.</summary>
+	[Fact]
+	public async Task with_no_duplicates_every_saved_choice_for_the_runs_files_is_unused()
+	{
+		DuplicateAliasRule gone = new("Departures.txt", ".laxGONEf", 1, DuplicateAliasAction.Keep);
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			AliasOnlySettings() with { DuplicateAliasChoices = [gone] }, DepartureTestData.Dotss(), new AiracSupplementalData());
+
+		Assert.Equal([gone], result.UnusedDuplicateAliasChoices);
+		Assert.Empty(result.DuplicateAliasReport!.Duplicates);
 	}
 
 	[Fact]

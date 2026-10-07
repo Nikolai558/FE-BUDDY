@@ -6,7 +6,7 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 
 /// <summary>
 /// The NASR-code-to-display-value translations the Airports sub-service applies, plus the
-/// class-airspace sentence builder and the airspace-hours line splitter.
+/// class-airspace sentence builder and the airspace-hours lines.
 /// </summary>
 /// <remarks>
 /// Kept apart from <see cref="AirportBuilder"/> so the mappings can be unit-tested directly and
@@ -18,6 +18,9 @@ public static class AirportFieldMaps
 {
 	/// <summary>What ends the first line of <c>AIRSPACE_HRS</c>, e.g. <c>CLASS D SVC 0600-2400</c>.</summary>
 	private const string ServiceMarker = " SVC ";
+
+	/// <summary>The airspace hours of class airspace that is always in effect, as the FAA writes all-day attendance.</summary>
+	internal const string AllHours = "ALL";
 
 	private static readonly Dictionary<string, string> TowerTypes = new(StringComparer.OrdinalIgnoreCase)
 	{
@@ -89,6 +92,21 @@ public static class AirportFieldMaps
 			2 => $"{classes[0]} & {classes[1]}",
 			_ => JoinWithSerialAmpersand(classes),
 		};
+	}
+
+	/// <summary>
+	/// The airspace hours the alias file shows for a <c>CLS_ARSP</c> row: its <c>AIRSPACE_HRS</c> split
+	/// into lines (<see cref="SplitAirspaceHours"/>), or <c>ALL</c> when the row flags a class but gives
+	/// no hours. NASR leaves the hours blank for class airspace that is always in effect (PHX's Bravo,
+	/// for one).
+	/// </summary>
+	/// <param name="row">The airport's <c>CLS_ARSP</c> row, or <see langword="null"/> when it has none.</param>
+	/// <returns>The lines; empty when there is no row, or it flags no class and gives no hours.</returns>
+	public static IReadOnlyList<string> BuildAirspaceHours(ClsArspCsvDataModel.ClsArsp? row)
+	{
+		IReadOnlyList<string> lines = SplitAirspaceHours(row?.AirspaceHrs);
+
+		return lines.Count == 0 && BuildClassAirspace(row) is not null ? [AllHours] : lines;
 	}
 
 	/// <summary>

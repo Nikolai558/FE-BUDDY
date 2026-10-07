@@ -280,8 +280,12 @@ public sealed class AirportBuilderTests
 	public void attendance_hours_come_in_schedule_order_and_airspace_hours_are_split_into_lines()
 	{
 		NasrCsvDataCollection data = AirportTestDataBuilder.Build(
-			airports: [AirportTestDataBuilder.Base("DCU"), AirportTestDataBuilder.Base("PDX")],
-			classAirspace: [AirportTestDataBuilder.ClassAirspaceRow("DCU", classD: "Y", airspaceHours: "CLASS D SVC 0600-2400; OTHER TIMES CLASS G")],
+			airports: [AirportTestDataBuilder.Base("DCU"), AirportTestDataBuilder.Base("PDX"), AirportTestDataBuilder.Base("PHX")],
+			classAirspace:
+			[
+				AirportTestDataBuilder.ClassAirspaceRow("DCU", classD: "Y", airspaceHours: "CLASS D SVC 0600-2400; OTHER TIMES CLASS G"),
+				AirportTestDataBuilder.ClassAirspaceRow("PHX", classB: "Y", airspaceHours: ""),
+			],
 			attendance:
 			[
 				AirportTestDataBuilder.AttendanceRow("DCU", 3, " 0800-1700 "),
@@ -300,6 +304,10 @@ public sealed class AirportBuilderTests
 		Assert.Equal("PDX", airports[1].FaaId);
 		Assert.Empty(airports[1].AttendanceHours);
 		Assert.Empty(airports[1].AirspaceHours);
+
+		// Class airspace with no hours is always in effect.
+		Assert.Equal("PHX", airports[2].FaaId);
+		Assert.Equal(["ALL"], airports[2].AirspaceHours);
 	}
 
 	/// <summary>A field with no tower shows no attendance hours, whatever APT_ATT says; its airspace hours still show.</summary>

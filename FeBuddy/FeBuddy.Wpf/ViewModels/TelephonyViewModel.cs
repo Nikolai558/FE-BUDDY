@@ -385,7 +385,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	{
 		ServicePreviewRow[] rows =
 		[
-			new ServicePreviewRow("Alias file", $"{TelephonyOutputFiles.Alias}, every operator in the FAA telephony pages"),
 			new ServicePreviewRow("Virtual airlines", HasVirtualAirlines
 				? string.Join(", ", VirtualAirlines.Select(va => $"{va.Designator} ({va.Telephony}, {va.Organization})"))
 				: "None"),
@@ -393,7 +392,20 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			new ServicePreviewRow("Telephony data", TelephonyDataStatus),
 		];
 
-		return [new ServicePreviewSection("Telephony", rows)];
+		return [new ServicePreviewSection("Telephony", rows) { WhatYoullGet = WhatYoullGet }];
+	}
+
+	/// <inheritdoc />
+	/// <remarks>Nothing narrows Telephony; the virtual airlines are added on top.</remarks>
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		int count = VirtualAirlines.Count;
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
+			.Add(SummaryJoin.First, "every operator in the FAA's telephony pages, except expired U.S. special call signs")
+			.Add(SummaryJoin.Plus, count == 0 ? null : count == 1 ? "your virtual airline" : $"your {count} virtual airlines")
+			.Add(SummaryJoin.Plus, IncludeVatsimRadarList ? "the VATSIM-Radar Virtual Airline List" : null)
+			.ToList());
 	}
 
 	// ================= save contract =================

@@ -13,6 +13,26 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-07
+<!--
+PostId: 2026-10-07.1
+-->
+
+**Version 3.0.0-beta.4 Compiled!**
+
+More from your beta feedback
+
+- **No more uninstalling between versions**: your settings now carry over
+- **Settings profiles**: keep a set of settings for each facility (or for testing) and switch at the top of Settings
+- Every AIRAC Service card is tagged with the files it changes, and each tab starts with a **What You'll Get** summary
+- **Duplicate alias commands**: have the run stop and let you pick which line keeps each one. Your choices are remembered
+- **Ctrl + click** anything on the map to see its properties
+- Fixes: the full VATSIM-Radar virtual airline list (about 700), `ALL` hours for full-time airspace, and a Systems box that flags a missing d-TPP Metafile
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.4)!!!
+
+---
+
 ## 2026-10-05
 <!--
 PostId: 2026-10-05.2

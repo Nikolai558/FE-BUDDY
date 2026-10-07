@@ -250,18 +250,72 @@ public sealed class ShellViewModel : ObservableObject
 		StatusKind.Ok;
 
 	/// <summary>The health popover's heading, e.g. <c>1 needs attention</c>.</summary>
-	public string HealthSummary
+	public string HealthSummary => SummarizeHealth(SystemHealth);
+
+	/// <summary>
+	/// The health popover's heading for <paramref name="rows"/>: how many need attention, or - when
+	/// the only one says what to call it (a missing d-TPP Metafile) - that instead, so the user is
+	/// not sent into the drawer for something that is expected.
+	/// </summary>
+	/// <param name="rows">The health rows.</param>
+	/// <returns>The heading.</returns>
+	internal static string SummarizeHealth(IReadOnlyCollection<HealthRow> rows)
 	{
-		get
+		List<HealthRow> issues = [.. rows.Where(h => h.Kind is StatusKind.Warn or StatusKind.Down)];
+
+		return issues.Count switch
 		{
-			var issues = SystemHealth.Count(h => h.Kind is StatusKind.Warn or StatusKind.Down);
-			return issues switch
-			{
-				0 => "All systems nominal",
-				1 => "1 needs attention",
-				_ => $"{issues} need attention",
-			};
+			0 => "All systems nominal",
+			1 when issues[0].OnlyIssueSummary is { } only => only,
+			1 => "1 needs attention",
+			_ => $"{issues.Count} need attention",
+		};
+	}
+
+	/// <summary>
+	/// The drawer's AIRAC data row: which cycles are ready, and - in amber - any ready cycle whose
+	/// d-TPP Metafile is not out yet, which the General tab shows as <i>partial</i> (issue #322).
+	/// </summary>
+	/// <param name="readiness">The cycles' readiness as a whole.</param>
+	/// <param name="cycles">Each cycle's position, state and whether its d-TPP Metafile is downloaded.</param>
+	/// <returns>The row.</returns>
+	internal static HealthRow DescribeAiracData(
+		AiracCycleReadiness readiness,
+		IReadOnlyList<(AiracCyclePosition Position, CycleDataState State, bool HasMetafile)> cycles)
+	{
+		const string Name = "AIRAC data";
+
+		if (readiness == AiracCycleReadiness.Unavailable)
+		{
+			return new HealthRow(Name, "current cycle failed to download or parse", StatusKind.Down);
 		}
+
+		if (readiness is not (AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded))
+		{
+			return new HealthRow(Name, "downloading and parsing…", StatusKind.Warn);
+		}
+
+		static string Named(AiracCyclePosition position) => position.ToString().ToLowerInvariant();
+
+		string[] ready = [.. cycles.Where(c => c.State == CycleDataState.Ready).Select(c => Named(c.Position))];
+		string[] notPublished = [.. cycles.Where(c => c.State == CycleDataState.NotYetPublished).Select(c => Named(c.Position))];
+		string[] noMetafile = [.. cycles.Where(c => c.State == CycleDataState.Ready && !c.HasMetafile).Select(c => Named(c.Position))];
+
+		string detail = readiness == AiracCycleReadiness.Degraded
+			? "ready — a best-effort cycle failed"
+			: $"{string.Join(" / ", ready)} ready" + (notPublished.Length > 0 ? $", {string.Join(" / ", notPublished)} not published yet" : string.Empty);
+
+		if (noMetafile.Length == 0)
+		{
+			return new HealthRow(Name, detail, readiness == AiracCycleReadiness.Degraded ? StatusKind.Warn : StatusKind.Ok);
+		}
+
+		string which = string.Join(" and ", noMetafile);
+		string metafiles = noMetafile.Length == 1 ? "d-TPP Metafile" : "d-TPP Metafiles";
+
+		return new HealthRow(Name, detail, StatusKind.Warn,
+			Note: $"{which}: no {metafiles} yet",
+			OnlyIssueSummary: readiness == AiracCycleReadiness.Ready ? $"Ready except {which} {metafiles}" : null);
 	}
 
 	private void OnEnvironmentChanged(object? sender, EventArgs e)
@@ -453,17 +507,15 @@ public sealed class ShellViewModel : ObservableObject
 			? new HealthRow("Internet", "connected", StatusKind.Ok)
 			: new HealthRow("Internet", "offline — online features are disabled", StatusKind.Down));
 
-		AiracCycleReadiness readiness = AiracCycleDataCache.Instance.Entries.Count == 0
+		AiracCycleDataCache cache = AiracCycleDataCache.Instance;
+		AiracCycleReadiness readiness = cache.Entries.Count == 0
 			? AiracCycleReadiness.Waiting
-			: AiracCycleDataCache.Instance.ComputeReadiness();
+			: cache.ComputeReadiness();
 
-		SystemHealth.Add(readiness switch
-		{
-			AiracCycleReadiness.Ready => new HealthRow("AIRAC data", "previous / current / next ready", StatusKind.Ok),
-			AiracCycleReadiness.Degraded => new HealthRow("AIRAC data", "ready — a best-effort cycle failed", StatusKind.Warn),
-			AiracCycleReadiness.Unavailable => new HealthRow("AIRAC data", "current cycle failed to download or parse", StatusKind.Down),
-			_ => new HealthRow("AIRAC data", "downloading and parsing…", StatusKind.Warn),
-		});
+		// A cycle's metafile is fetched before it is parsed, so a ready cycle without one stays
+		// without one until the next launch - as the General tab's "partial" says.
+		SystemHealth.Add(DescribeAiracData(readiness,
+			[.. cache.Entries.OrderBy(e => e.Position).Select(e => (e.Position, e.State, cache.FindDtppFile(e.Cycle.AiracCycleId) is not null))]));
 
 		VersionCheckResult? version = AppEnvironment.Version;
 		SystemHealth.Add(version switch

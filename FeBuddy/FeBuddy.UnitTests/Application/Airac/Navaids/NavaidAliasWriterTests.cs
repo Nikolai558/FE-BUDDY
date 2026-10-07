@@ -10,8 +10,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Navaids;
 /// Covers the <c>Navaids.txt</c> alias file. Like <c>AirportAliasWriterTests</c>, the load-bearing
 /// assertion is that a block holds literal <c>\n</c>, <c>\t</c> and <c>\s</c> escapes - never real
 /// newlines, tabs or spaces holding a column - plus the NAVAIDs-specific command-merging rules:
-/// several NAVAIDs sharing an ID or a name command are appended, joined by <c>\n---</c>, in the
-/// order their command was first seen.
+/// several NAVAIDs sharing an ID or a name command are shown together, with a <c>+</c> line
+/// between them, in the order their command was first seen.
 /// </summary>
 public sealed class NavaidAliasWriterTests : IDisposable
 {
@@ -38,8 +38,11 @@ public sealed class NavaidAliasWriterTests : IDisposable
 	private const string EloBlock =
 		@"\nNAVAID:\t\t\sELO\s-\sELY\n\t\t\t\tDME\nFREQ:\t\t\s\s\s113.45\nARTCC\sHIGH:\t\sZMP\nARTCC\sLOW:\t\s\sZMP";
 
-	/// <summary>The literal text joining two NAVAIDs' blocks under one shared command.</summary>
-	private const string BlockSeparator = @"\n---";
+	/// <summary>
+	/// A command's body as CRC shows it: a blank line above the first block, a <c>+</c> line between
+	/// blank lines from one block to the next, and a line break after the last.
+	/// </summary>
+	private static string Body(params string[] blocks) => @"\n" + string.Join(@"\n\n\t\t+\n", blocks) + @"\n";
 
 	private readonly string _outputDirectory =
 		Path.Combine(Path.GetTempPath(), "FeBuddyTests_NavAlias_" + Guid.NewGuid().ToString("N"));
@@ -73,8 +76,8 @@ public sealed class NavaidAliasWriterTests : IDisposable
 		NavaidAliasGenerateResult result = NavaidAliasWriter.Generate([NavaidTestData.Cgt()], Settings());
 
 		string expected =
-			$".navCGT .echo {CgtBlock}" + Environment.NewLine +
-			$".navCHICAGOHEIGHTS .echo {CgtBlock}" + Environment.NewLine;
+			$".navCGT .echo {Body(CgtBlock)}" + Environment.NewLine +
+			$".navCHICAGOHEIGHTS .echo {Body(CgtBlock)}" + Environment.NewLine;
 
 		Assert.Equal(expected, File.ReadAllText(result.FilePath!));
 		Assert.Equal(2, result.CommandCount);
@@ -87,7 +90,7 @@ public sealed class NavaidAliasWriterTests : IDisposable
 			[NavaidTestData.AbqVortac(), NavaidTestData.AbqVot()], Settings());
 
 		string contents = File.ReadAllText(result.FilePath!);
-		string expectedBody = AbqVortacBlock + BlockSeparator + AbqVotBlock;
+		string expectedBody = Body(AbqVortacBlock, AbqVotBlock);
 
 		Assert.Contains($".navABQ .echo {expectedBody}" + Environment.NewLine, contents);
 		Assert.Contains($".navALBUQUERQUE .echo {expectedBody}" + Environment.NewLine, contents);
@@ -101,12 +104,24 @@ public sealed class NavaidAliasWriterTests : IDisposable
 			[NavaidTestData.AaCedar(), NavaidTestData.AaKenie()], Settings());
 
 		string contents = File.ReadAllText(result.FilePath!);
-		string expectedBody = AaCedarBlock + BlockSeparator + AaKenieBlock;
 
-		Assert.Contains($".navAA .echo {expectedBody}" + Environment.NewLine, contents);
-		Assert.Contains($".navCEDAR .echo {AaCedarBlock}" + Environment.NewLine, contents);
-		Assert.Contains($".navKENIE .echo {AaKenieBlock}" + Environment.NewLine, contents);
+		Assert.Contains($".navAA .echo {Body(AaCedarBlock, AaKenieBlock)}" + Environment.NewLine, contents);
+		Assert.Contains($".navCEDAR .echo {Body(AaCedarBlock)}" + Environment.NewLine, contents);
+		Assert.Contains($".navKENIE .echo {Body(AaKenieBlock)}" + Environment.NewLine, contents);
 		Assert.Equal(3, result.CommandCount);
+	}
+
+	/// <summary>The layout spelled out in full, as asked for in issue #328.</summary>
+	[Fact]
+	public void two_navaids_under_one_command_read_as_two_cards_with_a_plus_line_between_them()
+	{
+		NavaidAliasGenerateResult result = NavaidAliasWriter.Generate(
+			[NavaidTestData.AaCedar(), NavaidTestData.AaKenie()], Settings());
+
+		Assert.Equal(
+			@".navAA .echo \n\nNAVAID:\t\t\sAA\s-\sCEDAR\n\t\t\t\tNDB\nFREQ:\t\t\s\s\s341\nARTCC\sHIGH:\t\sZTL\nARTCC\sLOW:\t\s\sZTL" +
+			@"\n\n\t\t+\n\nNAVAID:\t\t\sAA\s-\sKENIE\n\t\t\t\tNDB\nFREQ:\t\t\s\s\s365\nARTCC\sHIGH:\t\sZMP\nARTCC\sLOW:\t\s\sZMP\n",
+			File.ReadAllLines(result.FilePath!)[0]);
 	}
 
 	[Fact]
@@ -116,10 +131,8 @@ public sealed class NavaidAliasWriterTests : IDisposable
 			[NavaidTestData.Elo(), NavaidTestData.Ely()], Settings());
 
 		string contents = File.ReadAllText(result.FilePath!);
-		string expectedElyBody = EloBlock + BlockSeparator + ElyBlock;
-
-		Assert.Contains($".navELY .echo {expectedElyBody}" + Environment.NewLine, contents);
-		Assert.Contains($".navELO .echo {EloBlock}" + Environment.NewLine, contents);
+		Assert.Contains($".navELY .echo {Body(EloBlock, ElyBlock)}" + Environment.NewLine, contents);
+		Assert.Contains($".navELO .echo {Body(EloBlock)}" + Environment.NewLine, contents);
 
 		// Written exactly once, not once per source NAVAID.
 		Assert.Equal(1, contents.Split(".navELY .echo").Length - 1);

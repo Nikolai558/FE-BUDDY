@@ -1,7 +1,7 @@
 namespace FeBuddy.Core.Infrastructure.FileSystem.Models;
 
 /// <summary>What <see cref="AppDataReset.RunPending"/> did.</summary>
-/// <param name="SettingsKept">Whether <c>UserConfig.json</c> was kept.</param>
+/// <param name="SettingsKept">Whether the settings (every profile) were kept.</param>
 /// <param name="CredentialsRemoved">
 /// How many credentials were removed from Windows Credential Manager; <see langword="null"/> when
 /// the reset kept them.

@@ -1,0 +1,59 @@
+<!--
+    DuplicateAliasesCard  -  on the AIRAC Service's Preview Settings tab, above the run button: what
+    the run does with an alias command more than one line uses (issue #318), and the choices saved
+    from earlier runs. Shown while the run writes an alias file. Backs onto
+    DuplicateAliasesCardViewModel, which saves each change at once.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.DuplicateAliasesCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:DuplicateAliasesCardViewModel}"
+             d:DesignWidth="820"
+             Visibility="{Binding AppliesToRun, Converter={StaticResource BoolToVis}}">
+    <ctl:Card Header="Duplicate Alias Commands">
+        <StackPanel>
+            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                       Text="When more than one line of the alias files uses a command, CRC can only run one of them. What should the run do?" />
+            <RadioButton GroupName="DuplicateAliases" Margin="0,3"
+                         Content="List them in Duplicate_Alias_Commands.txt"
+                         IsChecked="{Binding ReviewDuplicates, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+            <RadioButton GroupName="DuplicateAliases" Margin="0,3"
+                         Content="Stop and let me choose, before the alias files are saved"
+                         IsChecked="{Binding ReviewDuplicates, Mode=TwoWay}" />
+            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,0"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Text="For each command you keep one line, and leave out or rename the others. Your choices are saved and made in every later run, whichever you pick here." />
+
+            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Saved Choices" Margin="0,16,0,6" />
+            <TextBlock Style="{StaticResource Text.Caption}" Text="No saved choices yet."
+                       Visibility="{Binding HasSavedChoices, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+            <ItemsControl ItemsSource="{Binding SavedChoices}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type m:SavedDuplicateChoiceRow}">
+                        <Border Margin="0,3" Padding="8,4" CornerRadius="{StaticResource Radius.Chip}"
+                                Background="{StaticResource Brush.Bg.Sunken}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Close}"
+                                        ToolTip="Remove this choice. The next run asks again, or lists the duplicate."
+                                        Command="{Binding RemoveCommand}" />
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Action}" Style="{StaticResource Text.Body}"
+                                           VerticalAlignment="Center" Margin="12,0,8,0" />
+                                <TextBlock Text="{Binding Line}" Style="{StaticResource Text.Body}" FontFamily="{StaticResource Font.Mono}"
+                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Content="Remove all" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,8,0,0"
+                    Command="{Binding RemoveAllCommand}"
+                    Visibility="{Binding HasSavedChoices, Converter={StaticResource BoolToVis}}" />
+        </StackPanel>
+    </ctl:Card>
+</UserControl>

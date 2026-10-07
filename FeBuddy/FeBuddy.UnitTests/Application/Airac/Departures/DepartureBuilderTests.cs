@@ -149,17 +149,47 @@ public sealed class DepartureBuilderTests
 	}
 
 	[Fact]
-	public void an_airport_only_in_served_arpt_gets_every_body()
+	public void an_airport_dp_apt_leaves_out_gets_the_transitions_only()
 	{
+		// Modelled on CONLE at FDK: SERVED_ARPT lists it, but DP_APT assigns it no body.
 		NasrCsvDataCollection data = TwoBodyProcedure("CCC", ("B1", "AAA"));
 
 		DepartureLocateResult result = ReadAndLocate(data);
 
 		DepartureAirportProcedure ccc = Assert.Single(result.AirportProcedures, p => p.AirportId == "CCC");
-		Assert.Equal(["B1", "B2", "DELTA TRANSITION"], ccc.Routes.Select(r => r.Name));
+		Assert.Equal(["DELTA TRANSITION"], ccc.Routes.Select(r => r.Name));
 
 		DepartureAirportProcedure aaa = Assert.Single(result.AirportProcedures, p => p.AirportId == "AAA");
 		Assert.Equal(["B1", "DELTA TRANSITION"], aaa.Routes.Select(r => r.Name));
+	}
+
+	[Fact]
+	public void with_no_dp_apt_rows_every_airport_gets_every_body()
+	{
+		// Modelled on HUDSN (COPTER): several airports, two bodies, and no DP_APT rows.
+		NasrCsvDataCollection data = TwoBodyProcedure("AAA CCC");
+
+		DepartureLocateResult result = ReadAndLocate(data);
+
+		Assert.Equal(["AAA", "CCC"], result.AirportProcedures.Select(p => p.AirportId));
+		Assert.All(result.AirportProcedures, p => Assert.Equal(["B1", "B2", "DELTA TRANSITION"], p.Routes.Select(r => r.Name)));
+	}
+
+	[Fact]
+	public void an_airport_dp_apt_leaves_out_of_a_procedure_with_no_transitions_gets_an_info_message()
+	{
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: [DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA CCC")],
+			apts: [DepartureTestData.Apt(TestName, TestArtcc, TestCode, "B1", "AAA")],
+			routes: DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", ["ALPHA", "CHRLI"]),
+			fixes: DepartureTestData.SyntheticFixes("ALPHA", "CHRLI"));
+
+		DepartureLocateResult result = ReadAndLocate(data);
+
+		Assert.Equal("AAA", Assert.Single(result.AirportProcedures).AirportId);
+		ServiceMessage message = Assert.Single(result.Messages);
+		Assert.Equal(LogLevel.Info, message.Level);
+		Assert.Contains("at CCC: DP_APT assigns it no body that DP_RTE lists", message.Text);
 	}
 
 	[Fact]

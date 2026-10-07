@@ -46,6 +46,19 @@ public sealed record AiracServiceSettings
 	public IReadOnlyDictionary<string, string>? FileNames { get; init; }
 
 	/// <summary>
+	/// What happens to a duplicated alias command no choice settles: <see langword="false"/> (the
+	/// default) lists it in <c>Duplicate_Alias_Commands.txt</c>; <see langword="true"/> stops the run,
+	/// before any alias file is saved, for the user to choose (the reviewer given to <c>RunAsync</c>).
+	/// </summary>
+	public bool ReviewDuplicateAliases { get; init; }
+
+	/// <summary>
+	/// The user's saved choices for duplicated alias commands (see <see cref="Airac.DuplicateAliasChoices"/>).
+	/// They are made in every run, whichever way <see cref="ReviewDuplicateAliases"/> is set.
+	/// </summary>
+	public IReadOnlyList<DuplicateAliasRule> DuplicateAliasChoices { get; init; } = [];
+
+	/// <summary>
 	/// The folder this run writes every file into, e.g.
 	/// <c>C:\Users\me\Desktop\FE-Buddy_Output\AIRAC_2610</c> (see <see cref="AiracOutputPaths"/>).
 	/// </summary>

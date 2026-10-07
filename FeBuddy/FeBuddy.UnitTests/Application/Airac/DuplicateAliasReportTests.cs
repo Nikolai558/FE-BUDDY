@@ -80,6 +80,19 @@ public sealed class DuplicateAliasReportTests : IDisposable
 			duplicate.Lines);
 	}
 
+	/// <summary>Two lines of one file with one command are told apart by which comes first, for saved choices.</summary>
+	[Fact]
+	public void lines_sharing_a_command_in_one_file_are_numbered_in_order()
+	{
+		AliasFileWritten recall = AliasFile("Faa_Chart_Recall.txt", ".dtwI22Lc .OPENURL a", ".dtwI21Rc .OPENURL b", ".DTWI22LC .OPENURL c");
+		AliasFileWritten airports = AliasFile("Airports.txt", ".dtwI22Lc .ECHO d");
+
+		DuplicateAliasCommand duplicate = Assert.Single(DuplicateAliasReport.Find([recall, airports], Nasr()));
+
+		Assert.Equal([1, 2, 1], duplicate.Lines.Select(line => line.Occurrence));
+		Assert.Equal(["Faa_Chart_Recall.txt", "Faa_Chart_Recall.txt", "Airports.txt"], duplicate.Lines.Select(line => line.FileKey));
+	}
+
 	[Fact]
 	public void files_with_no_shared_command_have_no_duplicates()
 	{

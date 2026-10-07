@@ -7,10 +7,11 @@ using FeBuddy.Core.Infrastructure.Telephony.Parsers;
 namespace FeBuddy.UnitTests.Infrastructure.Telephony;
 
 /// <summary>
-/// Covers <see cref="VatsimRadarAirlineParser"/> against small real files: only the virtual airlines
-/// are read, trimmed and in the list's order; an entry missing a value, or with one that is not text
-/// or is blank, is skipped; and a file that is not the list - not JSON, or JSON but not an array -
-/// throws, which is what keeps a bad download from replacing FE-Buddy's copy.
+/// Covers <see cref="VatsimRadarAirlineParser"/> against small real files: only the <c>virtual</c>
+/// array is read, trimmed and in the list's order; an entry missing a value, or with one that is not
+/// text or is blank, is skipped; a copy kept by beta.3 or earlier (one JSON array) is still read; and
+/// a file that is not the list - not JSON, or JSON with no array of virtual airlines - throws, which
+/// is what keeps a bad download from replacing FE-Buddy's copy.
 /// </summary>
 public sealed class VatsimRadarAirlineParserTests : IDisposable
 {
@@ -32,19 +33,30 @@ public sealed class VatsimRadarAirlineParserTests : IDisposable
 		return path;
 	}
 
+	/// <summary>The shape <c>data.vatsim-radar.com/airlines/all</c> serves; NWR is issue #317's test case.</summary>
 	[Fact]
-	public void only_the_virtual_airlines_are_read_trimmed_and_in_the_lists_order()
+	public void only_the_virtual_array_is_read_trimmed_and_in_the_lists_order()
 	{
 		string path = Write("""
-			[
-			  { "icao": " OCN ", "name": " vOCN ", "callsign": " Ocean ", "virtual": true, "country": "US" },
-			  { "icao": "SBI", "name": "S7 AIRLINES", "callsign": "SIBERIAN AIRLINES", "virtual": false },
-			  { "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }
-			]
+			{
+			  "airlines": [
+			    { "icao": "AAB", "name": "ABELAG AVIATION", "callsign": "ABG", "virtual": false },
+			    { "icao": "TALN", "name": "Royal Australian Air Force", "callsign": "Talon", "virtual": false }
+			  ],
+			  "virtual": [
+			    { "icao": " OCN ", "name": " vOCN ", "callsign": " Ocean ", "virtual": true },
+			    { "icao": "NWR", "name": "NICKS AIR", "callsign": "FABULOUS", "virtual": true },
+			    { "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }
+			  ]
+			}
 			""");
 
 		Assert.Equal(
-			[new VatsimRadarAirline("OCN", "vOCN", "Ocean"), new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta")],
+			[
+				new VatsimRadarAirline("OCN", "vOCN", "Ocean"),
+				new VatsimRadarAirline("NWR", "NICKS AIR", "FABULOUS"),
+				new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta"),
+			],
 			VatsimRadarAirlineParser.Parse(path));
 	}
 
@@ -52,16 +64,18 @@ public sealed class VatsimRadarAirlineParserTests : IDisposable
 	public void an_entry_missing_a_value_or_with_one_that_is_not_text_or_is_blank_is_skipped()
 	{
 		string path = Write("""
-			[
-			  { "name": "No Designator", "callsign": "NONE", "virtual": true },
-			  { "icao": "NUL", "name": null, "callsign": "NULL", "virtual": true },
-			  { "icao": "NUM", "name": "A Number", "callsign": 7, "virtual": true },
-			  { "icao": "BLK", "name": "Blank Callsign", "callsign": "   ", "virtual": true },
-			  { "icao": "STR", "name": "String Virtual", "callsign": "STRING", "virtual": "true" },
-			  { "icao": "NOV", "name": "No Virtual", "callsign": "NOVIRTUAL" },
-			  "not an object",
-			  { "icao": "ASK", "name": "AIRSKY", "callsign": "AIRSKY", "virtual": true }
-			]
+			{
+			  "virtual": [
+			    { "name": "No Designator", "callsign": "NONE", "virtual": true },
+			    { "icao": "NUL", "name": null, "callsign": "NULL", "virtual": true },
+			    { "icao": "NUM", "name": "A Number", "callsign": 7, "virtual": true },
+			    { "icao": "BLK", "name": "Blank Callsign", "callsign": "   ", "virtual": true },
+			    { "icao": "STR", "name": "String Virtual", "callsign": "STRING", "virtual": "true" },
+			    { "icao": "NOV", "name": "No Virtual", "callsign": "NOVIRTUAL" },
+			    "not an object",
+			    { "icao": "ASK", "name": "AIRSKY", "callsign": "AIRSKY", "virtual": true }
+			  ]
+			}
 			""");
 
 		Assert.Equal([new VatsimRadarAirline("ASK", "AIRSKY", "AIRSKY")], VatsimRadarAirlineParser.Parse(path));
@@ -70,13 +84,34 @@ public sealed class VatsimRadarAirlineParserTests : IDisposable
 	[Fact]
 	public void an_empty_list_has_no_virtual_airlines()
 	{
-		Assert.Empty(VatsimRadarAirlineParser.Parse(Write("[]")));
+		Assert.Empty(VatsimRadarAirlineParser.Parse(Write("""{ "airlines": [], "virtual": [] }""")));
 	}
 
+	/// <summary>
+	/// The GitHub list FE-Buddy downloaded up to beta.3 is one array, real and virtual airlines mixed.
+	/// A copy of it is read until the next download replaces it.
+	/// </summary>
 	[Fact]
-	public void json_that_is_not_an_array_is_not_the_list()
+	public void a_copy_of_the_list_kept_by_beta_3_is_still_read()
 	{
-		Assert.Throws<InvalidDataException>(() => VatsimRadarAirlineParser.Parse(Write("""{ "icao": "DAL" }""")));
+		string path = Write("""
+			[
+			  { "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true, "country": "US" },
+			  { "icao": "SBI", "name": "S7 AIRLINES", "callsign": "SIBERIAN AIRLINES", "virtual": false }
+			]
+			""");
+
+		Assert.Equal([new VatsimRadarAirline("OCN", "vOCN", "Ocean")], VatsimRadarAirlineParser.Parse(path));
+	}
+
+	[Theory]
+	[InlineData("""{ "icao": "DAL" }""")]
+	[InlineData("""{ "airlines": [] }""")]
+	[InlineData("""{ "virtual": { "icao": "DAL" } }""")]
+	[InlineData("42")]
+	public void json_with_no_array_of_virtual_airlines_is_not_the_list(string json)
+	{
+		Assert.Throws<InvalidDataException>(() => VatsimRadarAirlineParser.Parse(Write(json)));
 	}
 
 	[Fact]

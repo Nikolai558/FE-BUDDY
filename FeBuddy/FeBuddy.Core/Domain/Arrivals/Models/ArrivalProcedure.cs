@@ -85,6 +85,13 @@ public sealed record ArrivalProcedure
 	/// different <c>BODY_SEQ</c> to mean two different bodies. An airport missing from this map -
 	/// it appears only in <c>SERVED_ARPT</c> - uses every body.
 	/// </summary>
+	/// <remarks>
+	/// A departure's left-out airport gets the transitions only
+	/// (<c>DepartureProcedure.BodyNamesByAirport</c>); an arrival's keeps every body.
+	/// <c>STAR_APT</c> lists every served airport on all but one STAR (2026-10 cycle), and on that
+	/// one, TANDY SIX, the chart has every airport fly the SADDE-ALBAS body that <c>STAR_APT</c>
+	/// gives only LGB and SNA - SLI and TOA included.
+	/// </remarks>
 	public required IReadOnlyDictionary<string, IReadOnlyList<(string Name, int Sequence)>> BodiesByAirport { get; init; }
 
 	/// <summary>Whether <c>STAR_RTE</c> has any rows for this procedure. A procedure without them produces no output.</summary>

@@ -51,7 +51,9 @@ FeBuddy.Core/
 │       └── ChartRecall/  the FAA Chart Recall command rules: ChartRecallCodes, ApproachCodes,
 │                         SidStarCodes, ChartRecallText
 ├── Infrastructure/
-│   ├── Configuration/    UserConfigFile, UserConfigKeys, DevMode, OutputFormatting, and settings
+│   ├── Configuration/    UserConfigFile (and the settings profiles), UserConfigKeys, DevMode,
+│   │                     OutputFormatting; the settings layout (UserConfigVersion,
+│   │                     UserConfigMigrations); and settings
 │   │                     export/import: UserConfigTransfer, UserConfigPortability, PortablePathTokens
 │   ├── Credentials/      CredentialStore, WindowsCredentialVault, CredentialHosts, UrlSecrets
 │   │                     (see Credentials.md)
@@ -123,9 +125,9 @@ FeBuddy.Wpf/
 │                        WheelScroll, ScrollToTop, BringIntoView, PasteOnOneLine,
 │                        ComboBoxDropDownFocus), and MaximizeToWorkArea, a window hook the chrome
 │                        windows install from code
-├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView,
-│                        MapCanvas, AliasGuideDocumentView, BesideOrBelow, CommandTablePanel,
-│                        ChromeWindow, BrandMark
+├── Controls/            Card, SectionHeader, OutputTag, OutputLine, OutputSummary, Option, CopyButton,
+│                        FilterPicker, MarkdownView, MapCanvas, AliasGuideDocumentView, BesideOrBelow,
+│                        CommandTablePanel, ChromeWindow, BrandMark
 ├── Converters/          one IValueConverter per file
 ├── Map/                 GeoJsonReader, WebMercator, ProjectedLayer, AiracMapLayers, BaseMap
 ├── Mvvm/                ObservableObject, RelayCommand
@@ -141,8 +143,9 @@ FeBuddy.Wpf/
 │                        (ServiceValidation, ServiceAreas), the card interfaces (IOutputSettings, …)
 └── Views/               ShellWindow, TabbedServiceView (AIRAC Service), FileConversionsView, one view
     │                    per tab or conversion page, MapWorkspace (every map), the dialog windows
-    └── Cards/           the shared cards (Attention, Outputs, What Files Do You Want?, FE-Buddy
-                         Properties, Region of Interest, CRC ERAM Defaults, Source Files, Run);
+    └── Cards/           the shared cards (Attention, What You'll Get, Outputs, What Files Do You
+                         Want?, FE-Buddy Properties, Region of Interest, CRC ERAM Defaults, Source
+                         Files, Run);
                          CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
                          Defaults; and OutputStatusRow, an output's On/Off line
 ```
@@ -154,7 +157,9 @@ FeBuddy.Wpf/
   Conversions, Info) goes back to its first tab, picker or main page each time it is chosen in the
   side nav.
 - **AIRAC Service is `TabbedServiceView`.** Tabs are data (`TabbedServiceViewModel`), not
-  hand-placed XAML.
+  hand-placed XAML. A choice about the run itself, not any one tab's, is a card above Preview
+  Settings' run button (`ServicePreviewTabViewModel.RunOptions`, an `IPreviewOptions`): AIRAC
+  Service's Duplicate Alias Commands.
 - **File Conversions** (`FileConversionsView`) opens on a picker - Source, File, Output, a tree of
   `ConversionChoice`s built in `FileConversionsViewModel` - and Continue opens that conversion's page
   in its place, with its last run's results under its Run card.
@@ -176,7 +181,9 @@ FeBuddy.Wpf/
 - **One map.** `Views/MapWorkspace` is the Map page and every map window (`RoiPickerWindow`).
   `MapViewModel` holds the box being edited and where it goes (`IRoiTarget`); everything else lives
   in `MapLayersState.Shared`, so every map shows the same layers. `Controls/MapCanvas` is a
-  from-scratch Web-Mercator vector map: no tiles, no network, no map SDK.
+  from-scratch Web-Mercator vector map: no tiles, no network, no map SDK. A Ctrl + click is hit
+  tested against what was drawn (`MapCanvas.Inspect.cs`); each `MapGeometry` carries its
+  `MapFeature` (a file's properties, kept as JSON text until shown) for `MapViewModel.Inspect`.
 
 ### Conventions
 
@@ -222,8 +229,12 @@ Say, Preferred Routes:
 2. **App:** an entry in `ViewModels/AiracSubServices.cs`, with the outputs it offers (its columns on
    the General tab) and its tooltip text; a `PreferredRoutesViewModel` deriving
    from `GeojsonSubServiceViewModel` and implementing `ISubServiceRunTarget`; a `PreferredRoutesView`
-   built from the shared cards, with its `DataTemplate` in `Views/TabbedServiceView.xaml`; and, in
-   `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that
+   built from the shared cards, with its `DataTemplate` in `Views/TabbedServiceView.xaml`, each of
+   its own cards naming the outputs its settings change (`ctl:Card Outputs="Alias, Geojson"`, which
+   tags the card and greys it while they're all off), and the What You'll Get card under the
+   Attention card (`cards:SummaryCard`, filled by overriding `BuildWhatYoullGet()`: a `SummaryBlock`
+   of filter lines per output, or one for outputs that get the same, also used by its
+   `BuildPreviewSummary()`); and, in `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that
    puts its `BuildSettingsBlock()` into the run's settings.
 
 Copy from `Fixes` for the usual shape, `WxStations` for data that doesn't come from NASR, `Telephony`

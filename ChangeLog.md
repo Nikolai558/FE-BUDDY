@@ -19,6 +19,85 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 ## Unreleased
 
+---
+
+## 3.0.0-beta.4
+### AIRAC Service
+- Departures: an airport the FAA's data leaves out of a departure's bodies (its routes from the
+  runways) now gets only the transitions, not every other airport's bodies. FDK's CONLE no longer
+  draws BWI's runway routes.
+- Bug #316 - Airports: class airspace that NASR gives no hours for (always in effect, like PHX's
+  Bravo) now shows `ALL` under its `HRS:`, as attendance does. An airport with no class airspace
+  still shows none.
+- Bug #317 - Telephony: the VATSIM-Radar Virtual Airline List now comes from VATSIM-Radar's own data
+  (about 700 virtual airlines, up from about 250), so ones like NWR and WAT are no longer missing.
+- Feature #328 - Airports, NAVAIDs and Telephony cards: a blank line above the first card and a line
+  break after the last, and where one command shows several cards, an indented `+` between them
+  instead of `---`.
+- Feature #323 - `Procedure_Changes.md`: a chart shared by several airports (a STAR, say) is listed
+  under every one of them, with "Also serves" naming the others, instead of under one airport only.
+- Feature #313 - Every card says which files its settings change, with a coloured tag on its title
+  row: **Alias**, **GeoJSON**, **Changes** or **JSON**, matching the General tab's columns. A tag
+  is struck through while that file is off.
+- Bug #314 - A card whose files are all off is greyed out, with a note saying where to turn them on.
+  The Region of Interest card on Departures and Arrivals stays active with GeoJSON off, since it
+  narrows their alias file too; on NAVAIDs it now greys out, since it never touches the alias file.
+  On Airports, Airways and NAVAIDs it says what the region does to each file.
+- Feature #314 - Each sub-service tab starts with a **What You'll Get** card: what its files will
+  hold, one filter per line, joined by AND, OR or PLUS (for example, "SIDs and obstacle departures
+  AND in ZOB AND amended in the last 4 cycles"). It follows your settings as you change them, and
+  Preview Settings shows the same lines for each tab.
+- Feature #313, Docs #325 - The AIRAC Service's cards are reworded to be shorter and plainer. Each
+  alias file's description shows the command to type, with an example, and Custom Alias Files on
+  Concatenate Aliases says simply how to add a file. Airways' **Designations to Include** card is now
+  **Airway Types to Include**, and its **Split into** list reads **High and Low** or **Airway types**.
+- Feature #326 - Concatenate Aliases: each custom alias file is one line - its name, how it stands,
+  **Check** and the order buttons - until you click it open for its address and credential. A new
+  web address, or a file **Check** has help for, opens by itself.
+- Feature #318 - Duplicate alias commands: on Preview Settings, choose to have the run stop before
+  the alias files are saved and ask which line keeps each duplicated command, and leave out or
+  rename the others (a new command is checked against every command in the run, your custom alias
+  files' included). The choices are saved and made in every later run, so only new duplicates ask
+  again; they're listed on Preview Settings, where each can be removed.
+
+### Map
+- Feature #312 - Your Files: **Show all files** shows or hides every file at once, and right-clicking
+  a file offers **Deselect all files except this one**. **Clear all** is now **Reset**.
+- Feature #327 - **Ctrl + click** a line, dot or label on the map to see its properties in a panel
+  beside it: a GeoJSON feature's properties as the file has them (with a button to copy them as
+  JSON), or what the AIRAC data says about a live airport, runway, NAVAID or ARTCC boundary. Every
+  shape under the pointer is listed, and drawn highlighted until you close the panel.
+
+### Settings
+- Feature #324 - You no longer need to uninstall FE-Buddy between versions: settings saved by beta.2
+  or later are kept. When a later version changes how settings are saved, it updates yours at launch
+  and keeps a copy of the old file (`UserConfig-v1.Default.json` and so on, beside the profile).
+  Settings exports carry the same version, so an older export still imports.
+- Feature #324 - Settings profiles: keep a whole set of settings for each facility, or one for
+  testing, and switch between them at the top of Settings, with **New…**, **Rename…** and
+  **Delete…**. Your update channel, the News you've read and FE-Buddy's GitHub token are the same in
+  every profile. Your settings so far become the **Default** profile.
+- Feature #324 - **Import…** asks where a file's settings go: into a new profile, added to the
+  profile in use, or in place of its settings.
+- Bug #321 - Credentials: **Create a token on GitHub** now looks like a button, not a heading.
+
+### Look and feel
+- Bug #322 - The Systems box no longer says every cycle is ready while a d-TPP Metafile is missing:
+  AIRAC data turns amber and names the cycle, and when that's the only issue the box reads *Ready
+  except next d-TPP Metafile* rather than "1 needs attention". A next cycle the FAA hasn't published
+  is shown as such.
+
+### Dev notes
+- Settings files and exports are stamped with a settings layout (`UserConfigVersion`). Renaming,
+  moving or re-formatting a saved setting now needs a new layout and a step in
+  `UserConfigMigrations`; `UserConfigLayoutTests` fails without one. See Settings Reference,
+  "Changing the layout".
+- Settings are one file per profile, `%APPDATA%\FE-Buddy\User Configurations\UserConfig.<Profile>.json`,
+  plus `Shared.json` for the settings every profile shares and the profile in use. `UserConfigFile`
+  hides the split. beta.3's `UserConfig.json` is moved in as Default.
+
+---
+
 ## 3.0.0-beta.3
 ### AIRAC Service
 - Feature #308 - On the General tab, a sub-service's **Include** now matches its files: untick its

@@ -67,8 +67,9 @@ public sealed record Airport
 
 	/// <summary>
 	/// When the class airspace is in effect: <c>CLS_ARSP.AIRSPACE_HRS</c> split into display lines
-	/// by <c>AirportFieldMaps.SplitAirspaceHours</c> (e.g. <c>CLASS D SVC</c>, <c>0600-2400</c>,
-	/// <c>OTHER TIMES CLASS G</c>). Empty when NASR publishes none.
+	/// by <c>AirportFieldMaps.BuildAirspaceHours</c> (e.g. <c>CLASS D SVC</c>, <c>0600-2400</c>,
+	/// <c>OTHER TIMES CLASS G</c>), or <c>ALL</c> when <c>CLS_ARSP</c> flags a class with no hours.
+	/// Empty when the airport has no <c>CLS_ARSP</c> row.
 	/// </summary>
 	public IReadOnlyList<string> AirspaceHours { get; init; } = [];
 

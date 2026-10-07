@@ -108,4 +108,38 @@ public sealed class GeoJsonReaderTests
 
 		Assert.Equal(new GeoPoint(40, -100), Assert.Single(read).Parts[0][0]);
 	}
+
+	/// <summary>
+	/// Each shape keeps its feature for a Ctrl + click: the geometry type, its place among the file's
+	/// features (a skipped defaults feature still counts) and its properties as written. A
+	/// GeometryCollection's shapes share theirs; a bare geometry is a feature of its own.
+	/// </summary>
+	[Fact]
+	public void each_shape_keeps_its_feature()
+	{
+		IReadOnlyList<MapGeometry> read = GeoJsonReader.Read("""
+			{"type":"FeatureCollection","features":[
+			  {"type":"Feature","properties":{"isLineDefaults":true},"geometry":{"type":"Point","coordinates":[0,180]}},
+			  {"type":"Feature","properties":{"style":"solid","thickness":2},"geometry":{"type":"MultiLineString","coordinates":[[[0,0],[1,1]]]}},
+			  {"type":"Feature","geometry":{"type":"GeometryCollection","geometries":[{"type":"Point","coordinates":[1,2]},{"type":"LineString","coordinates":[[0,0],[1,1]]}]}},
+			  {"type":"Feature","properties":[1],"geometry":{"type":"Point","coordinates":[3,4]}}
+			]}
+			""");
+
+		MapFeature line = read[0].Feature!;
+		Assert.Equal("MultiLineString", line.Kind);
+		Assert.Equal(2, line.Number);
+		Assert.True(line.IsFromFile);
+		Assert.Equal([new MapProperty("style", "solid"), new MapProperty("thickness", "2")], line.Properties());
+
+		Assert.Same(read[1].Feature, read[2].Feature);
+		Assert.Equal("GeometryCollection", read[1].Feature!.Kind);
+		Assert.Equal(3, read[1].Feature!.Number);
+		Assert.Empty(read[1].Feature!.Properties());
+		Assert.Empty(read[3].Feature!.Properties());
+
+		MapFeature bare = Assert.Single(GeoJsonReader.Read("""{"type":"LineString","coordinates":[[0,0],[1,1]]}""")).Feature!;
+		Assert.Equal("LineString", bare.Kind);
+		Assert.Null(bare.Number);
+	}
 }

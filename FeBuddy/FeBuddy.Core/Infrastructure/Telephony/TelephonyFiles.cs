@@ -10,16 +10,17 @@ namespace FeBuddy.Core.Infrastructure.Telephony;
 public static class TelephonyFiles
 {
 	/// <summary>
-	/// The kept copy's name of the VATSIM-Radar Virtual Airline List: the airlines VATSIM-Radar's
-	/// community keeps for VATSIM, its virtual airlines among them (see <see cref="VatsimRadarAirlinesUrl"/>).
+	/// The kept copy's name of the VATSIM-Radar Virtual Airline List: the airlines VATSIM-Radar shows,
+	/// its virtual airlines among them (see <see cref="VatsimRadarAirlinesUrl"/>).
 	/// </summary>
 	public const string VatsimRadarAirlinesFileName = "vatsim_radar_airlines.json";
 
 	/// <summary>
-	/// Where the VATSIM-Radar Virtual Airline List is downloaded from: <c>custom-data/airlines.json</c>
-	/// in the <c>VATSIM-Radar/data</c> repository on GitHub.
+	/// Where the VATSIM-Radar Virtual Airline List is downloaded from: VATSIM-Radar's own data service,
+	/// whose <c>virtual</c> array is every virtual airline VATSIM-Radar shows. (Up to 3.0.0-beta.3,
+	/// FE-Buddy downloaded <c>custom-data/airlines.json</c> from GitHub, which has only some of them.)
 	/// </summary>
-	public const string VatsimRadarAirlinesUrl = "https://raw.githubusercontent.com/VATSIM-Radar/data/main/custom-data/airlines.json";
+	public const string VatsimRadarAirlinesUrl = "https://data.vatsim-radar.com/airlines/all";
 
 	/// <summary>
 	/// The kept copy's name of Chapter 3, Section 1, "Aircraft Company/Telephony/Three-Letter

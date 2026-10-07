@@ -98,10 +98,12 @@ public sealed class VatsimRadarVirtualAirlinesTests : IDisposable
 	public void a_kept_copy_gives_what_a_run_would_write_and_when_it_was_downloaded()
 	{
 		string path = Write("airlines.json", """
-			[
-			  { "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true },
-			  { "icao": "C", "name": "Coast Guard Virtual", "callsign": "COAST GUARD", "virtual": true }
-			]
+			{
+			  "virtual": [
+			    { "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true },
+			    { "icao": "C", "name": "Coast Guard Virtual", "callsign": "COAST GUARD", "virtual": true }
+			  ]
+			}
 			""");
 		DateTime downloadedUtc = new(2026, 10, 1, 8, 0, 0, DateTimeKind.Utc);
 		File.SetLastWriteTimeUtc(path, downloadedUtc);

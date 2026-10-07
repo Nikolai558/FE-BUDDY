@@ -5,7 +5,7 @@ downloads from a protected website uses one.
 
 ## Where credentials live
 
-- **In Windows Credential Manager**, never in `UserConfig.json`, a settings export or any other
+- **In Windows Credential Manager**, never in a settings profile, a settings export or any other
   FE-Buddy file. Windows encrypts each entry with the signed-in user's key, so only that user on
   that PC can read it. Entries use local-machine persistence, so they never roam.
 - **One entry per credential**, named `FE-Buddy:credential:<id>`, holding its name, type, user name,

@@ -40,12 +40,12 @@
             <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
                        Text="Turn these on or off on the General tab." />
 
-            <cards:OutputStatusRow Label="GeoJSON files" IsOn="{Binding GenerateGeojson}"
+            <cards:OutputStatusRow Kind="Geojson" IsOn="{Binding GenerateGeojson}"
                                    Description="{Binding GeojsonDescription, ElementName=Self}" />
             <ContentPresenter Style="{StaticResource OutputOptions}" IsEnabled="{Binding GenerateGeojson}"
                               Content="{Binding GeojsonOptions, ElementName=Self}" />
 
-            <cards:OutputStatusRow Margin="0,12,0,0" Label="Alias file" IsOn="{Binding GenerateAliasFile}"
+            <cards:OutputStatusRow Margin="0,12,0,0" Kind="Alias" IsOn="{Binding GenerateAliasFile}"
                                    Description="{Binding AliasDescription, ElementName=Self}" />
             <ContentPresenter Style="{StaticResource OutputOptions}" IsEnabled="{Binding GenerateAliasFile}"
                               Content="{Binding AliasOptions, ElementName=Self}" />

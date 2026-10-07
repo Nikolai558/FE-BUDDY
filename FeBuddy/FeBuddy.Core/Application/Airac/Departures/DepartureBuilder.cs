@@ -207,17 +207,20 @@ public static class DepartureBuilder
 			: $"{procedure.DpName} ({procedure.ComputerCode}, {procedure.Artcc}-{string.Join('/', procedure.ServedAirports)})";
 
 	/// <summary>
-	/// The routes one airport gets: the bodies <c>DP_APT</c> assigns it (every body when it has
-	/// no <c>DP_APT</c> rows at all), then every transition.
+	/// The routes one airport gets: the bodies <c>DP_APT</c> assigns it, then every transition.
+	/// An airport <c>DP_APT</c> leaves out gets the transitions only; when the procedure has no
+	/// <c>DP_APT</c> rows at all, every airport gets every body.
 	/// </summary>
 	/// <param name="procedure">The procedure.</param>
 	/// <param name="airportId">The airport.</param>
 	/// <returns>The routes, bodies first, each group in <c>DP_RTE</c> order.</returns>
 	internal static List<DepartureRawRoute> RoutesFor(DepartureProcedure procedure, string airportId)
 	{
-		IEnumerable<DepartureRawRoute> bodies = procedure.BodyNamesByAirport.TryGetValue(airportId, out IReadOnlyList<string>? names)
-			? procedure.Bodies.Where(body => names.Contains(body.Name, StringComparer.OrdinalIgnoreCase))
-			: procedure.Bodies;
+		IEnumerable<DepartureRawRoute> bodies =
+			procedure.BodyNamesByAirport.Count == 0 ? procedure.Bodies
+			: procedure.BodyNamesByAirport.TryGetValue(airportId, out IReadOnlyList<string>? names)
+				? procedure.Bodies.Where(body => names.Contains(body.Name, StringComparer.OrdinalIgnoreCase))
+			: [];
 
 		return [.. bodies, .. procedure.Transitions];
 	}

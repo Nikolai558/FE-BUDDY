@@ -44,6 +44,12 @@ public sealed class ServicePreviewTabViewModel(
 	/// <summary>The rundown, one section per contributing tab.</summary>
 	public ObservableCollection<ServicePreviewSection> Sections { get; } = [];
 
+	/// <summary>
+	/// The service's own card above the run button - for AIRAC Service, what to do with duplicate
+	/// alias commands - shown by its own DataTemplate; <see langword="null"/> for none.
+	/// </summary>
+	public IPreviewOptions? RunOptions { get; init; }
+
 	/// <summary>Set when a tab is invalid, naming the tabs that need fixing first and how to find what to fix.</summary>
 	public string? BlockingIssue
 	{
@@ -87,6 +93,8 @@ public sealed class ServicePreviewTabViewModel(
 		{
 			Sections.Add(section);
 		}
+
+		RunOptions?.Refresh();
 
 		string[] invalid = [.. others
 			.Where(t => t.Status == ServiceTabStatus.Invalid)

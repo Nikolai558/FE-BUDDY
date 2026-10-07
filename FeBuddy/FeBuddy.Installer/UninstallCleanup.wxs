@@ -5,7 +5,7 @@
   (UPGRADINGPRODUCTCODE is set while a newer MSI removes the old one), so settings survive
   every update, including 2.x -> 3.x.
 
-    %AppData%\FE-Buddy        3.x: UserConfig.json, logs, downloaded AIRAC cycles
+    %AppData%\FE-Buddy        3.x: settings profiles (User Configurations), logs, downloaded AIRAC cycles
     %LocalAppData%\FE-BUDDY   2.x's data folder, left behind when 3.x upgraded it
     %Temp%\FE-BUDDY           the temporary workspace (both lines use the same folder)
 

@@ -39,6 +39,18 @@ public static class UserConfigKeys
 	public const string CoordinatePrecision = "Services.AiracService.CoordinatePrecision";
 
 	/// <summary>
+	/// Whether the AIRAC run stops for the user to choose for a duplicated alias command no saved
+	/// choice settles (<c>Y</c>), or lists it in <c>Duplicate_Alias_Commands.txt</c> (<c>N</c>, the default).
+	/// </summary>
+	public const string DuplicateAliasesReview = "Services.AiracService.DuplicateAliases.Review";
+
+	/// <summary>
+	/// The user's saved choices for duplicated alias commands, one per line as
+	/// <c>FileKey|Command|Occurrence|Action|NewCommand</c> (see <c>DuplicateAliasChoices</c>).
+	/// </summary>
+	public const string DuplicateAliasesChoices = "Services.AiracService.DuplicateAliases.Choices";
+
+	/// <summary>
 	/// The output GeoJSON files the Map shows, <c>|</c>-joined and relative to the cycle's output
 	/// folder - so the same picks work on any PC, and show as missing until that PC has run them.
 	/// </summary>

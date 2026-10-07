@@ -1,0 +1,912 @@
+{
+  "General": {
+    "UpdateChannel": "Beta",
+    "NewsLastOpen": "2026-10-05.2",
+    "PrettyPrintGeojson": "Y",
+    "DefaultOutputDirectory": "C:\\Users\\tester\\Desktop\\FE-Buddy Output",
+    "AddFeBuddyOutputFolder": "Y",
+    "FeBuddyGitHub": {
+      "CredentialId": "0f8fad5bd9cb469fa16570867728950e"
+    },
+    "LegacyGitHubTokenNoticeShown": "Y"
+  },
+  "Services": {
+    "AiracService": {
+      "UserArtccId": "ZOB",
+      "CoordinatePrecision": "7",
+      "AiracCycleId": "2610",
+      "SelectedSubServices": "ArtccBoundaries,Airports,Airways,Arrivals,Departures,Navaids,Fixes,Procedures,Telephony,WxStations",
+      "Outputs": {
+        "ArtccBoundaries": {
+          "Geojson": "Y"
+        },
+        "Airports": {
+          "Alias": "Y",
+          "Geojson": "N"
+        },
+        "Airways": {
+          "Alias": "Y",
+          "Geojson": "Y"
+        },
+        "Arrivals": {
+          "Alias": "Y",
+          "Geojson": "Y"
+        },
+        "Departures": {
+          "Alias": "Y",
+          "Geojson": "Y"
+        },
+        "Navaids": {
+          "Alias": "Y",
+          "Geojson": "Y"
+        },
+        "Fixes": {
+          "Geojson": "Y"
+        },
+        "Procedures": {
+          "Alias": "Y",
+          "ProcedureChanges": "Y",
+          "ProceduresJson": "N"
+        },
+        "Telephony": {
+          "Alias": "Y"
+        },
+        "WxStations": {
+          "Geojson": "Y"
+        }
+      },
+      "DefaultRoi": {
+        "FilterByRoi": "Y",
+        "Corners": {
+          "SwLat": "39.5",
+          "SwLon": "-85.25",
+          "NeLat": "43.75",
+          "NeLon": "-78.5"
+        }
+      },
+      "FileNames": {
+        "RenameFiles": "Y",
+        "Files": {
+          "1": {
+            "Key": "Airports.txt",
+            "Rename": "Y",
+            "Name": "ZOB_Airports"
+          }
+        }
+      },
+      "ConcatenateAliases": {
+        "CombineAliasFiles": "Y",
+        "Sources": {
+          "1": {
+            "Url": "https://github.com/vZOB/facility/raw/refs/heads/main/ZOB-Alias.txt"
+          },
+          "2": {
+            "FilePath": "C:\\Users\\tester\\Documents\\ZOB-Local-Alias.txt"
+          }
+        }
+      },
+      "Airports": {
+        "EmitRunwayLines": "Y",
+        "EmitAirportSymbols": "Y",
+        "EmitAirportText": "N",
+        "IncludeFebCustomProperties": "Y",
+        "FebProperties": "faaId,icaoId",
+        "CrcDefaultsScope": "SpecificFiles",
+        "CrcDefaultsFiles": "Airports_Symbols",
+        "CrcEramPropertyDefaults": {
+          "Runways_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "Airports_Symbol": {
+            "bcg": "12",
+            "filters": "1,2",
+            "style": "airport",
+            "size": "2"
+          },
+          "Airports_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          }
+        },
+        "Roi": {
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        }
+      },
+      "Airways": {
+        "OutputBy": "HighLow",
+        "BufferAirwayWaypoints": "Y",
+        "FixBufferNm": "1.5",
+        "NavaidBufferNm": "3",
+        "AliasRoiScope": "RoiAirways",
+        "SplitAtAntimeridian": "Y",
+        "ExcludedDesignations": "",
+        "HighDesignations": "J,Q",
+        "LowDesignations": "T,V",
+        "BothDesignations": "",
+        "EmitLines": "Y",
+        "EmitSymbols": "Y",
+        "EmitText": "Y",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "None",
+        "CrcDefaultsFiles": "",
+        "CrcEramPropertyDefaults": {
+          "High_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "Low_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "Other_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "High_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "Low_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "Other_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "High_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "Low_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "Other_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          }
+        },
+        "Roi": {
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        }
+      },
+      "Arrivals": {
+        "ArtccFilter": "ZNY,ZOB",
+        "Roi": {
+          "Mode": "Waypoint",
+          "OverrideDefaultRoi": "Y",
+          "OverrideCorners": {
+            "SwLat": "40.25",
+            "SwLon": "-83.5",
+            "NeLat": "42.5",
+            "NeLon": "-80"
+          }
+        },
+        "Amendment": {
+          "Filter": "Cycles",
+          "WithinCycles": "4",
+          "WithinDays": "30",
+          "OnOrAfter": ""
+        },
+        "EmitLines": "Y",
+        "EmitSymbols": "Y",
+        "EmitText": "N",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "None",
+        "CrcDefaultsFiles": "",
+        "CrcEramPropertyDefaults": {
+          "Arrivals_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "Arrivals_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "Arrivals_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          }
+        }
+      },
+      "Departures": {
+        "IncludeObstacleDepartures": "N",
+        "ArtccFilter": "ZOB",
+        "Roi": {
+          "Mode": "Airport",
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        },
+        "Amendment": {
+          "Filter": "Date",
+          "WithinCycles": "1",
+          "WithinDays": "30",
+          "OnOrAfter": "2026-09-03"
+        },
+        "EmitLines": "Y",
+        "EmitSymbols": "Y",
+        "EmitText": "Y",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "AllGeojsonFiles",
+        "CrcDefaultsFiles": "",
+        "CrcEramPropertyDefaults": {
+          "Departures_Line": {
+            "bcg": "4",
+            "filters": "3",
+            "style": "solid",
+            "thickness": "1"
+          },
+          "Departures_Symbol": {
+            "bcg": "4",
+            "filters": "3",
+            "style": "obstruction1",
+            "size": "1"
+          },
+          "Departures_Text": {
+            "bcg": "4",
+            "filters": "3",
+            "size": "1",
+            "underline": "N",
+            "opaque": "N",
+            "xOffset": "0",
+            "yOffset": "0"
+          }
+        }
+      },
+      "ArtccBoundaries": {
+        "OutputBy": "HighLow",
+        "LocationFilter": "ZOB",
+        "SplitAtAntimeridian": "Y",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "None",
+        "CrcDefaultsFiles": "",
+        "CrcEramPropertyDefaults": {
+          "High_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "Low_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "Unlimited_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          }
+        },
+        "Roi": {
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        }
+      },
+      "Fixes": {
+        "OutputBy": "All",
+        "ExcludedFixUses": "",
+        "ExcludedCharts": "",
+        "Combinations": "",
+        "EmitSymbols": "Y",
+        "EmitText": "Y",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "None",
+        "CrcDefaultsFiles": "",
+        "CrcEramPropertyDefaults": {
+          "Fix_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "COMPUTER-NAV_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "MIL-RPRTNG-PNT_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "MIL-WYPNT_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "NRS-WYPNT_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "RADAR_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "RPRTNG-PNT_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "VFR-WYPNT_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "WYPNT_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "Fix_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "COMPUTER-NAV_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "MIL-RPRTNG-PNT_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "MIL-WYPNT_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "NRS-WYPNT_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "RADAR_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "RPRTNG-PNT_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "VFR-WYPNT_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "WYPNT_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          }
+        },
+        "Roi": {
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        }
+      },
+      "Navaids": {
+        "OutputBy": "Type",
+        "ExcludedTypes": "",
+        "SymbolStyleBy": "Type",
+        "FanMarkerStyle": "",
+        "EmitSymbols": "Y",
+        "EmitText": "Y",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "None",
+        "CrcDefaultsFiles": "",
+        "CrcEramPropertyDefaults": {
+          "NAVAIDs_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "VOR_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "VORTAC_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "VOR-DME_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "VOT_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "TACAN_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "DME_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "NDB_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "NDB-DME_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "MARINE-NDB_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "MARINE-NDB-DME_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "UHF-NDB_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "FAN-MARKER_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "CONSOLAN_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "NAVAIDs_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "VOR_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "VORTAC_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "VOR-DME_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "VOT_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "TACAN_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "DME_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "NDB_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "NDB-DME_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "MARINE-NDB_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "MARINE-NDB-DME_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "UHF-NDB_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "FAN-MARKER_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          },
+          "CONSOLAN_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          }
+        },
+        "Roi": {
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        }
+      },
+      "Procedures": {
+        "Facilities": "ZOB",
+        "IncludeRoiAirports": "Y",
+        "Airports": "CLE,DTW",
+        "Procedures": "",
+        "AirportProcedures": "",
+        "ChartTypes": "IAP,STR,DP,ODP,DAU,APD",
+        "JsonFields": "icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "None",
+        "CrcDefaultsFiles": "",
+        "Roi": {
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        }
+      },
+      "Telephony": {
+        "IncludeVatsimRadarVirtualAirlines": "Y",
+        "VirtualAirlines": {
+          "1": {
+            "Designator": "DVA",
+            "Telephony": "DELTA",
+            "Organization": "Delta Virtual"
+          }
+        },
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "None",
+        "CrcDefaultsFiles": "",
+        "Roi": {
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        }
+      },
+      "WxStations": {
+        "EmitSymbols": "Y",
+        "EmitText": "Y",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": "",
+        "CrcDefaultsScope": "None",
+        "CrcDefaultsFiles": "",
+        "CrcEramPropertyDefaults": {
+          "Wx_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "Wx_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          }
+        },
+        "Roi": {
+          "OverrideDefaultRoi": "N",
+          "OverrideCorners": {
+            "SwLat": "",
+            "SwLon": "",
+            "NeLat": "",
+            "NeLon": ""
+          }
+        }
+      }
+    },
+    "FileConversions": {
+      "DatToGeojson": {
+        "SourceType": "Folder",
+        "SourceFolder": "C:\\Users\\tester\\Documents\\DAT",
+        "IncludeCrcLineDefaults": "Y",
+        "CrcEramPropertyDefaults": {
+          "VideoMap_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          }
+        },
+        "CroppingDistance": "20"
+      },
+      "EramToGeojson": {
+        "SourceType": "Folder",
+        "SourceFolder": "",
+        "IncludeCrcLineDefaults": "Y",
+        "IncludeCrcSymbolDefaults": "Y",
+        "IncludeCrcTextDefaults": "Y",
+        "CrcEramPropertyDefaults": {
+          "GeoMap_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "GeoMap_Symbol": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "size": ""
+          },
+          "GeoMap_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          }
+        },
+        "OutputLayout": "ByAttributes",
+        "DefaultsSource": "Xml",
+        "IncludeFebCustomProperties": "N",
+        "FebProperties": ""
+      },
+      "SctToGeojson": {
+        "SourceType": "Folder",
+        "SourceFolder": "",
+        "IncludeCrcLineDefaults": "Y",
+        "IncludeCrcTextDefaults": "Y",
+        "CrcEramPropertyDefaults": {
+          "SectorFile_Line": {
+            "bcg": "",
+            "filters": "",
+            "style": "",
+            "thickness": ""
+          },
+          "SectorFile_Text": {
+            "bcg": "",
+            "filters": "",
+            "size": "",
+            "underline": "",
+            "opaque": "",
+            "xOffset": "",
+            "yOffset": ""
+          }
+        }
+      }
+    },
+    "MapService": {
+      "OutputGeojson": "Geojson\\ARTCC-Boundary_High_Lines.geojson",
+      "Gridlines": "Y",
+      "BaseMapLayers": "States",
+      "BaseMapOpacity": "50",
+      "AiracLayers": "Airports",
+      "Home": "41.2,-81.6,7"
+    }
+  }
+}

@@ -4,8 +4,9 @@ using FeBuddy.Wpf.ViewModels;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers the ROI half of <see cref="MapViewModel"/>: the corner fields, saving, cancelling and
-/// clearing, and which typed corners move the box - against a stand-in <see cref="IRoiTarget"/>.
+/// Covers <see cref="MapViewModel"/>: the ROI half - the corner fields, saving, cancelling and
+/// clearing, and which typed corners move the box - against a stand-in <see cref="IRoiTarget"/>; and
+/// the properties panel a Ctrl + click opens (<see cref="MapViewModel.Inspect"/>, <see cref="MapFeatureCard"/>).
 /// </summary>
 public sealed class MapViewModelTests
 {
@@ -177,6 +178,116 @@ public sealed class MapViewModelTests
 		Assert.Null(vm.DraftRoi);
 		Assert.Equal(Saved.NeLat, vm.ReferenceRoi!.Value.North);
 	}
+
+	// ============================ properties ============================
+
+	/// <summary>A Ctrl + click opens the panel: one card per shape, and the shapes highlighted.</summary>
+	[Fact]
+	public void a_ctrl_click_shows_a_card_for_each_shape()
+	{
+		MapViewModel vm = new(new Target());
+		MapLayer layer = Layer(
+			new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(41, -99), new GeoPoint(42, -98)]])
+			{
+				Feature = MapFeature.FromGeoJson("LineString", 152, """{"style":"dashed"}"""),
+			},
+			new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(41.4, -81.85)], [new GeoPoint(41.5, -81.9)]], "CLE")
+			{
+				Feature = MapFeature.FromData("Airport", [new("FAA ID", "CLE")]),
+			});
+		MapHit line = new(layer, layer.Geometries[0], null);
+		MapHit airport = new(layer, layer.Geometries[1], new GeoPoint(41.4, -81.85));
+
+		vm.Inspect(new MapInspection(new GeoPoint(41.4, -81.85), [line, airport]));
+
+		Assert.True(vm.IsInspecting);
+		Assert.Equal("2 objects", vm.InspectTitle);
+		Assert.Equal("At 41.40000, -81.85000.", vm.InspectNote);
+		Assert.Equal([line, airport], vm.Highlighted);
+
+		MapFeatureCard first = vm.InspectedFeatures[0];
+		Assert.Equal("ZOB_Test.geojson", first.Title);
+		Assert.Equal("LineString · 3 points · feature 152 in the file", first.Summary);
+		Assert.Equal([new MapProperty("style", "dashed")], first.Properties);
+		Assert.True(first.CanCopy);
+		Assert.Equal("Copy the properties as JSON", first.CopyToolTip);
+
+		MapFeatureCard second = vm.InspectedFeatures[1];
+		Assert.Equal("Airport · 41.40000, -81.85000", second.Summary);
+		Assert.Equal("Copy the properties", second.CopyToolTip);
+		Assert.Equal("FAA ID: CLE", second.CopyText);
+	}
+
+	/// <summary>A shape with nothing known beyond itself says so, and has nothing to copy.</summary>
+	[Fact]
+	public void a_shape_with_no_properties_says_so()
+	{
+		MapLayer layer = Layer(new MapGeometry(MapGeometryKind.Polygon, [[new GeoPoint(0, 0), new GeoPoint(1, 0), new GeoPoint(1, 1)], [new GeoPoint(5, 5), new GeoPoint(6, 5), new GeoPoint(6, 6)]]));
+
+		MapFeatureCard card = new(new MapHit(layer, layer.Geometries[0], null));
+
+		Assert.Equal("Polygon · 2 parts, 6 points", card.Summary);
+		Assert.False(card.HasProperties);
+		Assert.False(card.CanCopy);
+		Assert.Throws<ArgumentNullException>(() => new MapFeatureCard(null!));
+	}
+
+	/// <summary>A click on nothing still opens the panel, to say so and how to use it.</summary>
+	[Fact]
+	public void a_click_on_nothing_says_how_to_use_it()
+	{
+		MapViewModel vm = new(new Target());
+
+		vm.Inspect(new MapInspection(new GeoPoint(40, -100), []));
+
+		Assert.True(vm.IsInspecting);
+		Assert.Equal("Nothing here", vm.InspectTitle);
+		Assert.Equal("At 40.00000, -100.00000. Ctrl + click on a line, a dot or a label to see its properties.", vm.InspectNote);
+		Assert.Empty(vm.InspectedFeatures);
+		Assert.Throws<ArgumentNullException>(() => vm.Inspect(null!));
+	}
+
+	/// <summary>The panel shows the shapes drawn on top, and says when there were more.</summary>
+	[Theory]
+	[InlineData(30, "30 objects")]
+	[InlineData(MapInspection.MaxHits, "100 or more objects")]
+	public void many_shapes_show_the_ones_on_top(int count, string title)
+	{
+		MapLayer layer = Layer(new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(40, -100)]]));
+		MapViewModel vm = new(new Target());
+
+		vm.Inspect(new MapInspection(new GeoPoint(40, -100), [.. Enumerable.Repeat(new MapHit(layer, layer.Geometries[0], null), count)]));
+
+		Assert.Equal(title, vm.InspectTitle);
+		Assert.Equal(MapViewModel.MaxCards, vm.InspectedFeatures.Count);
+		Assert.Equal(MapViewModel.MaxCards, vm.Highlighted!.Count);
+		Assert.EndsWith("Showing the 25 drawn on top.", vm.InspectNote, StringComparison.Ordinal);
+	}
+
+	/// <summary>Esc closes the panel first; with it closed, Esc cancels an ROI edit as before.</summary>
+	[Fact]
+	public void escape_closes_the_panel_then_cancels_the_edit()
+	{
+		Target target = new() { Current = Saved };
+		MapViewModel vm = new(target) { IsEditingRoi = true };
+		vm.Inspect(new MapInspection(new GeoPoint(40, -100), []));
+
+		vm.EscapeCommand.Execute(null);
+
+		Assert.False(vm.IsInspecting);
+		Assert.Null(vm.Highlighted);
+		Assert.True(vm.IsEditingRoi);
+		Assert.Equal(0, target.Cancels);
+
+		vm.EscapeCommand.Execute(null);
+
+		Assert.False(vm.IsEditingRoi);
+		Assert.Equal(1, target.Cancels);
+		Assert.False(vm.EscapeCommand.CanExecute(null));
+		Assert.False(vm.CloseInspectCommand.CanExecute(null));
+	}
+
+	private static MapLayer Layer(params MapGeometry[] geometries) => new("ZOB_Test.geojson", geometries, System.Windows.Media.Brushes.Orange);
 
 	private static void Type(MapViewModel vm, string field, string value)
 	{

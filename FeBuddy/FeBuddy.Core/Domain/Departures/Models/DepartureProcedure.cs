@@ -51,9 +51,11 @@ public sealed record DepartureProcedure
 	/// <c>DP_APT.ARPT_ID</c>, in that order, without duplicates.
 	/// </summary>
 	/// <remarks>
-	/// The two lists disagree for a handful of procedures (CONLE, FOXHL, TRMML), so taking both
-	/// errs on the side of producing the procedure for an airport rather than silently dropping
-	/// it.
+	/// Per the FAA, <c>SERVED_ARPT</c> lists every airport a departure serves, and <c>DP_APT</c>
+	/// the airports that fly each body, so every <c>DP_APT</c> airport should be in
+	/// <c>SERVED_ARPT</c>. It is not always (FOXHL's lists only BWI, though <c>DP_APT</c> has six
+	/// airports), so taking both errs on the side of producing the procedure for an airport rather
+	/// than silently dropping it.
 	/// </remarks>
 	public required IReadOnlyList<string> ServedAirports { get; init; }
 
@@ -66,8 +68,16 @@ public sealed record DepartureProcedure
 	/// <summary>
 	/// The body names <c>DP_APT</c> assigns to each airport (<c>BODY_NAME</c> by
 	/// <c>ARPT_ID</c>). An airport missing from this map - it appears only in
-	/// <c>SERVED_ARPT</c> - uses every body.
+	/// <c>SERVED_ARPT</c> - gets the transitions only. When the map is empty (<c>DP_APT</c> has no
+	/// rows for the procedure), every airport uses every body.
 	/// </summary>
+	/// <remarks>
+	/// Per the FAA, an airport <c>SERVED_ARPT</c> lists but <c>DP_APT</c> does not has no codeable
+	/// body. Two real airports are left out (2026-10 cycle): CYQG on TRMML, which the FAA says
+	/// should no longer be served, and FDK on CONLE, whose chart does fly the OHSSS-CONLE body
+	/// <c>DP_APT</c> gives the other satellites. Transitions only is still closer to FDK's chart than
+	/// every BWI runway body.
+	/// </remarks>
 	public required IReadOnlyDictionary<string, IReadOnlyList<string>> BodyNamesByAirport { get; init; }
 
 	/// <summary>Whether <c>DP_RTE</c> has any rows for this procedure. A procedure without them produces no output.</summary>

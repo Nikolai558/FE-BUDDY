@@ -51,8 +51,8 @@ dotnet build FeBuddy/FeBuddy.sln
 dotnet run --project FeBuddy/FeBuddy.Wpf
 ```
 
-A development build uses `%APPDATA%\FE-Buddy` like an installed copy: `UserConfig.json`, the FAA
-data in `AiracCycles`, and the logs.
+A development build uses `%APPDATA%\FE-Buddy` like an installed copy: the settings profiles in
+`User Configurations`, the FAA data in `AiracCycles`, and the logs.
 
 **Developer mode** is `DevModeEnabled` in `FeBuddy.Wpf/App.xaml.cs`, a code constant. Turn it on
 for a troubleshooting build: GeoJSON is pretty printed and Debug log entries are kept. Keep it off

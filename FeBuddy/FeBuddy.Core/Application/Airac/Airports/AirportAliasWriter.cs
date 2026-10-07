@@ -28,7 +28,8 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 ///   </item>
 ///   <item>
 ///     For the same reason the line breaks are literal <c>\n</c> escapes. The file itself is
-///     one physical line per command; CRC turns the escapes into a multi-line display.
+///     one physical line per command; CRC turns the escapes into a multi-line display, with a
+///     blank line above the card and a line break after it (<see cref="EchoCards"/>).
 ///   </item>
 /// </list>
 /// <para>
@@ -167,7 +168,7 @@ public static class AirportAliasWriter
 		string tab4 = tab3 + TabEscape;
 		string space3 = SpaceEscape + SpaceEscape + SpaceEscape;
 
-		body.Append(".ECHO ").Append(NewLineEscape);
+		body.Append(NewLineEscape);
 		body.Append("APT:").Append(tab3).Append(displayLine).Append(NewLineEscape);
 		body.Append(tab4).Append(airport.Name).Append(NewLineEscape);
 		body.Append(tab4).Append(airport.FacilityType).Append(NewLineEscape);
@@ -185,7 +186,7 @@ public static class AirportAliasWriter
 		body.Append("AIRSPACE:").Append(TabEscape).Append(space3).Append(airport.ClassAirspace ?? string.Empty).Append(NewLineEscape);
 		AppendLines(body, TabEscape + SpaceEscape + "HRS:" + TabEscape + space3, airport.AirspaceHours, tab4);
 
-		return body.ToString();
+		return ".ECHO " + EchoCards.Join([body.ToString()]);
 	}
 
 	/// <summary>

@@ -41,7 +41,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"the GeoJSON covers every airport";
+		"the GeoJSON has every airport";
 
 	/// <inheritdoc />
 	/// <remarks>The files are named for what they hold: <c>Runways_Lines</c>, <c>Airports_Symbols</c>, <c>Airports_Text</c>.</remarks>
@@ -133,23 +133,27 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("GeoJSON", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
-			new ServicePreviewRow("GeoJSON covers", GenerateGeojson ? DescribeGeojsonScope() : "No GeoJSON"),
-			new ServicePreviewRow("Alias file",
-				GenerateAliasFile ? "Airports.txt, every open airport in NASR - the region never limits the alias file" : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
 			new ServicePreviewRow("Region of interest", DescribeRoi()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
-		return [new ServicePreviewSection("Airports", rows)];
+		return [new ServicePreviewSection("Airports", rows) { WhatYoullGet = WhatYoullGet }];
 	}
 
-	/// <summary>What the GeoJSON files cover once the region (override or default) is applied.</summary>
-	/// <returns>e.g. "Open airports whose reference point is inside the region".</returns>
-	private string DescribeGeojsonScope() =>
-		HasRoi
-			? "Open airports whose reference point is inside the region"
-			: "Every open airport in NASR";
+	/// <inheritdoc />
+	/// <remarks>The region narrows the GeoJSON only; with no region the two blocks are the same, and merge.</remarks>
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
+			.Add(SummaryJoin.First, "every open airport")
+			.Add(SummaryJoin.And, RegionLine("with its reference point inside the region"))
+			.ToList());
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
+			.Add(SummaryJoin.First, HasRoi ? "every open airport, in the region or not" : "every open airport")
+			.ToList());
+	}
 
 	// ================= save contract =================
 

@@ -377,7 +377,7 @@ public sealed class ArrivalFilterTests
 	public void airport_mode_drops_an_airport_with_no_apt_base_row_with_an_info_message()
 	{
 		ArrivalAirportProcedure atUnknown = ArrivalTestData.AirportProcedure(
-			ArrivalTestData.Procedure(codeId: "CYQG"), "CYQG",
+			ArrivalTestData.Procedure(codeId: "GHOST"), "NOAPT",
 			new ArrivalPoint("NEARB", "RP", 34.0, -118.0));
 		List<ServiceMessage> messages = [];
 
@@ -390,7 +390,7 @@ public sealed class ArrivalFilterTests
 		Assert.Empty(kept);
 		ServiceMessage message = Assert.Single(messages);
 		Assert.Equal(LogLevel.Info, message.Level);
-		Assert.Contains("CYQG", message.Text);
+		Assert.Contains("Airport 'NOAPT' has no APT_BASE record", message.Text);
 	}
 
 	[Fact]

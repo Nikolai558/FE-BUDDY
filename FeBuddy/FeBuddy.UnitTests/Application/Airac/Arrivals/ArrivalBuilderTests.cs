@@ -203,6 +203,8 @@ public sealed class ArrivalBuilderTests
 	[Fact]
 	public void an_airport_only_in_served_arpt_gets_every_body()
 	{
+		// Unlike a departure, where it would get the transitions only. Modelled on TANDY SIX,
+		// whose chart has SLI and TOA fly the body STAR_APT gives only LGB and SNA.
 		NasrCsvDataCollection data = TwoBodyProcedure("CCC", ("B1", "AAA"));
 
 		ArrivalLocateResult result = ReadAndLocate(data);

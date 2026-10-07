@@ -13,15 +13,19 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// included procedure that changed this cycle, with links to the FAA's chart and compare PDFs.
 /// </summary>
 /// <remarks>
-/// A chart shared by more than one included airport (chiefly a STAR) is written once, under the
-/// airport it belongs to - see <see cref="Identity"/> and <see cref="FindOwnerIndex"/> - with a
-/// child line naming the other included airports it also serves.
+/// A chart shared by more than one included airport (chiefly a STAR) is listed under each of them,
+/// so every airport's list is complete, with a child line naming the other included airports it
+/// also serves - see <see cref="Identity"/>. Regional minimums pages can serve a hundred airports,
+/// so that line names the first few and counts the rest.
 /// </remarks>
 public static class ProcedureChangesMarkdownWriter
 {
 	private const string NoteLine =
 		"Note: In some cases, the link will return a 404 Error. This is because the FAA does not have a comparative document. " +
 		"This is common with Military facilities.";
+
+	/// <summary>How many other airports an "Also serves" line names before it counts the rest.</summary>
+	private const int AlsoServesNamed = 10;
 
 	/// <summary>
 	/// Writes <c>Procedure_Changes.md</c> for the included airports and procedures.
@@ -180,9 +184,15 @@ public static class ProcedureChangesMarkdownWriter
 
 		if (entry.AlsoServes.Count > 0)
 		{
-			builder.AppendLine($"{childIndent}- Also serves: {string.Join(", ", entry.AlsoServes)}");
+			builder.AppendLine($"{childIndent}- Also serves: {AlsoServes(entry.AlsoServes)}");
 		}
 	}
+
+	/// <summary>The other airports, e.g. <c>LGB, SLI, TOA</c>, or the first ten and <c>and 31 more</c>.</summary>
+	private static string AlsoServes(IReadOnlyList<string> airports) =>
+		airports.Count <= AlsoServesNamed
+			? string.Join(", ", airports)
+			: $"{string.Join(", ", airports.Take(AlsoServesNamed))} and {airports.Count - AlsoServesNamed} more";
 
 	private static string ReAddedLine(Procedure procedure, string cycle, string previousCycle)
 	{
@@ -198,12 +208,11 @@ public static class ProcedureChangesMarkdownWriter
 	}
 
 	/// <summary>
-	/// Walks every included airport's included, changed procedures in document order and applies
-	/// the shared-chart de-duplication rule: a chart listed at more than one included airport keeps
-	/// only its owner's (or, failing that, the first airport's) entry, with the others recorded as
-	/// "Also serves".
+	/// Walks every included airport's included, changed procedures in document order. Each is listed
+	/// under its own airport; a chart more than one included airport lists names the others as
+	/// "Also serves", in document order.
 	/// </summary>
-	/// <returns>Every airport's surviving entries, keyed by <see cref="ProcedureAirport.AptIdent"/>, plus the total change count.</returns>
+	/// <returns>Every airport's entries, keyed by <see cref="ProcedureAirport.AptIdent"/>, plus the total change count.</returns>
 	private static (Dictionary<string, List<RenderEntry>> EntriesByAirport, int ChangeCount) BuildEntries(
 		IReadOnlyList<ProcedureAirport> orderedAirports)
 	{
@@ -220,57 +229,31 @@ public static class ProcedureChangesMarkdownWriter
 			}
 		}
 
-		Dictionary<string, List<int>> indicesByIdentity = new(StringComparer.OrdinalIgnoreCase);
+		// Every included airport that lists each chart, once each, in document order.
+		Dictionary<string, List<string>> airportsByIdentity = new(StringComparer.OrdinalIgnoreCase);
 
-		for (int i = 0; i < changed.Count; i++)
+		foreach ((ProcedureAirport airport, Procedure procedure) in changed)
 		{
-			string identity = Identity(changed[i].Procedure);
+			string identity = Identity(procedure);
 
-			if (!indicesByIdentity.TryGetValue(identity, out List<int>? indices))
+			if (!airportsByIdentity.TryGetValue(identity, out List<string>? airports))
 			{
-				indices = [];
-				indicesByIdentity[identity] = indices;
+				airports = [];
+				airportsByIdentity[identity] = airports;
 			}
 
-			indices.Add(i);
-		}
-
-		HashSet<int> dropped = [];
-		Dictionary<int, IReadOnlyList<string>> alsoServesByIndex = [];
-
-		foreach (List<int> indices in indicesByIdentity.Values)
-		{
-			if (indices.Count <= 1)
+			if (!airports.Contains(airport.AptIdent, StringComparer.OrdinalIgnoreCase))
 			{
-				continue;
-			}
-
-			int keeperIndex = FindOwnerIndex(indices, changed) ?? indices[0];
-
-			alsoServesByIndex[keeperIndex] = [.. indices
-				.Where(index => index != keeperIndex)
-				.Select(index => changed[index].Airport.AptIdent)];
-
-			foreach (int index in indices)
-			{
-				if (index != keeperIndex)
-				{
-					dropped.Add(index);
-				}
+				airports.Add(airport.AptIdent);
 			}
 		}
 
 		Dictionary<string, List<RenderEntry>> entriesByAirport = new(StringComparer.OrdinalIgnoreCase);
 
-		for (int i = 0; i < changed.Count; i++)
+		foreach ((ProcedureAirport airport, Procedure procedure) in changed)
 		{
-			if (dropped.Contains(i))
-			{
-				continue;
-			}
-
-			(ProcedureAirport airport, Procedure procedure) = changed[i];
-			IReadOnlyList<string> alsoServes = alsoServesByIndex.TryGetValue(i, out IReadOnlyList<string>? also) ? also : [];
+			IReadOnlyList<string> alsoServes = [.. airportsByIdentity[Identity(procedure)]
+				.Where(other => !other.Equals(airport.AptIdent, StringComparison.OrdinalIgnoreCase))];
 
 			if (!entriesByAirport.TryGetValue(airport.AptIdent, out List<RenderEntry>? entries))
 			{
@@ -281,7 +264,7 @@ public static class ProcedureChangesMarkdownWriter
 			entries.Add(new RenderEntry(procedure, alsoServes));
 		}
 
-		return (entriesByAirport, changed.Count - dropped.Count);
+		return (entriesByAirport, changed.Count);
 	}
 
 	/// <summary>
@@ -298,37 +281,5 @@ public static class ProcedureChangesMarkdownWriter
 		return pdfName is { Length: > 0 }
 			? pdfName
 			: $"{procedure.ChartCode}|{procedure.ProcUid}|{procedure.Name}";
-	}
-
-	/// <summary>
-	/// Finds the member whose airport owns the shared chart - its <see cref="ProcedureAirport.Alnum"/>,
-	/// zero-padded to 5 digits, equals the identity PDF name's leading 5 digits.
-	/// </summary>
-	/// <returns>The owner's index into <paramref name="changed"/>, or <see langword="null"/> when no member owns it (or the identity is not PDF-shaped).</returns>
-	private static int? FindOwnerIndex(List<int> indices, List<(ProcedureAirport Airport, Procedure Procedure)> changed)
-	{
-		string identity = Identity(changed[indices[0]].Procedure);
-
-		if (identity.Length < 5)
-		{
-			return null;
-		}
-
-		string leading5 = identity[..5];
-
-		if (!leading5.All(char.IsAsciiDigit))
-		{
-			return null;
-		}
-
-		foreach (int index in indices)
-		{
-			if (changed[index].Airport.Alnum.ToString("D5", CultureInfo.InvariantCulture) == leading5)
-			{
-				return index;
-			}
-		}
-
-		return null;
 	}
 }

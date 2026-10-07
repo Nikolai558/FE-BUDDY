@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows.Media;
 
 using FeBuddy.Core.Application.Airac.Airports;
@@ -103,10 +104,13 @@ internal static class AiracMapLayers
 
 		MapLayer runways = new(
 			"Runways",
-			[.. towered.SelectMany(a => a.Runways)
+			[.. towered.SelectMany(a => a.Runways
 				.Where(r => r.HasGeometry)
 				.Select(r => new MapGeometry(MapGeometryKind.Line,
-					[[new GeoPoint(r.FirstEnd!.Latitude, r.FirstEnd.Longitude), new GeoPoint(r.SecondEnd!.Latitude, r.SecondEnd.Longitude)]]))],
+					[[new GeoPoint(r.FirstEnd!.Latitude, r.FirstEnd.Longitude), new GeoPoint(r.SecondEnd!.Latitude, r.SecondEnd.Longitude)]])
+				{
+					Feature = RunwayFeature(a, r),
+				}))],
 			brush,
 			thickness: 2.0)
 		{
@@ -116,7 +120,10 @@ internal static class AiracMapLayers
 
 		MapLayer airports = new(
 			Name(AiracLayerKind.ToweredAirports),
-			[.. towered.Select(a => new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(a.Latitude, a.Longitude)]], a.FaaId))],
+			[.. towered.Select(a => new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(a.Latitude, a.Longitude)]], a.FaaId)
+			{
+				Feature = AirportFeature(a),
+			})],
 			brush,
 			pointRadius: 2.5)
 		{
@@ -135,7 +142,10 @@ internal static class AiracMapLayers
 		[
 			new MapLayer(
 				Name(AiracLayerKind.Navaids),
-				[.. vors.Select(n => new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(n.Latitude, n.Longitude)]], n.NavId))],
+				[.. vors.Select(n => new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(n.Latitude, n.Longitude)]], n.NavId)
+				{
+					Feature = NavaidFeature(n),
+				})],
 				Frozen(AiracLayerKind.Navaids),
 				pointRadius: 4.5)
 			{
@@ -154,14 +164,53 @@ internal static class AiracMapLayers
 			yield break;
 		}
 
+		// The ring and its label are one thing to a Ctrl+click.
+		MapFeature feature = MapFeature.FromData("ARTCC boundary",
+		[
+			new("ID", ring.Location.LocationId),
+			new("Name", ring.Location.LocationName),
+			new("Stratum", ring.Altitude.ToString()),
+			new("Type", ring.Type),
+		]);
+
 		List<GeoPoint> points = [.. ring.Points.Select(p => new GeoPoint(p.Latitude, p.Longitude))];
-		yield return new MapGeometry(MapGeometryKind.Polygon, [points]);
+		yield return new MapGeometry(MapGeometryKind.Polygon, [points]) { Feature = feature };
 
 		if (LabelPoint(points) is { } anchor)
 		{
-			yield return new MapGeometry(MapGeometryKind.Point, [[anchor]], ring.Location.LocationId);
+			yield return new MapGeometry(MapGeometryKind.Point, [[anchor]], ring.Location.LocationId) { Feature = feature };
 		}
 	}
+
+	private static MapFeature AirportFeature(Airport airport) => MapFeature.FromData("Airport",
+	[
+		new("FAA ID", airport.FaaId),
+		new("ICAO ID", airport.IcaoId ?? string.Empty),
+		new("Name", airport.Name),
+		new("Tower", airport.TowerType),
+		new("ARTCC", airport.RespArtccId),
+		new("Elevation", airport.Elevation is { } elevation ? $"{elevation.ToString("0.#", CultureInfo.InvariantCulture)} ft" : string.Empty),
+		new("Airspace", airport.ClassAirspace ?? string.Empty),
+		new("CTAF", airport.CtafFrequency ?? string.Empty),
+	]);
+
+	private static MapFeature RunwayFeature(Airport airport, AirportRunway runway) => MapFeature.FromData("Runway",
+	[
+		new("Airport", airport.FaaId),
+		new("Runway", runway.RunwayId),
+		new("Length", $"{runway.Length.ToString("N0", CultureInfo.InvariantCulture)} ft"),
+		new("Surface", runway.SurfaceType ?? string.Empty),
+	]);
+
+	private static MapFeature NavaidFeature(Navaid navaid) => MapFeature.FromData("NAVAID",
+	[
+		new("ID", navaid.NavId),
+		new("Name", navaid.Name),
+		new("Type", navaid.NavType),
+		new("Frequency", navaid.Freq is { } freq ? freq.ToString("0.0#", CultureInfo.InvariantCulture) : string.Empty),
+		new("Low ARTCC", navaid.LowAltArtccId),
+		new("High ARTCC", navaid.HighAltArtccId),
+	]);
 
 	/// <summary>
 	/// Where a ring's ID goes: the average of its vertices, worked out the short way round so a

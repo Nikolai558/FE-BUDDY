@@ -431,8 +431,9 @@
                                         <TextBlock Text="Systems" FontFamily="{StaticResource Font.Body}"
                                                    FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource Brush.Text.Primary}" />
+                                        <!-- wraps: "Ready except next d-TPP Metafile" is wider than the rail -->
                                         <TextBlock Text="{Binding HealthSummary}" Style="{StaticResource Text.Caption}"
-                                                   FontSize="11.5" />
+                                                   FontSize="11.5" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </DockPanel>
                             </ToggleButton>
@@ -456,6 +457,9 @@
                                                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                                             <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" />
                                                             <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Caption}" />
+                                                            <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Caption}"
+                                                                       Foreground="{StaticResource Brush.Warn}"
+                                                                       Visibility="{Binding Note, Converter={StaticResource StringToVis}}" />
                                                         </StackPanel>
                                                     </Grid>
                                                     <DataTemplate.Triggers>

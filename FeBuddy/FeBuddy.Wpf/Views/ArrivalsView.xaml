@@ -24,26 +24,28 @@
 
             <cards:AttentionCard />
 
+            <!-- ============ what the outputs get, every filter in one place ============ -->
+            <cards:SummaryCard />
+
             <!-- ============ outputs ============ -->
-            <cards:OutputsCard GeojsonDescription="Writes the arrival procedure (STAR) GeoJSON files selected below."
-                               AliasDescription="Writes one alias command per airport and procedure that draws the procedure's points." />
+            <cards:OutputsCard GeojsonDescription="Map files for each STAR, in a folder per airport. Pick which files below."
+                               AliasDescription="Writes a command for each STAR at each airport that shows all of its fixes on the scope.&#xA;Type . then the airport, the STAR and f, Ex: .lasBLAIDf" />
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
-                                    LinesDescription="One line feature per airport and procedure, shared segments drawn once."
-                                    SymbolsDescription="One symbol per point on the procedure."
-                                    TextDescription="A label per point showing its identifier."
-                                    Footnote="Files are written to `Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\` in the cycle's folder, next to that airport's departures, as &lt;airport&gt;_&lt;procedure&gt;_STAR_Lines/Symbols/Text.geojson." />
+            <cards:GeojsonFilesCard LinesDescription="The STAR's routes as lines. A stretch shared by two routes is drawn once."
+                                    SymbolsDescription="A symbol at each of its fixes."
+                                    TextDescription="A label at each of its fixes with the fix's identifier."
+                                    Footnote="Files go in `Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\` in the cycle's folder, beside that airport's departures, named &lt;airport&gt;_&lt;STAR&gt;_STAR_Lines, _Symbols and _Text." />
 
             <!-- ============ FE-Buddy properties ============ -->
-            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+            <cards:FebPropertiesCard />
 
             <!-- ============ procedures ============ -->
-            <ctl:Card Header="Procedures">
+            <ctl:Card Header="Procedures" Outputs="Alias, Geojson">
                 <StackPanel>
                     <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="ARTCCs" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Pick the ARTCCs whose arrivals you want. Leave all unticked to include every ARTCC. Your facility from Settings ▸ Facility Profile is ticked until you first save this tab. A STAR shared by two ARTCCs follows each airport's own ARTCC." />
+                               Text="Only STARs for airports in the ARTCCs you tick. Tick none for every ARTCC. Your facility from Settings ▸ Facility Profile starts ticked. A STAR that serves airports in two ARTCCs is kept for the airports in the ones you tick." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="ARTCCs appear once the selected cycle's data is loaded."
@@ -66,13 +68,13 @@
                          while its radio is checked, and keeps its value when another is picked. -->
                     <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Amendment Date" Margin="0,14,0,0" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,2"
-                               Text="Every procedure has an amendment date: the day its current version took effect. Choose how recent that has to be, to keep only the arrivals that changed lately." />
+                               Text="Keep only the STARs amended recently. A STAR's amendment date is the day its current version took effect." />
                     <RadioButton GroupName="ArrivalAmendment" Content="Any amendment date" Margin="0,6,0,0"
-                                 ToolTip="Every arrival, however long ago it was last amended."
+                                 ToolTip="Every STAR, however long ago it was last amended."
                                  IsChecked="{Binding AmendmentAny, Mode=TwoWay}" />
                     <WrapPanel Margin="0,6,0,0">
                         <RadioButton GroupName="ArrivalAmendment" Content="Amended within the last" VerticalAlignment="Center"
-                                     ToolTip="Only arrivals amended in the selected cycle or the cycles just before it. 1 is the selected cycle only, 2 adds the cycle before it, and so on."
+                                     ToolTip="Only STARs amended in the selected cycle or the ones just before it. 1 is the selected cycle only, 2 adds the cycle before it, and so on."
                                      IsChecked="{Binding AmendmentByCycles, Mode=TwoWay}" />
                         <TextBox Style="{StaticResource Field.Number}"
                                  IsEnabled="{Binding AmendmentByCycles}"
@@ -83,7 +85,7 @@
                     </WrapPanel>
                     <WrapPanel Margin="0,6,0,0">
                         <RadioButton GroupName="ArrivalAmendment" Content="Amended within the last" VerticalAlignment="Center"
-                                     ToolTip="Only arrivals amended in the last so many days, counting back from today."
+                                     ToolTip="Only STARs amended in this many days, counting back from today."
                                      IsChecked="{Binding AmendmentByDays, Mode=TwoWay}" />
                         <TextBox Style="{StaticResource Field.Number}"
                                  IsEnabled="{Binding AmendmentByDays}"
@@ -93,7 +95,7 @@
                     </WrapPanel>
                     <WrapPanel Margin="0,6,0,0">
                         <RadioButton GroupName="ArrivalAmendment" Content="Amended on or after" VerticalAlignment="Center"
-                                     ToolTip="Only arrivals amended on this date or later."
+                                     ToolTip="Only STARs amended on this date or later."
                                      IsChecked="{Binding AmendmentByDate, Mode=TwoWay}" />
                         <DatePicker Width="160" Margin="8,0,0,0" VerticalAlignment="Center"
                                     IsEnabled="{Binding AmendmentByDate}"
@@ -101,23 +103,19 @@
                                     bhv:FieldState.Error="{Binding FieldErrors[AmendedOnOrAfter]}" />
                     </WrapPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
-                               Text="Cycles count back from the cycle selected on the General tab, which counts as the first. Days count back from today." />
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
-                               Text="For example, with cycle 2610 selected, &quot;the last 4 cycles&quot; covers cycles 2607 to 2610. An arrival last amended in 2606 is left out of this run's files; &quot;the last 5 cycles&quot; would keep it." />
+                               Text="Cycles count back from the cycle on the General tab. Ex: with 2610 selected, the last 4 cycles are 2607 to 2610, so a STAR last amended in 2606 is left out. Days count back from today." />
                 </StackPanel>
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard>
+            <cards:RoiOverrideCard Outputs="Alias, Geojson">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <StackPanel Margin="0,14,0,0" IsEnabled="{Binding HasRoi}">
-                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="How the Region Selects Arrivals" />
-                        <RadioButton GroupName="ArrivalRoiMode" Content="Every arrival for an airport inside the region" Margin="0,6,0,0"
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Which STARs the Region Keeps" />
+                        <RadioButton GroupName="ArrivalRoiMode" Content="Every STAR for an airport inside the region" Margin="0,6,0,0"
                                      IsChecked="{Binding RoiModeAirport, Mode=TwoWay}" />
-                        <RadioButton GroupName="ArrivalRoiMode" Content="Any arrival with a point inside the region" Margin="0,3,0,0"
+                        <RadioButton GroupName="ArrivalRoiMode" Content="Any STAR with a fix inside the region" Margin="0,3,0,0"
                                      IsChecked="{Binding RoiModeWaypoint, Mode=TwoWay}" />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
-                                   Text="The region filters both the GeoJSON files and the alias file." />
                     </StackPanel>
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>

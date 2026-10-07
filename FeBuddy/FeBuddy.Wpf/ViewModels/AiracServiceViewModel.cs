@@ -50,6 +50,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	private readonly AiracGeneralTabViewModel _general;
 	private readonly FileNamesViewModel _fileNames = new();
 	private readonly ServicePreviewTabViewModel _preview;
+	private readonly DuplicateAliasesCardViewModel _duplicateAliases;
 	private readonly ServiceRunReviewTabViewModel _runReview = new();
 	private readonly Dictionary<string, ServiceTabViewModel> _tabsByKey = new(StringComparer.OrdinalIgnoreCase);
 
@@ -72,7 +73,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			_ = LoadCycleDataAsync();
 		};
 
-		_preview = new ServicePreviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs.Where(t => t.IsAvailable));
+		// What the run does with duplicate alias commands is the run's, not any tab's, so it sits on Preview Settings.
+		_duplicateAliases = new DuplicateAliasesCardViewModel(
+			() => Tabs.OfType<GeojsonSubServiceViewModel>().Any(t => t.IsAvailable && t.WritesAliasFile));
+		_preview = new ServicePreviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs.Where(t => t.IsAvailable))
+		{
+			RunOptions = _duplicateAliases,
+		};
 
 		_fileNames.AttachToService(
 			FilesTheRunWrites,
@@ -458,6 +465,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				? facility.ToUpperInvariant()
 				: null,
 			FileNames = _fileNames.BuildFileNamesBlock(),
+			ReviewDuplicateAliases = DuplicateAliasesCardViewModel.LoadReview(),
+			DuplicateAliasChoices = DuplicateAliasesCardViewModel.LoadChoices(),
 			Airways = AirwaysTab?.BuildSettingsBlock(),
 			Airports = AirportsTab?.BuildSettingsBlock(),
 			Departures = DeparturesTab?.BuildSettingsBlock(),
@@ -502,13 +511,18 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			var progress = new Progress<AiracServiceProgress>(p =>
 				_runReview.ReportStep(p.SubService, p.Message, p.PercentComplete >= 100));
 
-			AiracServiceResult result = await AiracService.RunAsync(settings, progress);
+			AiracServiceResult result = await AiracService.RunAsync(settings, progress, reviewDuplicates: ReviewDuplicatesAsync);
+
+			// Saved before anything else can fail: the user made these choices to be kept.
+			_duplicateAliases.SaveChoices(result.DuplicateAliasChoicesMade);
 
 			string summary = SummarizeRun(cycle.AiracCycleId, result);
-			string[] files = CollectFilesWritten(result);
 			SubServiceRunResult[] subServiceResults = [.. targets
 				.Select(t => t.DescribeRunResult(result))
 				.OfType<SubServiceRunResult>()];
+
+			// A run stopped at the duplicates deleted its alias files.
+			string[] files = [.. CollectFilesWritten(result).Where(file => !result.StoppedAtDuplicateReview || File.Exists(file))];
 
 			_runReview.CompleteRun(
 				result,
@@ -517,7 +531,14 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				files,
 				ExistingFolder(result.OutputDirectory));
 
-			Toast.Success("AIRAC Service complete", summary);
+			if (result.StoppedAtDuplicateReview)
+			{
+				Toast.Warn("AIRAC Service stopped", "You stopped it at the duplicate alias commands, so no alias file was saved.");
+			}
+			else
+			{
+				Toast.Success("AIRAC Service complete", summary);
+			}
 		}
 		catch (Exception ex)
 		{
@@ -533,6 +554,16 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			RefreshDownloadedDataStatus();
 		}
 	}
+
+	/// <summary>
+	/// Opens the duplicate alias commands window, when the run stops for the user's choices. The run
+	/// calls this off the UI thread, so the window opens on it.
+	/// </summary>
+	/// <param name="review">What the run asks.</param>
+	/// <param name="cancellationToken">Unused: the window is modal, and the run waits for it.</param>
+	/// <returns>The choices, or <see langword="null"/> to stop the run.</returns>
+	private Task<IReadOnlyList<DuplicateAliasRule>?> ReviewDuplicatesAsync(DuplicateAliasReview review, CancellationToken cancellationToken) =>
+		_dispatcher.InvokeAsync(() => DuplicateAliasReviewWindow.Review(Application.Current?.MainWindow, review)).Task;
 
 	/// <summary>
 	/// Asks what to do with the files an earlier run of this cycle left in its folder. Overwrite is

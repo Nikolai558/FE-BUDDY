@@ -36,6 +36,23 @@ public abstract class ServiceTabViewModel : ObservableObject
 	public virtual bool IsSetApart => false;
 
 	/// <summary>
+	/// Which of the sub-service's outputs are on (the General tab's table): what the output tags on
+	/// the tab's cards show as on or off. A tab with no outputs of its own has every output on.
+	/// </summary>
+	public virtual SubServiceOutputKinds OutputsOn => OutputKinds.Every;
+
+	/// <summary>
+	/// The tab's "What You'll Get" summary: for the outputs that are on, the filters that pick what
+	/// they get, one per line, joined by AND, OR and PLUS. The tab's top card and its Preview Settings
+	/// section both show it. Empty for a tab with nothing to sum up.
+	/// </summary>
+	public IReadOnlyList<SummaryBlock> WhatYoullGet => SummaryBlock.ForOutputsOn(OutputsOn, [.. BuildWhatYoullGet()]);
+
+	/// <summary>The outputs <see cref="WhatYoullGet"/> is about, for its card's tags.</summary>
+	public SubServiceOutputKinds WhatYoullGetOutputs =>
+		WhatYoullGet.Aggregate(SubServiceOutputKinds.None, (outputs, block) => outputs | block.Outputs);
+
+	/// <summary>
 	/// Per-field validation messages, keyed by the field key a view passes to
 	/// <c>FieldState.Error</c>. Bind as <c>{Binding FieldErrors[SwLat]}</c>.
 	/// </summary>
@@ -156,7 +173,8 @@ public abstract class ServiceTabViewModel : ObservableObject
 	public virtual bool Save() => true;
 
 	/// <summary>
-	/// Re-runs validation and recomputes <see cref="Status"/>. Called automatically by
+	/// Re-runs validation and recomputes <see cref="Status"/>, and announces <see cref="WhatYoullGet"/>
+	/// again, since whatever needed re-checking may have changed it. Called automatically by
 	/// <see cref="MarkDirty"/>; call it directly after loading values from config.
 	/// </summary>
 	public void Revalidate()
@@ -168,6 +186,21 @@ public abstract class ServiceTabViewModel : ObservableObject
 		ValidationErrors = [.. validation.Messages];
 		ValidationError = validation.Messages.FirstOrDefault();
 		UpdateStatus();
+		RaiseWhatYoullGetChanged();
+	}
+
+	/// <summary>
+	/// The blocks of the tab's <see cref="WhatYoullGet"/>, one per output or group of outputs, before
+	/// the outputs that are off are left out. The base has none.
+	/// </summary>
+	/// <returns>The blocks.</returns>
+	protected virtual IEnumerable<SummaryBlock> BuildWhatYoullGet() => [];
+
+	/// <summary>Announces <see cref="WhatYoullGet"/> again, after something it reads changed without a re-check (the default ROI).</summary>
+	protected void RaiseWhatYoullGetChanged()
+	{
+		OnPropertyChanged(nameof(WhatYoullGet));
+		OnPropertyChanged(nameof(WhatYoullGetOutputs));
 	}
 
 	/// <summary>

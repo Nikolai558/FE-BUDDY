@@ -112,16 +112,11 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public string OutputModeHint => OutputBy switch
 	{
 		AirwayGeojsonOutputBy.HighLow =>
-			"Two file sets:\n" +
-			"    • Airways_High\n" +
-			"    • Airways_Low\n" +
-			"Each airway type goes in either High or Low, as you choose.\n" +
-			"Each set is _Lines + _Symbols + _Text.",
+			"Airways_High and Airways_Low, each with Lines, Symbols and Text.\n" +
+			"You choose which file each airway type goes in.",
 		AirwayGeojsonOutputBy.Designation =>
-			"One file set per designation, derived from the AWY_ID prefix.\n" +
-			"Ex: J / V / Q / T / AT:\n" +
-			"    Airways_J, Airways_V, Airways_Q, …\n" +
-			"Each set is _Lines + _Symbols + _Text.",
+			"A set of files per airway type, each with Lines, Symbols and Text.\n" +
+			"Ex: Airways_J, Airways_V, Airways_Q",
 		_ => string.Empty,
 	};
 
@@ -135,7 +130,31 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public string NavaidBufferNm { get => _navaidBufferNm; set { if (SetProperty(ref _navaidBufferNm, value)) MarkDirty(); } }
 
 	/// <summary>Which airways the alias file covers: <see langword="true"/> for ROI airways only, <see langword="false"/> for every FAA airway.</summary>
-	public bool AliasRoiAirwaysOnly { get => _aliasRoiAirwaysOnly; set { if (SetProperty(ref _aliasRoiAirwaysOnly, value)) MarkDirty(); } }
+	public bool AliasRoiAirwaysOnly
+	{
+		get => _aliasRoiAirwaysOnly;
+		set
+		{
+			if (SetProperty(ref _aliasRoiAirwaysOnly, value))
+			{
+				OnPropertyChanged(nameof(RoiOutputs));
+				OnPropertyChanged(nameof(RoiAliasEffect));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>
+	/// The outputs the region of interest narrows, for its card's tags: the GeoJSON always, and the
+	/// alias file only with <see cref="AliasRoiAirwaysOnly"/>.
+	/// </summary>
+	public SubServiceOutputKinds RoiOutputs =>
+		SubServiceOutputKinds.Geojson | (AliasRoiAirwaysOnly ? SubServiceOutputKinds.Alias : SubServiceOutputKinds.None);
+
+	/// <summary>What the region of interest does to the alias file, for its card.</summary>
+	public string RoiAliasEffect => AliasRoiAirwaysOnly
+		? "Only airways that cross the region, each with all of its fixes."
+		: "Every airway. To limit it to the region, choose Only airways that cross the region on the Outputs card.";
 
 	/// <summary>Whether a line that crosses 180 degrees longitude is split in two there.</summary>
 	public bool SplitAtAntimeridian { get => _splitAtAntimeridian; set { if (SetProperty(ref _splitAtAntimeridian, value)) MarkDirty(); } }
@@ -317,7 +336,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			nameof(OutputBy), nameof(OutputModeHint), nameof(ShowsStrata),
 			nameof(BufferAirwayWaypoints), nameof(FixBufferNm), nameof(NavaidBufferNm),
-			nameof(AliasRoiAirwaysOnly), nameof(SplitAtAntimeridian),
+			nameof(AliasRoiAirwaysOnly), nameof(RoiOutputs), nameof(RoiAliasEffect), nameof(SplitAtAntimeridian),
 		})
 		{
 			OnPropertyChanged(name);
@@ -380,7 +399,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			validation.AddArea(
 				ServiceAreas.HighAndLowFiles,
 				$"Choose High, Low or Both for {string.Join(", ", unchosen)} on the High and Low Files card, " +
-				"or untick them under Designations to Include.");
+				"or untick them under Airway Types to Include.");
 		}
 
 		ValidateSharedSettings(validation);
@@ -401,34 +420,12 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		if (EmitSymbols) fileKinds.Add("Symbols");
 		if (EmitText) fileKinds.Add("Text");
 
-		string aliasFile = GenerateAliasFile
-			? AliasRoiAirwaysOnly ? "Airways.txt, ROI airways only" : "Airways.txt, all FAA airways"
-			: "No";
-
-		// Before a cycle is parsed the toggle list is empty, which would make the preview claim
-		// "none excluded" when the user has exclusions saved. Fall back to what is on disk.
-		string excluded = Designations.Count > 0
-			? string.Join(", ", Designations.Where(d => !d.Included).Select(d => d.Designation))
-			: string.Join(", ", ParseExcludedFromConfig().OrderBy(d => d, StringComparer.OrdinalIgnoreCase));
-
-		// Name what is covered - never "all except"; the exclusions have their own row. The
-		// designations come from the parsed cycle, so until it is loaded there is nothing to name.
-		string[] included = [.. Designations.Where(d => d.Included).Select(d => d.Designation)];
-		string covered = Designations.Count == 0
-			? "Waiting for the cycle's airway list"
-			: included.Length > 0 ? $"{string.Join(", ", included)} airways" : "No airways";
-
-		string includes = covered
-			+ (HasRoi ? ". GeoJSON: only the airways crossing the region, clipped to it." : ".");
-
 		List<ServicePreviewRow> rows =
 		[
-			new ServicePreviewRow("GeoJSON output", GenerateGeojson ? OutputBy.ToString() : "No"),
-			new ServicePreviewRow("Alias file", aliasFile),
+			new ServicePreviewRow("GeoJSON split into", !GenerateGeojson ? "No GeoJSON"
+				: OutputBy == AirwayGeojsonOutputBy.HighLow ? "High and Low" : "Airway types"),
 			new ServicePreviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Includes", includes),
-			new ServicePreviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
 			new ServicePreviewRow("Buffer waypoints", BufferAirwayWaypoints
 				? $"{FixBufferNm.Trim()} NM around fixes, {NavaidBufferNm.Trim()} NM around NAVAIDs"
 				: "No"),
@@ -442,7 +439,36 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			rows.Insert(1, new ServicePreviewRow("High and Low files", DescribeStrata()));
 		}
 
-		return [new ServicePreviewSection("Airways", rows)];
+		return [new ServicePreviewSection("Airways", rows) { WhatYoullGet = WhatYoullGet }];
+	}
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// The designations narrow both files; the region narrows the GeoJSON, and the alias file only
+	/// with ROI airways only. With no region the two blocks are the same, and merge.
+	/// </remarks>
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		// Before a cycle is parsed the toggle list is empty: the saved exclusions stand in.
+		string[] excluded = Designations.Count > 0
+			? [.. Designations.Where(d => !d.Included).Select(d => d.Designation)]
+			: [.. ParseExcludedFromConfig().OrderBy(d => d, StringComparer.OrdinalIgnoreCase)];
+
+		string airways = excluded.Length == 0
+			? "every airway"
+			: $"every airway except the {SummaryLines.Join(excluded, "and")} airways";
+
+		bool aliasUsesRegion = AliasRoiAirwaysOnly && HasRoi;
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
+			.Add(SummaryJoin.First, airways)
+			.Add(SummaryJoin.And, RegionLine("that cross the region, cut off at its edge"))
+			.ToList());
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
+			.Add(SummaryJoin.First, aliasUsesRegion || !HasRoi ? airways : $"{airways}, in the region or not")
+			.Add(SummaryJoin.And, aliasUsesRegion ? RegionLine("that cross the region, each with all of its fixes") : null)
+			.ToList());
 	}
 
 	// ================= helpers =================

@@ -1,7 +1,7 @@
 <!--
-    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates /
-    Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to UserConfig.json
-    but the credentials, which go to Windows Credential Manager.
+    SettingsView  -  Settings Profile / Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub
+    Requests / Updates / Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to the
+    settings profile in use but the credentials, which go to Windows Credential Manager.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -37,14 +37,14 @@
                                Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Import…" Margin="0,0,8,0"
                             Command="{Binding ImportCommand}"
-                            ToolTip="Make this PC's settings match a settings file someone exported. Their folders are moved into your own user folders and only used where they work on this PC; your update channel stays as it is." />
+                            ToolTip="Bring in a settings file someone exported: as a new profile, added to the profile in use, or in place of its settings. Their folders are moved into your own user folders and only used where they work on this PC; your update channel stays as it is." />
                     <Button Style="{StaticResource Button.Ghost}" Content="Export…" Margin="0,0,8,0"
                             Command="{Binding ExportCommand}"
-                            ToolTip="Save every FE-Buddy setting to a file you can share. Folders under your Desktop, Documents or user folder are written so they work on another PC; settings that only apply to this PC are left out." />
+                            ToolTip="Save every setting in the profile in use to a file you can share. Folders under your Desktop, Documents or user folder are written so they work on another PC; settings that only apply to this PC are left out." />
                     <Button Style="{StaticResource Button.Primary}" Content="Save"
                             Command="{Binding SaveCommand}" MinWidth="90" />
                 </StackPanel>
-                <TextBlock Text="Preferences for this installation, saved to UserConfig.json."
+                <TextBlock Text="Preferences for this installation, saved to the settings profile in use."
                            Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
             </DockPanel>
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
@@ -53,6 +53,33 @@
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                       bhv:WheelScroll.Amplify="3">
             <StackPanel Margin="28,34,28,8">
+
+                <!-- ================= 0. SETTINGS PROFILE ================= -->
+                <!-- Takes effect at once: not part of this page's Save. Choosing another profile switches to it. -->
+                <ctl:Card Header="Settings Profile" DataContext="{Binding SettingsProfile}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
+                                   Text="{Binding Source={x:Static vm:SettingsProfilesViewModel.Description}}" />
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Style="{StaticResource Button.Ghost}" Content="New…" Margin="8,0,0,0"
+                                        ToolTip="Make a profile - from a copy of this one, or every default - and switch to it."
+                                        Command="{Binding NewCommand}" />
+                                <Button Style="{StaticResource Button.Ghost}" Content="Rename…" Margin="8,0,0,0"
+                                        ToolTip="Give the profile in use another name."
+                                        Command="{Binding RenameCommand}" />
+                                <Button Style="{StaticResource Button.Ghost.Danger}" Content="Delete…" Margin="8,0,0,0"
+                                        ToolTip="Switch to another profile, then delete this one."
+                                        Command="{Binding DeleteCommand}" />
+                            </StackPanel>
+                            <ComboBox Style="{StaticResource Themed.ComboBox}" Width="300" HorizontalAlignment="Left"
+                                      ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}"
+                                      ToolTip="The profile in use. Choose another to switch to it." />
+                        </DockPanel>
+                        <TextBlock bhv:InlineCode.Text="{Binding FileNote}" Style="{StaticResource Text.Caption}"
+                                   TextWrapping="Wrap" Margin="0,8,0,0" />
+                    </StackPanel>
+                </ctl:Card>
 
                 <!-- ================= 1. FACILITY PROFILE ================= -->
                 <ctl:Card Header="Facility Profile">

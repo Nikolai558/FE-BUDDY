@@ -1,0 +1,96 @@
+<!--
+    DuplicateAliasReviewWindow  -  opened by the AIRAC run when it stops at duplicated alias commands
+    (Preview Settings ▸ Duplicate Alias Commands, issue #318): for each command, a row per line that
+    uses it, with Keep / Leave out / Rename to. Finishing hands the choices back to the run; stopping
+    or closing the window stops it. Backs onto DuplicateAliasReviewViewModel.
+-->
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.DuplicateAliasReviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:DuplicateAliasReviewViewModel}"
+        Title="Duplicate Alias Commands"
+        Width="860" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="24">
+        <StackPanel>
+            <TextBlock Text="Duplicate Alias Commands"
+                       FontFamily="{StaticResource Font.Display}" FontSize="17.5" FontWeight="Bold"
+                       Foreground="{StaticResource Brush.Text.Primary}" />
+            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0" Text="{Binding Intro}" />
+            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
+                       Text="Your choices are saved, and later runs make them without asking. A new command can't be one the run already uses, your custom alias files' included." />
+
+            <!-- every command, scrolling when there are many -->
+            <ScrollViewer MaxHeight="520" Margin="0,14,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Groups}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type m:DuplicateAliasGroupItem}">
+                            <Border Style="{StaticResource Panel.Inset}" Margin="0,0,8,10">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding LineCount}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Command}" Style="{StaticResource Text.Body.Strong}" FontFamily="{StaticResource Font.Mono}" />
+                                    </DockPanel>
+
+                                    <ItemsControl ItemsSource="{Binding Lines}" Margin="0,6,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type m:DuplicateAliasLineItem}">
+                                                <StackPanel Margin="0,6,0,0">
+                                                    <!-- the line: its file, then as much of it as fits (all of it on hover) -->
+                                                    <DockPanel ToolTip="{Binding Text}">
+                                                        <TextBlock DockPanel.Dock="Left" Text="{Binding FileName}" Style="{StaticResource Text.Caption}"
+                                                                   Width="170" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding Text}" Style="{StaticResource Text.Caption}" FontFamily="{StaticResource Font.Mono}"
+                                                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="170,4,0,0">
+                                                        <RadioButton GroupName="{Binding GroupName}" Content="Keep" Margin="0,0,16,0" VerticalAlignment="Center"
+                                                                     IsChecked="{Binding Action, Converter={StaticResource EnumToBool}, ConverterParameter=Keep}" />
+                                                        <RadioButton GroupName="{Binding GroupName}" Content="Leave out" Margin="0,0,16,0" VerticalAlignment="Center"
+                                                                     IsChecked="{Binding Action, Converter={StaticResource EnumToBool}, ConverterParameter=Ignore}" />
+                                                        <RadioButton GroupName="{Binding GroupName}" Content="Rename to" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                                     IsChecked="{Binding Action, Converter={StaticResource EnumToBool}, ConverterParameter=Rename}" />
+                                                        <TextBox Width="200" FontFamily="{StaticResource Font.Mono}" Tag="e.g. .orfNUTIYa"
+                                                                 Text="{Binding NewCommand, UpdateSourceTrigger=PropertyChanged}"
+                                                                 IsEnabled="{Binding IsRename}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock Text="{Binding Problem}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"
+                                               TextWrapping="Wrap" Margin="0,8,0,0"
+                                               Visibility="{Binding HasProblem, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <DockPanel Margin="0,18,0,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Stop the run" Style="{StaticResource Button.Ghost}"
+                            Command="{Binding StopCommand}" Margin="0,0,10,0" IsCancel="True"
+                            ToolTip="End the run here. No alias file is saved." />
+                    <Button Content="Save choices and finish the run" Style="{StaticResource Button.Primary}"
+                            Command="{Binding FinishCommand}" IsDefault="True" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0"
+                           Text="Stopping saves no alias file and no Combined_Alias.txt." />
+            </DockPanel>
+        </StackPanel>
+    </Border>
+</ctl:ChromeWindow>

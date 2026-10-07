@@ -29,17 +29,20 @@
 
             <cards:AttentionCard />
 
+            <!-- ============ what the outputs get, every filter in one place ============ -->
+            <cards:SummaryCard />
+
             <!-- ============ outputs ============ -->
             <ctl:Card Header="Outputs">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
                                Text="Turn these on or off on the General tab." />
-                    <cards:OutputStatusRow Label="Procedure_Changes.md" IsOn="{Binding GenerateChangesDocument}"
-                                           Description="A briefing of every added, changed and deleted procedure at the airports you pick, grouped by facility, busiest airspace first, with links to the FAA's compare PDFs and charts." />
-                    <cards:OutputStatusRow Margin="0,12,0,0" Label="Procedures.json" IsOn="{Binding GenerateProceduresJson}"
-                                           Description="Every current chart at the airports you pick, with the fields chosen below." />
-                    <cards:OutputStatusRow Margin="0,12,0,10" Label="Alias file" IsOn="{Binding GenerateAliasFile}"
-                                           Description="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile,&#xA;Ex: .dtwI22Lc for ILS OR LOC RWY 22L at DTW.&#xA;The choices below pick what the documents cover; they never limit the alias file." />
+                    <cards:OutputStatusRow Kind="ProcedureChanges" Label="Procedure_Changes.md" IsOn="{Binding GenerateChangesDocument}"
+                                           Description="A briefing of every chart added, changed or deleted this cycle at the airports you pick. Grouped by facility, busiest airspace first, with links to the FAA's comparison PDFs and charts." />
+                    <cards:OutputStatusRow Margin="0,12,0,0" Kind="ProceduresJson" Label="Procedures.json" IsOn="{Binding GenerateProceduresJson}"
+                                           Description="A list of every current chart at the airports you pick, with the fields you choose below, for other tools to read." />
+                    <cards:OutputStatusRow Margin="0,12,0,10" Kind="Alias" Label="Faa_Chart_Recall.txt" IsOn="{Binding GenerateAliasFile}"
+                                           Description="Writes a command for each page of every chart in the d-TPP metafile that opens it from the FAA.&#xA;Ex: .dtwI22Lc opens ILS OR LOC RWY 22L at DTW&#xA;The cards below only pick what the two documents cover. The alias file always has every chart." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                bhv:InlineCode.Text="The documents are written to `Publication_Docs\` in the cycle's folder, and the alias file to `Aliases\`. The Concatenate Aliases tab also adds the alias file to `Aliases\Combined_Alias.txt`." />
@@ -47,11 +50,11 @@
             </ctl:Card>
 
             <!-- ============ d-TPP data ============ -->
-            <ctl:Card Header="d-TPP Data">
+            <ctl:Card Header="d-TPP Data" Outputs="Alias, ProcedureChanges, ProceduresJson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Procedures come from the FAA's d-TPP metafile for the selected cycle, which the FAA posts 15–18 days before the cycle's effective date. FE-Buddy downloads it at launch." />
+                               Text="Charts come from the FAA's d-TPP metafile for the selected cycle. The FAA posts it 15 to 18 days before the cycle starts, and FE-Buddy downloads it at launch." />
                     <TextBlock Text="{Binding DtppStatus}" TextWrapping="Wrap" Margin="0,0,0,4"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
                         <TextBlock.Style>
@@ -75,10 +78,10 @@
             </ctl:Card>
 
             <!-- ============ facilities ============ -->
-            <ctl:Card Header="Facilities" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Facilities" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Include every airport these ARTCCs are responsible for." />
+                               Text="The charts at every airport in the ARTCCs you tick." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="Facilities appear once the selected cycle's data is loaded."
@@ -99,10 +102,10 @@
             </ctl:Card>
 
             <!-- ============ airports ============ -->
-            <ctl:Card Header="Airports" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Airports" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="{Binding Source={x:Static vm:ProceduresViewModel.MaxAirports}, StringFormat='Include every procedure at these airports, up to {0}. Type or paste FAA or ICAO IDs, separated by spaces, commas or new lines, then press Enter or Add.'}" />
+                               Text="{Binding Source={x:Static vm:ProceduresViewModel.MaxAirports}, StringFormat='The charts at these airports, up to {0} airports. Type or paste FAA or ICAO IDs, separated by spaces, commas or new lines, then press Enter or Add.'}" />
 
                     <ItemsControl ItemsSource="{Binding Airports}" Margin="0,0,0,8">
                         <ItemsControl.ItemTemplate>
@@ -145,16 +148,16 @@
                                Foreground="{StaticResource Brush.Danger}"
                                Visibility="{Binding NewAirportHint, Converter={StaticResource StringToVis}}" />
 
-                    <CheckBox Content="Also include every airport inside the region of interest (set below)"
+                    <CheckBox Content="Also every airport inside the region (set below)"
                               IsChecked="{Binding IncludeRoiAirports}" Margin="0,12,0,0" />
                 </StackPanel>
             </ctl:Card>
 
             <!-- ============ procedures at any airport ============ -->
-            <ctl:Card Header="Procedures at Any Airport" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Procedures at Any Airport" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Include a procedure wherever it appears, e.g. a STAR that serves several airports." />
+                               Text="A procedure at every airport it serves, such as a STAR shared by several airports." />
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -203,10 +206,10 @@
             </ctl:Card>
 
             <!-- ============ airport + procedure ============ -->
-            <ctl:Card Header="Airport + Procedure" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Airport + Procedure" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Include one procedure at one airport." />
+                               Text="One procedure at one airport." />
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -270,11 +273,11 @@
             </ctl:Card>
 
             <!-- ============ chart types ============ -->
-            <ctl:Card Header="Chart Types" bhv:FieldState.Error="{Binding FieldErrors[ChartTypes]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Chart Types" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[ChartTypes]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Which charts to include for whole airports (facilities, airports and the region). Procedures you pick by name are always included." />
+                               Text="Which charts the Facilities and Airports cards and the region bring in. Procedures you add by name are always included." />
                     <ItemsControl ItemsSource="{Binding ChartTypeToggles}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -289,10 +292,10 @@
             </ctl:Card>
 
             <!-- ============ Procedures.json fields ============ -->
-            <ctl:Card Header="Procedures.json Fields" Visibility="{Binding GenerateProceduresJson, Converter={StaticResource BoolToVis}}">
+            <ctl:Card Header="Procedures.json Fields" Outputs="ProceduresJson" Visibility="{Binding GenerateProceduresJson, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Airport ID and procedure name are always included." />
+                               Text="The airport ID and procedure name are always included." />
                     <ItemsControl ItemsSource="{Binding JsonFieldToggles}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -307,11 +310,11 @@
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard IsEnabled="{Binding GeneratesDocument}">
+            <cards:RoiOverrideCard Outputs="ProcedureChanges, ProceduresJson">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Used only when 'Also include every airport inside the region of interest' is ticked under Airports." />
+                               Text="Used only when &quot;Also every airport inside the region&quot; is ticked on the Airports card." />
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 

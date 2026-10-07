@@ -42,8 +42,10 @@ public sealed class MapLayersState : ObservableObject
 {
 	private const string Node = "Services.MapService";
 	private const string OutputKey = UserConfigKeys.MapOutputGeojson;
-	private const string AiracKey = Node + ".AiracLayers";
-	private const string HomeKey = Node + ".Home";
+
+	// Internal so the unit tests can check every settings layout's keys are still the ones read here.
+	internal const string AiracKey = Node + ".AiracLayers";
+	internal const string HomeKey = Node + ".Home";
 
 	// Clear of the live layers' blue, green and purple (AiracMapLayers.Color), so a file never
 	// looks like one of them.
@@ -77,6 +79,7 @@ public sealed class MapLayersState : ObservableObject
 	private bool _isPanelOpen = true;
 	private MapHome? _home;
 	private bool _reloadingFromConfig;
+	private bool _settingUserFiles;
 	private ICollectionView _outputChoicesView = CollectionViewSource.GetDefaultView(Array.Empty<OutputFileChoice>());
 	private IReadOnlyList<AiracOutputGeojsonFile> _listedFiles = [];
 
@@ -98,7 +101,11 @@ public sealed class MapLayersState : ObservableObject
 				OnAiracToggled)),
 		];
 
-		UserFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasUserFiles));
+		UserFiles.CollectionChanged += (_, _) =>
+		{
+			OnPropertyChanged(nameof(HasUserFiles));
+			OnPropertyChanged(nameof(AllUserFilesShown));
+		};
 		OutputFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasOutputFiles));
 
 		LoadFilesCommand = new RelayCommand(LoadFiles);
@@ -317,12 +324,23 @@ public sealed class MapLayersState : ObservableObject
 	/// <summary>Whether the user has opened any file.</summary>
 	public bool HasUserFiles => UserFiles.Count > 0;
 
+	/// <summary>
+	/// The Your Files card's Show all files box: <see langword="true"/> while every file is shown,
+	/// <see langword="false"/> while none is, <see langword="null"/> for some. Ticking it shows them
+	/// all; unticking hides them all.
+	/// </summary>
+	public bool? AllUserFilesShown
+	{
+		get => MapFileItem.AllShown(UserFiles);
+		set => SetUserFilesShown(_ => value != false);
+	}
+
 	// ---- commands ----
 
 	/// <summary>Opens GeoJSON files from anywhere onto the map.</summary>
 	public ICommand LoadFilesCommand { get; }
 
-	/// <summary>Removes every file the user opened.</summary>
+	/// <summary>Removes every file the user opened (the Your Files card's Reset).</summary>
 	public ICommand ClearFilesCommand { get; }
 
 	/// <summary>Re-reads the cycle list and the output folder, reloading any file a newer run replaced.</summary>
@@ -882,7 +900,7 @@ public sealed class MapLayersState : ObservableObject
 		foreach (string path in dialog.FileNames)
 		{
 			SolidColorBrush brush = FrozenBrush.Of(FileColors[_userColorCursor++ % FileColors.Length]);
-			MapFileItem item = new(Path.GetFileName(path), path, brush, SyncLayers, RemoveUserFile, Zoom);
+			MapFileItem item = new(Path.GetFileName(path), path, brush, OnUserFileChanged, RemoveUserFile, Zoom, ShowOnlyUserFile);
 			UserFiles.Add(item);
 			added.Add(item);
 			loads.Add(LoadIntoAsync(item, path, File.GetLastWriteTimeUtc(path)));
@@ -913,6 +931,40 @@ public sealed class MapLayersState : ObservableObject
 	{
 		UserFiles.Clear();
 		SyncLayers();
+	}
+
+	/// <summary>Shows <paramref name="item"/> and hides every other file of the user's (the right-click on a row).</summary>
+	private void ShowOnlyUserFile(MapFileItem item) => SetUserFilesShown(file => ReferenceEquals(file, item));
+
+	/// <summary>Shows or hides each of the user's files, then redraws once rather than once per file.</summary>
+	private void SetUserFilesShown(Func<MapFileItem, bool> shown)
+	{
+		_settingUserFiles = true;
+		try
+		{
+			foreach (MapFileItem file in UserFiles)
+			{
+				file.IsVisible = shown(file);
+			}
+		}
+		finally
+		{
+			_settingUserFiles = false;
+		}
+
+		OnUserFileChanged();
+	}
+
+	/// <summary>A user's file was shown, hidden, loaded or failed: redraws, and updates the Show all files box.</summary>
+	private void OnUserFileChanged()
+	{
+		if (_settingUserFiles)
+		{
+			return;
+		}
+
+		SyncLayers();
+		OnPropertyChanged(nameof(AllUserFilesShown));
 	}
 
 	// ============================ shared ================================

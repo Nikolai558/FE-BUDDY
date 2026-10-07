@@ -1,0 +1,55 @@
+<!--
+    ProfileNameWindow  -  Settings ▸ Settings Profile asks for a profile's name here: New… (with
+    whether it starts from a copy of the profile in use) and Rename…. The button stays off until the
+    name can be a file's; why it can't shows under the box. Backs onto ProfileNameViewModel.
+-->
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.ProfileNameWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:ProfileNameViewModel}"
+        Title="{Binding Heading}"
+        Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="24">
+        <StackPanel>
+            <TextBlock Text="{Binding Heading}"
+                       FontFamily="{StaticResource Font.Display}" FontSize="17.5" FontWeight="Bold"
+                       Foreground="{StaticResource Brush.Text.Primary}" />
+            <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,10,0,0"
+                       Text="{Binding Description}" />
+
+            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Name" Margin="0,16,0,4" />
+            <TextBox x:Name="NameBox" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                     MaxLength="80" />
+            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
+                       Foreground="{StaticResource Brush.Warn}" Text="{Binding Problem}"
+                       Visibility="{Binding HasProblem, Converter={StaticResource BoolToVis}}" />
+
+            <ctl:Option Margin="0,14,0,0" Description="Off, it starts with every setting at its default."
+                        Visibility="{Binding OffersCopy, Converter={StaticResource BoolToVis}}">
+                <CheckBox Content="{Binding CopyLabel}" IsChecked="{Binding CopyCurrent}" />
+            </ctl:Option>
+
+            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,14,0,0"
+                       Foreground="{StaticResource Brush.Warn}" Text="{Binding UnsavedNote}"
+                       Visibility="{Binding HasUnsavedNote, Converter={StaticResource BoolToVis}}" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                <Button Content="Cancel" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding CancelCommand}" MinWidth="96" Margin="0,0,10,0" />
+                <Button Content="{Binding ConfirmText}" Style="{StaticResource Button.Primary}"
+                        Command="{Binding ConfirmCommand}" IsDefault="True" MinWidth="120" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</ctl:ChromeWindow>

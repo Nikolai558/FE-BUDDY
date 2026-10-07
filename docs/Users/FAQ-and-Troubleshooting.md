@@ -23,7 +23,7 @@ separate counter. The real version is at the top of FE-Buddy's window.
 No. It downloads public data (the FAA's, aviationweather.gov's and, if you choose it, VATSIM-Radar's
 virtual airline list), asks a public time service for the current UTC time, checks GitHub for updates
 and News, and downloads any custom alias file you point it at. Your settings stay in
-`%APPDATA%\FE-Buddy\UserConfig.json`. A saved token or password lives in Windows Credential Manager
+`%APPDATA%\FE-Buddy\User Configurations`. A saved token or password lives in Windows Credential Manager
 and is only sent to the websites you allow.
 
 ### I set FEBUDDY_GITHUB_TOKEN for FE-Buddy 2.x
@@ -42,7 +42,8 @@ the run goes on.
 
 Since cycle 2609 the FAA's data lists ORF's NUTIY and SWOPE departures as STARs too, so
 `.orfNUTIYf` and `.orfSWOPEf` are in both files. `Duplicate_Alias_Commands.txt` lists them with any
-other duplicates.
+other duplicates. To pick which line keeps a command once and for all, see Duplicate Alias Commands
+on the [Preview Settings tab](User-Guide.md#preview-settings-tab).
 
 ### Do I still need FE-Buddy 2.x?
 
@@ -109,7 +110,7 @@ Please attach these when you [report it](https://github.com/Nikolai558/FE-BUDDY/
 ### I want to start fresh
 
 Use Settings ▸ **Reset FE-Buddy…**, or close FE-Buddy and delete
-`%APPDATA%\FE-Buddy\UserConfig.json`.
+`%APPDATA%\FE-Buddy\User Configurations`.
 
 ## Still stuck?
 

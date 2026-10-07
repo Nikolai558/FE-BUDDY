@@ -61,7 +61,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"the GeoJSON covers every NAVAID";
+		"the GeoJSON has every NAVAID";
 
 	/// <inheritdoc />
 	/// <remarks>NAVAIDs has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -241,9 +241,8 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		[
 			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
-			new ServicePreviewRow("Types", DescribeTypes()),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", HasRoi ? $"{DescribeRoi()}; GeoJSON only - the alias file covers every NAVAID" : DescribeRoi()),
+			new ServicePreviewRow("Region of interest", DescribeRoi()),
 		];
 
 		if (ShowSymbolStyleChoice)
@@ -253,7 +252,32 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()));
 
-		return [new ServicePreviewSection("NAVAIDs", rows)];
+		return [new ServicePreviewSection("NAVAIDs", rows) { WhatYoullGet = WhatYoullGet }];
+	}
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// The types narrow both files; the region narrows the GeoJSON only. With no region the two
+	/// blocks are the same, and merge.
+	/// </remarks>
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		string[] included = [.. IncludedTypes()];
+		string[] excluded = [.. ExcludedTypeNames()];
+
+		// Name the shorter list: what is left out, or what is kept.
+		string navaids = excluded.Length == 0 ? "every NAVAID in service"
+			: excluded.Length <= included.Length ? $"every NAVAID in service except {SummaryLines.Join(excluded, "and")}"
+			: $"NAVAIDs in service that are {SummaryLines.Join(included, "or")}";
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
+			.Add(SummaryJoin.First, navaids)
+			.Add(SummaryJoin.And, RegionLine("inside the region"))
+			.ToList());
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
+			.Add(SummaryJoin.First, HasRoi ? $"{navaids}, in the region or not" : navaids)
+			.ToList());
 	}
 
 	// ================= save contract =================
@@ -555,22 +579,9 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			: $"{files} - one pair per NAVAID type";
 	}
 
-	/// <summary>The "Types" preview row.</summary>
-	private string DescribeTypes()
-	{
-		string[] included = [.. IncludedTypes()];
-
-		if (included.Length == 0)
-		{
-			return "None";
-		}
-
-		return ExcludedTypeNames().Any() ? string.Join(", ", included) : "Every type";
-	}
-
 	/// <summary>The "Symbol style" preview row, shown only while <see cref="ShowSymbolStyleChoice"/> is true.</summary>
 	private string DescribeSymbolStyle() =>
 		StyleByNavaidType
 			? $"By NAVAID type (fan markers: {(string.IsNullOrWhiteSpace(FanMarkerStyle) ? "not set" : FanMarkerStyle)})"
-			: "One style for the whole file";
+			: "The same symbol for every NAVAID";
 }

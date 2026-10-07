@@ -27,7 +27,12 @@ public sealed class MapFileItem : ObservableObject
 	/// <param name="onChanged">Called when the item's layer or visibility changes, to rebuild the draw list.</param>
 	/// <param name="remove">Removes the item.</param>
 	/// <param name="zoom">Frames the item's layer on the map.</param>
-	public MapFileItem(string name, string path, Brush swatch, Action onChanged, Action<MapFileItem> remove, Action<MapFileItem> zoom)
+	/// <param name="showOnly">
+	/// Shows the item and hides the rest of its list (the Your Files card's right-click), or
+	/// <see langword="null"/> where the list doesn't offer it.
+	/// </param>
+	public MapFileItem(string name, string path, Brush swatch, Action onChanged, Action<MapFileItem> remove, Action<MapFileItem> zoom,
+		Action<MapFileItem>? showOnly = null)
 	{
 		Name = name;
 		Path = path;
@@ -35,6 +40,7 @@ public sealed class MapFileItem : ObservableObject
 		_onChanged = onChanged;
 		RemoveCommand = new RelayCommand(() => remove(this));
 		ZoomCommand = new RelayCommand(() => zoom(this), () => _layer is not null);
+		ShowOnlyCommand = showOnly is null ? null : new RelayCommand(() => showOnly(this));
 	}
 
 	/// <summary>The name shown in the list.</summary>
@@ -102,6 +108,20 @@ public sealed class MapFileItem : ObservableObject
 
 	/// <summary>Frames the file's shapes.</summary>
 	public ICommand ZoomCommand { get; }
+
+	/// <summary>Shows this file and hides every other in its list; <see langword="null"/> where the list doesn't offer it.</summary>
+	public ICommand? ShowOnlyCommand { get; }
+
+	/// <summary>
+	/// Whether every file in a list is shown, for a "show all" box: <see langword="true"/> when all are
+	/// (or there are none), <see langword="false"/> when none are, and <see langword="null"/> for some.
+	/// </summary>
+	/// <param name="files">The list.</param>
+	/// <returns>The box's state.</returns>
+	public static bool? AllShown(IReadOnlyCollection<MapFileItem> files) =>
+		files.All(f => f.IsVisible) ? true
+		: files.Any(f => f.IsVisible) ? null
+		: false;
 
 	/// <summary>Shows the loaded layer.</summary>
 	/// <param name="layer">The file's shapes.</param>

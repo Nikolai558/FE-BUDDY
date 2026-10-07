@@ -32,6 +32,25 @@ public sealed record AiracServiceResult : ServiceResult
 	public DuplicateAliasReportResult? DuplicateAliasReport { get; init; }
 
 	/// <summary>
+	/// The choices the user made for duplicated alias commands when the run stopped for them
+	/// (<see cref="AiracServiceSettings.ReviewDuplicateAliases"/>), to save for later runs; empty when
+	/// it didn't stop.
+	/// </summary>
+	public IReadOnlyList<DuplicateAliasRule> DuplicateAliasChoicesMade { get; init; } = [];
+
+	/// <summary>
+	/// The saved choices for no duplicated command of this run's - its duplicate has gone - which the
+	/// run didn't use.
+	/// </summary>
+	public IReadOnlyList<DuplicateAliasRule> UnusedDuplicateAliasChoices { get; init; } = [];
+
+	/// <summary>
+	/// Whether the user stopped the run when it asked about duplicated alias commands. It saved no
+	/// alias file and no <c>Combined_Alias.txt</c> then; the other files it had written stay.
+	/// </summary>
+	public bool StoppedAtDuplicateReview { get; init; }
+
+	/// <summary>
 	/// The Airways sub-service result, or <see langword="null"/> when Airways was not part of
 	/// this run.
 	/// </summary>

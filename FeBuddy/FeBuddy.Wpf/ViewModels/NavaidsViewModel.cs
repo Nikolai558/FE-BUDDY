@@ -61,7 +61,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"the GeoJSON covers every NAVAID";
+		"the GeoJSON has every NAVAID";
 
 	/// <inheritdoc />
 	/// <remarks>NAVAIDs has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -276,7 +276,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, HasRoi ? $"{navaids}, whatever the region" : navaids)
+			.Add(SummaryJoin.First, HasRoi ? $"{navaids}, in the region or not" : navaids)
 			.ToList());
 	}
 
@@ -583,5 +583,5 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	private string DescribeSymbolStyle() =>
 		StyleByNavaidType
 			? $"By NAVAID type (fan markers: {(string.IsNullOrWhiteSpace(FanMarkerStyle) ? "not set" : FanMarkerStyle)})"
-			: "One style for the whole file";
+			: "The same symbol for every NAVAID";
 }

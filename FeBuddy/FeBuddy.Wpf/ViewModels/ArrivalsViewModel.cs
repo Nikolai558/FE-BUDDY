@@ -67,7 +67,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"every arrival procedure is included";
+		"every arrival is included";
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -314,7 +314,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			.Add(SummaryJoin.And, artccs.Length == 0 ? "for airports in every ARTCC" : $"for airports in {SummaryLines.Join(artccs, "or")}")
 			.Add(SummaryJoin.And, DescribeAmendmentFilter().TrimStart(',', ' '))
 			.Add(SummaryJoin.And, RegionLine(_roiMode == ArrivalRoiMode.Waypoint
-				? "with at least one point inside the region"
+				? "with at least one fix inside the region"
 				: "at an airport inside the region"))
 			.ToList());
 	}

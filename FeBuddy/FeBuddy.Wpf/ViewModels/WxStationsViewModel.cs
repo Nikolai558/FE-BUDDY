@@ -52,7 +52,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"the GeoJSON covers every station";
+		"the GeoJSON has every station";
 
 	/// <inheritdoc />
 	/// <remarks>Wx Stations has no Lines file: only Symbols and Text are ever written.</remarks>

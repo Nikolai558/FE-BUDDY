@@ -243,9 +243,9 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// this tab (<see cref="NoRoiEffect"/>), and how to set one.
 	/// </remarks>
 	public string RoiFallbackHint => DefaultRoiStore.Load() is { } roi
-		? $"Using the default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
-		: $"ROI has not been set, yet, so {NoRoiEffect}.\n" +
-		  $"Please set the default ROI in Settings or on the Map page, or tick the box above to give {Title} its own.";
+		? $"Using your default region: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
+		: $"No default region is set, so {NoRoiEffect}.\n" +
+		  $"Set one in Settings or on the Map page, or tick the box above to give {Title} its own.";
 
 	/// <inheritdoc />
 	/// <remarks>With neither, the run covers everything.</remarks>
@@ -258,7 +258,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <param name="keeps">What the region keeps, e.g. <c>at an airport inside the region</c>.</param>
 	/// <returns>e.g. <c>at an airport inside the region (your default ROI)</c>.</returns>
 	protected string? RegionLine(string keeps) =>
-		HasRoi ? $"{keeps} ({(OverrideRoi ? "this tab's own ROI" : "your default ROI")})" : null;
+		HasRoi ? $"{keeps} ({(OverrideRoi ? "this tab's own" : "your default")})" : null;
 
 	/// <inheritdoc />
 	public ICommand PickRoiOnMapCommand { get; }
@@ -629,12 +629,12 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		if (OverrideRoi)
 		{
-			return $"Override: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}";
+			return $"This tab's own: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}";
 		}
 
 		return DefaultRoiStore.Load() is { } roi
-			? $"Default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
-			: "ROI has not been set, yet - no geographic limit";
+			? $"Your default: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
+			: "None set, so no limit";
 	}
 
 	/// <summary>
@@ -699,10 +699,10 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		// Each corner is reported against its own box so the empty one highlights. The two
 		// library checks below look at the set as a whole, so they belong to the card - and they
 		// only make sense once all four boxes actually have something in them.
-		bool hasAllCorners = validation.RequireValue("SwLat", SwLat, "Southwest latitude is required when overriding the ROI.");
-		hasAllCorners &= validation.RequireValue("SwLon", SwLon, "Southwest longitude is required when overriding the ROI.");
-		hasAllCorners &= validation.RequireValue("NeLat", NeLat, "Northeast latitude is required when overriding the ROI.");
-		hasAllCorners &= validation.RequireValue("NeLon", NeLon, "Northeast longitude is required when overriding the ROI.");
+		bool hasAllCorners = validation.RequireValue("SwLat", SwLat, "Enter the southwest latitude of this tab's own region.");
+		hasAllCorners &= validation.RequireValue("SwLon", SwLon, "Enter the southwest longitude of this tab's own region.");
+		hasAllCorners &= validation.RequireValue("NeLat", NeLat, "Enter the northeast latitude of this tab's own region.");
+		hasAllCorners &= validation.RequireValue("NeLon", NeLon, "Enter the northeast longitude of this tab's own region.");
 
 		if (!hasAllCorners)
 		{
@@ -711,14 +711,14 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		if (!RoiFilter.IsCoordinateValidFormat(SwLat, SwLon, NeLat, NeLon, out string? formatError))
 		{
-			validation.AddArea(ServiceAreas.Roi, $"ROI override: {formatError}");
+			validation.AddArea(ServiceAreas.Roi, $"This tab's own region: {formatError}");
 			return;
 		}
 
 		if (TryReadOverrideCorners() is { } corners
 			&& !RoiFilter.IsCoordinatesRelativePositionValid(corners.SwLat, corners.SwLon, corners.NeLat, corners.NeLon, out string? positionError))
 		{
-			validation.AddArea(ServiceAreas.Roi, $"ROI override: {positionError}");
+			validation.AddArea(ServiceAreas.Roi, $"This tab's own region: {positionError}");
 		}
 	}
 
@@ -733,7 +733,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private void PickRoiOnMap()
 	{
 		RegionOfInterest? picked = Views.RoiPickerWindow.Pick(
-			System.Windows.Application.Current?.MainWindow, TryReadOverrideCorners(), $"{Title} ROI Override", DefaultRoiStore.Load());
+			System.Windows.Application.Current?.MainWindow, TryReadOverrideCorners(), $"{Title}: Own Region", DefaultRoiStore.Load());
 
 		if (picked is { } roi)
 		{

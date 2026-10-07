@@ -41,7 +41,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"the GeoJSON covers every airport";
+		"the GeoJSON has every airport";
 
 	/// <inheritdoc />
 	/// <remarks>The files are named for what they hold: <c>Runways_Lines</c>, <c>Airports_Symbols</c>, <c>Airports_Text</c>.</remarks>
@@ -151,7 +151,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, HasRoi ? "every open airport, whatever the region" : "every open airport")
+			.Add(SummaryJoin.First, HasRoi ? "every open airport, in the region or not" : "every open airport")
 			.ToList());
 	}
 

@@ -43,6 +43,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   hold, one filter per line, joined by AND, OR or PLUS (for example, "SIDs and obstacle departures
   AND in ZOB AND amended in the last 4 cycles"). It follows your settings as you change them, and
   Preview Settings shows the same lines for each tab.
+- Feature #313, Docs #325 - The AIRAC Service's cards are reworded to be shorter and plainer. Each
+  alias file's description shows the command to type, with an example, and Custom Alias Files on
+  Concatenate Aliases says simply how to add a file. Airways' **Designations to Include** card is now
+  **Airway Types to Include**, and its **Split into** list reads **High and Low** or **Airway types**.
 
 ### Settings
 - Feature #324 - You no longer need to uninstall FE-Buddy between versions: settings saved by beta.2

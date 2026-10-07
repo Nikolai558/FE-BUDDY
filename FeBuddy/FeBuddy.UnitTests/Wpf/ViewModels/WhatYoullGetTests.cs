@@ -100,7 +100,7 @@ public sealed class WhatYoullGetTests : IDisposable
 				"SIDs only, no obstacle departures",
 				"AND in ZNY or ZOB",
 				"AND amended in the last 4 cycles",
-				"AND at an airport inside the region (this tab's own ROI)",
+				"AND at an airport inside the region (this tab's own)",
 			],
 			Lines(Assert.Single(tab.WhatYoullGet)));
 	}
@@ -139,12 +139,12 @@ public sealed class WhatYoullGetTests : IDisposable
 
 		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGet), changed);
 		Assert.Equal([Geojson, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
-		Assert.Equal(["every open airport", "AND with its reference point inside the region (your default ROI)"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["every open airport, whatever the region"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["every open airport", "AND with its reference point inside the region (your default)"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["every open airport, in the region or not"], Lines(tab.WhatYoullGet[1]));
 
 		Attach(tab, AiracSubServices.AirportsKey, Alias);
 
-		Assert.Equal(["every open airport, whatever the region"], Lines(Assert.Single(tab.WhatYoullGet)));
+		Assert.Equal(["every open airport, in the region or not"], Lines(Assert.Single(tab.WhatYoullGet)));
 	}
 
 	// ---- Airways ----
@@ -173,13 +173,13 @@ public sealed class WhatYoullGetTests : IDisposable
 
 		tab.OverrideRoi = true;
 
-		Assert.Equal(["every airway except the Y airways", "AND that cross the region, cut off at its edge (this tab's own ROI)"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["every airway except the Y airways, whatever the region"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["every airway except the Y airways", "AND that cross the region, cut off at its edge (this tab's own)"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["every airway except the Y airways, in the region or not"], Lines(tab.WhatYoullGet[1]));
 
 		tab.AliasRoiAirwaysOnly = true;
 
 		Assert.Equal(
-			["every airway except the Y airways", "AND that cross the region, each with all of its waypoints (this tab's own ROI)"],
+			["every airway except the Y airways", "AND that cross the region, each with all of its fixes (this tab's own)"],
 			Lines(tab.WhatYoullGet[1]));
 	}
 
@@ -216,13 +216,13 @@ public sealed class WhatYoullGetTests : IDisposable
 			[
 				"every chart at airports in ZOB",
 				"OR at CLE or DTW",
-				"OR at an airport inside the region (this tab's own ROI)",
+				"OR at an airport inside the region (this tab's own)",
 				"AND of these types: IAP, STR, DP, ODP, DAU and APD",
 				"PLUS BRWNZ FIVE, wherever it's published",
 				"AND in Procedure_Changes.md, only those added, changed or deleted this cycle",
 			],
 			Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["every chart at every airport in the d-TPP metafile, whatever you pick for the documents"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["every chart at every airport in the d-TPP metafile, not just the ones you pick for the documents"], Lines(tab.WhatYoullGet[1]));
 	}
 
 	[Fact]

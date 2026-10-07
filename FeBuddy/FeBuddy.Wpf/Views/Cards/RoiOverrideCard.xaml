@@ -30,7 +30,7 @@
     <ctl:Card Header="Region of Interest" bhv:FieldState.Error="{Binding FieldErrors[Roi]}"
               Outputs="{Binding Outputs, ElementName=Self}">
         <StackPanel>
-            <CheckBox Content="{Binding Title}" ContentStringFormat="Override the default ROI for {0}"
+            <CheckBox Content="{Binding Title}" ContentStringFormat="Give {0} its own region"
                       IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
             <!-- the default ROI in use, or (in amber) that none is set and how to set one -->
             <TextBlock Text="{Binding RoiFallbackHint}" TextWrapping="Wrap"

@@ -22,8 +22,8 @@
     <ctl:Card Header="FE-Buddy Properties" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[FebProperties]}">
         <StackPanel>
             <ctl:Option Margin="0,4,0,0"
-                        Description="Custom Geojson Property fields that increases file size but can be helpful for debugging or viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be prefixed with &quot;feb.&quot; as to not conflict with standard CRC properties.">
-                <CheckBox Content="Include FE-Buddy Properties, when available." IsChecked="{Binding IncludeFebCustomProperties}" />
+                        Description="Extra fields on each map object, such as its ID or name, so you can tell what it is in a GeoJSON viewer. CRC ignores them. They make the files bigger. Each one starts with &quot;feb.&quot; so it can't clash with CRC's own fields.">
+                <CheckBox Content="Include FE-Buddy properties" IsChecked="{Binding IncludeFebCustomProperties}" />
             </ctl:Option>
             <ItemsControl Margin="26,8,0,0" ItemsSource="{Binding FebProperties}"
                           IsEnabled="{Binding IncludeFebCustomProperties}">

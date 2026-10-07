@@ -18,7 +18,7 @@ public partial class CrcDefaultsCard : UserControl
 	/// <summary>Identifies the <see cref="Note"/> dependency property.</summary>
 	public static readonly DependencyProperty NoteProperty = Register(
 		nameof(Note),
-		"CRC-ERAM defaults are an isDefaults feature at the top of a GeoJSON file: the look CRC gives every feature in it. Choose which of this tab's files get them; every box shown below must be filled in.");
+		"CRC-ERAM defaults set how CRC draws everything in a file. They're written as a hidden isDefaults feature at the top of the file. Choose which files get them, then fill in every box below.");
 
 	/// <summary>Identifies the <see cref="Choice"/> dependency property.</summary>
 	public static readonly DependencyProperty ChoiceProperty = DependencyProperty.Register(

@@ -112,16 +112,11 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public string OutputModeHint => OutputBy switch
 	{
 		AirwayGeojsonOutputBy.HighLow =>
-			"Two file sets:\n" +
-			"    • Airways_High\n" +
-			"    • Airways_Low\n" +
-			"Each airway type goes in either High or Low, as you choose.\n" +
-			"Each set is _Lines + _Symbols + _Text.",
+			"Airways_High and Airways_Low, each with Lines, Symbols and Text.\n" +
+			"You choose which file each airway type goes in.",
 		AirwayGeojsonOutputBy.Designation =>
-			"One file set per designation, derived from the AWY_ID prefix.\n" +
-			"Ex: J / V / Q / T / AT:\n" +
-			"    Airways_J, Airways_V, Airways_Q, …\n" +
-			"Each set is _Lines + _Symbols + _Text.",
+			"A set of files per airway type, each with Lines, Symbols and Text.\n" +
+			"Ex: Airways_J, Airways_V, Airways_Q",
 		_ => string.Empty,
 	};
 
@@ -158,8 +153,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <summary>What the region of interest does to the alias file, for its card.</summary>
 	public string RoiAliasEffect => AliasRoiAirwaysOnly
-		? "Only the airways that cross the region, each with all of its waypoints."
-		: "Every FAA airway. To narrow it to the region, choose ROI airways only on the Outputs card.";
+		? "Only airways that cross the region, each with all of its fixes."
+		: "Every airway. To limit it to the region, choose Only airways that cross the region on the Outputs card.";
 
 	/// <summary>Whether a line that crosses 180 degrees longitude is split in two there.</summary>
 	public bool SplitAtAntimeridian { get => _splitAtAntimeridian; set { if (SetProperty(ref _splitAtAntimeridian, value)) MarkDirty(); } }
@@ -404,7 +399,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			validation.AddArea(
 				ServiceAreas.HighAndLowFiles,
 				$"Choose High, Low or Both for {string.Join(", ", unchosen)} on the High and Low Files card, " +
-				"or untick them under Designations to Include.");
+				"or untick them under Airway Types to Include.");
 		}
 
 		ValidateSharedSettings(validation);
@@ -427,7 +422,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		List<ServicePreviewRow> rows =
 		[
-			new ServicePreviewRow("GeoJSON output", GenerateGeojson ? OutputBy.ToString() : "No"),
+			new ServicePreviewRow("GeoJSON split into", !GenerateGeojson ? "No GeoJSON"
+				: OutputBy == AirwayGeojsonOutputBy.HighLow ? "High and Low" : "Airway types"),
 			new ServicePreviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
 			new ServicePreviewRow("Buffer waypoints", BufferAirwayWaypoints
@@ -470,8 +466,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, aliasUsesRegion || !HasRoi ? airways : $"{airways}, whatever the region")
-			.Add(SummaryJoin.And, aliasUsesRegion ? RegionLine("that cross the region, each with all of its waypoints") : null)
+			.Add(SummaryJoin.First, aliasUsesRegion || !HasRoi ? airways : $"{airways}, in the region or not")
+			.Add(SummaryJoin.And, aliasUsesRegion ? RegionLine("that cross the region, each with all of its fixes") : null)
 			.ToList());
 	}
 

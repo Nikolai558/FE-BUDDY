@@ -85,7 +85,7 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.True(tab.ShowsStrata);
 		Assert.False(tab.IsDirty);
 		Assert.Equal(
-			"Choose High, Low or Both for Y, ZK on the High and Low Files card, or untick them under Designations to Include.",
+			"Choose High, Low or Both for Y, ZK on the High and Low Files card, or untick them under Airway Types to Include.",
 			tab.ValidationError);
 	}
 
@@ -248,12 +248,12 @@ public sealed class AirwaysViewModelTests : IDisposable
 		tab.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
 		Assert.Equal(SubServiceOutputKinds.Geojson, tab.RoiOutputs);
-		Assert.StartsWith("Every FAA airway.", tab.RoiAliasEffect, StringComparison.Ordinal);
+		Assert.StartsWith("Every airway.", tab.RoiAliasEffect, StringComparison.Ordinal);
 
 		tab.AliasRoiAirwaysOnly = true;
 
 		Assert.Equal(SubServiceOutputKinds.Geojson | SubServiceOutputKinds.Alias, tab.RoiOutputs);
-		Assert.Equal("Only the airways that cross the region, each with all of its waypoints.", tab.RoiAliasEffect);
+		Assert.Equal("Only airways that cross the region, each with all of its fixes.", tab.RoiAliasEffect);
 		Assert.Contains(nameof(AirwaysViewModel.RoiOutputs), changed);
 		Assert.Contains(nameof(AirwaysViewModel.RoiAliasEffect), changed);
 	}

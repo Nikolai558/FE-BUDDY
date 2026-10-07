@@ -29,9 +29,9 @@
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
-                                    SymbolsDescription="One symbol per fix."
-                                    TextDescription="A label per fix: its identifier."
-                                    Footnote="Files are written to `Geojson\` in the cycle's folder." />
+                                    SymbolsDescription="A symbol at each fix."
+                                    TextDescription="A label at each fix with its identifier."
+                                    Footnote="Files go in `Geojson\` in the cycle's folder." />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">
@@ -40,16 +40,16 @@
                                  Content="All fixes in one file (Fix_Symbols.geojson, Fix_Text.geojson)"
                                  IsChecked="{Binding OutputAll, Mode=TwoWay}" />
                     <RadioButton GroupName="FixOutputBy" Margin="0,6,0,0"
-                                 Content="One file per fix-use (e.g. Fix_WYPNT_Symbols.geojson)"
+                                 Content="One file per fix use (Ex: Fix_WYPNT_Symbols.geojson)"
                                  IsChecked="{Binding OutputByFixUse, Mode=TwoWay}" />
                     <RadioButton GroupName="FixOutputBy" Margin="0,6,0,0"
-                                 Content="One file per chart (e.g. Fix_ENROUTE-LOW_Symbols.geojson)"
+                                 Content="One file per chart (Ex: Fix_ENROUTE-LOW_Symbols.geojson)"
                                  IsChecked="{Binding OutputByChart, Mode=TwoWay}" />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,6"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="A fix on several charts goes into each of their files; fixes on no chart go into Fix_NO-CHART." />
+                               Text="A fix on several charts goes in each of their files. Fixes on no chart go in Fix_NO-CHART." />
                     <RadioButton GroupName="FixOutputBy" Margin="0,0,0,0"
-                                 Content="One file per chart + fix-use combination you list below (e.g. Fix_ENROUTE-LOW-WYPNT_Symbols.geojson)"
+                                 Content="One file per chart and fix use combination you add below (Ex:Fix_ENROUTE-LOW-WYPNT_Symbols.geojson)"
                                  IsChecked="{Binding OutputByCombination, Mode=TwoWay}" />
                 </StackPanel>
             </ctl:Card>
@@ -111,7 +111,7 @@
             <ctl:Card Header="Combinations" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[Combinations]}" Visibility="{Binding ShowCombinations, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Each combination writes the fixes that are on that chart and have that fix use." />
+                               Text="Each combination gets its own files: the fixes on that chart that have that fix use." />
 
                     <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8"
                                Text="No combinations yet."
@@ -175,7 +175,7 @@
             <cards:RoiOverrideCard Outputs="Geojson">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
-                               Text="The region limits which fixes are written: a fix outside it is left out of every file." />
+                               Text="Only fixes inside the region are written, in every file." />
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 

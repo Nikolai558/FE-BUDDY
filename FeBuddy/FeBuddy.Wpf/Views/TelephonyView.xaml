@@ -36,10 +36,10 @@
             <ctl:Card Header="Outputs">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
-                               Text="Telephony writes only an alias file, so it is on whenever Telephony is included on the General tab." />
+                               Text="Telephony only writes an alias file. It's on whenever Telephony is included on the General tab." />
                     <cards:OutputStatusRow Kind="Alias" IsOn="{Binding GenerateAliasFile}" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
-                               Text="A card for every operator in the FAA telephony pages: its three-letter designator, telephony, company and country. Your virtual airlines (below) are added too.&#xA;Type .id and either the designator from the data block or the telephony the pilot said,&#xA;Ex: .idAVA or .idAVIANCA&#xA;When one command fits more than one operator, it shows all of them." />
+                               Text="Writes .id commands that show an operator's 3LD, telephony, company and country in CRC. Every operator in the FAA's telephony list is included, plus your virtual airlines below.&#xA;Type .id and the 3LD from the data block or the telephony the pilot said, Ex: .idAVA or .idAVIANCA&#xA;When a command fits more than one operator, it shows each of them." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                bhv:InlineCode.Text="Written to `Aliases\` in the cycle's folder. The Concatenate Aliases tab also adds it to `Aliases\Combined_Alias.txt`." />
@@ -50,13 +50,13 @@
             <ctl:Card Header="Virtual Airlines" Outputs="Alias" bhv:FieldState.Error="{Binding FieldErrors[VirtualAirlines]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               bhv:InlineCode.Text="Add virtual airlines to `Telephony.txt`. Each gets a card marked `--VA--` with its 3LD, telephony and virtual organization, under `.id` and its 3LD, and `.id` and its telephony. When it shares a command with a real operator or another virtual airline, the command shows all of them, real operators first." />
+                               bhv:InlineCode.Text="Adds virtual airlines to `Telephony.txt`. Each gets a `--VA--` card with its 3LD, telephony and organization, under `.id` plus its 3LD and `.id` plus its telephony. When a command fits more than one, it shows each of them, real operators first." />
 
                     <!-- the VATSIM-Radar list: one tick, and what FE-Buddy has of it -->
                     <CheckBox Content="Include the VATSIM-Radar Virtual Airline List" IsChecked="{Binding IncludeVatsimRadarList}" Margin="0,4,0,0" />
                     <StackPanel Margin="26,4,0,0" MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
                         <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                   bhv:InlineCode.Text="About 700 virtual airlines kept by VATSIM-Radar (`data.vatsim-radar.com`), each written after yours with a `--VA--` card of its own. Every run downloads the latest list. A virtual airline of yours that is exactly the same as one on it can't be added; one that differs at all gets its own card." />
+                                   bhv:InlineCode.Text="About 700 virtual airlines from VATSIM-Radar (`data.vatsim-radar.com`), added after yours, each with its own `--VA--` card. You can't add one of your own that exactly matches one on the list. If it differs at all, it gets its own card." />
                         <StackPanel Visibility="{Binding IncludeVatsimRadarList, Converter={StaticResource BoolToVis}}" Margin="0,6,0,0">
                             <TextBlock Text="{Binding VatsimRadarListStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
                             <Button Content="Download the latest list" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
@@ -144,10 +144,10 @@
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Operators come from FAA Order JO 7340.2, Chapter 3: the ICAO register (Section 1) and the U.S. special call signs (Section 4). They are not part of the AIRAC data, so every run downloads the latest pages, whichever cycle you run." />
+                               Text="Operators come from FAA Order JO 7340.2, Chapter 3: the ICAO register (Section 1) and U.S. special call signs (Section 4). This isn't AIRAC data, so every run downloads the latest pages, for any cycle." />
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Left out: a register entry with no three-letter designator or no telephony, and a U.S. special call sign that has expired." />
+                               Text="Left out: register entries with no 3LD or no telephony, and expired U.S. special call signs." />
                     <TextBlock Text="{Binding TelephonyDataStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
                 </StackPanel>

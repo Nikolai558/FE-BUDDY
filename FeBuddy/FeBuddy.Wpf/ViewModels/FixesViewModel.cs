@@ -77,7 +77,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"the GeoJSON covers every fix";
+		"the GeoJSON has every fix";
 
 	/// <inheritdoc />
 	/// <remarks>Fixes has no Lines file: only Symbols and Text are ever written.</remarks>

@@ -68,7 +68,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"every departure procedure is included";
+		"every departure is included";
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -313,7 +313,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			.Add(SummaryJoin.And, artccs.Length == 0 ? "in every ARTCC" : $"in {SummaryLines.Join(artccs, "or")}")
 			.Add(SummaryJoin.And, DescribeAmendmentFilter().TrimStart(',', ' '))
 			.Add(SummaryJoin.And, RegionLine(_roiMode == DepartureRoiMode.Waypoint
-				? "with at least one point inside the region"
+				? "with at least one fix inside the region"
 				: "at an airport inside the region"))
 			.ToList());
 	}

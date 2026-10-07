@@ -168,7 +168,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
-		"\"Also include every airport inside the region of interest\" has nothing to select";
+		"the region box on the Airports card adds no airports";
 
 	/// <inheritdoc />
 	/// <remarks>Procedures writes no GeoJSON at all.</remarks>
@@ -260,7 +260,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		_dtppStatus = dtpp is not null
 			? $"Cycle {cycleId}: {airportCount:N0} airports, {procedureCount:N0} procedures, downloaded {downloadedLocal:d MMM yyyy}."
-			: $"Cycle {cycleId}'s metafile isn't published yet (or couldn't be downloaded). FE-Buddy checks again at each launch; until then a run writes none of Procedures' files (Procedure_Changes.md, Procedures.json, Faa_Chart_Recall.txt).";
+			: $"Cycle {cycleId}'s metafile isn't out yet, or couldn't be downloaded. FE-Buddy checks again at each launch. Until then, Procedures writes none of its files.";
 
 		_dtppPreviousStatus = previousAvailable
 			? $"Deleted procedures link to cycle {previousCycleId}'s charts."
@@ -288,7 +288,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 			return primary is null
 				? "No facility is set in Settings ▸ Facility Profile, so facilities are listed alphabetically."
-				: $"Listed first in the documents: {primary} — your facility in Settings ▸ Facility Profile.";
+				: $"{primary} is listed first in the documents, as your facility in Settings ▸ Facility Profile.";
 		}
 	}
 
@@ -714,7 +714,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		yield return new SummaryBlock(SubServiceOutputKinds.ProcedureChanges | SubServiceOutputKinds.ProceduresJson, documents.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, "every chart at every airport in the d-TPP metafile, whatever you pick for the documents")
+			.Add(SummaryJoin.First, "every chart at every airport in the d-TPP metafile, not just the ones you pick for the documents")
 			.ToList());
 	}
 
@@ -839,15 +839,15 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			validation.AddArea(
 				ServiceAreas.ChartTypes,
-				"No chart types are ticked. Tick at least one chart type below, so the facilities, airports or region you picked actually include something.");
+				"No chart types are ticked, so the facilities, airports and region bring in nothing. Tick at least one chart type.");
 		}
 
 		if (_includeRoiAirports && !HasRoi)
 		{
 			validation.AddArea(
 				ServiceAreas.Roi,
-				"Set a region of interest below (or a default one in Settings), or untick "
-				+ "'Also include every airport inside the region of interest'.");
+				"Set a region below or a default one in Settings, or untick "
+				+ "\"Also every airport inside the region\" on the Airports card.");
 		}
 	}
 

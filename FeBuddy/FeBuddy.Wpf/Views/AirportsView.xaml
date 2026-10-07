@@ -26,16 +26,16 @@
             <cards:SummaryCard />
 
             <!-- ============ outputs ============ -->
-            <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
-                               AliasDescription="Writes one alias command per airport FAA ID, and one more for an airport whose ICAO ID is different." />
+            <cards:OutputsCard GeojsonDescription="Map files of airports and their runways. Pick which files below."
+                               AliasDescription="Writes an .apt command for every open airport that shows its details in CRC: name, tower, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF, weather, hours and airspace.&#xA;Type .apt and the FAA or ICAO ID, Ex: .aptDTW or .aptKDTW" />
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard LinesLabel="Runways — Lines"
-                                    LinesDescription="One MultiLineString Feature per airport holding that airport's runway centrelines. (1 file)"
+                                    LinesDescription="Each airport's runways, drawn as lines."
                                     SymbolsLabel="Airports — Symbols"
-                                    SymbolsDescription="One symbol per airport, placed at its reference point. (1 file)"
+                                    SymbolsDescription="A symbol at each airport's reference point."
                                     TextLabel="Airports — Text"
-                                    TextDescription="A label per airport showing the FAA ID and the airport name. (1 file)" />
+                                    TextDescription="A label at each airport with its FAA ID and name." />
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard />
@@ -44,8 +44,8 @@
             <cards:RoiOverrideCard Outputs="Geojson">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <StackPanel Margin="0,10,0,0">
-                        <ctl:OutputLine Kind="Geojson" Text="Only the airports whose reference point is inside the region." />
-                        <ctl:OutputLine Kind="Alias" Text="Every airport, whatever the region." />
+                        <ctl:OutputLine Kind="Geojson" Text="Only airports with their reference point inside the region." />
+                        <ctl:OutputLine Kind="Alias" Text="Every airport. The region doesn't apply." />
                     </StackPanel>
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>

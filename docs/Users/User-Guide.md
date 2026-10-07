@@ -49,7 +49,7 @@ greyed out. Where a card changes two files differently, a line for each says how
 
 Each sub-service tab but Concatenate Aliases starts with **What You'll Get**: what its files will
 hold, one filter per line. **AND** narrows the lines above, **OR** is another way in, and **PLUS**
-adds to them whatever they say. Where its files get different things, each file has its own lines.
+adds something on top. Where its files get different things, each file has its own lines.
 
 ### Saving
 
@@ -80,14 +80,16 @@ their own.
 - **What Files Do You Want?** - which of **Lines**, **Symbols** and **Text** to write. Symbols with
   exactly the same properties are written as one feature (a MultiPoint), so Symbols files stay
   small; labels are always one feature each.
-- **FE-Buddy Properties** - optional `feb.*` fields, handy for checking a file; CRC ignores them.
-  One that differs from point to point, such as an ID, keeps each symbol a feature of its own.
-- **Region of Interest** - Settings' **Default Region of Interest**, unless you tick **Override the
-  default ROI** and type the corners or **Pick on map…**. With no region (the card says so in
-  amber), nothing is left out.
+- **FE-Buddy Properties** - optional `feb.*` fields that tell you what each object is in a GeoJSON
+  viewer. CRC ignores them. One that differs from point to point, such as an ID, keeps each symbol a
+  feature of its own.
+- **Region of Interest** - Settings' **Default Region of Interest**, unless you tick **Give *tab* its
+  own region** and type the corners or **Pick on map…**. With no region (the card says so in amber),
+  nothing is left out.
 - **CRC ERAM Defaults** - how CRC draws a file, written as a hidden feature at its top. At the top of
-  the card, choose which GeoJSON files get them: none (to start), every one, or specific files. Then
-  fill in every box shown; the lists offer only values CRC accepts. Airways, NAVAIDs, ARTCC
+  the card, choose which GeoJSON files get them: **No CRC-ERAM defaults** (to start), **Every GeoJSON
+  file from this tab**, or **Only the files I tick**. Then fill in every box shown; the lists offer
+  only values CRC accepts. Airways, NAVAIDs, ARTCC
   Boundaries and Fixes can ask for a set per class (High or Low, NAVAID type, altitude, fix group),
   so their files can look different.
 
@@ -114,13 +116,13 @@ Each ARTCC's boundary as lines. No Symbols, Text or alias file.
 
 ### Airways tab
 
-- **Split into** - **HighLow** (`Airways_High`, `Airways_Low`) or **Designation** (`Airways_J`,
-  `Airways_V`, …). For HighLow, the **High and Low Files** card puts each airway type in High, Low or
-  Both, by type rather than altitude: J and Q start in High, V and T in Low, and any other type must
-  be chosen. For no Airways GeoJSON, untick its **GeoJSON** box on the General tab.
-- **`Airways.txt`** - a command per airway that draws its fixes, e.g. `.J3F`: **All FAA airways** or
-  **ROI airways only**.
-- **Designations to Include** - untick one to leave it out of everything.
+- **Split into** - **High and Low** (`Airways_High`, `Airways_Low`) or **Airway types** (`Airways_J`,
+  `Airways_V`, …). For High and Low, the **High and Low Files** card puts each airway type in High,
+  Low or Both, by type rather than altitude: J and Q start in High, V and T in Low, and any other type
+  must be chosen. For no Airways GeoJSON, untick its **GeoJSON** box on the General tab.
+- **`Airways.txt`** - a command per airway that shows its fixes, e.g. `.J3F`: **Every airway** or
+  **Only airways that cross the region**.
+- **Airway Types to Include** - untick one to leave it out of the GeoJSON and the alias file.
 - **Buffer Airway Waypoints** (off to start) - stops lines short of each waypoint so they don't run
   through the symbols: 2.5 NM around fixes and 5 NM around NAVAIDs to start.
 - **Split GeoJSON at the Antimeridian** - leave it on.
@@ -144,8 +146,8 @@ covers STARs. Otherwise the two tabs work the same.
   with each airport's own.
 - **Amendment Date** - every procedure, or only those amended in the last *N* cycles (counting the
   selected one), the last *N* days, or since a date.
-- **How the Region Selects…** - every procedure of an airport in the region, or any procedure with
-  a point in it. The region limits the alias file too.
+- **Which Departures (or STARs) the Region Keeps** - every procedure for an airport in the region,
+  or any procedure with a fix in it. The region limits the alias file too.
 - **Names** - the FAA computer code without its version (`DOTSS2.DOTSS` is `DOTSS`; a STAR's runs the
   other way, so `AALAN.BLAID2` is `BLAID`), or the name without punctuation when there's no code
   (`O'HARE` is `OHARE`).
@@ -159,8 +161,8 @@ covers STARs. Otherwise the two tabs work the same.
   type* (`NAVAIDs_VORTACs_Symbols`, …).
 - **Files** - Symbols, and Text: the identifier, then the name and type (`CGT` /
   `CHICAGO HEIGHTS VORTAC`).
-- **NAVAID Symbol Style** - with *All in one file* and CRC-ERAM defaults on the Symbols file: style
-  each NAVAID by its type (you choose the fan markers' style), or one style for the whole file.
+- **NAVAID Symbol Style** - with *All in one file* and CRC-ERAM defaults on the Symbols file: **By
+  NAVAID type** (you choose the fan markers' symbol), or **The same symbol for every NAVAID**.
 - **`Navaids.txt`** - a `.nav` command for each identifier and each name, showing the name, type,
   frequency and ARTCCs. NAVAIDs that share an identifier (`ABQ` is a VORTAC and a VOT) share one
   command. It covers every NAVAID of the ticked types; the region only limits the GeoJSON.
@@ -183,8 +185,8 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
 
 - **Outputs** (on or off on the General tab) - `Procedure_Changes.md` (what changed this cycle) and
   `Procedures.json` (every current chart) for the airports you pick, and `Faa_Chart_Recall.txt`
-  ([chart recall commands](#faa-chart-recall-commands) for every chart at every airport, whatever you
-  pick).
+  ([chart recall commands](#faa-chart-recall-commands) for every chart at every airport, not just the
+  ones you pick).
 - **d-TPP Data** - the cycle's metafile, and whether a deleted chart can be linked to its last copy
   (that needs the previous cycle's metafile).
 - **What the documents cover** - these add up: every airport of the ticked **Facilities**; the
@@ -195,8 +197,8 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
   and press Enter or **Add**. Any it can't add stay in the box, with why underneath: not an airport
   this cycle, already listed, or already included by a ticked facility or the region.
 - **Procedures.json Fields** - the optional fields the JSON carries.
-- **Region of Interest** - only decides which airports *Also include every airport inside the region
-  of interest* adds. Nothing is clipped.
+- **Region of Interest** - only decides which airports *Also every airport inside the region* adds.
+  Nothing is clipped.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
 then "Other". Each lists the airports that changed, Class B first. A changed chart links to the FAA's
@@ -224,9 +226,9 @@ doesn't know yet is named on the Review tab - please report it.
 
 ### Telephony tab
 
-Writes `Telephony.txt` for every operator in the FAA's list, whatever the region: an `.id` command
-for its designator and one for its telephony (`.idAVA`, `.idAVIANCA`; just one when they're the
-same, `.idNASA`), each showing the operator's card. Operators that share a command show a card each.
+Writes `Telephony.txt` for every operator in the FAA's list: an `.id` command for its 3LD and one
+for its telephony (`.idAVA`, `.idAVIANCA`; just one when they're the same, `.idNASA`), each showing
+the operator's card. Operators that share a command show a card each. The region doesn't apply.
 
 - **Virtual Airlines** - add your facility's own (3LD, telephony and virtual organization). Each gets
   the same two commands and a card marked `--VA--`, after any real operator sharing the command.

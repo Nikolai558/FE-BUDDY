@@ -50,7 +50,7 @@
     <StackPanel>
 
         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
-                   Text="Everything this run will do, at a glance. Change anything by going back to its tab." />
+                   Text="What the run will do, tab by tab. To change something, go back to its tab." />
 
         <!-- something is invalid: the run is blocked until it is fixed -->
         <ctl:Card Style="{StaticResource Card.Danger}"

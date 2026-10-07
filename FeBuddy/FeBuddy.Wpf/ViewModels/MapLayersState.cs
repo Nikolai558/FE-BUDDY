@@ -42,8 +42,10 @@ public sealed class MapLayersState : ObservableObject
 {
 	private const string Node = "Services.MapService";
 	private const string OutputKey = UserConfigKeys.MapOutputGeojson;
-	private const string AiracKey = Node + ".AiracLayers";
-	private const string HomeKey = Node + ".Home";
+
+	// Internal so the unit tests can check every settings layout's keys are still the ones read here.
+	internal const string AiracKey = Node + ".AiracLayers";
+	internal const string HomeKey = Node + ".Home";
 
 	// Clear of the live layers' blue, green and purple (AiracMapLayers.Color), so a file never
 	// looks like one of them.

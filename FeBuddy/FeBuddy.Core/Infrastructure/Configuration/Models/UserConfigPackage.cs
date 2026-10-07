@@ -7,13 +7,18 @@ namespace FeBuddy.Core.Infrastructure.Configuration.Models;
 /// </param>
 /// <param name="AppVersion">The FE-Buddy version that exported it, when the file says.</param>
 /// <param name="ExportedUtc">When it was exported, when the file says.</param>
-/// <param name="Values">Every setting in the file, by dotted path, as it is in the file (folders still tokenized).</param>
+/// <param name="Values">
+/// Every setting in the file, by dotted path, brought up to this version's layout (folders still
+/// tokenized).
+/// </param>
+/// <param name="ConfigVersion">The settings layout the file was saved in (<see cref="UserConfigVersion"/>).</param>
 public sealed record UserConfigPackage(
 	string FileName,
 	int FormatVersion,
 	string? AppVersion,
 	DateTimeOffset? ExportedUtc,
-	IReadOnlyDictionary<string, string> Values)
+	IReadOnlyDictionary<string, string> Values,
+	int ConfigVersion = UserConfigVersion.Oldest)
 {
 	/// <summary>Whether the file is a plain <c>UserConfig.json</c> rather than an FE-Buddy export.</summary>
 	public bool IsPlainConfigFile => FormatVersion == 0;

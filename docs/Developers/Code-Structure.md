@@ -51,7 +51,8 @@ FeBuddy.Core/
 │       └── ChartRecall/  the FAA Chart Recall command rules: ChartRecallCodes, ApproachCodes,
 │                         SidStarCodes, ChartRecallText
 ├── Infrastructure/
-│   ├── Configuration/    UserConfigFile, UserConfigKeys, DevMode, OutputFormatting, and settings
+│   ├── Configuration/    UserConfigFile, UserConfigKeys, DevMode, OutputFormatting; the settings
+│   │                     layout (UserConfigVersion, UserConfigMigrations); and settings
 │   │                     export/import: UserConfigTransfer, UserConfigPortability, PortablePathTokens
 │   ├── Credentials/      CredentialStore, WindowsCredentialVault, CredentialHosts, UrlSecrets
 │   │                     (see Credentials.md)

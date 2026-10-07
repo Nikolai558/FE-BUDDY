@@ -17,9 +17,11 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class BaseMapSettings : ObservableObject
 {
 	private const string Node = "Services.MapService";
-	private const string GridlinesKey = Node + ".Gridlines";
-	private const string LayersKey = Node + ".BaseMapLayers";
-	private const string OpacityKey = Node + ".BaseMapOpacity";
+
+	// Internal so the unit tests can check every settings layout's keys are still the ones read here.
+	internal const string GridlinesKey = Node + ".Gridlines";
+	internal const string LayersKey = Node + ".BaseMapLayers";
+	internal const string OpacityKey = Node + ".BaseMapOpacity";
 
 	/// <summary>The opacity, in percent, before the user has chosen one: there to steer by, not to look at.</summary>
 	internal const int DefaultOpacityPercent = 50;

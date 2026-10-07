@@ -19,7 +19,7 @@ says so; a blank there means the same name.
 [ARTCC Boundaries](#artcc-boundaries) · [Fixes](#fixes) · [Wx Stations](#wx-stations) ·
 [Procedures](#procedures) · [Telephony](#telephony) · [Concatenate Aliases](#concatenate-aliases) ·
 [File conversions](#file-conversions) · [Settings export and import](#settings-export-and-import) ·
-[Adding a setting](#adding-a-setting)
+[Adding a setting](#adding-a-setting) · [Changing the layout](#changing-the-layout)
 
 ## How values are read
 
@@ -47,6 +47,11 @@ One nested JSON tree. Code reads a value by its dotted path (`General.UpdateChan
 `UserConfigFile`; keys read in more than one place are constants in `UserConfigKeys`. Before a tab's
 node is saved, its old state is copied to `UserConfig.previous.json`, which **Undo last save**
 restores. Settings' own **Save** writes the whole file, with no undo copy.
+
+The file starts with `"ConfigVersion"`, its layout (`UserConfigVersion`), which every write stamps
+and which is never read as a setting. A file with no stamp is layout 1 (3.0.0-beta.2 and beta.3).
+At launch, a file in an older layout is brought forward (`UserConfigMigrations`) and written back,
+the old file kept as `UserConfig.v<old layout>.json`. See [Changing the layout](#changing-the-layout).
 
 ### General
 
@@ -477,11 +482,13 @@ Settings ▸ **Export…** writes a file another user can bring in with **Import
 the same tree as `UserConfig.json`, under a header.
 
 ```json
-{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "appVersion": "3.0.0",
+{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 1, "appVersion": "3.0.0",
   "exportedUtc": "2026-09-27T12:00:00Z", "settings": { "General": { ... }, "Services": { ... } } }
 ```
 
-A plain `UserConfig.json` imports too. A file with a newer `formatVersion`, or over 2 MB, is refused.
+A plain `UserConfig.json` imports too. `formatVersion` is the header's; `configVersion` is the
+layout of the settings inside (none means layout 1). A file in an older layout is brought forward
+before the import is planned. A file with a newer `formatVersion` or layout, or over 2 MB, is refused.
 
 **Each key travels according to its name** (`UserConfigPortability.Classify`), so a new setting needs
 no list:
@@ -519,3 +526,30 @@ no list:
    `Password` and the like a secret. A yes/no setting ending in `Folder` goes in
    `UserConfigPortability`'s `NotFolderKeys`, and a this-PC-only setting in its `LocalKeys`.
 5. **List it on this page.**
+
+## Changing the layout
+
+Testers keep their settings from one version to the next, so a saved setting is never just renamed.
+Renaming, moving or dropping one, or changing how its value is written, makes a new layout. So does
+moving the settings file, or splitting it.
+
+1. **Bump `UserConfigVersion.Current`.**
+2. **Add the step** that turns the old layout into the new one to `UserConfigMigrations.All`:
+   ```csharp
+   new UserConfigMigration(2, "Airways' buffer distances moved under Buffer", settings =>
+   {
+       settings.Move("Services.AiracService.Airways.FixBufferNm", "Services.AiracService.Airways.Buffer.FixNm");
+       settings.ChangeValue("Services.AiracService.Airways.Buffer.Enabled", value => value == "true" ? "Y" : "N");
+   })
+   ```
+   A step edits the settings by dotted path (`Move`, `ChangeValue`, `Set`, `Remove`). Each edit can
+   run twice without harm, so write the step the same way: it may meet a file that already has some
+   of the new layout.
+3. **For a file that moves**, have `UserConfigFile` look for it where the old layout kept it too.
+4. **Add a sample** of the new layout: `FeBuddy.UnitTests\Fixtures\UserConfig\UserConfig.v<N>.json`,
+   a full file as the new version saves it, with its fingerprint in `UserConfigLayoutTests`.
+
+`UserConfigLayoutTests` brings every sample forward and has every settings page read it. It fails if
+a setting in any layout's sample is no longer saved with the same value. It also fails if a
+released sample changes. A setting saved outside the tabs (Settings, the default ROI, the map) is
+checked by its key constant, listed in the test's `OtherSettings`.

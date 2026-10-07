@@ -18,11 +18,13 @@ namespace FeBuddy.Wpf.Shell;
 public static class DefaultRoiStore
 {
 	private const string Node = "Services.AiracService.DefaultRoi";
-	private const string FilterKey = $"{Node}.FilterByRoi";
-	private const string SwLatKey = $"{Node}.Corners.SwLat";
-	private const string SwLonKey = $"{Node}.Corners.SwLon";
-	private const string NeLatKey = $"{Node}.Corners.NeLat";
-	private const string NeLonKey = $"{Node}.Corners.NeLon";
+
+	// Internal so the unit tests can check every settings layout's keys are still the ones read here.
+	internal const string FilterKey = $"{Node}.FilterByRoi";
+	internal const string SwLatKey = $"{Node}.Corners.SwLat";
+	internal const string SwLonKey = $"{Node}.Corners.SwLon";
+	internal const string NeLatKey = $"{Node}.Corners.NeLat";
+	internal const string NeLonKey = $"{Node}.Corners.NeLon";
 
 	/// <summary>Raised after <see cref="Set"/> or <see cref="Clear"/> writes to disk.</summary>
 	public static event EventHandler? Changed;

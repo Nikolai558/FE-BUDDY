@@ -46,6 +46,8 @@
     <!-- A made-up RADAR Video Map in the FAA .dat layout. Real FAA .dat files must never be
          committed: every fixture here is invented. -->
     <None Include="Fixtures\Dat\*.dat" CopyToOutputDirectory="PreserveNewest" />
+    <!-- One sample UserConfig.json per settings layout FE-Buddy has released (UserConfigLayoutTests). -->
+    <None Include="Fixtures\UserConfig\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

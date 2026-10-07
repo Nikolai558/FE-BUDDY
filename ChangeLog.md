@@ -33,6 +33,18 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Feature #323 - `Procedure_Changes.md`: a chart shared by several airports (a STAR, say) is listed
   under every one of them, with "Also serves" naming the others, instead of under one airport only.
 
+### Settings
+- Feature #324 - You no longer need to uninstall FE-Buddy between versions: settings saved by beta.2
+  or later are kept. When a later version changes how settings are saved, it updates yours at launch
+  and keeps a copy of the old file (`UserConfig.v1.json` and so on, beside `UserConfig.json`).
+  Settings exports carry the same version, so an older export still imports.
+
+### Dev notes
+- `UserConfig.json` and exports are stamped with a settings layout (`UserConfigVersion`). Renaming,
+  moving or re-formatting a saved setting now needs a new layout and a step in
+  `UserConfigMigrations`; `UserConfigLayoutTests` fails without one. See Settings Reference,
+  "Changing the layout".
+
 ---
 
 ## 3.0.0-beta.3

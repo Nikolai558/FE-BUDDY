@@ -16,9 +16,13 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// <para>
 /// The file is the same nested JSON as <c>UserConfig.json</c>, wrapped in a small header:
 /// <code>
-/// { "format": "FE-Buddy.UserConfig", "formatVersion": 1, "appVersion": "3.0.0",
+/// { "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 1, "appVersion": "3.0.0",
 ///   "exportedUtc": "2026-09-27T12:00:00Z", "settings": { "General": { ... }, "Services": { ... } } }
 /// </code>
+/// <c>formatVersion</c> is this wrapper's; <c>configVersion</c> is the settings layout inside it
+/// (<see cref="UserConfigVersion"/>), which <see cref="Read(string)"/> brings forward
+/// (<see cref="UserConfigMigrations"/>). An export with no <c>configVersion</c> (3.0.0-beta.3 and
+/// earlier) is taken to be in the oldest layout.
 /// Each setting goes by its <see cref="UserConfigPortability.Classify(string)"/> scope: shared
 /// settings travel as they are, folders travel tokenized (<see cref="PortablePathTokens"/>), and
 /// PC-only state, credentials and credential choices never go into the file.
@@ -120,6 +124,7 @@ public static class UserConfigTransfer
 		{
 			["format"] = FormatId,
 			["formatVersion"] = FormatVersion,
+			["configVersion"] = UserConfigMigrations.CurrentVersion,
 			["appVersion"] = appVersion,
 			["exportedUtc"] = exportedUtc.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
 			["settings"] = UserConfigFile.BuildTree(exported),
@@ -199,7 +204,8 @@ public static class UserConfigTransfer
 			// A plain UserConfig.json copied out of someone's %APPDATA%\FE-Buddy imports as it is.
 			if (obj["General"] is JsonObject || obj["Services"] is JsonObject)
 			{
-				return new UserConfigPackage(fileName, FormatVersion: 0, AppVersion: null, ExportedUtc: null, Flatten(obj));
+				int plainVersion = UserConfigFile.TakeVersion(obj, fileName);
+				return Package(fileName, formatVersion: 0, appVersion: null, exportedUtc: null, Flatten(obj), plainVersion);
 			}
 
 			throw NotASettingsFile(fileName);
@@ -234,7 +240,49 @@ public static class UserConfigTransfer
 				? when
 				: null;
 
-		return new UserConfigPackage(fileName, version, appVersion, exportedUtc, Flatten(settings));
+		int configVersion = obj["configVersion"] is JsonValue c && c.TryGetValue(out int layout) && layout >= UserConfigVersion.Oldest
+			? layout
+			: UserConfigVersion.Oldest;
+
+		return Package(fileName, version, appVersion, exportedUtc, Flatten(settings), configVersion);
+	}
+
+	/// <summary>
+	/// A package of a file's settings, brought up to this version's layout. A file saved in a newer
+	/// layout is refused: this FE-Buddy can't know what its settings mean.
+	/// </summary>
+	/// <exception cref="UserConfigTransferException">The file is in a newer layout, or its settings can't be brought forward.</exception>
+	private static UserConfigPackage Package(
+		string fileName,
+		int formatVersion,
+		string? appVersion,
+		DateTimeOffset? exportedUtc,
+		Dictionary<string, string> values,
+		int configVersion)
+	{
+		if (configVersion > UserConfigMigrations.CurrentVersion)
+		{
+			string from = appVersion is null ? "a newer FE-Buddy" : $"FE-Buddy v{appVersion.TrimStart('v', 'V')}";
+			throw new UserConfigTransferException($"'{fileName}' was saved by {from}, which keeps its settings differently from this one. Update FE-Buddy, then import it again.");
+		}
+
+		UserConfigMigrationResult migrated;
+
+		try
+		{
+			migrated = UserConfigMigrations.Migrate(values, configVersion);
+		}
+		catch (InvalidOperationException ex)
+		{
+			throw new UserConfigTransferException($"The settings in '{fileName}' could not be brought up to this version of FE-Buddy: {ex.Message}", ex);
+		}
+
+		if (migrated.Migrated)
+		{
+			AppLog.Info(LogSource, $"Brought '{fileName}' up from settings layout {configVersion} to layout {migrated.ToVersion}: {string.Join("; ", migrated.Applied)}.");
+		}
+
+		return new UserConfigPackage(fileName, formatVersion, appVersion, exportedUtc, migrated.Values, configVersion);
 	}
 
 	/// <summary>Works out what importing <paramref name="package"/> would do to this PC's settings, without writing anything.</summary>

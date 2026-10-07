@@ -51,6 +51,7 @@ public sealed class UserConfigTransferTests : IDisposable
 	/// <summary>Restores defaults and deletes the throwaway directory.</summary>
 	public void Dispose()
 	{
+		UserConfigMigrations.ConfigureForTesting(null, null);
 		UserConfigFile.ConfigureForTesting(null);
 		AppLog.ConfigureForTesting(null);
 
@@ -236,6 +237,81 @@ public sealed class UserConfigTransferTests : IDisposable
 
 		Assert.Null(package.ExportedUtc);
 		Assert.Equal("true", package.Values["General.PrettyPrintGeojson"]);
+	}
+
+	// ============================ the settings layout ============================
+
+	/// <summary>An export says which settings layout is inside it.</summary>
+	[Fact]
+	public void export_stamps_the_settings_layout()
+	{
+		UserConfigTransfer.Export(ExportPath, new Dictionary<string, string> { [ArtccKey] = "ZOB" }, "3.1.0", ExportedAt, Alice);
+
+		Assert.Equal(UserConfigVersion.Current, JsonNode.Parse(File.ReadAllText(ExportPath))!["configVersion"]!.GetValue<int>());
+		Assert.Equal(UserConfigVersion.Current, UserConfigTransfer.Read(ExportPath).ConfigVersion);
+	}
+
+	/// <summary>A plain <c>UserConfig.json</c>'s stamp is its layout, not a setting to import.</summary>
+	[Fact]
+	public void a_plain_files_stamp_is_its_layout_not_a_setting()
+	{
+		UserConfigPackage package = UserConfigTransfer.Parse(
+			"""{ "ConfigVersion": 1, "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""",
+			"UserConfig.json");
+
+		Assert.Equal(1, package.ConfigVersion);
+		Assert.Equal(["Services.AiracService.UserArtccId"], package.Values.Keys);
+	}
+
+	/// <summary>Exports from beta.3 and earlier have no stamp: they are the oldest layout.</summary>
+	[Fact]
+	public void an_export_with_no_layout_is_the_oldest()
+	{
+		UserConfigPackage package = UserConfigTransfer.Parse(
+			"""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "settings": { "Services": { "AiracService": { "UserArtccId": "ZOB" } } } }""",
+			"x.json");
+
+		Assert.Equal(UserConfigVersion.Oldest, package.ConfigVersion);
+		Assert.Equal("ZOB", package.Values[ArtccKey]);
+	}
+
+	/// <summary>A file in a layout newer than this FE-Buddy's can't be understood, so it isn't imported.</summary>
+	[Theory]
+	[InlineData("""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 9, "appVersion": "3.4.0", "settings": {} }""", "saved by FE-Buddy v3.4.0, which keeps its settings differently")]
+	[InlineData("""{ "ConfigVersion": 9, "General": { "UpdateChannel": "Beta" } }""", "saved by a newer FE-Buddy, which keeps its settings differently")]
+	public void a_file_in_a_newer_layout_is_refused(string json, string expectedMessage)
+	{
+		UserConfigTransferException ex = Assert.Throws<UserConfigTransferException>(() => UserConfigTransfer.Parse(json, "x.json"));
+
+		Assert.Contains(expectedMessage, ex.Message, StringComparison.Ordinal);
+	}
+
+	/// <summary>With a second layout, an older file's settings are brought forward before the import is planned.</summary>
+	[Fact]
+	public void an_older_files_settings_are_brought_forward_before_they_are_imported()
+	{
+		UserConfigMigrations.ConfigureForTesting(2, [new UserConfigMigration(2, "Moved the ARTCC", settings => settings.Move(ArtccKey, "General.Facility.ArtccId"))]);
+
+		UserConfigPackage package = UserConfigTransfer.Parse(
+			"""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 1, "settings": { "Services": { "AiracService": { "UserArtccId": "ZOB" } } } }""",
+			"zob.json");
+
+		Assert.Equal(1, package.ConfigVersion);
+		Assert.Equal(["General.Facility.ArtccId"], package.Values.Keys);
+		Assert.Equal("ZOB", package.Values["General.Facility.ArtccId"]);
+		Assert.Contains(AppLog.Entries, e => e.Message == "Brought 'zob.json' up from settings layout 1 to layout 2: Moved the ARTCC.");
+	}
+
+	[Fact]
+	public void a_file_whose_settings_cannot_be_brought_forward_is_refused()
+	{
+		UserConfigMigrations.ConfigureForTesting(2, [new UserConfigMigration(2, "Breaks", _ => throw new FormatException("no"))]);
+
+		UserConfigTransferException ex = Assert.Throws<UserConfigTransferException>(() => UserConfigTransfer.Parse(
+			"""{ "General": { "UpdateChannel": "Beta" } }""",
+			"UserConfig.json"));
+
+		Assert.StartsWith("The settings in 'UserConfig.json' could not be brought up to this version of FE-Buddy:", ex.Message, StringComparison.Ordinal);
 	}
 
 	// ============================ plan ============================

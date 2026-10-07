@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -30,6 +31,12 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// The launch read path never throws: a missing file or a missing key yields defaults and a
 /// log entry, so a first run with no config behaves exactly like a run with an empty config.
 /// </para>
+/// <para>
+/// The file carries its layout version (<see cref="UserConfigVersion"/>) at the top, outside the
+/// settings, and every write stamps it. A file read in an older layout is brought up to the current
+/// one (<see cref="UserConfigMigrations"/>) and written back at once, the file as it was kept beside
+/// it as <c>UserConfig.v&lt;old version&gt;.json</c>.
+/// </para>
 /// </remarks>
 public static class UserConfigFile
 {
@@ -49,6 +56,13 @@ public static class UserConfigFile
 	private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
 
 	private static string _directory = AppPaths.AppDataDirectory;
+
+	/// <summary>
+	/// The layout every write stamps the file with: the current one, unless the file was read in a
+	/// layout it could not be fully brought out of - an older one whose update could not be written
+	/// (so the next launch tries again), or a newer one this FE-Buddy does not know.
+	/// </summary>
+	private static int _stampVersion = UserConfigVersion.Current;
 
 	/// <summary>
 	/// The directory holding <c>UserConfig.json</c>: <c>%APPDATA%\FE-Buddy</c> by default.
@@ -77,9 +91,19 @@ public static class UserConfigFile
 	public static string BeforeImportFilePath => Path.Combine(Directory, BeforeImportFileName);
 
 	/// <summary>
+	/// The full path a file in an older layout is kept at once it has been brought forward, e.g.
+	/// <c>UserConfig.v1.json</c>.
+	/// </summary>
+	/// <param name="version">The layout the file was in.</param>
+	/// <returns>The path.</returns>
+	public static string BroughtForwardFilePath(int version) =>
+		Path.Combine(Directory, string.Create(CultureInfo.InvariantCulture, $"UserConfig.v{version}.json"));
+
+	/// <summary>
 	/// Reads <c>UserConfig.json</c> from disk into the in-memory dictionary, replacing whatever
 	/// was there. A missing or unreadable file leaves the dictionary empty and logs a warning
-	/// rather than throwing - this is the launch read path.
+	/// rather than throwing - this is the launch read path. A file in an older layout is brought
+	/// forward (see the class remarks).
 	/// </summary>
 	/// <returns>Whether the file was read, missing or unreadable.</returns>
 	public static UserConfigReadResult ReadAll()
@@ -87,6 +111,7 @@ public static class UserConfigFile
 		lock (Gate)
 		{
 			Values.Clear();
+			_stampVersion = UserConfigMigrations.CurrentVersion;
 
 			string path = ConfigFilePath;
 
@@ -103,7 +128,21 @@ public static class UserConfigFile
 
 				if (root is JsonObject obj)
 				{
+					int version = TakeVersion(obj, path);
 					FlattenInto(obj, prefix: string.Empty, Values);
+
+					if (version < UserConfigMigrations.CurrentVersion)
+					{
+						BringForward(path, version);
+					}
+					else if (version > UserConfigMigrations.CurrentVersion)
+					{
+						// Saves keep its stamp, so the newer FE-Buddy never takes its own settings for old ones.
+						_stampVersion = version;
+						AppLog.Warning(LogSource, $"'{ConfigFileName}' was saved by a newer FE-Buddy (settings layout {version}; this one knows up to " +
+							$"{UserConfigMigrations.CurrentVersion}). Settings it doesn't know are kept as they are.");
+					}
+
 					return UserConfigReadResult.Read;
 				}
 
@@ -127,8 +166,7 @@ public static class UserConfigFile
 	{
 		lock (Gate)
 		{
-			JsonObject root = BuildTree(Values);
-			WriteObject(ConfigFilePath, root);
+			WriteConfig(ConfigFilePath, BuildTree(Values), _stampVersion);
 		}
 
 		ReadAll();
@@ -211,7 +249,8 @@ public static class UserConfigFile
 
 	/// <summary>
 	/// Replaces every setting at once with <paramref name="values"/> and writes the whole file -
-	/// the one write that is not per node, used by a settings import.
+	/// the one write that is not per node, used by a settings import. The values must be in the
+	/// current layout (<see cref="UserConfigTransfer.Read(string)"/> brings an import's forward).
 	/// </summary>
 	/// <remarks>
 	/// <para>
@@ -250,7 +289,7 @@ public static class UserConfigFile
 
 			try
 			{
-				WriteObject(incoming, BuildTree(replacement));
+				WriteConfig(incoming, BuildTree(replacement), UserConfigMigrations.CurrentVersion);
 
 				if (File.Exists(ConfigFilePath))
 				{
@@ -323,7 +362,7 @@ public static class UserConfigFile
 			// Replace the subtree on disk with the in-memory version built from the flat dict.
 			JsonNode? newSubtree = BuildSubtree(Values, nodePath);
 			SetNodeAtPath(onDisk, nodePath, newSubtree);
-			WriteObject(ConfigFilePath, onDisk);
+			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
 		}
 
 		ReadAll();
@@ -384,7 +423,7 @@ public static class UserConfigFile
 
 			JsonObject onDisk = LoadObjectOrEmpty(ConfigFilePath);
 			SetNodeAtPath(onDisk, nodePath, snapshot?.DeepClone());
-			WriteObject(ConfigFilePath, onDisk);
+			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
 
 			// Consume the snapshot: undo depth is exactly one.
 			RemoveNodeAtPath(previous, nodePath);
@@ -407,6 +446,7 @@ public static class UserConfigFile
 		{
 			Values.Clear();
 			_directory = directory ?? AppPaths.AppDataDirectory;
+			_stampVersion = UserConfigMigrations.CurrentVersion;
 		}
 	}
 
@@ -531,6 +571,101 @@ public static class UserConfigFile
 	{
 		System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 		File.WriteAllText(path, root.ToJsonString(WriteOptions));
+	}
+
+	/// <summary>Writes a whole settings file, stamped with its layout version at the top.</summary>
+	private static void WriteConfig(string path, JsonObject root, int version)
+	{
+		JsonObject stamped = new() { [UserConfigVersion.FileKey] = version };
+
+		foreach (KeyValuePair<string, JsonNode?> entry in root.Where(entry => entry.Key != UserConfigVersion.FileKey).ToList())
+		{
+			root.Remove(entry.Key);
+			stamped[entry.Key] = entry.Value;
+		}
+
+		WriteObject(path, stamped);
+	}
+
+	/// <summary>
+	/// Takes a settings file's layout stamp out of its top level, leaving only settings: the version,
+	/// or <see cref="UserConfigVersion.Oldest"/> when the file has none (beta.2 and beta.3 wrote none)
+	/// or one that can't be read.
+	/// </summary>
+	/// <param name="root">The file's top level; the stamp is removed from it.</param>
+	/// <param name="fileName">The file, for the log.</param>
+	/// <returns>The layout the file is in.</returns>
+	internal static int TakeVersion(JsonObject root, string fileName)
+	{
+		if (!root.TryGetPropertyValue(UserConfigVersion.FileKey, out JsonNode? stamp))
+		{
+			return UserConfigVersion.Oldest;
+		}
+
+		root.Remove(UserConfigVersion.FileKey);
+
+		if (stamp is JsonValue value && value.TryGetValue(out int version) && version >= UserConfigVersion.Oldest)
+		{
+			return version;
+		}
+
+		AppLog.Warning(LogSource, $"'{fileName}' has a settings layout stamp FE-Buddy can't read ({stamp?.ToJsonString() ?? "null"}). " +
+			$"Its settings are taken to be in layout {UserConfigVersion.Oldest}.");
+		return UserConfigVersion.Oldest;
+	}
+
+	/// <summary>
+	/// Brings the settings just read in layout <paramref name="version"/> up to the current one and
+	/// writes them back, keeping the file as it was (<see cref="BroughtForwardFilePath(int)"/>). The
+	/// per-node undo snapshots are of the old layout, so they go. When the update can't be worked out,
+	/// the settings are used as they are and the file is left alone; when it can't be written, the
+	/// file keeps its old stamp so the next launch tries again. Never throws.
+	/// </summary>
+	private static void BringForward(string path, int version)
+	{
+		UserConfigMigrationResult result;
+
+		try
+		{
+			result = UserConfigMigrations.Migrate(Values, version);
+		}
+		catch (InvalidOperationException ex)
+		{
+			_stampVersion = version;
+			AppLog.Warning(LogSource, $"Could not bring the settings in '{ConfigFileName}' up from layout {version} to layout {UserConfigMigrations.CurrentVersion}: " +
+				$"{ex.Message} They are used as they are, and the file is left unchanged.");
+			return;
+		}
+
+		Values.Clear();
+
+		foreach (KeyValuePair<string, string> entry in result.Values)
+		{
+			Values[entry.Key] = entry.Value;
+		}
+
+		string keptAs = BroughtForwardFilePath(version);
+
+		try
+		{
+			File.Copy(path, keptAs, overwrite: true);
+			WriteConfig(path, BuildTree(Values), UserConfigMigrations.CurrentVersion);
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			_stampVersion = version;
+			AppLog.Warning(LogSource, $"Brought the settings up from layout {version} to layout {UserConfigMigrations.CurrentVersion}, but could not write " +
+				$"'{ConfigFileName}': {ex.Message} FE-Buddy tries again at the next launch.");
+			return;
+		}
+
+		if (!DeleteIfPresent(PreviousFilePath))
+		{
+			AppLog.Warning(LogSource, $"Could not delete '{PreviousFileName}', so Undo last save may put back a setting in the old layout.");
+		}
+
+		AppLog.Info(LogSource, $"Brought the settings up from layout {version} to layout {UserConfigMigrations.CurrentVersion}: " +
+			$"{string.Join("; ", result.Applied)}. The file as it was is kept as '{Path.GetFileName(keptAs)}'.");
 	}
 
 	private static JsonNode? GetNodeAtPath(JsonObject root, string dottedPath)

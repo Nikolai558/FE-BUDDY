@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.4
 ### AIRAC Service
 - Departures: an airport the FAA's data leaves out of a departure's bodies (its routes from the
   runways) now gets only the transitions, not every other airport's bodies. FDK's CONLE no longer

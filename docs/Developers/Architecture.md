@@ -25,7 +25,7 @@ FeBuddy.Wpf (FE-BUDDY.exe)   FeBuddy.Harness   FeBuddy.UnitTests
 runs `LaunchSequence.RunAsync` off the UI thread. A step that fails is logged and only disables what
 needs it; launch never stops.
 
-1. Clear `%TEMP%\FE-Buddy`, read `UserConfig.json` and, at the first launch, save the update
+1. Clear `%TEMP%\FE-Buddy`, read the settings profile in use and, at the first launch, save the update
    channel (`UpdateChannelSetting.SaveDefaultIfUnset`;
    [Versioning](VERSIONING.md#pre-releases-and-channels)).
 2. Look for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` variable - its name only, never its value - and,
@@ -169,14 +169,16 @@ Not every sub-service has all four steps:
 
 ## Settings
 
-- **`UserConfig.json`** is one JSON tree, read at launch and addressed by dotted paths
-  (`Services.AiracService.Airways.OutputBy`).
+- **Settings are profiles**, one JSON tree each (`User Configurations\UserConfig.<Profile>.json`),
+  read at launch and addressed by dotted paths (`Services.AiracService.Airways.OutputBy`). The few
+  every profile shares, and the profile in use, are in `Shared.json`; `UserConfigFile` hides the
+  split. See [Settings Reference](Settings-Reference.md#settings-profiles).
 - **Each tab saves only its own node** (`UserConfigFile.Save(nodePath)`). Before it does, the node's
-  old state goes to `UserConfig.previous.json` for **Undo last save**.
-- **An import replaces the whole file** (`UserConfigFile.ReplaceAll`), keeping the old one as
-  `UserConfig.before-import.json`. How each key travels is decided by its name; see
-  [Settings export and import](Settings-Reference.md#settings-export-and-import).
-- **Credentials** are never in `UserConfig.json`: they live in Windows Credential Manager, and
+  old state goes to `UserConfig-previous.<Profile>.json` for **Undo last save**.
+- **An import replaces or adds to the profile in use** (`UserConfigFile.ReplaceAll`), keeping the
+  old one as `UserConfig-before-import.<Profile>.json`, or makes a new profile. How each key travels
+  is decided by its name; see [Settings export and import](Settings-Reference.md#settings-export-and-import).
+- **Credentials** are never in a settings file: they live in Windows Credential Manager, and
   settings hold only their id. See [Credentials](Credentials.md).
 
 ## GeoJSON output

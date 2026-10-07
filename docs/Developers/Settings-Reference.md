@@ -6,13 +6,15 @@ FE-Buddy's settings live in two places:
   for one run. The app builds it (each tab's `BuildSettingsBlock`), the harness writes it by hand
   (`FeBuddy.Harness/HarnessSettings.cs`) and the tests build it inline. All of them go through the
   same parser.
-- **`UserConfig.json`** (`%APPDATA%\FE-Buddy`) - what the app remembers. Each tab saves its own
-  node, mostly under the same key names its block uses.
+- **The settings profile** (`%APPDATA%\FE-Buddy\User Configurations\UserConfig.<Profile>.json`) -
+  what the app remembers. Each tab saves its own node, mostly under the same key names its block
+  uses.
 
 This page lists both. Where a saved key differs from the block key, the table's **Saved as** column
 says so; a blank there means the same name.
 
-**Contents:** [How values are read](#how-values-are-read) · [UserConfig.json](#userconfigjson) ·
+**Contents:** [How values are read](#how-values-are-read) · [The settings files](#the-settings-files) ·
+[Settings profiles](#settings-profiles) ·
 [Keys every AIRAC sub-service shares](#keys-every-airac-sub-service-shares) · [File keys](#file-keys) ·
 [New file names](#new-file-names) · [CRC defaults](#crc-defaults) · [Airports](#airports) ·
 [Airways](#airways) · [Departures and Arrivals](#departures-and-arrivals) · [NAVAIDs](#navaids) ·
@@ -41,17 +43,39 @@ Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsPars
 `EramToGeojsonSettingsParser`. Shared readers: `SubServiceSettingsReader`, `CrcDefaultsReader`,
 `ConversionSettingsReader` and `SettingsValueReader`.
 
-## UserConfig.json
+## The settings files
 
-One nested JSON tree. Code reads a value by its dotted path (`General.UpdateChannel`) through
-`UserConfigFile`; keys read in more than one place are constants in `UserConfigKeys`. Before a tab's
-node is saved, its old state is copied to `UserConfig.previous.json`, which **Undo last save**
-restores. Settings' own **Save** writes the whole file, with no undo copy.
+Each profile is one nested JSON tree. Code reads a value by its dotted path (`General.UpdateChannel`)
+through `UserConfigFile`; keys read in more than one place are constants in `UserConfigKeys`. Before
+a tab's node is saved, its old state is copied to `UserConfig-previous.<Profile>.json`, which **Undo
+last save** restores. Settings' own **Save** writes the whole profile, with no undo copy.
 
-The file starts with `"ConfigVersion"`, its layout (`UserConfigVersion`), which every write stamps
+Each file starts with `"ConfigVersion"`, its layout (`UserConfigVersion`), which every write stamps
 and which is never read as a setting. A file with no stamp is layout 1 (3.0.0-beta.2 and beta.3).
-At launch, a file in an older layout is brought forward (`UserConfigMigrations`) and written back,
-the old file kept as `UserConfig.v<old layout>.json`. See [Changing the layout](#changing-the-layout).
+At launch, a profile in an older layout is brought forward (`UserConfigMigrations`) and written back,
+the old file kept as `UserConfig-v<old layout>.<Profile>.json`. See [Changing the layout](#changing-the-layout).
+
+## Settings profiles
+
+Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
+
+| File | Holds |
+|---|---|
+| `UserConfig.<Profile>.json` | One profile: every setting but the shared ones. The name follows Windows' rules for a file name, up to 64 characters; names differing only in case are the same profile. |
+| `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`). |
+| `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward). They move and go with it. |
+
+- In memory the two files are one dictionary, so a caller never knows which a key is in. `Save`
+  writes a shared key under its node to `Shared.json`, and every other key to the profile. A shared
+  key found in a profile (copied in by hand, say) moves to `Shared.json`, unless that has one already.
+- `CreateProfile`, `SwitchProfile`, `RenameProfile` and `DeleteProfile` are in
+  `UserConfigFile.Profiles.cs`. The profile in use can't be deleted; Settings switches away first.
+- After a switch or an import every page reads the settings again (`ConfigPages.ReloadEverything`).
+- 3.0.0-beta.3 and earlier kept one `%APPDATA%\FE-Buddy\UserConfig.json`. While there is no profile,
+  each launch copies it in as **Default**, its backups with it, and leaves it for an older FE-Buddy.
+
+A profile is not a layout change: each setting keeps its dotted path, so no migration step was
+needed.
 
 ### General
 
@@ -490,15 +514,15 @@ file fails that file only.
 
 ## Settings export and import
 
-Settings ▸ **Export…** writes a file another user can bring in with **Import…** (`UserConfigTransfer`):
-the same tree as `UserConfig.json`, under a header.
+Settings ▸ **Export…** writes the profile in use to a file another user can bring in with
+**Import…** (`UserConfigTransfer`): the same tree as a profile, under a header.
 
 ```json
 { "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 1, "appVersion": "3.0.0",
   "exportedUtc": "2026-09-27T12:00:00Z", "settings": { "General": { ... }, "Services": { ... } } }
 ```
 
-A plain `UserConfig.json` imports too. `formatVersion` is the header's; `configVersion` is the
+A plain profile or beta.3 `UserConfig.json` imports too. `formatVersion` is the header's; `configVersion` is the
 layout of the settings inside (none means layout 1). A file in an older layout is brought forward
 before the import is planned. A file with a newer `formatVersion` or layout, or over 2 MB, is refused.
 
@@ -517,12 +541,17 @@ no list:
   has, a folder FE-Buddy reads from that exists, or a file that exists. A network path is refused
   unless it is this user's own Desktop, Documents or profile. Otherwise this PC keeps its own; a
   custom alias file is left out instead, since this PC's entry at that number is a different file.
-- **An import makes this PC's settings match the file**: anything the file leaves out goes back to
-  its default, except the Local, Secret and credential-choice keys above.
-- `UserConfigFile.ReplaceAll` writes the new file and swaps it in with `File.Replace`, keeping the
-  old one as `UserConfig.before-import.json`. It deletes `UserConfig.previous.json` (its undo would
-  restore pre-import settings), and every open page reloads (`ConfigPages.ReloadAll`,
-  `MapLayersState.ReloadFromConfigIfCreated`).
+- **The user chooses where the settings go** (`UserConfigImportMode`):
+  - **A new profile** (`ApplyAsNewProfile`) gets the file's settings, and FE-Buddy switches to it.
+  - **Replace** makes the profile in use match the file: anything the file leaves out goes back to
+    its default, except the Local, Secret and credential-choice keys above.
+  - **Merge** keeps the profile's settings the file leaves out, folders included. A numbered list
+    the file has (`...Sources.<n>...`) replaces the profile's whole list, and a profile key that
+    would nest under one of the file's, or the other way round, gives way.
+- `UserConfigFile.ReplaceAll` writes the new profile and swaps it in with `File.Replace`, keeping the
+  old one as `UserConfig-before-import.<Profile>.json`. It deletes `UserConfig-previous.<Profile>.json`
+  (its undo would restore pre-import settings), and every open page reloads
+  (`ConfigPages.ReloadEverything`). `Shared.json` is never touched.
 
 ## Adding a setting
 
@@ -542,8 +571,8 @@ no list:
 ## Changing the layout
 
 Testers keep their settings from one version to the next, so a saved setting is never just renamed.
-Renaming, moving or dropping one, or changing how its value is written, makes a new layout. So does
-moving the settings file, or splitting it.
+Renaming, moving or dropping one, or changing how its value is written, makes a new layout. Moving
+the settings file while every setting keeps its dotted path needs only step 3, as the profiles did.
 
 1. **Bump `UserConfigVersion.Current`.**
 2. **Add the step** that turns the old layout into the new one to `UserConfigMigrations.All`:

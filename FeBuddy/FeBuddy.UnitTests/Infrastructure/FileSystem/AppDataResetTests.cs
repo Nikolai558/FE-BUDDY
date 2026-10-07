@@ -36,6 +36,9 @@ public sealed class AppDataResetTests : IDisposable
 		Write("UserConfig.json", "{}");
 		Write("UserConfig.previous.json", "{}");
 		Write("UserConfig.before-import.json", "{}");
+		Write(@"User Configurations\UserConfig.Default.json", "{}");
+		Write(@"User Configurations\UserConfig.ZOB.json", "{}");
+		Write(@"User Configurations\Shared.json", "{}");
 		Write(@"AiracCycles\2610\APT_BASE.csv", "x");
 		Write(@"Logs\FE-Buddy_2026-09-29.log", "x");
 		Write(@"Telephony\telephony.html", "x");
@@ -65,7 +68,7 @@ public sealed class AppDataResetTests : IDisposable
 	{
 		Assert.Null(AppDataReset.RunPending(_credentials, NoWait));
 
-		Assert.Equal(7, Directory.EnumerateFiles(_appData, "*", SearchOption.AllDirectories).Count());
+		Assert.Equal(10, Directory.EnumerateFiles(_appData, "*", SearchOption.AllDirectories).Count());
 		Assert.Single(_credentials.List());
 	}
 
@@ -91,7 +94,9 @@ public sealed class AppDataResetTests : IDisposable
 		Assert.True(result.SettingsKept);
 		Assert.Null(result.CredentialsRemoved);
 		Assert.Empty(result.NotDeleted);
-		Assert.Equal(["UserConfig.json"], Names(_appData));
+		// Every profile, Shared.json, and an older FE-Buddy's file kept for it; its old backups go.
+		Assert.Equal(["User Configurations", "UserConfig.json"], Names(_appData));
+		Assert.Equal(["Shared.json", "UserConfig.Default.json", "UserConfig.ZOB.json"], Names(Path.Combine(_appData, "User Configurations")));
 		Assert.Single(_credentials.List());
 	}
 
@@ -182,7 +187,7 @@ public sealed class AppDataResetTests : IDisposable
 	}
 
 	private static string[] Names(string folder) =>
-		[.. Directory.EnumerateFileSystemEntries(folder).Select(path => Path.GetFileName(path))];
+		[.. Directory.EnumerateFileSystemEntries(folder).Select(path => Path.GetFileName(path)!).Order(StringComparer.Ordinal)];
 
 	private void Write(string relativePath, string text)
 	{

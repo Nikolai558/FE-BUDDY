@@ -63,8 +63,14 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ### Settings
 - Feature #324 - You no longer need to uninstall FE-Buddy between versions: settings saved by beta.2
   or later are kept. When a later version changes how settings are saved, it updates yours at launch
-  and keeps a copy of the old file (`UserConfig.v1.json` and so on, beside `UserConfig.json`).
+  and keeps a copy of the old file (`UserConfig-v1.Default.json` and so on, beside the profile).
   Settings exports carry the same version, so an older export still imports.
+- Feature #324 - Settings profiles: keep a whole set of settings for each facility, or one for
+  testing, and switch between them at the top of Settings, with **New…**, **Rename…** and
+  **Delete…**. Your update channel, the News you've read and FE-Buddy's GitHub token are the same in
+  every profile. Your settings so far become the **Default** profile.
+- Feature #324 - **Import…** asks where a file's settings go: into a new profile, added to the
+  profile in use, or in place of its settings.
 - Bug #321 - Credentials: **Create a token on GitHub** now looks like a button, not a heading.
 
 ### Look and feel
@@ -74,10 +80,14 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   is shown as such.
 
 ### Dev notes
-- `UserConfig.json` and exports are stamped with a settings layout (`UserConfigVersion`). Renaming,
+- Settings files and exports are stamped with a settings layout (`UserConfigVersion`). Renaming,
   moving or re-formatting a saved setting now needs a new layout and a step in
   `UserConfigMigrations`; `UserConfigLayoutTests` fails without one. See Settings Reference,
   "Changing the layout".
+- Settings are one file per profile, `%APPDATA%\FE-Buddy\User Configurations\UserConfig.<Profile>.json`,
+  plus `Shared.json` for the settings every profile shares and the profile in use. `UserConfigFile`
+  hides the split. beta.3's `UserConfig.json` is copied in as Default and left in place for older
+  versions.
 
 ---
 

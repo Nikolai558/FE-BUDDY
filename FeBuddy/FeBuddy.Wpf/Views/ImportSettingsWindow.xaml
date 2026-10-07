@@ -1,0 +1,83 @@
+<!--
+    ImportSettingsWindow  -  Settings ▸ Import… asks here where a file's settings go: a new profile
+    (the default, named in the box under it), added to the profile in use, or in place of its
+    settings. What the choice does shows under them and scrolls on a short screen, so the buttons
+    always stay on it. Backs onto ImportSettingsViewModel.
+-->
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.ImportSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:ImportSettingsViewModel}"
+        Title="Import Settings"
+        Width="560" SizeToContent="Height"
+        MaxHeight="{Binding Height, Source={x:Static SystemParameters.WorkArea}}"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0">
+                <TextBlock Text="Import Settings"
+                           FontFamily="{StaticResource Font.Display}" FontSize="17.5" FontWeight="Bold"
+                           Foreground="{StaticResource Brush.Text.Primary}" />
+                <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,10,0,0"
+                           Text="{Binding FromFile}" />
+            </StackPanel>
+
+            <!-- ============ where the settings go ============ -->
+            <StackPanel Grid.Row="1">
+                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Where They Go" Margin="0,16,0,6" />
+
+                <ctl:Option Description="{Binding NewProfileDescription}">
+                    <RadioButton GroupName="ImportDestination" Content="Into a new profile" IsChecked="{Binding IsNewProfile, Mode=TwoWay}" />
+                </ctl:Option>
+                <StackPanel Margin="26,8,0,0" Visibility="{Binding IsNewProfile, Converter={StaticResource BoolToVis}}">
+                    <TextBox x:Name="NameBox" Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}"
+                             MaxLength="80" Width="300" HorizontalAlignment="Left"
+                             ToolTip="The new profile's name." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Foreground="{StaticResource Brush.Warn}" Text="{Binding NameProblem}"
+                               Visibility="{Binding HasNameProblem, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+
+                <ctl:Option Margin="0,12,0,0" Description="{Binding MergeDescription}">
+                    <RadioButton GroupName="ImportDestination" Content="{Binding MergeLabel}" IsChecked="{Binding IsMerge, Mode=TwoWay}" />
+                </ctl:Option>
+                <ctl:Option Margin="0,12,0,0" Description="{Binding ReplaceDescription}">
+                    <RadioButton GroupName="ImportDestination" Content="{Binding ReplaceLabel}" IsChecked="{Binding IsReplace, Mode=TwoWay}" />
+                </ctl:Option>
+
+                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="What Happens" Margin="0,18,0,6" />
+            </StackPanel>
+
+            <ScrollViewer x:Name="Body" Grid.Row="2"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <TextBlock bhv:InlineCode.Text="{Binding Summary}" TextWrapping="Wrap"
+                           Style="{StaticResource Text.Body}" />
+            </ScrollViewer>
+
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                <Button Content="Cancel" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding CancelCommand}" MinWidth="96" Margin="0,0,10,0" />
+                <Button Content="Import" Style="{StaticResource Button.Primary}"
+                        Command="{Binding ImportCommand}" MinWidth="120" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</ctl:ChromeWindow>

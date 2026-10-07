@@ -25,6 +25,9 @@ public sealed class UserConfigFileTests : IDisposable
 	{
 		AppLog.ConfigureForTesting(Path.Combine(_directory, "logs"));
 		UserConfigFile.ConfigureForTesting(_directory);
+
+		// Tests write the profile's file straight in.
+		Directory.CreateDirectory(UserConfigFile.Directory);
 	}
 
 	/// <summary>Restores defaults and deletes the throwaway directory.</summary>
@@ -253,12 +256,12 @@ public sealed class UserConfigFileTests : IDisposable
 	{
 		Directory.CreateDirectory(_directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
-		UserConfigFile.TrySetValue("General.UpdateChannel", "Beta");
+		UserConfigFile.TrySetValue("General.PrettyPrintGeojson", "Y");
 
-		UserConfigFile.Save("General.UpdateChannel");
+		UserConfigFile.Save("General.PrettyPrintGeojson");
 
 		JsonNode root = JsonNode.Parse(File.ReadAllText(UserConfigFile.ConfigFilePath))!;
-		Assert.Equal("Beta", root["General"]!["UpdateChannel"]!.GetValue<string>());
+		Assert.Equal("Y", root["General"]!["PrettyPrintGeojson"]!.GetValue<string>());
 	}
 
 	/// <summary>Saving a node with nothing in memory under it removes it from the file.</summary>
@@ -280,13 +283,13 @@ public sealed class UserConfigFileTests : IDisposable
 	[Fact]
 	public void undo_a_null_snapshot_removes_the_node()
 	{
-		UserConfigFile.TrySetValue("General.UpdateChannel", "Beta");
+		UserConfigFile.TrySetValue("General.PrettyPrintGeojson", "Y");
 		UserConfigFile.Save(GeneralNode);
 		File.WriteAllText(UserConfigFile.PreviousFilePath, """{ "General": null }""");
 
 		Assert.True(UserConfigFile.Undo(GeneralNode));
 
-		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
+		Assert.Null(UserConfigFile.GetValue("General.PrettyPrintGeojson"));
 		Assert.False(UserConfigFile.CanUndo(GeneralNode));
 	}
 
@@ -294,9 +297,9 @@ public sealed class UserConfigFileTests : IDisposable
 	[Fact]
 	public void replace_all_swaps_every_value_backs_up_the_file_and_drops_undo()
 	{
-		UserConfigFile.TrySetValue("General.UpdateChannel", "Beta");
+		UserConfigFile.TrySetValue("General.PrettyPrintGeojson", "N");
 		UserConfigFile.Save(GeneralNode);
-		UserConfigFile.TrySetValue("General.UpdateChannel", "Alpha");
+		UserConfigFile.TrySetValue("General.PrettyPrintGeojson", "Y");
 		UserConfigFile.Save(GeneralNode);
 		Assert.True(UserConfigFile.CanUndo(GeneralNode));
 
@@ -304,17 +307,17 @@ public sealed class UserConfigFileTests : IDisposable
 		{
 			["Services.AiracService.UserArtccId"] = "ZOB",
 			["General..Broken"] = "dropped",
-			["General.PrettyPrintGeojson"] = null!,
+			["General.AddFeBuddyOutputFolder"] = null!,
 		});
 
 		Assert.Equal("ZOB", UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
-		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
+		Assert.Null(UserConfigFile.GetValue("General.PrettyPrintGeojson"));
 		Assert.Null(UserConfigFile.GetValue("General..Broken"));
-		Assert.Equal(string.Empty, UserConfigFile.GetValue("General.PrettyPrintGeojson"));
+		Assert.Equal(string.Empty, UserConfigFile.GetValue("General.AddFeBuddyOutputFolder"));
 		Assert.False(UserConfigFile.CanUndo(GeneralNode));
 
 		JsonNode backup = JsonNode.Parse(File.ReadAllText(UserConfigFile.BeforeImportFilePath))!;
-		Assert.Equal("Alpha", backup["General"]!["UpdateChannel"]!.GetValue<string>());
+		Assert.Equal("Y", backup["General"]!["PrettyPrintGeojson"]!.GetValue<string>());
 	}
 
 	/// <summary>With no config file yet there is nothing to back up, and the new file is still written.</summary>
@@ -414,7 +417,7 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Equal(Beta3File, File.ReadAllText(UserConfigFile.BroughtForwardFilePath(1)));
 		Assert.False(File.Exists(UserConfigFile.PreviousFilePath));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Info && e.Message.Contains(
-			"Brought the settings up from layout 1 to layout 2: Moved the facility's ARTCC under General. The file as it was is kept as 'UserConfig.v1.json'.",
+			"Brought the settings up from layout 1 to layout 2: Moved the facility's ARTCC under General. The file as it was is kept as 'UserConfig-v1.Default.json'.",
 			StringComparison.Ordinal));
 
 		// Read again: already in the current layout, so nothing more happens.
@@ -437,7 +440,7 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Equal("ZOB", UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
 		Assert.Equal(Beta3File, File.ReadAllText(UserConfigFile.ConfigFilePath));
 		Assert.False(File.Exists(UserConfigFile.BroughtForwardFilePath(1)));
-		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not bring the settings in 'UserConfig.json' up from layout 1 to layout 2", StringComparison.Ordinal));
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not bring the settings in 'UserConfig.Default.json' up from layout 1 to layout 2", StringComparison.Ordinal));
 
 		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
 		UserConfigFile.Save(AirwaysNode);
@@ -482,7 +485,7 @@ public sealed class UserConfigFileTests : IDisposable
 		}
 
 		Assert.Equal(2, Stamp(UserConfigFile.ConfigFilePath));
-		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not delete 'UserConfig.previous.json'", StringComparison.Ordinal));
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not delete 'UserConfig-previous.Default.json'", StringComparison.Ordinal));
 	}
 
 	/// <summary>A file a newer FE-Buddy saved keeps its stamp, so going back to the newer one never brings its own settings forward again.</summary>

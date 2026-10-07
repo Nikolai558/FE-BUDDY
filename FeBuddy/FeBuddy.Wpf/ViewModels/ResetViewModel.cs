@@ -30,23 +30,23 @@ public sealed class ResetViewModel : ObservableObject
 
 	/// <summary>What deleting the settings loses.</summary>
 	public const string SettingsLoss =
-		"Your output folder and facility, the default Region of Interest, every AIRAC Service tab's " +
-		"choices (CRC ERAM defaults and file names included), your custom alias files, the File " +
-		"Conversions' folders and options, the Map's files and layers, your update channel, which " +
-		"GitHub token FE-Buddy uses, and which News posts you have read. FE-Buddy starts with its defaults.";
+		"Every settings profile - your output folder and facility, the default Region of Interest, every " +
+		"AIRAC Service tab's choices (CRC ERAM defaults and file names included), your custom alias files, " +
+		"the File Conversions' folders and options, the Map's files and layers - and your update channel, " +
+		"which GitHub token FE-Buddy uses, and which News posts you have read. FE-Buddy starts with its defaults.";
 
 	/// <summary>How the saved copy is used, shown under the Save a copy first box.</summary>
 	public const string CopyNote =
-		"You choose where (the Desktop, to start with). Settings ▸ Import… brings it back, all but " +
-		"this PC's own choices: the update channel, the GitHub token, the credential for each web " +
-		"address and which News posts you have read.";
+		"You choose where (the Desktop, to start with); any other profile is saved beside it, its name in " +
+		"brackets. Settings ▸ Import… brings each back, all but this PC's own choices: the update channel, " +
+		"the GitHub token, the credential for each web address and which News posts you have read.";
 
 	private bool _keepSettings = true;
 	private bool _saveCopyFirst = true;
 	private bool _keepCredentials = true;
 
 	/// <summary>Creates the view-model.</summary>
-	/// <param name="hasSettings">Whether there are saved settings (<c>UserConfig.json</c>) to keep or delete.</param>
+	/// <param name="hasSettings">Whether there are saved settings (a settings profile) to keep or delete.</param>
 	/// <param name="credentialCount">How many credentials are saved; with none, there is nothing to choose.</param>
 	/// <param name="unfinishedWork">What closing FE-Buddy now would lose (a running job, unsaved edits); empty when nothing.</param>
 	public ResetViewModel(bool hasSettings, int credentialCount, IReadOnlyList<string> unfinishedWork)
@@ -67,7 +67,7 @@ public sealed class ResetViewModel : ObservableObject
 	/// <summary>Whether there are saved settings to keep or delete.</summary>
 	public bool HasSettings { get; }
 
-	/// <summary>Keep <c>UserConfig.json</c>. The default.</summary>
+	/// <summary>Keep the settings profiles. The default.</summary>
 	public bool KeepSettings
 	{
 		get => _keepSettings;
@@ -82,7 +82,7 @@ public sealed class ResetViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>Delete <c>UserConfig.json</c>: the other side of <see cref="KeepSettings"/>, for the second radio button.</summary>
+	/// <summary>Delete the settings profiles: the other side of <see cref="KeepSettings"/>, for the second radio button.</summary>
 	public bool DeleteSettings
 	{
 		get => !KeepSettings;

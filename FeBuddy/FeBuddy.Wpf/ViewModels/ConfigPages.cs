@@ -1,10 +1,14 @@
+using FeBuddy.Wpf.Shell;
+
+using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Every <see cref="IConfigPage"/> built so far this session. A settings import uses it to warn
-/// about unsaved edits it would throw away, then to have each page re-read the imported file.
+/// Every <see cref="IConfigPage"/> built so far this session. A settings import, or a switch to
+/// another settings profile, uses it to warn about unsaved edits it would throw away, then to have
+/// each page re-read the settings.
 /// </summary>
 /// <remarks>
 /// Pages add themselves when they are built. They are held weakly, so a page nothing else keeps
@@ -49,12 +53,27 @@ public static class ConfigPages
 			}
 			catch (Exception ex)
 			{
-				AppLog.Warning("Settings", $"Could not reload '{page.ConfigPageName}' after the import: {ex.Message}");
+				AppLog.Warning("Settings", $"Could not reload '{page.ConfigPageName}' after the settings changed: {ex.Message}");
 				failed.Add(page.ConfigPageName);
 			}
 		}
 
 		return [.. failed.Distinct(StringComparer.Ordinal)];
+	}
+
+	/// <summary>
+	/// Has everything that read <c>UserConfig</c> read it again, after an import or a switch to another
+	/// settings profile: the app-wide GeoJSON options, every page (<see cref="ReloadAll"/>), the Map's
+	/// layers and the default ROI.
+	/// </summary>
+	/// <returns>The names of the pages that could not reload, as <see cref="ReloadAll"/> gives them.</returns>
+	public static IReadOnlyList<string> ReloadEverything()
+	{
+		OutputFormatting.LoadFromUserConfig();
+		IReadOnlyList<string> notReloaded = ReloadAll();
+		MapLayersState.ReloadFromConfigIfCreated();
+		DefaultRoiStore.NotifyReloaded();
+		return notReloaded;
 	}
 
 	private static List<IConfigPage> Live() =>

@@ -721,6 +721,138 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.Equal(Path.GetTempPath(), plan.Settings[DatFolderKey]);
 	}
 
+	// ============================ merge ============================
+
+	/// <summary>
+	/// Merging, the profile keeps every setting the file leaves out - folders too - and takes the
+	/// file's where both have one.
+	/// </summary>
+	[Fact]
+	public void merge_keeps_what_the_file_leaves_out_and_takes_what_it_has()
+	{
+		Dictionary<string, string> current = new()
+		{
+			[ArtccKey] = "ZNY",
+			["Services.AiracService.Fixes.OutputBy"] = "Use",
+			[UserConfigKeys.UpdateChannel] = "Beta",
+			[DatFolderKey] = @"E:\Dat",
+			[SctFolderKey] = @"E:\Sct",
+		};
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new()
+			{
+				[ArtccKey] = "ZOB",
+				["General.PrettyPrintGeojson"] = "Y",
+				[SctFolderKey] = @"D:\Sct",
+			}),
+			current,
+			Bob,
+			_ => true,
+			mode: UserConfigImportMode.Merge);
+
+		Assert.Equal(UserConfigImportMode.Merge, plan.Mode);
+		Assert.Equal("ZOB", plan.Settings[ArtccKey]);
+		Assert.Equal("Y", plan.Settings["General.PrettyPrintGeojson"]);
+		Assert.Equal("Use", plan.Settings["Services.AiracService.Fixes.OutputBy"]);
+		Assert.Equal("Beta", plan.Settings[UserConfigKeys.UpdateChannel]);
+		Assert.Equal(@"E:\Dat", plan.Settings[DatFolderKey]);
+		Assert.Equal(@"D:\Sct", plan.Settings[SctFolderKey]);
+		Assert.Equal(SctFolderKey, Assert.Single(plan.AppliedFolders).Key);
+
+		// ARTCC and the Sct folder changed, pretty print added.
+		Assert.Equal(3, plan.ChangedCount);
+	}
+
+	/// <summary>
+	/// A numbered list the file brings replaces the profile's whole list, so the profile's leftover
+	/// entries never mix with the file's - and the credential choice goes with an entry that changed.
+	/// </summary>
+	[Fact]
+	public void merge_takes_a_list_the_file_brings_whole()
+	{
+		const string Url3 = "Services.AiracService.ConcatenateAliases.Sources.3.Url";
+		const string Same = "https://github.com/vZOB/facility/blob/main/ZOB-Alias.txt";
+		const string Mine = "0f8fad5bd9cb469fa16570867728950e";
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new() { [Url1] = Same, [Url2] = "https://example.com/new.txt" }),
+			new Dictionary<string, string>
+			{
+				[Url1] = Same,
+				[Credential1] = Mine,
+				[Url2] = "https://example.com/old.txt",
+				[Credential2] = Mine,
+				[Url3] = "https://example.com/third.txt",
+			},
+			Bob,
+			_ => true,
+			mode: UserConfigImportMode.Merge);
+
+		Assert.Equal(Same, plan.Settings[Url1]);
+		Assert.Equal(Mine, plan.Settings[Credential1]);
+		Assert.Equal("https://example.com/new.txt", plan.Settings[Url2]);
+		Assert.False(plan.Settings.ContainsKey(Credential2));
+		Assert.False(plan.Settings.ContainsKey(Url3));
+	}
+
+	/// <summary>A profile setting the file's would nest under, or that would nest under the file's, makes way for the file's.</summary>
+	[Fact]
+	public void merge_drops_a_profile_setting_the_files_would_overwrite()
+	{
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new() { ["General.Thing"] = "file", ["General.Other.Leaf"] = "file" }),
+			new Dictionary<string, string> { ["General.Thing.Sub"] = "mine", ["General.Other"] = "mine", [ArtccKey] = "ZNY" },
+			Bob,
+			_ => true,
+			mode: UserConfigImportMode.Merge);
+
+		Assert.Equal("file", plan.Settings["General.Thing"]);
+		Assert.Equal("file", plan.Settings["General.Other.Leaf"]);
+		Assert.False(plan.Settings.ContainsKey("General.Thing.Sub"));
+		Assert.False(plan.Settings.ContainsKey("General.Other"));
+		Assert.Equal("ZNY", plan.Settings[ArtccKey]);
+	}
+
+	/// <summary>The public overload merges into the profile in use, and applying it writes the merge.</summary>
+	[Fact]
+	public void merge_of_the_live_config_writes_both()
+	{
+		UserConfigFile.TrySetValue(ArtccKey, "ZNY");
+		UserConfigFile.TrySetValue(CycleKey, "2609");
+		UserConfigFile.Write();
+
+		UserConfigTransfer.Apply(UserConfigTransfer.Plan(Package(new() { [ArtccKey] = "ZOB", ["General.PrettyPrintGeojson"] = "Y" }), UserConfigImportMode.Merge));
+
+		Assert.Equal("ZOB", UserConfigFile.GetValue(ArtccKey));
+		Assert.Equal("Y", UserConfigFile.GetValue("General.PrettyPrintGeojson"));
+		Assert.Equal("2609", UserConfigFile.GetValue(CycleKey));
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Imported settings from 'test.json' into profile 'Default' (Merge)", StringComparison.Ordinal));
+	}
+
+	// ============================ a new profile ============================
+
+	/// <summary>An import as a new profile writes it and puts it to use, leaving the profile that was in use as it was.</summary>
+	[Fact]
+	public void apply_as_a_new_profile_leaves_the_old_one_alone()
+	{
+		UserConfigFile.TrySetValue(ArtccKey, "ZNY");
+		UserConfigFile.TrySetValue(UserConfigKeys.UpdateChannel, "Beta");
+		UserConfigFile.Write();
+		string before = File.ReadAllText(UserConfigFile.ConfigFilePath);
+
+		UserConfigTransfer.ApplyAsNewProfile(UserConfigTransfer.Plan(Package(new() { [ArtccKey] = "ZOB" })), "ZOB");
+
+		Assert.Equal("ZOB", UserConfigFile.ActiveProfile);
+		Assert.Equal("ZOB", UserConfigFile.GetValue(ArtccKey));
+		Assert.Equal("Beta", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+		Assert.Equal(before, File.ReadAllText(UserConfigFile.ProfileFilePath("Default")));
+		Assert.Contains(AppLog.Entries, e => e.Message == "Imported settings from 'test.json' as the new profile 'ZOB'.");
+
+		Assert.Throws<ArgumentException>(() => UserConfigTransfer.ApplyAsNewProfile(UserConfigTransfer.Plan(Package(new() { [ArtccKey] = "ZAU" })), "zob"));
+		Assert.Equal("ZOB", UserConfigFile.GetValue(ArtccKey));
+	}
+
 	// ============================ apply ============================
 
 	/// <summary>Applying writes the planned settings to disk and keeps the replaced file.</summary>
@@ -782,7 +914,7 @@ public sealed class UserConfigTransferTests : IDisposable
 		}
 
 		Assert.Equal("ZOB", UserConfigFile.GetValue(ArtccKey));
-		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Could not delete 'UserConfig.previous.json'", StringComparison.Ordinal));
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Could not delete 'UserConfig-previous.Default.json'", StringComparison.Ordinal));
 	}
 
 	/// <summary>A second import keeps the file from just before it, replacing the first import's backup.</summary>
@@ -817,9 +949,20 @@ public sealed class UserConfigTransferTests : IDisposable
 		UserConfigFile.TrySetValue(ArtccKey, "ZOB");
 		UserConfigFile.Write();
 
-		foreach (string own in new[] { UserConfigFile.ConfigFilePath, UserConfigFile.PreviousFilePath, UserConfigFile.BeforeImportFilePath })
+		string[] own =
+		[
+			UserConfigFile.ConfigFilePath,
+			UserConfigFile.PreviousFilePath,
+			UserConfigFile.BeforeImportFilePath,
+			UserConfigFile.SharedFilePath,
+			UserConfigFile.ProfileFilePath("Another"),
+			Path.Combine(UserConfigFile.Directory, "anything.json"),
+			Path.Combine(_directory, "config", UserConfigFile.LegacyConfigFileName),
+		];
+
+		foreach (string path in own)
 		{
-			UserConfigTransferException ex = Assert.Throws<UserConfigTransferException>(() => UserConfigTransfer.Export(own.ToUpperInvariant()));
+			UserConfigTransferException ex = Assert.Throws<UserConfigTransferException>(() => UserConfigTransfer.Export(path.ToUpperInvariant()));
 			Assert.EndsWith("is one of FE-Buddy's own settings files. Export to a different file.", ex.Message, StringComparison.Ordinal);
 		}
 

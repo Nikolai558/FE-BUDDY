@@ -423,9 +423,13 @@ A map for checking GeoJSON files and setting your Region of Interest. **Set ROI�
 
 Press **Save** at the top to keep your changes (credentials save at once). **Export…** and
 **Import…** share your setup, leaving out this PC's own (update channel, credentials, which News
-you've read). An import shows what will change first and keeps your old settings as
-`UserConfig.before-import.json`.
+you've read). An import asks where the settings go - a new profile, added to the profile in use, or
+in place of its settings - and shows what will change first.
 
+- **Settings Profile** - a profile is a whole set of settings: keep one for each facility, or one
+  for testing. Choose one in the list to switch to it; **New…** makes one (a copy of the profile in
+  use, or every default), **Rename…** and **Delete…** act on the one in use. The update channel,
+  which News you've read and FE-Buddy's GitHub token are the same in every profile.
 - **Facility Profile** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first
   in reports), and the **Default Output Directory** (the Desktop to start, with a `FE-Buddy_Output`
   folder inside unless you untick it).

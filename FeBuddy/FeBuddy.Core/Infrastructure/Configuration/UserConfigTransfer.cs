@@ -33,14 +33,14 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// update channel and the like), which is never touched - a setting in the file that would nest
 /// under one of these, or they under it, is ignored; this PC's folder wherever the file's folder
 /// cannot work here (a custom alias file that is not on this PC is left out instead;
-/// <see cref="Plan(UserConfigPackage)"/> says which); and this PC's
+/// <see cref="Plan(UserConfigPackage, UserConfigImportMode)"/> says which); and this PC's
 /// credential choice for a setting the import leaves unchanged - a custom alias file at the same
 /// address keeps its credential, any other loses it. Folders are made this user's
 /// (<see cref="PortablePathTokens.Localize(string)"/>), so the other user's name is never
 /// imported. A plain <c>UserConfig.json</c> copied from another PC imports the same way.
 /// </para>
 /// <para>
-/// Import is two steps so the user sees what will happen first: <see cref="Plan(UserConfigPackage)"/>
+/// Import is two steps so the user sees what will happen first: <see cref="Plan(UserConfigPackage, UserConfigImportMode)"/>
 /// works it out without writing anything, and <see cref="Apply(UserConfigImportPlan)"/> writes it.
 /// </para>
 /// </remarks>
@@ -83,11 +83,8 @@ public static class UserConfigTransfer
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
-		// An export over UserConfig.json would turn the live settings into an export file.
-		string target = Path.GetFullPath(path);
-		string[] ownFiles = [UserConfigFile.ConfigFilePath, UserConfigFile.PreviousFilePath, UserConfigFile.BeforeImportFilePath];
-
-		if (ownFiles.Any(own => string.Equals(Path.GetFullPath(own), target, StringComparison.OrdinalIgnoreCase)))
+		// An export over a profile would turn live settings into an export file.
+		if (IsOwnSettingsFile(path))
 		{
 			throw new UserConfigTransferException($"'{Path.GetFileName(path)}' is one of FE-Buddy's own settings files. Export to a different file.");
 		}
@@ -287,9 +284,10 @@ public static class UserConfigTransfer
 
 	/// <summary>Works out what importing <paramref name="package"/> would do to this PC's settings, without writing anything.</summary>
 	/// <param name="package">A file read by <see cref="Read(string)"/>.</param>
-	/// <returns>The import, ready for <see cref="Apply(UserConfigImportPlan)"/>.</returns>
-	public static UserConfigImportPlan Plan(UserConfigPackage package) =>
-		Plan(package, UserConfigFile.SnapshotValues(), PortablePathTokens.ForCurrentUser(), Directory.Exists, File.Exists);
+	/// <param name="mode">Whether the file's settings replace the profile's or merge into them.</param>
+	/// <returns>The import, ready for <see cref="Apply(UserConfigImportPlan)"/> or <see cref="ApplyAsNewProfile"/>.</returns>
+	public static UserConfigImportPlan Plan(UserConfigPackage package, UserConfigImportMode mode = UserConfigImportMode.Replace) =>
+		Plan(package, UserConfigFile.SnapshotValues(), PortablePathTokens.ForCurrentUser(), Directory.Exists, File.Exists, mode);
 
 	/// <summary>Works out an import against <paramref name="current"/>. The public overload passes this PC's.</summary>
 	/// <param name="package">The file being imported.</param>
@@ -297,13 +295,15 @@ public static class UserConfigTransfer
 	/// <param name="tokens">How to expand the file's folder tokens.</param>
 	/// <param name="directoryExists">Whether a folder exists on this PC.</param>
 	/// <param name="fileExists">Whether a file exists on this PC; <see langword="null"/> uses <see cref="File.Exists(string)"/>.</param>
+	/// <param name="mode">Whether the file's settings replace the profile's or merge into them.</param>
 	/// <returns>The import.</returns>
 	internal static UserConfigImportPlan Plan(
 		UserConfigPackage package,
 		IReadOnlyDictionary<string, string> current,
 		PortablePathTokens tokens,
 		Func<string, bool> directoryExists,
-		Func<string, bool>? fileExists = null)
+		Func<string, bool>? fileExists = null,
+		UserConfigImportMode mode = UserConfigImportMode.Replace)
 	{
 		ArgumentNullException.ThrowIfNull(package);
 
@@ -311,6 +311,7 @@ public static class UserConfigTransfer
 		List<ImportedFolder> applied = [];
 		List<ImportedFolder> skipped = [];
 		List<string> ignored = [];
+		bool merge = mode == UserConfigImportMode.Merge;
 
 		// Start from what only this PC has; everything else, folders included, comes from the file.
 		foreach (KeyValuePair<string, string> entry in current)
@@ -323,9 +324,28 @@ public static class UserConfigTransfer
 
 		HashSet<string> keptForPc = [.. settings.Keys];
 
-		// A folder the file leaves out is cleared like any other setting, so this PC's folders are walked too.
+		if (merge)
+		{
+			// Merging, the profile's own settings stay too - but not a list the file brings a whole new copy
+			// of, nor one that would nest under one of the file's settings, or it under them.
+			HashSet<string> listsInFile = [.. package.Values.Keys.Select(ListOf).OfType<string>()];
+			HashSet<string> fileKeys = [.. package.Values.Keys];
+
+			foreach (KeyValuePair<string, string> entry in current)
+			{
+				if (UserConfigPortability.Classify(entry.Key) is ConfigKeyScope.Shared or ConfigKeyScope.MachinePath
+					&& (ListOf(entry.Key) is not { } list || !listsInFile.Contains(list))
+					&& !Overlaps(entry.Key, fileKeys))
+				{
+					settings[entry.Key] = entry.Value;
+				}
+			}
+		}
+
+		// A folder the file leaves out is cleared like any other setting, so this PC's folders are walked
+		// too - unless merging, which keeps them as they are.
 		SortedSet<string> folderKeys = new(
-			current.Keys.Where(key => UserConfigPortability.Classify(key) == ConfigKeyScope.MachinePath),
+			merge ? [] : current.Keys.Where(key => UserConfigPortability.Classify(key) == ConfigKeyScope.MachinePath),
 			StringComparer.Ordinal);
 
 		foreach (KeyValuePair<string, string> entry in package.Values.OrderBy(e => e.Key, StringComparer.Ordinal))
@@ -384,10 +404,13 @@ public static class UserConfigTransfer
 				.Distinct(StringComparer.Ordinal),
 		];
 
-		return new UserConfigImportPlan(package, settings, changed, applied, skipped, keptForThisPc, ignored);
+		return new UserConfigImportPlan(package, settings, changed, applied, skipped, keptForThisPc, ignored) { Mode = mode };
 	}
 
-	/// <summary>Writes an import worked out by <see cref="Plan(UserConfigPackage)"/>, keeping the replaced file as <see cref="UserConfigFile.BeforeImportFilePath"/>.</summary>
+	/// <summary>
+	/// Writes an import worked out by <see cref="Plan(UserConfigPackage, UserConfigImportMode)"/> into the
+	/// profile in use, keeping the replaced file as <see cref="UserConfigFile.BeforeImportFilePath"/>.
+	/// </summary>
 	/// <param name="plan">The import.</param>
 	public static void Apply(UserConfigImportPlan plan)
 	{
@@ -397,8 +420,57 @@ public static class UserConfigTransfer
 
 		AppLog.Info(
 			LogSource,
-			$"Imported settings from '{plan.Package.FileName}': {plan.ChangedCount} changed, "
+			$"Imported settings from '{plan.Package.FileName}' into profile '{UserConfigFile.ActiveProfile}' ({plan.Mode}): {plan.ChangedCount} changed, "
 			+ $"{plan.AppliedFolders.Count} folders taken, {plan.SkippedFolders.Count} folders or files not taken, {plan.IgnoredKeys.Count} entries ignored.");
+	}
+
+	/// <summary>
+	/// Writes an import (planned to replace) into a new profile of its own, and puts that profile to
+	/// use. The profile that was in use is left as it is.
+	/// </summary>
+	/// <param name="plan">The import, planned with <see cref="UserConfigImportMode.Replace"/>.</param>
+	/// <param name="profile">The new profile's name.</param>
+	/// <exception cref="ArgumentException">The name can't be used, or another profile has it.</exception>
+	/// <exception cref="IOException">The profile could not be written or put to use.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	public static void ApplyAsNewProfile(UserConfigImportPlan plan, string profile)
+	{
+		ArgumentNullException.ThrowIfNull(plan);
+
+		UserConfigFile.CreateProfile(profile, plan.Settings);
+		UserConfigFile.SwitchProfile(profile);
+
+		AppLog.Info(LogSource, $"Imported settings from '{plan.Package.FileName}' as the new profile '{UserConfigFile.ActiveProfile}'.");
+	}
+
+	/// <summary>Whether <paramref name="path"/> is one of FE-Buddy's own settings files: a profile, a backup, or the shared file.</summary>
+	private static bool IsOwnSettingsFile(string path)
+	{
+		string target = Path.GetFullPath(path);
+		string folder = Path.GetFullPath(UserConfigFile.Directory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+		string legacy = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(folder.TrimEnd(Path.DirectorySeparatorChar))!, UserConfigFile.LegacyConfigFileName));
+
+		return target.StartsWith(folder, StringComparison.OrdinalIgnoreCase)
+			|| string.Equals(target, legacy, StringComparison.OrdinalIgnoreCase);
+	}
+
+	/// <summary>
+	/// The numbered list <paramref name="key"/> is an entry of - <c>...ConcatenateAliases.Sources</c> for
+	/// <c>...ConcatenateAliases.Sources.2.FilePath</c> - or <see langword="null"/> when it is in none.
+	/// </summary>
+	private static string? ListOf(string key)
+	{
+		string[] segments = key.Split('.');
+
+		for (int i = 1; i < segments.Length; i++)
+		{
+			if (segments[i].Length > 0 && segments[i].All(char.IsAsciiDigit))
+			{
+				return string.Join('.', segments[..i]);
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>

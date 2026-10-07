@@ -38,6 +38,8 @@
                     <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Prose}"
                                Margin="0,0,0,6"
                                Visibility="{Binding Note, Converter={StaticResource StringToVis}}" />
+                    <!-- the tab's What You'll Get summary, the same lines as on the tab -->
+                    <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,0,0,4" />
                     <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource ReviewRow}" />
                 </StackPanel>
             </ctl:Card>

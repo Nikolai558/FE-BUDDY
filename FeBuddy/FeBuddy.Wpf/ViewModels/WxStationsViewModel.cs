@@ -136,7 +136,16 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
-		return [new ServicePreviewSection("Wx Stations", rows)];
+		return [new ServicePreviewSection("Wx Stations", rows) { WhatYoullGet = WhatYoullGet }];
+	}
+
+	/// <inheritdoc />
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
+			.Add(SummaryJoin.First, "every US and US-territory station that reports METARs")
+			.Add(SummaryJoin.And, RegionLine("inside the region"))
+			.ToList());
 	}
 
 	// ================= save contract =================

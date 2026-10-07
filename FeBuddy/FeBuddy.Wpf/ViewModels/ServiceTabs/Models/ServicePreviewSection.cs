@@ -4,4 +4,8 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 /// <param name="Title">The group heading, usually the tab's title.</param>
 /// <param name="Rows">The rows, in display order.</param>
 /// <param name="Note">Optional line under the heading, e.g. why a tab contributes nothing.</param>
-public sealed record ServicePreviewSection(string Title, IReadOnlyList<ServicePreviewRow> Rows, string? Note = null);
+public sealed record ServicePreviewSection(string Title, IReadOnlyList<ServicePreviewRow> Rows, string? Note = null)
+{
+	/// <summary>The tab's "What You'll Get" summary, shown above the rows; empty for a tab with none.</summary>
+	public IReadOnlyList<SummaryBlock> WhatYoullGet { get; init; } = [];
+}

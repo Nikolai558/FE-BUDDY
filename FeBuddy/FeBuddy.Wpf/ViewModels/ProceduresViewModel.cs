@@ -647,18 +647,75 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("Documents", DescribeDocuments()),
-			new ServicePreviewRow("Alias file",
-				GenerateAliasFile ? $"{ProcedureOutputFiles.Alias}, every chart at every airport in the d-TPP metafile - the choices below never limit it" : "No"),
-			new ServicePreviewRow("Facilities", DescribeFacilities()),
-			new ServicePreviewRow("Airports", Airports.Count > 0 ? string.Join(", ", Airports) : "None"),
-			new ServicePreviewRow("Procedures", ProcedureNames.Count > 0 ? string.Join(", ", ProcedureNames) : "None"),
-			new ServicePreviewRow("Airport + procedure", AirportProcedures.Count > 0 ? string.Join(", ", AirportProcedures.Select(p => p.Label)) : "None"),
-			new ServicePreviewRow("Chart types", DescribeChartTypes()),
-			new ServicePreviewRow("Region of interest", _includeRoiAirports ? $"Used for airport inclusion — {DescribeRoi()}" : "Not used for airport inclusion"),
+			new ServicePreviewRow("Facilities listed first", DescribePrimaryFacility()),
+			new ServicePreviewRow("Region of interest", _includeRoiAirports ? DescribeRoi() : "Not used"),
 			new ServicePreviewRow("d-TPP data", DtppStatus),
 		];
 
-		return [new ServicePreviewSection("Procedures", rows)];
+		return [new ServicePreviewSection("Procedures", rows) { WhatYoullGet = WhatYoullGet }];
+	}
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// Unlike every other tab, the documents' airports come in several ways at once - the
+	/// facilities, the airports listed, the region - any of which brings an airport in; the chart
+	/// types then narrow what a whole airport gives, and procedures picked by name are added on
+	/// top. The alias file never follows any of it.
+	/// </remarks>
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		string[] facilities = [.. SelectedFacilityIds()];
+		string[] airports = [.. Airports];
+		string[] chartTypes = [.. ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)];
+		string[] names = [.. ProcedureNames];
+		string[] pairs = [.. AirportProcedures.Select(p => p.Label)];
+
+		List<string> airportsIn = [];
+
+		if (facilities.Length > 0)
+		{
+			airportsIn.Add($"at airports in {SummaryLines.Join(facilities, "or")}");
+		}
+
+		if (airports.Length > 0)
+		{
+			airportsIn.Add(airports.Length <= 6 ? $"at {SummaryLines.Join(airports, "or")}" : $"at the {airports.Length} airports you listed");
+		}
+
+		if (_includeRoiAirports && RegionLine("at an airport inside the region") is { } region)
+		{
+			airportsIn.Add(region);
+		}
+
+		SummaryLines documents = new();
+
+		for (int i = 0; i < airportsIn.Count; i++)
+		{
+			documents.Add(SummaryJoin.Or, i == 0 ? $"every chart {airportsIn[0]}" : airportsIn[i]);
+		}
+
+		if (airportsIn.Count > 0)
+		{
+			documents.Add(SummaryJoin.And, chartTypes.Length > 0 ? $"of these types: {SummaryLines.Join(chartTypes, "and")}" : "of no type yet: tick a chart type");
+		}
+
+		documents.Add(SummaryJoin.Plus, names.Length > 0
+			? $"{SummaryLines.Join(names, "and")}, wherever {(names.Length == 1 ? "it's" : "they're")} published"
+			: null);
+		documents.Add(SummaryJoin.Plus, pairs.Length > 0 ? SummaryLines.Join(pairs, "and") : null);
+
+		if (airportsIn.Count == 0 && names.Length == 0 && pairs.Length == 0)
+		{
+			documents.Add(SummaryJoin.First, "nothing yet: pick a facility, an airport or a procedure");
+		}
+
+		documents.Add(SummaryJoin.And, GenerateChangesDocument ? "in Procedure_Changes.md, only those added, changed or deleted this cycle" : null);
+
+		yield return new SummaryBlock(SubServiceOutputKinds.ProcedureChanges | SubServiceOutputKinds.ProceduresJson, documents.ToList());
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
+			.Add(SummaryJoin.First, "every chart at every airport in the d-TPP metafile, whatever you pick for the documents")
+			.ToList());
 	}
 
 	// ================= save contract =================
@@ -1220,26 +1277,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		return docs.Count > 0 ? string.Join(", ", docs) : "None";
 	}
 
-	private string DescribeFacilities()
-	{
-		string[] selected = [.. SelectedFacilityIds()];
-
-		if (selected.Length == 0)
-		{
-			return "None";
-		}
-
-		string? primary = NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey));
-		string list = string.Join(", ", selected);
-
-		return primary is null ? list : $"{list} ({primary} listed first)";
-	}
-
-	private string DescribeChartTypes()
-	{
-		string[] selected = [.. ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)];
-		return selected.Length > 0 ? string.Join(", ", selected) : "None";
-	}
+	/// <summary>Which facility the documents list first: the user's own, from Settings ▸ Facility Profile.</summary>
+	private static string DescribePrimaryFacility() =>
+		NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey)) is { } primary
+			? $"{primary} (Settings ▸ Facility Profile), then the rest alphabetically"
+			: "Alphabetically (no facility set in Settings ▸ Facility Profile)";
 
 	/// <summary>What Add does with one entry in the Airports card's Add box.</summary>
 	private enum AirportEntryOutcome

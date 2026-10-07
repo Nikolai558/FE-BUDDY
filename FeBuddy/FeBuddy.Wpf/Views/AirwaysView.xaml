@@ -24,6 +24,9 @@
 
             <cards:AttentionCard />
 
+            <!-- ============ what the outputs get, every filter in one place ============ -->
+            <cards:SummaryCard />
+
             <!-- ============ outputs ============ -->
             <!-- The GeoJSON can be split two ways, and the alias file can cover every airway or just the ROI's.
                  The split choices come from x:Static, as the strata do (bug #251). -->

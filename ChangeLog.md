@@ -39,6 +39,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   The Region of Interest card on Departures and Arrivals stays active with GeoJSON off, since it
   narrows their alias file too; on NAVAIDs it now greys out, since it never touches the alias file.
   On Airports, Airways and NAVAIDs it says what the region does to each file.
+- Feature #314 - Each sub-service tab starts with a **What You'll Get** card: what its files will
+  hold, one filter per line, joined by AND, OR or PLUS (for example, "SIDs and obstacle departures
+  AND in ZOB AND amended in the last 4 cycles"). It follows your settings as you change them, and
+  Preview Settings shows the same lines for each tab.
 
 ### Settings
 - Feature #324 - You no longer need to uninstall FE-Buddy between versions: settings saved by beta.2

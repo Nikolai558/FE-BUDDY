@@ -22,6 +22,9 @@
 
             <cards:AttentionCard />
 
+            <!-- ============ what the outputs get, every filter in one place ============ -->
+            <cards:SummaryCard />
+
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
                                AliasDescription="Writes one alias command per airport FAA ID, and one more for an airport whose ICAO ID is different." />

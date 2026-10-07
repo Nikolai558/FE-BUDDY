@@ -251,6 +251,15 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <remarks>With neither, the run covers everything.</remarks>
 	public bool HasRoi => OverrideRoi || DefaultRoiStore.Load() is not null;
 
+	/// <summary>
+	/// A "What You'll Get" line about the region of interest - what it keeps, and whose region it
+	/// is - or <see langword="null"/> while there is no region, so nothing is left out.
+	/// </summary>
+	/// <param name="keeps">What the region keeps, e.g. <c>at an airport inside the region</c>.</param>
+	/// <returns>e.g. <c>at an airport inside the region (your default ROI)</c>.</returns>
+	protected string? RegionLine(string keeps) =>
+		HasRoi ? $"{keeps} ({(OverrideRoi ? "this tab's own ROI" : "your default ROI")})" : null;
+
 	/// <inheritdoc />
 	public ICommand PickRoiOnMapCommand { get; }
 
@@ -740,6 +749,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		OnPropertyChanged(nameof(RoiFallbackHint));
 		OnPropertyChanged(nameof(HasRoi));
+		RaiseWhatYoullGetChanged();
 	}
 
 	private void OnOutputsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnOutputsChanged();

@@ -195,19 +195,27 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
-		string[] selectedLocations = [.. SelectedLocationIds()];
-
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
-			new ServicePreviewRow("ARTCCs", selectedLocations.Length > 0 ? string.Join(", ", selectedLocations) : "Every ARTCC"),
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", HasRoi ? $"{DescribeRoi()}; lines are clipped at its edge" : DescribeRoi()),
+			new ServicePreviewRow("Region of interest", DescribeRoi()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
-		return [new ServicePreviewSection("ARTCC Boundaries", rows)];
+		return [new ServicePreviewSection("ARTCC Boundaries", rows) { WhatYoullGet = WhatYoullGet }];
+	}
+
+	/// <inheritdoc />
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		string[] artccs = [.. SelectedLocationIds()];
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
+			.Add(SummaryJoin.First, artccs.Length == 0 ? "every ARTCC's boundary" : $"the boundaries of {SummaryLines.Join(artccs, "and")}")
+			.Add(SummaryJoin.And, RegionLine("cut off at the region's edge"))
+			.ToList());
 	}
 
 	// ================= save contract =================

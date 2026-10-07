@@ -47,6 +47,10 @@ Each card's title row tags the files its settings change: **Alias**, **GeoJSON**
 columns. A tag is struck through while that file is off, and a card whose files are all off is
 greyed out. Where a card changes two files differently, a line for each says how.
 
+Each sub-service tab but Concatenate Aliases starts with **What You'll Get**: what its files will
+hold, one filter per line. **AND** narrows the lines above, **OR** is another way in, and **PLUS**
+adds to them whatever they say. Where its files get different things, each file has its own lines.
+
 ### Saving
 
 Each tab saves on its own: **Save**, **Undo all changes** (drops unsaved edits) and **Undo last
@@ -278,10 +282,10 @@ Every file the run will write, by folder, following the other tabs' settings.
 
 ### Preview Settings tab
 
-What the run will do, tab by tab. A red tab blocks the run; unsaved changes are saved first (you're
-asked). **Run AIRAC Service** starts it. If the cycle's folder already has files, choose **Overwrite
-files** (other old files stay), **Delete all files** (emptied first, not to the Recycle Bin) or
-**Cancel**.
+What the run will do, tab by tab, each starting with its What You'll Get lines. A red tab blocks
+the run; unsaved changes are saved first (you're asked). **Run AIRAC Service** starts it. If the
+cycle's folder already has files, choose **Overwrite files** (other old files stay), **Delete all
+files** (emptied first, not to the Recycle Bin) or **Cancel**.
 
 ### Review tab
 

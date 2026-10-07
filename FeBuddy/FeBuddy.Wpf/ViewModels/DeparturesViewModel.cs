@@ -289,21 +289,33 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		if (EmitSymbols) geojsonFiles.Add("Symbols");
 		if (EmitText) geojsonFiles.Add("Text");
 
-		// Before a cycle is parsed the toggle list is empty; SelectedArtccs falls back to what
-		// is saved, so the preview does not claim "All" when a filter is on disk.
-		string[] selectedArtccs = [.. SelectedArtccs()];
-
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
 			new ServicePreviewRow("GeoJSON files", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Includes", DescribeScope(selectedArtccs)),
-			new ServicePreviewRow("Region of interest", DescribeRegion()),
+			new ServicePreviewRow("Region of interest", DescribeRoi()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
-		return [new ServicePreviewSection("Departures", rows)];
+		return [new ServicePreviewSection("Departures", rows) { WhatYoullGet = WhatYoullGet }];
+	}
+
+	/// <inheritdoc />
+	/// <remarks>The filters narrow the alias file and the GeoJSON alike, so there is one block.</remarks>
+	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
+	{
+		// Before a cycle is parsed the toggle list is empty; SelectedArtccs falls back to what is saved.
+		string[] artccs = [.. SelectedArtccs()];
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson, new SummaryLines()
+			.Add(SummaryJoin.First, IncludeObstacleDepartures ? "SIDs and obstacle departures" : "SIDs only, no obstacle departures")
+			.Add(SummaryJoin.And, artccs.Length == 0 ? "in every ARTCC" : $"in {SummaryLines.Join(artccs, "or")}")
+			.Add(SummaryJoin.And, DescribeAmendmentFilter().TrimStart(',', ' '))
+			.Add(SummaryJoin.And, RegionLine(_roiMode == DepartureRoiMode.Waypoint
+				? "with at least one point inside the region"
+				: "at an airport inside the region"))
+			.ToList());
 	}
 
 	// ================= save contract =================
@@ -510,57 +522,6 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		OnPropertyChanged(nameof(RoiModeAirport));
 		OnPropertyChanged(nameof(RoiModeWaypoint));
 		MarkDirty();
-	}
-
-	/// <summary>
-	/// One sentence saying what the run will actually cover once every filter is applied -
-	/// procedure type, ARTCCs and the region together - and which outputs that applies to.
-	/// </summary>
-	/// <param name="selectedArtccs">The ARTCCs ticked (or saved, before the cycle loads); empty for all.</param>
-	/// <returns>e.g. "SIDs only, for ZOB and ZNY, at airports inside the region. Applies to the GeoJSON files and the alias file."</returns>
-	private string DescribeScope(string[] selectedArtccs)
-	{
-		string kinds = IncludeObstacleDepartures ? "SIDs and obstacle departures" : "SIDs only (no obstacle departures)";
-
-		string where = selectedArtccs.Length switch
-		{
-			0 => "for every ARTCC",
-			1 => $"for {selectedArtccs[0]}",
-			_ => $"for {string.Join(", ", selectedArtccs[..^1])} and {selectedArtccs[^1]}",
-		};
-
-		string region = !HasRoi
-			? string.Empty
-			: _roiMode == DepartureRoiMode.Waypoint
-				? ", with at least one point inside the region"
-				: ", at airports inside the region";
-
-		string outputs = (GenerateGeojson, GenerateAliasFile) switch
-		{
-			(true, true) => " Applies to the GeoJSON files and the alias file.",
-			(true, false) => " Applies to the GeoJSON files.",
-			(false, true) => " Applies to the alias file.",
-			_ => string.Empty,
-		};
-
-		return $"{kinds}, {where}{region}{DescribeAmendmentFilter()}.{outputs}";
-	}
-
-	/// <summary>
-	/// Only the geographic limit, plus how the region selects procedures. What the run covers
-	/// overall - also narrowed by the ARTCC and procedure-type choices - is the "Includes" row's
-	/// job (<see cref="DescribeScope"/>).
-	/// </summary>
-	/// <returns>The region in use and its mode, or that there is none.</returns>
-	private string DescribeRegion()
-	{
-		if (!HasRoi)
-		{
-			return DescribeRoi();
-		}
-
-		string mode = _roiMode == DepartureRoiMode.Waypoint ? "any point inside" : "airports inside";
-		return $"{DescribeRoi()}; {mode}";
 	}
 
 	private void RaiseOwnSettingProperties()

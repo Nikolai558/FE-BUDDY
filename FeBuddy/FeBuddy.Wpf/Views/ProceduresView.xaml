@@ -29,6 +29,9 @@
 
             <cards:AttentionCard />
 
+            <!-- ============ what the outputs get, every filter in one place ============ -->
+            <cards:SummaryCard />
+
             <!-- ============ outputs ============ -->
             <ctl:Card Header="Outputs">
                 <StackPanel>

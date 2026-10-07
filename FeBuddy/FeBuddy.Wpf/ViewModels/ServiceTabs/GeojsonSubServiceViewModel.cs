@@ -5,6 +5,7 @@ using System.Windows.Input;
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Domain.Geo;
@@ -103,6 +104,13 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <inheritdoc />
 	/// <remarks>Turned on and off on the General tab. Always off for a sub-service with no GeoJSON choice.</remarks>
 	public virtual bool GenerateGeojson => _outputs.Geojson;
+
+	/// <inheritdoc />
+	public override SubServiceOutputKinds OutputsOn =>
+		(GenerateAliasFile ? SubServiceOutputKinds.Alias : SubServiceOutputKinds.None)
+		| (GenerateGeojson ? SubServiceOutputKinds.Geojson : SubServiceOutputKinds.None)
+		| (_outputs.ProcedureChanges ? SubServiceOutputKinds.ProcedureChanges : SubServiceOutputKinds.None)
+		| (_outputs.ProceduresJson ? SubServiceOutputKinds.ProceduresJson : SubServiceOutputKinds.None);
 
 	/// <summary>Takes the tab's outputs from the General tab's row for it, and follows them.</summary>
 	/// <param name="outputs">The row.</param>
@@ -292,6 +300,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		OnPropertyChanged(nameof(GenerateAliasFile));
 		OnPropertyChanged(nameof(GenerateGeojson));
 		OnPropertyChanged(nameof(WritesAliasFile));
+		OnPropertyChanged(nameof(OutputsOn));
 		RefreshOutputFiles();
 		Revalidate();
 	}

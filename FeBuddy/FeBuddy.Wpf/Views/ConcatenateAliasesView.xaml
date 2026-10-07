@@ -30,7 +30,7 @@
         <cards:AttentionCard />
 
         <!-- ============ combine ============ -->
-        <ctl:Card Header="Combine Alias Files">
+        <ctl:Card Header="Combine Alias Files" Outputs="Alias">
             <StackPanel>
                 <CheckBox Margin="0,4,0,0" IsChecked="{Binding CombineAliasFiles}" Content="Combine the alias files into one file for vNAS" />
                 <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,4,0,0"
@@ -40,7 +40,7 @@
         </ctl:Card>
 
         <!-- ============ FE-Buddy's alias files: what the other tabs put in ============ -->
-        <ctl:Card Header="FE-Buddy Alias Files">
+        <ctl:Card Header="FE-Buddy Alias Files" Outputs="Alias">
             <StackPanel>
                 <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -96,7 +96,7 @@
         </ctl:Card>
 
         <!-- ============ custom alias files ============ -->
-        <ctl:Card Header="Custom Alias Files" bhv:FieldState.Error="{Binding FieldErrors[CustomAliasFiles]}" IsEnabled="{Binding CombineAliasFiles}">
+        <ctl:Card Header="Custom Alias Files" Outputs="Alias" bhv:FieldState.Error="{Binding FieldErrors[CustomAliasFiles]}" IsEnabled="{Binding CombineAliasFiles}">
             <StackPanel>
                 <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"

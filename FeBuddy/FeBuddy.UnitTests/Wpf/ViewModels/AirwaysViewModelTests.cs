@@ -218,6 +218,46 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.False(tab.IsDirty);
 	}
 
+	/// <summary>The cards' output tags follow the General tab: the tab says which outputs are on, and says so again when one changes.</summary>
+	[Fact]
+	public void the_outputs_on_follow_the_general_tab()
+	{
+		AirwaysViewModel tab = NewTab("J");
+		Assert.Equal(OutputKinds.Every, tab.OutputsOn);
+
+		SubServiceRow row = new(AiracSubServices.All.Single(d => d.Key == AiracSubServices.AirwaysKey), () => { });
+		row.Load(included: true, SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson);
+		tab.AttachOutputs(row);
+		List<string?> changed = [];
+		tab.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+		Assert.Equal(SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson, tab.OutputsOn);
+
+		row.Geojson = false;
+
+		Assert.Equal(SubServiceOutputKinds.Alias, tab.OutputsOn);
+		Assert.Contains(nameof(AirwaysViewModel.OutputsOn), changed);
+	}
+
+	/// <summary>The region narrows the alias file only with ROI airways only, so its card tags the alias file only then.</summary>
+	[Fact]
+	public void the_region_card_tags_the_alias_file_only_with_roi_airways_only()
+	{
+		AirwaysViewModel tab = NewTab("J");
+		List<string?> changed = [];
+		tab.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+		Assert.Equal(SubServiceOutputKinds.Geojson, tab.RoiOutputs);
+		Assert.StartsWith("Every FAA airway.", tab.RoiAliasEffect, StringComparison.Ordinal);
+
+		tab.AliasRoiAirwaysOnly = true;
+
+		Assert.Equal(SubServiceOutputKinds.Geojson | SubServiceOutputKinds.Alias, tab.RoiOutputs);
+		Assert.Equal("Only the airways that cross the region, each with all of its waypoints.", tab.RoiAliasEffect);
+		Assert.Contains(nameof(AirwaysViewModel.RoiOutputs), changed);
+		Assert.Contains(nameof(AirwaysViewModel.RoiAliasEffect), changed);
+	}
+
 	/// <summary>An unknown saved split (a typo, or a number) falls back to High and Low files.</summary>
 	[Fact]
 	public void an_unknown_saved_split_loads_as_high_and_low()

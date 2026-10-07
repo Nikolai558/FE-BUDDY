@@ -25,7 +25,7 @@
             <cards:AttentionCard />
 
             <!-- ============ file layout ============ -->
-            <ctl:Card Header="File Layout">
+            <ctl:Card Header="File Layout" Outputs="Geojson">
                 <StackPanel>
                     <RadioButton GroupName="ArtccBoundaryOutputBy" Margin="0,4,0,0"
                                  Content="High and Low - ARTCC-Boundary_High_Lines / _Low_Lines; UNLIMITED lines go in both"
@@ -46,7 +46,7 @@
             <cards:FebPropertiesCard />
 
             <!-- ============ ARTCCs ============ -->
-            <ctl:Card Header="ARTCCs">
+            <ctl:Card Header="ARTCCs" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Pick the ARTCCs whose boundaries you want. Leave all unticked to include every one. Your facility from Settings ▸ Facility Profile is ticked until you first save this tab." />
@@ -71,7 +71,7 @@
             </ctl:Card>
 
             <!-- ============ antimeridian ============ -->
-            <ctl:Card Header="Split GeoJSON at the Antimeridian">
+            <ctl:Card Header="Split GeoJSON at the Antimeridian" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. ZAK, ZAN, ZAP and ZOA cross it. Leave this on unless a downstream tool needs the un-split geometry." />
@@ -80,7 +80,7 @@
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard>
+            <cards:RoiOverrideCard Outputs="Geojson">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
                                Text="The region clips the boundary lines at its edge." />

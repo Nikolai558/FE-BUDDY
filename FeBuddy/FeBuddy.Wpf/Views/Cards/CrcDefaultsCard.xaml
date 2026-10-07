@@ -39,7 +39,7 @@
              d:DesignWidth="900"
              x:Name="Self"
              Visibility="{Binding ShowsCrcDefaultsCard, Converter={StaticResource BoolToVis}}">
-    <ctl:Card Header="CRC ERAM Defaults" bhv:FieldState.Error="{Binding FieldErrors[CrcDefaults]}">
+    <ctl:Card Header="CRC ERAM Defaults" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[CrcDefaults]}">
         <StackPanel>
             <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding Note, ElementName=Self}" />
 

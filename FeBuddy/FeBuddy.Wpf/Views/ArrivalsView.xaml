@@ -29,17 +29,16 @@
                                AliasDescription="Writes one alias command per airport and procedure that draws the procedure's points." />
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
-                                    LinesDescription="One line feature per airport and procedure, shared segments drawn once."
+            <cards:GeojsonFilesCard LinesDescription="One line feature per airport and procedure, shared segments drawn once."
                                     SymbolsDescription="One symbol per point on the procedure."
                                     TextDescription="A label per point showing its identifier."
                                     Footnote="Files are written to `Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\` in the cycle's folder, next to that airport's departures, as &lt;airport&gt;_&lt;procedure&gt;_STAR_Lines/Symbols/Text.geojson." />
 
             <!-- ============ FE-Buddy properties ============ -->
-            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+            <cards:FebPropertiesCard />
 
             <!-- ============ procedures ============ -->
-            <ctl:Card Header="Procedures">
+            <ctl:Card Header="Procedures" Outputs="Alias, Geojson">
                 <StackPanel>
                     <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="ARTCCs" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
@@ -108,7 +107,7 @@
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard>
+            <cards:RoiOverrideCard Outputs="Alias, Geojson">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <StackPanel Margin="0,14,0,0" IsEnabled="{Binding HasRoi}">
                         <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="How the Region Selects Arrivals" />
@@ -116,8 +115,6 @@
                                      IsChecked="{Binding RoiModeAirport, Mode=TwoWay}" />
                         <RadioButton GroupName="ArrivalRoiMode" Content="Any arrival with a point inside the region" Margin="0,3,0,0"
                                      IsChecked="{Binding RoiModeWaypoint, Mode=TwoWay}" />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
-                                   Text="The region filters both the GeoJSON files and the alias file." />
                     </StackPanel>
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>

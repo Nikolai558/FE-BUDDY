@@ -34,11 +34,11 @@
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
                                Text="Turn these on or off on the General tab." />
-                    <cards:OutputStatusRow Label="Procedure_Changes.md" IsOn="{Binding GenerateChangesDocument}"
+                    <cards:OutputStatusRow Kind="ProcedureChanges" Label="Procedure_Changes.md" IsOn="{Binding GenerateChangesDocument}"
                                            Description="A briefing of every added, changed and deleted procedure at the airports you pick, grouped by facility, busiest airspace first, with links to the FAA's compare PDFs and charts." />
-                    <cards:OutputStatusRow Margin="0,12,0,0" Label="Procedures.json" IsOn="{Binding GenerateProceduresJson}"
+                    <cards:OutputStatusRow Margin="0,12,0,0" Kind="ProceduresJson" Label="Procedures.json" IsOn="{Binding GenerateProceduresJson}"
                                            Description="Every current chart at the airports you pick, with the fields chosen below." />
-                    <cards:OutputStatusRow Margin="0,12,0,10" Label="Alias file" IsOn="{Binding GenerateAliasFile}"
+                    <cards:OutputStatusRow Margin="0,12,0,10" Kind="Alias" Label="Faa_Chart_Recall.txt" IsOn="{Binding GenerateAliasFile}"
                                            Description="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile,&#xA;Ex: .dtwI22Lc for ILS OR LOC RWY 22L at DTW.&#xA;The choices below pick what the documents cover; they never limit the alias file." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -47,7 +47,7 @@
             </ctl:Card>
 
             <!-- ============ d-TPP data ============ -->
-            <ctl:Card Header="d-TPP Data">
+            <ctl:Card Header="d-TPP Data" Outputs="Alias, ProcedureChanges, ProceduresJson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -75,7 +75,7 @@
             </ctl:Card>
 
             <!-- ============ facilities ============ -->
-            <ctl:Card Header="Facilities" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Facilities" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include every airport these ARTCCs are responsible for." />
@@ -99,7 +99,7 @@
             </ctl:Card>
 
             <!-- ============ airports ============ -->
-            <ctl:Card Header="Airports" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Airports" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="{Binding Source={x:Static vm:ProceduresViewModel.MaxAirports}, StringFormat='Include every procedure at these airports, up to {0}. Type or paste FAA or ICAO IDs, separated by spaces, commas or new lines, then press Enter or Add.'}" />
@@ -151,7 +151,7 @@
             </ctl:Card>
 
             <!-- ============ procedures at any airport ============ -->
-            <ctl:Card Header="Procedures at Any Airport" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Procedures at Any Airport" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include a procedure wherever it appears, e.g. a STAR that serves several airports." />
@@ -203,7 +203,7 @@
             </ctl:Card>
 
             <!-- ============ airport + procedure ============ -->
-            <ctl:Card Header="Airport + Procedure" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Airport + Procedure" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include one procedure at one airport." />
@@ -270,7 +270,7 @@
             </ctl:Card>
 
             <!-- ============ chart types ============ -->
-            <ctl:Card Header="Chart Types" bhv:FieldState.Error="{Binding FieldErrors[ChartTypes]}" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Chart Types" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[ChartTypes]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -289,7 +289,7 @@
             </ctl:Card>
 
             <!-- ============ Procedures.json fields ============ -->
-            <ctl:Card Header="Procedures.json Fields" Visibility="{Binding GenerateProceduresJson, Converter={StaticResource BoolToVis}}">
+            <ctl:Card Header="Procedures.json Fields" Outputs="ProceduresJson" Visibility="{Binding GenerateProceduresJson, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Airport ID and procedure name are always included." />
@@ -307,7 +307,7 @@
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard IsEnabled="{Binding GeneratesDocument}">
+            <cards:RoiOverrideCard Outputs="ProcedureChanges, ProceduresJson">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"

@@ -36,6 +36,12 @@ public abstract class ServiceTabViewModel : ObservableObject
 	public virtual bool IsSetApart => false;
 
 	/// <summary>
+	/// Which of the sub-service's outputs are on (the General tab's table): what the output tags on
+	/// the tab's cards show as on or off. A tab with no outputs of its own has every output on.
+	/// </summary>
+	public virtual SubServiceOutputKinds OutputsOn => OutputKinds.Every;
+
+	/// <summary>
 	/// Per-field validation messages, keyed by the field key a view passes to
 	/// <c>FieldState.Error</c>. Bind as <c>{Binding FieldErrors[SwLat]}</c>.
 	/// </summary>

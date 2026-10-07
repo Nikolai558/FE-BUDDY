@@ -53,16 +53,15 @@
             </cards:OutputsCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
-                                    LinesDescription="One line feature per airway, running through its waypoints in order. Airway gaps resolved via a MultiLineString feature."
+            <cards:GeojsonFilesCard LinesDescription="One line feature per airway, running through its waypoints in order. Airway gaps resolved via a MultiLineString feature."
                                     SymbolsDescription="One symbol per waypoint, styled as a VOR, NDB or intersection. A waypoint shared by several airways is drawn once."
                                     TextDescription="A label per waypoint showing its identifier." />
 
             <!-- ============ FE-Buddy properties ============ -->
-            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+            <cards:FebPropertiesCard />
 
             <!-- ============ designations ============ -->
-            <ctl:Card Header="Designations to Include">
+            <ctl:Card Header="Designations to Include" Outputs="Alias, Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Every designation in the selected cycle, all on to start. Untick one to leave it out of everything." />
@@ -88,7 +87,7 @@
                  until the user picks one. Every row's label column is as wide as the longest
                  designation (a shared size group), so the drop-downs line up and sit close to
                  their labels. -->
-            <ctl:Card Header="High and Low Files" bhv:FieldState.Error="{Binding FieldErrors[HighAndLowFiles]}"
+            <ctl:Card Header="High and Low Files" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[HighAndLowFiles]}"
                       Visibility="{Binding ShowsStrata, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8" TextWrapping="Wrap"
@@ -120,7 +119,7 @@
             </ctl:Card>
 
             <!-- ============ buffer airway waypoints ============ -->
-            <ctl:Card Header="Buffer Airway Waypoints" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="Buffer Airway Waypoints" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Lines stop short of each waypoint so they don't run through the waypoint symbols." />
@@ -157,7 +156,7 @@
             </ctl:Card>
 
             <!-- ============ antimeridian ============ -->
-            <ctl:Card Header="Split GeoJSON at the Antimeridian" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="Split GeoJSON at the Antimeridian" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. Leave this on unless a downstream tool needs the un-split geometry." />
@@ -166,7 +165,16 @@
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard />
+            <!-- It narrows the alias file only with "ROI airways only" on the Outputs card, so the
+                 card tags the alias file only then (RoiOutputs). -->
+            <cards:RoiOverrideCard Outputs="{Binding RoiOutputs}">
+                <cards:RoiOverrideCard.AdditionalContent>
+                    <StackPanel Margin="0,10,0,0">
+                        <ctl:OutputLine Kind="Geojson" Text="Only the airways that cross the region, cut off at its edge." />
+                        <ctl:OutputLine Kind="Alias" Text="{Binding RoiAliasEffect}" />
+                    </StackPanel>
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard>

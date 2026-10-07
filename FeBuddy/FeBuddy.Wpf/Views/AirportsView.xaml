@@ -27,8 +27,7 @@
                                AliasDescription="Writes one alias command per airport FAA ID, and one more for an airport whose ICAO ID is different." />
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
-                                    LinesLabel="Runways — Lines"
+            <cards:GeojsonFilesCard LinesLabel="Runways — Lines"
                                     LinesDescription="One MultiLineString Feature per airport holding that airport's runway centrelines. (1 file)"
                                     SymbolsLabel="Airports — Symbols"
                                     SymbolsDescription="One symbol per airport, placed at its reference point. (1 file)"
@@ -36,10 +35,17 @@
                                     TextDescription="A label per airport showing the FAA ID and the airport name. (1 file)" />
 
             <!-- ============ FE-Buddy properties ============ -->
-            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+            <cards:FebPropertiesCard />
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard IsEnabled="{Binding GenerateGeojson}" />
+            <cards:RoiOverrideCard Outputs="Geojson">
+                <cards:RoiOverrideCard.AdditionalContent>
+                    <StackPanel Margin="0,10,0,0">
+                        <ctl:OutputLine Kind="Geojson" Text="Only the airports whose reference point is inside the region." />
+                        <ctl:OutputLine Kind="Alias" Text="Every airport, whatever the region." />
+                    </StackPanel>
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard LinesTitle="Runways — Lines" SymbolsTitle="Airports — Symbols" TextTitle="Airports — Text">

@@ -123,16 +123,17 @@
                 <Grid Margin="0,0,0,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="140" SharedSizeGroup="SubService" />
-                        <ColumnDefinition Width="56" />
-                        <ColumnDefinition Width="56" />
+                        <ColumnDefinition Width="68" />
+                        <ColumnDefinition Width="68" />
                         <ColumnDefinition Width="68" />
                         <ColumnDefinition Width="68" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Include" Style="{StaticResource ColumnHeading}" HorizontalAlignment="Left" TextAlignment="Left" />
-                    <TextBlock Grid.Column="1" Text="Alias" Style="{StaticResource ColumnHeading}" />
-                    <TextBlock Grid.Column="2" Text="GeoJSON" Style="{StaticResource ColumnHeading}" />
-                    <TextBlock Grid.Column="3" Text="Procedure&#xA;Changes" Style="{StaticResource ColumnHeading}" />
-                    <TextBlock Grid.Column="4" Text="Procedures&#xA;JSON" Style="{StaticResource ColumnHeading}" />
+                    <!-- the output tags, in the colours the tabs' cards use for the same outputs -->
+                    <ContentPresenter Grid.Column="1" Content="{x:Static ctl:OutputTag.AliasHeading}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                    <ContentPresenter Grid.Column="2" Content="{x:Static ctl:OutputTag.GeojsonHeading}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                    <ContentPresenter Grid.Column="3" Content="{x:Static ctl:OutputTag.ChangesHeading}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                    <ContentPresenter Grid.Column="4" Content="{x:Static ctl:OutputTag.JsonHeading}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
                 </Grid>
                 <Border Style="{StaticResource Divider}" Margin="0,0,0,4" />
 
@@ -142,8 +143,8 @@
                             <Grid Margin="0,5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" MinWidth="140" SharedSizeGroup="SubService" />
-                                    <ColumnDefinition Width="56" />
-                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="68" />
+                                    <ColumnDefinition Width="68" />
                                     <ColumnDefinition Width="68" />
                                     <ColumnDefinition Width="68" />
                                 </Grid.ColumnDefinitions>

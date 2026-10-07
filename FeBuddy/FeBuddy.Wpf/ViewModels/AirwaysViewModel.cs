@@ -135,7 +135,31 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public string NavaidBufferNm { get => _navaidBufferNm; set { if (SetProperty(ref _navaidBufferNm, value)) MarkDirty(); } }
 
 	/// <summary>Which airways the alias file covers: <see langword="true"/> for ROI airways only, <see langword="false"/> for every FAA airway.</summary>
-	public bool AliasRoiAirwaysOnly { get => _aliasRoiAirwaysOnly; set { if (SetProperty(ref _aliasRoiAirwaysOnly, value)) MarkDirty(); } }
+	public bool AliasRoiAirwaysOnly
+	{
+		get => _aliasRoiAirwaysOnly;
+		set
+		{
+			if (SetProperty(ref _aliasRoiAirwaysOnly, value))
+			{
+				OnPropertyChanged(nameof(RoiOutputs));
+				OnPropertyChanged(nameof(RoiAliasEffect));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>
+	/// The outputs the region of interest narrows, for its card's tags: the GeoJSON always, and the
+	/// alias file only with <see cref="AliasRoiAirwaysOnly"/>.
+	/// </summary>
+	public SubServiceOutputKinds RoiOutputs =>
+		SubServiceOutputKinds.Geojson | (AliasRoiAirwaysOnly ? SubServiceOutputKinds.Alias : SubServiceOutputKinds.None);
+
+	/// <summary>What the region of interest does to the alias file, for its card.</summary>
+	public string RoiAliasEffect => AliasRoiAirwaysOnly
+		? "Only the airways that cross the region, each with all of its waypoints."
+		: "Every FAA airway. To narrow it to the region, choose ROI airways only on the Outputs card.";
 
 	/// <summary>Whether a line that crosses 180 degrees longitude is split in two there.</summary>
 	public bool SplitAtAntimeridian { get => _splitAtAntimeridian; set { if (SetProperty(ref _splitAtAntimeridian, value)) MarkDirty(); } }
@@ -317,7 +341,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			nameof(OutputBy), nameof(OutputModeHint), nameof(ShowsStrata),
 			nameof(BufferAirwayWaypoints), nameof(FixBufferNm), nameof(NavaidBufferNm),
-			nameof(AliasRoiAirwaysOnly), nameof(SplitAtAntimeridian),
+			nameof(AliasRoiAirwaysOnly), nameof(RoiOutputs), nameof(RoiAliasEffect), nameof(SplitAtAntimeridian),
 		})
 		{
 			OnPropertyChanged(name);

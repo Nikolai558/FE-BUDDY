@@ -27,7 +27,8 @@
              d:DataContext="{d:DesignInstance tabs:IRoiOverrideSettings}"
              d:DesignWidth="820"
              x:Name="Self">
-    <ctl:Card Header="Region of Interest" bhv:FieldState.Error="{Binding FieldErrors[Roi]}">
+    <ctl:Card Header="Region of Interest" bhv:FieldState.Error="{Binding FieldErrors[Roi]}"
+              Outputs="{Binding Outputs, ElementName=Self}">
         <StackPanel>
             <CheckBox Content="{Binding Title}" ContentStringFormat="Override the default ROI for {0}"
                       IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />

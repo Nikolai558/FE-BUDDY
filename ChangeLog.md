@@ -32,6 +32,13 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   instead of `---`.
 - Feature #323 - `Procedure_Changes.md`: a chart shared by several airports (a STAR, say) is listed
   under every one of them, with "Also serves" naming the others, instead of under one airport only.
+- Feature #313 - Every card says which files its settings change, with a coloured tag on its title
+  row: **Alias**, **GeoJSON**, **Changes** or **JSON**, matching the General tab's columns. A tag
+  is struck through while that file is off.
+- Bug #314 - A card whose files are all off is greyed out, with a note saying where to turn them on.
+  The Region of Interest card on Departures and Arrivals stays active with GeoJSON off, since it
+  narrows their alias file too; on NAVAIDs it now greys out, since it never touches the alias file.
+  On Airports, Airways and NAVAIDs it says what the region does to each file.
 
 ### Settings
 - Feature #324 - You no longer need to uninstall FE-Buddy between versions: settings saved by beta.2

@@ -124,9 +124,9 @@ FeBuddy.Wpf/
 │                        WheelScroll, ScrollToTop, BringIntoView, PasteOnOneLine,
 │                        ComboBoxDropDownFocus), and MaximizeToWorkArea, a window hook the chrome
 │                        windows install from code
-├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView,
-│                        MapCanvas, AliasGuideDocumentView, BesideOrBelow, CommandTablePanel,
-│                        ChromeWindow, BrandMark
+├── Controls/            Card, SectionHeader, OutputTag, OutputLine, Option, CopyButton, FilterPicker,
+│                        MarkdownView, MapCanvas, AliasGuideDocumentView, BesideOrBelow,
+│                        CommandTablePanel, ChromeWindow, BrandMark
 ├── Converters/          one IValueConverter per file
 ├── Map/                 GeoJsonReader, WebMercator, ProjectedLayer, AiracMapLayers, BaseMap
 ├── Mvvm/                ObservableObject, RelayCommand
@@ -223,7 +223,9 @@ Say, Preferred Routes:
 2. **App:** an entry in `ViewModels/AiracSubServices.cs`, with the outputs it offers (its columns on
    the General tab) and its tooltip text; a `PreferredRoutesViewModel` deriving
    from `GeojsonSubServiceViewModel` and implementing `ISubServiceRunTarget`; a `PreferredRoutesView`
-   built from the shared cards, with its `DataTemplate` in `Views/TabbedServiceView.xaml`; and, in
+   built from the shared cards, with its `DataTemplate` in `Views/TabbedServiceView.xaml`, each of
+   its own cards naming the outputs its settings change (`ctl:Card Outputs="Alias, Geojson"`, which
+   tags the card and greys it while they're all off); and, in
    `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that
    puts its `BuildSettingsBlock()` into the run's settings.
 

@@ -42,6 +42,11 @@ Where you make files, every one ready for vNAS. The tabs run down the left:
 The screen waits until the AIRAC data has downloaded. It opens at **General** each time you choose it
 in the menu; edits on the other tabs are kept.
 
+Each card's title row tags the files its settings change: **Alias**, **GeoJSON**, **Changes**
+(`Procedure_Changes.md`) and **JSON** (`Procedures.json`), in the same colours as the General tab's
+columns. A tag is struck through while that file is off, and a card whose files are all off is
+greyed out. Where a card changes two files differently, a line for each says how.
+
 ### Saving
 
 Each tab saves on its own: **Save**, **Undo all changes** (drops unsaved edits) and **Undo last

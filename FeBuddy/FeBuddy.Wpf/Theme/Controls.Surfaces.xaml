@@ -13,6 +13,8 @@
         Divider         Border  - 1px hairline rule
         Chip / Chip.*   Border  - small status badge (pair with Chip.Text)
         Chip.Text       TextBlock - the label inside a chip
+        ctl:OutputTag   (implicit DataTemplate) an output tag: Alias, GeoJSON, Changes, JSON
+        ctl:OutputLine  (implicit) one output's tag and what a card does to it
         Nav.List        ListBox - the side navigation
         Nav.Item        ListBoxItem - one nav row (icon + label + active bar)
         Tab.Rail        ListBox - the vertical tab rail inside a tabbed service
@@ -93,13 +95,37 @@
                                 <ctl:SectionHeader x:Name="Title" DockPanel.Dock="Top"
                                                    Label="{TemplateBinding Header}">
                                     <ctl:SectionHeader.Aside>
-                                        <!-- the title's own font, so showing it can't change the row's height -->
-                                        <TextBlock x:Name="AttentionLabel" Text="NEEDS ATTENTION"
-                                                   Style="{DynamicResource Text.SectionHeader}"
-                                                   Foreground="{DynamicResource Brush.Danger}"
-                                                   Visibility="Collapsed" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <!-- the title's own font, so showing it can't change the row's height -->
+                                            <TextBlock x:Name="AttentionLabel" Text="NEEDS ATTENTION"
+                                                       Style="{DynamicResource Text.SectionHeader}"
+                                                       Foreground="{DynamicResource Brush.Danger}"
+                                                       VerticalAlignment="Center" Visibility="Collapsed" />
+                                            <!-- the outputs the card's settings affect -->
+                                            <ItemsControl ItemsSource="{TemplateBinding OutputTags}" Focusable="False"
+                                                          VerticalAlignment="Center">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemContainerStyle>
+                                                    <Style TargetType="ContentPresenter">
+                                                        <Setter Property="Margin" Value="6,0,0,0" />
+                                                    </Style>
+                                                </ItemsControl.ItemContainerStyle>
+                                            </ItemsControl>
+                                        </StackPanel>
                                     </ctl:SectionHeader.Aside>
                                 </ctl:SectionHeader>
+                                <!-- why the card is greyed out: every output it affects is off -->
+                                <DockPanel x:Name="OutputsOffNote" DockPanel.Dock="Top" Margin="0,0,0,10">
+                                    <TextBlock DockPanel.Dock="Left" Text="{DynamicResource Icon.Info}" FontFamily="{DynamicResource Font.Icon}"
+                                               Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Top"
+                                               Margin="0,2,8,0" />
+                                    <TextBlock Text="{TemplateBinding OutputsOffNote}" Style="{DynamicResource Text.Caption}"
+                                               Foreground="{DynamicResource Brush.Text.Secondary}" TextWrapping="Wrap" />
+                                </DockPanel>
                                 <ContentPresenter />
                             </DockPanel>
                         </Border>
@@ -117,6 +143,9 @@
                         <Trigger Property="NeedsAttention" Value="True">
                             <Setter TargetName="AttentionOutline" Property="Visibility" Value="Visible" />
                             <Setter TargetName="AttentionLabel" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="OutputsOffNote" Value="{x:Null}">
+                            <Setter TargetName="OutputsOffNote" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -308,6 +337,67 @@
                 <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
             </DataTrigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- ========================= OUTPUT TAGS ========================= -->
+    <!-- An output tag (ctl:OutputTag): a chip in its output's hue (Brush.Output.*), struck through
+         and greyed while the output is off. Implicit, so a card's title row, an OutputLine, an
+         Outputs card row and the General tab's headings all draw it the same way. -->
+    <DataTemplate DataType="{x:Type ctl:OutputTag}">
+        <Border x:Name="Chip" CornerRadius="{DynamicResource Radius.Chip}" BorderThickness="1" Padding="6,1"
+                SnapsToDevicePixels="True" VerticalAlignment="Center" HorizontalAlignment="Left"
+                ToolTip="{Binding ToolTip}"
+                Background="{DynamicResource Brush.Overlay}" BorderBrush="{DynamicResource Brush.Stroke.Strong}">
+            <TextBlock x:Name="Label" Text="{Binding Label}" Style="{StaticResource Chip.Text}" FontSize="11" />
+        </Border>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding Kind}" Value="Alias">
+                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource Brush.Output.Alias.Soft}" />
+                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Brush.Output.Alias.Line}" />
+                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Brush.Output.Alias}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Kind}" Value="Geojson">
+                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource Brush.Output.Geojson.Soft}" />
+                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Brush.Output.Geojson.Line}" />
+                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Brush.Output.Geojson}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Kind}" Value="ProcedureChanges">
+                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource Brush.Output.Changes.Soft}" />
+                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Brush.Output.Changes.Line}" />
+                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Brush.Output.Changes}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Kind}" Value="ProceduresJson">
+                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource Brush.Output.Json.Soft}" />
+                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Brush.Output.Json.Line}" />
+                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Brush.Output.Json}" />
+            </DataTrigger>
+            <!-- last, so it wins over the hue -->
+            <DataTrigger Binding="{Binding IsOn}" Value="False">
+                <Setter TargetName="Chip" Property="Background" Value="Transparent" />
+                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
+                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
+                <Setter TargetName="Label" Property="TextDecorations" Value="Strikethrough" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!-- ctl:OutputLine: one output's tag, then what the card does to it. The tag column is a fixed
+         width, so the lines' text lines up whichever outputs they name. -->
+    <Style TargetType="ctl:OutputLine">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Margin" Value="0,6,0,0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ctl:OutputLine">
+                    <DockPanel>
+                        <ContentPresenter DockPanel.Dock="Left" Content="{TemplateBinding Output}" Width="72"
+                                          VerticalAlignment="Top" Margin="0,1,0,0" />
+                        <TextBlock Text="{TemplateBinding Text}" Style="{DynamicResource Text.Prose}" VerticalAlignment="Center" />
+                    </DockPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ========================= NAVIGATION ========================= -->

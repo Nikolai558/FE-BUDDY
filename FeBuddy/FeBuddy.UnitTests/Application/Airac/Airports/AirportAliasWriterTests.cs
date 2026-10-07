@@ -209,9 +209,10 @@ public sealed class AirportAliasWriterTests : IDisposable
 	}
 
 	/// <summary>
-	/// The whole card, as it was asked for: attendance hours after WX, then the airspace (moved down
-	/// from after PTRN ALT) with its hours, each extra line lined up under the first value. The
-	/// space in <c>ATNDCE HRS:</c> is <c>\s</c>, as in <c>FAC\sTYPE:</c>, so CRC keeps it.
+	/// The whole card, as it was asked for: a blank line above it, attendance hours after WX, then
+	/// the airspace (moved down from after PTRN ALT) with its hours, each extra line lined up under
+	/// the first value, and a line break after it. The space in <c>ATNDCE HRS:</c> is <c>\s</c>, as
+	/// in <c>FAC\sTYPE:</c>, so CRC keeps it.
 	/// </summary>
 	[Fact]
 	public void the_card_ends_with_the_attendance_hours_then_the_airspace_and_its_hours()
@@ -229,12 +230,37 @@ public sealed class AirportAliasWriterTests : IDisposable
 			airspaceHours: ["CLASS D SVC", "1715-0100Z++ MON-FRI EXCEPT FED HOLS", "OTHER TIMES CLASS E"]));
 
 		Assert.Equal(
-			@".ECHO \nAPT:\t\t\tDTW - KDTW\n\t\t\t\tDETROIT METRO WAYNE COUNTY\n\t\t\t\tAIRPORT\nFAC\sTYPE:\t\s\s\sTWR" +
+			@".ECHO \n\nAPT:\t\t\tDTW - KDTW\n\t\t\t\tDETROIT METRO WAYNE COUNTY\n\t\t\t\tAIRPORT\nFAC\sTYPE:\t\s\s\sTWR" +
 			@"\nARTCC:\t\t\s\sZOB\nLONGEST\sRWY:\t04R/22L (12003′)\n\t\t\t\tCONC\nELEV:\t\t\s\s\s645.2′\nPTRN\sALT:\t\s\s\s" +
 			@"\nFSS:\t\t\tLAN\nCTAF:\t\t\s\s\s\nWX:\t\t\t\s\nATNDCE\sHRS:\t\s7a-9p\n\t\t\t\tAnother Time" +
 			@"\nAIRSPACE:\t\s\s\sBravo\n\t\sHRS:\t\s\s\sCLASS D SVC\n\t\t\t\t1715-0100Z++ MON-FRI EXCEPT FED HOLS" +
-			@"\n\t\t\t\tOTHER TIMES CLASS E",
+			@"\n\t\t\t\tOTHER TIMES CLASS E\n",
 			body);
+	}
+
+	/// <summary>The written command for a field with no tower, runway or airspace, as asked for in issue #328.</summary>
+	[Fact]
+	public void a_bare_field_gets_a_blank_line_above_its_card_and_a_line_break_after_it()
+	{
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate(
+			[
+				AirportTestDataBuilder.BuiltAirport(
+					faaId: "00A",
+					name: "TOTAL RF",
+					elevation: 9,
+					respArtccId: "ZNY",
+					fssId: "IPT",
+					towerType: "No-TWR",
+					facilityType: "HELIPORT",
+					ctafFrequency: "122.9"),
+			],
+			Settings());
+
+		Assert.Equal(
+			@".apt00A .ECHO \n\nAPT:\t\t\t00A\n\t\t\t\tTOTAL RF\n\t\t\t\tHELIPORT\nFAC\sTYPE:\t\s\s\sNo-TWR\nARTCC:\t\t\s\sZNY" +
+			@"\nLONGEST\sRWY:\t\n\t\t\t\t\nELEV:\t\t\s\s\s9′\nPTRN\sALT:\t\s\s\s\nFSS:\t\t\tIPT\nCTAF:\t\t\s\s\s122.9\nWX:\t\t\t\s" +
+			@"\nATNDCE\sHRS:\t\s\nAIRSPACE:\t\s\s\s\n\t\sHRS:\t\s\s\s\n",
+			Assert.Single(File.ReadAllLines(result.FilePath!)));
 	}
 
 	[Fact]
@@ -245,7 +271,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 		Assert.EndsWith(
 			NewLine + "ATNDCE" + Space + "HRS:" + Tab + Space +
 			NewLine + "AIRSPACE:" + Tab + Space + Space + Space +
-			NewLine + Tab + Space + "HRS:" + Tab + Space + Space + Space,
+			NewLine + Tab + Space + "HRS:" + Tab + Space + Space + Space + NewLine,
 			body);
 	}
 

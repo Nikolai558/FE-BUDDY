@@ -251,7 +251,7 @@ public sealed class TelephonyDownloaderTests : IDisposable
 	// ---- the VATSIM-Radar Virtual Airline List ----
 
 	private const string ValidVatsimRadarJson =
-		"""[{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }]""";
+		"""{ "airlines": [], "virtual": [{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }] }""";
 
 	[Fact]
 	public async Task the_vatsim_radar_list_downloads_fresh()

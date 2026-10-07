@@ -192,8 +192,8 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
 then "Other". Each lists the airports that changed, Class B first. A changed chart links to the FAA's
 comparison PDF, a new one to its chart, and a deleted one to its last chart. A STAR at several
-airports is listed once, with "Also serves". **`Procedures.json`** lists the same airports' current
-charts.
+airports is listed under each, with "Also serves" naming the others. **`Procedures.json`** lists the
+same airports' current charts.
 
 #### FAA Chart Recall commands
 
@@ -221,7 +221,7 @@ same, `.idNASA`), each showing the operator's card. Operators that share a comma
 
 - **Virtual Airlines** - add your facility's own (3LD, telephony and virtual organization). Each gets
   the same two commands and a card marked `--VA--`, after any real operator sharing the command.
-  - **Include the VATSIM-Radar Virtual Airline List** adds its ~250 virtual airlines after yours,
+  - **Include the VATSIM-Radar Virtual Airline List** adds its ~700 virtual airlines after yours,
     downloaded every run (**Download the latest list** fetches it now). One of yours exactly the same
     as one on the list can't be added; one that differs at all gets its own card.
 - **Telephony Data** - FAA Order JO 7340.2, Chapter 3, downloaded every run. Entries with no

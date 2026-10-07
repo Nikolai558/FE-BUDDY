@@ -274,10 +274,14 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 		Assert.Contains("  - ILS RWY 1 [New](chart not available)\r\n", content);
 	}
 
-	// ---- shared-chart de-duplication ----
+	// ---- a chart shared by several airports ----
 
+	/// <summary>
+	/// Issue #323: each airport's list is complete, so a STAR shared by BUR and VNY shows under both,
+	/// each noting the other.
+	/// </summary>
 	[Fact]
-	public void a_shared_chart_is_owned_by_the_airport_whose_alnum_matches_the_pdf_prefix()
+	public void a_shared_chart_is_listed_under_every_airport_it_serves_with_the_others_noted()
 	{
 		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", alnum: 100, procedures:
 		[
@@ -286,58 +290,66 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", responsibleArtcc: "ZOB", alnum: 200, procedures:
 		[
 			ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", change: ProcedureChange.Changed, reportedPdfName: "00200SHARED.PDF"),
-		]);
-
-		string content = Generate([aaa, bbb], ProcedureTestData.Dtpp("2609"));
-
-		Assert.Contains(
-			"- BBB\r\n" +
-			"  - [GRUUB ONE (RNAV)](https://aeronav.faa.gov/d-tpp/2609/compare_pdf/00200SHARED_cmp.pdf)\r\n" +
-			"    - Also serves: AAA\r\n",
-			content);
-		Assert.DoesNotContain(content.Split("\r\n"), line => line == "- AAA");
-	}
-
-	[Fact]
-	public void a_shared_chart_falls_back_when_the_identity_is_too_short_to_carry_an_alnum_prefix()
-	{
-		// A PDF name shorter than 5 characters cannot carry a leading zero-padded alnum, so the
-		// owner lookup must bail out before even checking whether the prefix is numeric.
-		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", alnum: 100, procedures:
-		[
-			ProcedureTestData.BuiltProcedure("SHARED STAR", change: ProcedureChange.Changed, reportedPdfName: "X"),
-		]);
-		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", responsibleArtcc: "ZOB", alnum: 200, procedures:
-		[
-			ProcedureTestData.BuiltProcedure("SHARED STAR", change: ProcedureChange.Changed, reportedPdfName: "X"),
-		]);
-
-		string content = Generate([aaa, bbb], ProcedureTestData.Dtpp("2609"));
-
-		Assert.Contains("    - Also serves: BBB\r\n", content);
-		Assert.DoesNotContain(content.Split("\r\n"), line => line == "- BBB");
-	}
-
-	[Fact]
-	public void a_shared_chart_falls_back_to_the_first_airport_in_document_order_when_no_owner_matches()
-	{
-		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", alnum: 100, procedures:
-		[
-			ProcedureTestData.BuiltProcedure("SHARED STAR", change: ProcedureChange.Changed, reportedPdfName: "SHARED.PDF"),
-		]);
-		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", responsibleArtcc: "ZOB", alnum: 200, procedures:
-		[
-			ProcedureTestData.BuiltProcedure("SHARED STAR", change: ProcedureChange.Changed, reportedPdfName: "SHARED.PDF"),
 		]);
 
 		string content = Generate([aaa, bbb], ProcedureTestData.Dtpp("2609"));
 
 		Assert.Contains(
 			"- AAA\r\n" +
-			"  - [SHARED STAR](https://aeronav.faa.gov/d-tpp/2609/compare_pdf/SHARED_cmp.pdf)\r\n" +
+			"  - [GRUUB ONE (RNAV)](https://aeronav.faa.gov/d-tpp/2609/compare_pdf/00200SHARED_cmp.pdf)\r\n" +
 			"    - Also serves: BBB\r\n",
 			content);
-		Assert.DoesNotContain(content.Split("\r\n"), line => line == "- BBB");
+		Assert.Contains(
+			"- BBB\r\n" +
+			"  - [GRUUB ONE (RNAV)](https://aeronav.faa.gov/d-tpp/2609/compare_pdf/00200SHARED_cmp.pdf)\r\n" +
+			"    - Also serves: AAA\r\n",
+			content);
+	}
+
+	/// <summary>
+	/// A regional takeoff minimums page is one PDF listed twice at each airport it covers (TAKEOFF
+	/// MINIMUMS and DIVERSE VECTOR AREA): both are listed, and the note names the other airport once,
+	/// never the airport itself.
+	/// </summary>
+	[Fact]
+	public void the_note_names_each_other_airport_once_and_never_the_airport_itself()
+	{
+		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("TAKEOFF MINIMUMS", change: ProcedureChange.Changed, reportedPdfName: "SE4TO.PDF"),
+			ProcedureTestData.BuiltProcedure("DIVERSE VECTOR AREA", change: ProcedureChange.Changed, reportedPdfName: "SE4TO.PDF"),
+		]);
+		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", responsibleArtcc: "ZOB", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("TAKEOFF MINIMUMS", change: ProcedureChange.Changed, reportedPdfName: "SE4TO.PDF"),
+			ProcedureTestData.BuiltProcedure("DIVERSE VECTOR AREA", change: ProcedureChange.Changed, reportedPdfName: "SE4TO.PDF"),
+		]);
+
+		string content = Generate([aaa, bbb], ProcedureTestData.Dtpp("2609"));
+		string[] lines = content.Split("\r\n");
+
+		Assert.Equal(2, lines.Count(line => line == "    - Also serves: BBB"));
+		Assert.Equal(2, lines.Count(line => line == "    - Also serves: AAA"));
+		Assert.Equal(4, lines.Count(line => line.StartsWith("    - Also serves:", StringComparison.Ordinal)));
+	}
+
+	/// <summary>A regional minimums page can serve a hundred airports: the note names ten and counts the rest.</summary>
+	[Fact]
+	public void a_note_with_more_than_ten_other_airports_names_ten_and_counts_the_rest()
+	{
+		ProcedureAirport[] airports = [.. Enumerable.Range(1, 13).Select(i =>
+			ProcedureTestData.BuiltAirport($"A{i:D2}", responsibleArtcc: "ZOB", procedures:
+			[
+				ProcedureTestData.BuiltProcedure("ALTERNATE MINIMUMS", change: ProcedureChange.Changed, reportedPdfName: "SW3ALT.PDF"),
+			]))];
+
+		string content = Generate(airports, ProcedureTestData.Dtpp("2609"));
+
+		Assert.Contains(
+			"- A01\r\n" +
+			"  - [ALTERNATE MINIMUMS](https://aeronav.faa.gov/d-tpp/2609/compare_pdf/SW3ALT_cmp.pdf)\r\n" +
+			"    - Also serves: A02, A03, A04, A05, A06, A07, A08, A09, A10, A11 and 2 more\r\n",
+			content);
 	}
 
 	// ---- facility ordering ----

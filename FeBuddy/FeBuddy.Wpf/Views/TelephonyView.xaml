@@ -53,7 +53,7 @@
                     <CheckBox Content="Include the VATSIM-Radar Virtual Airline List" IsChecked="{Binding IncludeVatsimRadarList}" Margin="0,4,0,0" />
                     <StackPanel Margin="26,4,0,0" MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
                         <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                   bhv:InlineCode.Text="About 250 virtual airlines kept by VATSIM-Radar's community (`github.com/VATSIM-Radar/data`), each written after yours with a `--VA--` card of its own. Every run downloads the latest list. A virtual airline of yours that is exactly the same as one on it can't be added; one that differs at all gets its own card." />
+                                   bhv:InlineCode.Text="About 700 virtual airlines kept by VATSIM-Radar (`data.vatsim-radar.com`), each written after yours with a `--VA--` card of its own. Every run downloads the latest list. A virtual airline of yours that is exactly the same as one on it can't be added; one that differs at all gets its own card." />
                         <StackPanel Visibility="{Binding IncludeVatsimRadarList, Converter={StaticResource BoolToVis}}" Margin="0,6,0,0">
                             <TextBlock Text="{Binding VatsimRadarListStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
                             <Button Content="Download the latest list" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"

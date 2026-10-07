@@ -99,4 +99,32 @@ public sealed class AirportFieldMapsTests
 	[InlineData(null, "")]
 	public void airspace_hours_break_after_svc_and_at_every_comma_and_semicolon(string? airspaceHours, string expected) =>
 		Assert.Equal(expected.Length == 0 ? [] : expected.Split('|'), AirportFieldMaps.SplitAirspaceHours(airspaceHours));
+
+	/// <summary>A class with no hours is always in effect, so it reads <c>ALL</c>, as all-day attendance does (PHX's Bravo).</summary>
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData(" ; ")]
+	public void a_class_with_no_airspace_hours_reads_all(string? airspaceHours)
+	{
+		ClsArspCsvDataModel.ClsArsp row = AirportTestDataBuilder.ClassAirspaceRow("PHX", classB: "Y", airspaceHours: airspaceHours);
+
+		Assert.Equal(["ALL"], AirportFieldMaps.BuildAirspaceHours(row));
+	}
+
+	[Fact]
+	public void a_class_with_airspace_hours_reads_them_split_into_lines()
+	{
+		ClsArspCsvDataModel.ClsArsp row = AirportTestDataBuilder.ClassAirspaceRow("DCU", classD: "Y", airspaceHours: "CLASS D SVC 0600-2400; OTHER TIMES CLASS G");
+
+		Assert.Equal(["CLASS D SVC", "0600-2400", "OTHER TIMES CLASS G"], AirportFieldMaps.BuildAirspaceHours(row));
+	}
+
+	/// <summary>No class airspace, no hours: an airport with no row, or a row that flags nothing, stays blank.</summary>
+	[Fact]
+	public void no_class_airspace_has_no_airspace_hours()
+	{
+		Assert.Empty(AirportFieldMaps.BuildAirspaceHours(null));
+		Assert.Empty(AirportFieldMaps.BuildAirspaceHours(AirportTestDataBuilder.ClassAirspaceRow("SEA")));
+	}
 }

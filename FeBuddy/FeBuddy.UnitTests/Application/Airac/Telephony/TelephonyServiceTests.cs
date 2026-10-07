@@ -220,8 +220,8 @@ public sealed class TelephonyServiceTests : IDisposable
 		Assert.Equal(0, result.MergedCommandCount);
 
 		string contents = File.ReadAllText(result.AliasFilePath!);
-		Assert.Contains(@".idDVA .echo \n--VA--", contents);
-		Assert.Contains(@".idDEVILAIR .echo \n--VA--", contents);
+		Assert.Contains(@".idDVA .echo \n\n--VA--", contents);
+		Assert.Contains(@".idDEVILAIR .echo \n\n--VA--", contents);
 	}
 
 	[Fact]

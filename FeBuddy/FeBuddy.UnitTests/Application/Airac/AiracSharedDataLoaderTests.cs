@@ -182,7 +182,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 	// ---- Telephony: the VATSIM-Radar Virtual Airline List ----
 
 	private const string ValidVatsimRadarJson =
-		"""[{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }]""";
+		"""{ "airlines": [], "virtual": [{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }] }""";
 
 	private TelephonyRefreshResult FreshPages() => new(
 		new SharedDataRefreshResult(WriteFile("register.html", ValidRegisterHtml), NowUtc, FailureReason: null),

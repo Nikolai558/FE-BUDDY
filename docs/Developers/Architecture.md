@@ -71,7 +71,7 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
 |---|---|---|---|
 | Wx Stations' station list | aviationweather.gov | `WxStations\stations.cache.xml` | every run that includes Wx Stations |
 | Telephony's ICAO register and U.S. special call signs | FAA Order JO 7340.2, Chapter 3 | `Telephony\telephony_register.html`, `us_special_call_signs.html` | every run that includes Telephony |
-| The VATSIM-Radar Virtual Airline List | GitHub (`VATSIM-Radar/data`) | `Telephony\vatsim_radar_airlines.json` | every run whose Telephony block includes it |
+| The VATSIM-Radar Virtual Airline List | VATSIM-Radar (`data.vatsim-radar.com/airlines/all`, its `virtual` array) | `Telephony\vatsim_radar_airlines.json` | every run whose Telephony block includes it |
 | The d-TPP Metafile (Procedures) | the FAA, one per cycle | `d-tpp_Metafile.xml` in the cycle's folder | at launch, once per cycle |
 
 - **Wx Stations and Telephony** aren't published per cycle, so one copy is kept under
@@ -238,8 +238,8 @@ The FAA's data has quirks. Each rule lives in one class.
   departures as STARs too. The GeoJSON never clashes (arrival files carry `STAR`), but both alias
   files get the same commands. Left as the FAA has it; the duplicate report flags them.
 - **NAVAIDs** (`NavaidBuilder`): from `NAV_BASE`, skipping `SHUTDOWN`. Duplicate `NAV_ID`s are normal
-  (`ABQ` is a VORTAC and a VOT) and every row is kept; their alias command lists each, joined by
-  `\n---`.
+  (`ABQ` is a VORTAC and a VOT) and every row is kept; their alias command lists each, with a `+`
+  line between them (`EchoCards`, shared with Airports and Telephony).
 - **ARTCC boundary rings** (`ArtccBoundaryBuilder`): from `ARB_BASE` and `ARB_SEG`, grouped by
   location and altitude. A new ring starts wherever `POINT_SEQ` doesn't increase (ZAK's CTA then FIR
   ring) and after a point described "POINT OF BEGINNING" (ZOA's four UTA rings in one run). A ring is

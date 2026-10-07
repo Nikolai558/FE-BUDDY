@@ -9,7 +9,7 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 /// <summary>
 /// Writes <c>Telephony.txt</c>: an <c>.echo</c> command per designator, identifier and telephony
 /// that shows the operator's card in CRC, e.g.
-/// <c>.idAVA .echo \n3LD:\t\t\tAVA\nTELEPHONY:\t\s\sAVIANCA\nCOMPANY:\t\t...\nCOUNTRY:\t\tCOLOMBIA</c>.
+/// <c>.idAVA .echo \n\n3LD:\t\t\tAVA\nTELEPHONY:\t\s\sAVIANCA\nCOMPANY:\t\t...\nCOUNTRY:\t\tCOLOMBIA\n</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -22,8 +22,8 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 /// When several operators land on one command - a telephony that spells another operator's
 /// designator (<c>AVA</c> is AVIANCA's designator and another operator's telephony), or two
 /// telephonies that only differ by spaces (<c>RYAN AIR</c>, <c>RYANAIR</c>) - the command is written
-/// once, showing every one of their cards joined by <c>\n---</c>, the way <c>Navaids.txt</c> handles
-/// a shared NAVAID identifier. The operators whose designator or identifier the command is come
+/// once, showing every one of their cards with a <c>+</c> line between them (<see cref="EchoCards"/>),
+/// the way <c>Navaids.txt</c> handles a shared NAVAID identifier. The operators whose designator or identifier the command is come
 /// first, then those whose telephony spells it; within each, the FAA's operators come before the
 /// user's virtual airlines (which <c>TelephonyBuilder</c> lists last), so the virtual airline DVA
 /// with telephony DELTA shows under <c>.idDELTA</c> after Delta Air Lines. Commands are written in
@@ -47,9 +47,6 @@ public static class TelephonyAliasWriter
 
 	/// <summary>The literal two-character escape CRC expands into a single space.</summary>
 	private const string SpaceEscape = @"\s";
-
-	/// <summary>The literal text joining two operators' cards under one shared command.</summary>
-	private const string CardSeparator = @"\n---";
 
 	/// <summary>The line a virtual airline's card starts with, so it is never taken for a real operator.</summary>
 	private const string VirtualAirlineMark = "--VA--";
@@ -76,7 +73,7 @@ public static class TelephonyAliasWriter
 
 		foreach ((string command, List<string> cards) in cardsByCommand.OrderBy(pair => pair.Key, StringComparer.Ordinal))
 		{
-			builder.Append(command).Append(" .echo ").Append(string.Join(CardSeparator, cards)).AppendLine();
+			builder.Append(command).Append(" .echo ").Append(EchoCards.Join(cards)).AppendLine();
 		}
 
 		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);

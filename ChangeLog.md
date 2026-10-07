@@ -22,6 +22,16 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Departures: an airport the FAA's data leaves out of a departure's bodies (its routes from the
   runways) now gets only the transitions, not every other airport's bodies. FDK's CONLE no longer
   draws BWI's runway routes.
+- Bug #316 - Airports: class airspace that NASR gives no hours for (always in effect, like PHX's
+  Bravo) now shows `ALL` under its `HRS:`, as attendance does. An airport with no class airspace
+  still shows none.
+- Bug #317 - Telephony: the VATSIM-Radar Virtual Airline List now comes from VATSIM-Radar's own data
+  (about 700 virtual airlines, up from about 250), so ones like NWR and WAT are no longer missing.
+- Feature #328 - Airports, NAVAIDs and Telephony cards: a blank line above the first card and a line
+  break after the last, and where one command shows several cards, an indented `+` between them
+  instead of `---`.
+- Feature #323 - `Procedure_Changes.md`: a chart shared by several airports (a STAR, say) is listed
+  under every one of them, with "Also serves" naming the others, instead of under one airport only.
 
 ---
 

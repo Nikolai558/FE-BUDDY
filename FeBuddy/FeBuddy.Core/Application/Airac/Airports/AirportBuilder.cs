@@ -118,7 +118,7 @@ public static class AirportBuilder
 				WeatherFrequency = Normalize(weather?.Freq),
 				WeatherFrequencyUse = Normalize(weather?.FreqUse),
 				ClassAirspace = AirportFieldMaps.BuildClassAirspace(airspaceRow),
-				AirspaceHours = AirportFieldMaps.SplitAirspaceHours(airspaceRow?.AirspaceHrs),
+				AirspaceHours = AirportFieldMaps.BuildAirspaceHours(airspaceRow),
 				AttendanceHours = IsNonTowered(row) ? [] : BuildAttendanceHours(attendanceByAirport[id]),
 				Runways = runways,
 				LongestRunway = SelectLongestRunway(runways)

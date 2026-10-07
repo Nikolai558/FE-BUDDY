@@ -47,6 +47,13 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 	private static TelephonyEntry Va(string designator, string telephony, string organization) =>
 		new(TelephonyEntryKind.VirtualAirline, designator, telephony, organization, string.Empty);
 
+	/// <summary>
+	/// A command's body as CRC shows it: a blank line above the first card, a <c>+</c> line between
+	/// blank lines from one card to the next, and a line break after the last.
+	/// </summary>
+	private static string Body(params TelephonyEntry[] entries) =>
+		@"\n" + string.Join(@"\n\n\t\t+\n", entries.Select(TelephonyAliasWriter.BuildCard)) + @"\n";
+
 	// ---- BuildCard ----
 
 	[Fact]
@@ -137,10 +144,24 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate([avianca, axv], Settings());
 		string contents = File.ReadAllText(result.FilePath!);
 
-		string expectedBody = TelephonyAliasWriter.BuildCard(avianca) + @"\n---" + TelephonyAliasWriter.BuildCard(axv);
-		Assert.Contains($".idAVA .echo {expectedBody}" + Environment.NewLine, contents);
+		Assert.Contains($".idAVA .echo {Body(avianca, axv)}" + Environment.NewLine, contents);
 		Assert.Equal(3, result.CommandCount); // .idAVA (merged), .idAVIANCA, .idAXV
 		Assert.Equal(1, result.MergedCommandCount);
+	}
+
+	/// <summary>The layout spelled out in full, as asked for in issue #328.</summary>
+	[Fact]
+	public void two_operators_under_one_command_read_as_two_cards_with_a_plus_line_between_them()
+	{
+		TelephonyEntry avianca = Icao("AVA", "AVIANCA", "AEROVIAS DEL CONTINENTE AMERICANO S.A.", "COLOMBIA");
+		TelephonyEntry axv = Icao("AXV", "AVA", "AVA AIRLINES", "IRAN (ISLAMIC REPUBLIC OF)");
+
+		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate([avianca, axv], Settings());
+
+		Assert.Equal(
+			@".idAVA .echo \n\n3LD:\t\t\tAVA\nTELEPHONY:\t\s\sAVIANCA\nCOMPANY:\t\tAEROVIAS DEL CONTINENTE AMERICANO S.A.\nCOUNTRY:\t\tCOLOMBIA" +
+			@"\n\n\t\t+\n\n3LD:\t\t\tAXV\nTELEPHONY:\t\s\sAVA\nCOMPANY:\t\tAVA AIRLINES\nCOUNTRY:\t\tIRAN (ISLAMIC REPUBLIC OF)\n",
+			File.ReadAllLines(result.FilePath!)[0]);
 	}
 
 	[Fact]
@@ -152,8 +173,7 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate([rya, ryr], Settings());
 		string contents = File.ReadAllText(result.FilePath!);
 
-		string expectedBody = TelephonyAliasWriter.BuildCard(rya) + @"\n---" + TelephonyAliasWriter.BuildCard(ryr);
-		Assert.Contains($".idRYANAIR .echo {expectedBody}" + Environment.NewLine, contents);
+		Assert.Contains($".idRYANAIR .echo {Body(rya, ryr)}" + Environment.NewLine, contents);
 		Assert.Equal(3, result.CommandCount); // .idRYA, .idRYR, .idRYANAIR (merged)
 		Assert.Equal(1, result.MergedCommandCount);
 	}
@@ -219,10 +239,10 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 
 		string[] expectedLines =
 		[
-			@".idDAL .echo \n3LD:\t\t\tDAL\nTELEPHONY:\t\s\sDELTA\nCOMPANY:\t\tDELTA AIR LINES, INC.\nCOUNTRY:\t\tUNITED STATES",
-			@".idDELTA .echo \n3LD:\t\t\tDAL\nTELEPHONY:\t\s\sDELTA\nCOMPANY:\t\tDELTA AIR LINES, INC.\nCOUNTRY:\t\tUNITED STATES\n---\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL",
-			@".idDEVILAIR .echo \n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDEVIL AIR\nVIRTUAL ORG:\tRUSTIC VIRTUAL",
-			@".idDVA .echo \n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL\n---\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDEVIL AIR\nVIRTUAL ORG:\tRUSTIC VIRTUAL",
+			@".idDAL .echo \n\n3LD:\t\t\tDAL\nTELEPHONY:\t\s\sDELTA\nCOMPANY:\t\tDELTA AIR LINES, INC.\nCOUNTRY:\t\tUNITED STATES\n",
+			@".idDELTA .echo \n\n3LD:\t\t\tDAL\nTELEPHONY:\t\s\sDELTA\nCOMPANY:\t\tDELTA AIR LINES, INC.\nCOUNTRY:\t\tUNITED STATES\n\n\t\t+\n\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL\n",
+			@".idDEVILAIR .echo \n\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDEVIL AIR\nVIRTUAL ORG:\tRUSTIC VIRTUAL\n",
+			@".idDVA .echo \n\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL\n\n\t\t+\n\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDEVIL AIR\nVIRTUAL ORG:\tRUSTIC VIRTUAL\n",
 		];
 
 		Assert.Equal(string.Concat(expectedLines.Select(line => line + Environment.NewLine)), File.ReadAllText(result.FilePath!));
@@ -240,8 +260,7 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate([avianca, virtualAirline], Settings());
 		string[] lines = File.ReadAllLines(result.FilePath!);
 
-		string expectedBody = TelephonyAliasWriter.BuildCard(avianca) + @"\n---" + TelephonyAliasWriter.BuildCard(virtualAirline);
-		Assert.Equal($".idAVA .echo {expectedBody}", lines[0]);
+		Assert.Equal($".idAVA .echo {Body(avianca, virtualAirline)}", lines[0]);
 		Assert.Equal(
 			[".idAVA ", ".idAVAVIRTUALAIR ", ".idAVIANCA "],
 			lines.Select(line => line[..(line.IndexOf(' ') + 1)]));
@@ -257,6 +276,6 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 
 		Assert.Equal(1, result.CommandCount);
 		Assert.Equal(0, result.MergedCommandCount);
-		Assert.StartsWith(@".idNAS .echo \n--VA--", Assert.Single(File.ReadAllLines(result.FilePath!)));
+		Assert.StartsWith(@".idNAS .echo \n\n--VA--", Assert.Single(File.ReadAllLines(result.FilePath!)));
 	}
 }

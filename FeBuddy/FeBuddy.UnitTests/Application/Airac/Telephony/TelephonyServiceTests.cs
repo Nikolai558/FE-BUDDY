@@ -311,13 +311,23 @@ public sealed class TelephonyServiceTests : IDisposable
 		Assert.False(Directory.Exists(_outputDirectory));
 	}
 
-	// ---- the VATSIM-Radar Virtual Airline List ----
+	// ---- the virtual airline list ----
 
+	/// <summary>
+	/// The list's virtual airlines are written, counted and named in the summary; one with a real
+	/// operator's 3LD and telephony is left out (issue #339) - the run says so - and the rest still share
+	/// a command with the real operator, after it.
+	/// </summary>
 	[Fact]
-	public void the_vatsim_radar_list_is_written_counted_and_named_in_the_summary_when_included()
+	public void the_list_is_written_counted_and_named_in_the_summary_when_included()
 	{
 		TelephonyDataCollection data = Data([Assignment("DELTA AIR LINES, INC.", "UNITED STATES", "DELTA", "DAL")]);
-		data.VatsimRadarAirlines = [new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta"), new VatsimRadarAirline("OCN", "vOCN", "Ocean")];
+		data.VatsimRadarAirlines =
+		[
+			new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta"),
+			new VatsimRadarAirline("DLV", "Delta Virtual Air", "Delta"),
+			new VatsimRadarAirline("OCN", "vOCN", "Ocean"),
+		];
 
 		TelephonyServiceResult result = TelephonyService.Run(
 			data,
@@ -331,16 +341,21 @@ public sealed class TelephonyServiceTests : IDisposable
 		Assert.Equal(3, result.VirtualAirlineCount);
 		Assert.Equal(2, result.VatsimRadarVirtualAirlineCount);
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info
-			&& m.Text.Contains("and 3 virtual airline(s) (2 from the VATSIM-Radar list);", StringComparison.Ordinal));
+			&& m.Text.Contains("and 3 virtual airline(s) (2 from the virtual airline list);", StringComparison.Ordinal));
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info
+			&& m.Text.EndsWith("as a real operator, so only the real operator was written: DAL DELTA (FLY DELTA VIRTUAL).", StringComparison.Ordinal));
 
-		// .idDELTA: Delta Air Lines, then the user's DVA, then the list's DAL.
-		string delta = Assert.Single(File.ReadAllLines(result.AliasFilePath!), line => line.StartsWith(".idDELTA ", StringComparison.Ordinal));
-		Assert.True(delta.IndexOf("DELTA AIR LINES", StringComparison.Ordinal) < delta.IndexOf("DELTA VIRTUAL", StringComparison.Ordinal));
-		Assert.True(delta.IndexOf("DELTA VIRTUAL", StringComparison.Ordinal) < delta.IndexOf("FLY DELTA VIRTUAL", StringComparison.Ordinal));
+		string[] lines = File.ReadAllLines(result.AliasFilePath!);
+		Assert.DoesNotContain(lines, line => line.Contains("FLY DELTA VIRTUAL", StringComparison.Ordinal));
+
+		// .idDELTA: Delta Air Lines, then the user's DVA, then the list's DLV.
+		string delta = Assert.Single(lines, line => line.StartsWith(".idDELTA ", StringComparison.Ordinal));
+		Assert.True(delta.IndexOf("DELTA AIR LINES", StringComparison.Ordinal) < delta.IndexOf("DVA", StringComparison.Ordinal));
+		Assert.True(delta.IndexOf("DVA", StringComparison.Ordinal) < delta.IndexOf("DLV", StringComparison.Ordinal));
 	}
 
 	[Fact]
-	public void the_vatsim_radar_list_is_not_written_when_not_included()
+	public void the_list_is_not_written_when_not_included()
 	{
 		TelephonyDataCollection data = Data([Assignment("DELTA AIR LINES, INC.", "UNITED STATES", "DELTA", "DAL")]);
 		data.VatsimRadarAirlines = [new VatsimRadarAirline("OCN", "vOCN", "Ocean")];

@@ -69,7 +69,7 @@ FeBuddy.Core/
 │   ├── SharedData/       SharedDataDownload: download, check and swap in data kept outside the
 │   │                     cycle folders
 │   ├── WxStations/       aviationweather.gov's station list (WxStationDownloader, WxStationXmlParser)
-│   ├── Telephony/        the FAA's telephony pages and the VATSIM-Radar Virtual Airline List
+│   ├── Telephony/        the FAA's telephony pages and the virtual airline list (GNG + VATSIM-Radar)
 │   │                     (TelephonyDownloader, TelephonyHtmlParser, VatsimRadarAirlineParser)
 │   ├── Dtpp/             the FAA d-TPP Metafile (DtppDownloader, DtppMetafileXmlParser)
 │   └── Dat/ Sct/ Eram/   the conversions' readers: DatFileReader, SctFileReader, EramGeoMapReader,

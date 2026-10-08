@@ -22,7 +22,13 @@ namespace FeBuddy.Core.Infrastructure.SharedData;
 /// replaces the kept copy, so a failed, cut-off or unexpected download never overwrites a good
 /// copy. A failure is not an exception: the result then points at the last good copy, with its
 /// download time and why the fresh download failed, for the caller to warn about - or at no copy
-/// at all, when FE-Buddy never downloaded one. Only cancellation is thrown.
+/// at all, when FE-Buddy never downloaded one. Only cancellation is thrown. Why it failed names the
+/// innermost cause too (<see cref="DescribeFailure"/>): .NET's own "see inner exception" says nothing.
+/// </para>
+/// <para>
+/// A caller can ask for a kept copy younger than a given age to be used as it is, without
+/// downloading (<see cref="SharedDataRefreshResult.Reused"/>) - the virtual airline list's parts,
+/// downloaded at most once a day.
 /// </para>
 /// </remarks>
 public static class SharedDataDownload
@@ -53,12 +59,36 @@ public static class SharedDataDownload
 	/// <param name="cancellationToken">Cancels the download.</param>
 	/// <returns>The copy to use, fresh or not, and why a fresh one could not be had.</returns>
 	/// <exception cref="OperationCanceledException">Thrown only when <paramref name="cancellationToken"/> is cancelled.</exception>
+	public static Task<SharedDataRefreshResult> RefreshAsync(
+		string url,
+		string destinationPath,
+		Action<string, string> prepare,
+		Action<string> validate,
+		string description,
+		CancellationToken cancellationToken = default) =>
+		RefreshAsync(url, destinationPath, prepare, validate, description, reuseCopyYoungerThan: null, cancellationToken);
+
+	/// <summary>
+	/// Same as <see cref="RefreshAsync(string, string, Action{string, string}, Action{string}, string, CancellationToken)"/>,
+	/// but a kept copy younger than <paramref name="reuseCopyYoungerThan"/> is used as it is, without
+	/// downloading (<see cref="SharedDataRefreshResult.Reused"/>).
+	/// </summary>
+	/// <param name="url">Where to download from.</param>
+	/// <param name="destinationPath">The kept copy's full path.</param>
+	/// <param name="prepare">Turns the downloaded file into the file to keep; throws when it can't.</param>
+	/// <param name="validate">Throws when the prepared file is not usable.</param>
+	/// <param name="description">What the file is, for the log.</param>
+	/// <param name="reuseCopyYoungerThan">How new a kept copy has to be to be used without downloading; <see langword="null"/> always downloads.</param>
+	/// <param name="cancellationToken">Cancels the download.</param>
+	/// <returns>The copy to use, fresh, reused or the last good one, and why a fresh one could not be had.</returns>
+	/// <exception cref="OperationCanceledException">Thrown only when <paramref name="cancellationToken"/> is cancelled.</exception>
 	public static async Task<SharedDataRefreshResult> RefreshAsync(
 		string url,
 		string destinationPath,
 		Action<string, string> prepare,
 		Action<string> validate,
 		string description,
+		TimeSpan? reuseCopyYoungerThan,
 		CancellationToken cancellationToken = default)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(url);
@@ -66,6 +96,21 @@ public static class SharedDataDownload
 		ArgumentNullException.ThrowIfNull(prepare);
 		ArgumentNullException.ThrowIfNull(validate);
 		ArgumentException.ThrowIfNullOrWhiteSpace(description);
+
+		if (reuseCopyYoungerThan is { } maxAge && File.Exists(destinationPath))
+		{
+			DateTime keptUtc = File.GetLastWriteTimeUtc(destinationPath);
+			TimeSpan age = DateTime.UtcNow - keptUtc;
+
+			// A copy dated in the future (the clock was moved back) is downloaded again, not trusted for ever.
+			if (age >= TimeSpan.Zero && age < maxAge)
+			{
+				AppLog.Info("SharedDataDownload",
+					$"Used FE-Buddy's copy of the {description} from {keptUtc.ToLocalTime():d MMM yyyy HH:mm} without downloading it: " +
+					$"it is under {maxAge.TotalHours:0} hours old.");
+				return new SharedDataRefreshResult(destinationPath, keptUtc, FailureReason: null) { Reused = true };
+			}
+		}
 
 		string fileName = Path.GetFileName(destinationPath);
 		string unique = Guid.NewGuid().ToString("N");
@@ -112,11 +157,12 @@ public static class SharedDataDownload
 		{
 			// Anything else - a network error, an HTTP error, a timeout, a payload that does not
 			// parse - leaves the kept copy as it was, for the caller to fall back on.
-			AppLog.Warning("SharedDataDownload", $"Could not download the latest {description} from {url}: {ex.Message}");
+			string reason = DescribeFailure(ex);
+			AppLog.Warning("SharedDataDownload", $"Could not download the latest {description} from {url}: {reason}");
 
 			return File.Exists(destinationPath)
-				? new SharedDataRefreshResult(destinationPath, File.GetLastWriteTimeUtc(destinationPath), ex.Message)
-				: new SharedDataRefreshResult(FilePath: null, DownloadedUtc: null, ex.Message);
+				? new SharedDataRefreshResult(destinationPath, File.GetLastWriteTimeUtc(destinationPath), reason)
+				: new SharedDataRefreshResult(FilePath: null, DownloadedUtc: null, reason);
 		}
 		finally
 		{
@@ -124,6 +170,37 @@ public static class SharedDataDownload
 			DeleteQuietly(preparedPath);
 			DeleteQuietly(replacementPath);
 		}
+	}
+
+	/// <summary>
+	/// Why a download failed, for the log and the run: the exception's message, and the innermost
+	/// cause's when it has one that says more - e.g. <c>The SSL connection could not be established:
+	/// Authentication failed because the remote party sent a TLS alert: 'ProtocolVersion'.</c> rather
+	/// than .NET's own "..., see inner exception."
+	/// </summary>
+	/// <param name="ex">What was thrown.</param>
+	/// <returns>The reason.</returns>
+	internal static string DescribeFailure(Exception ex)
+	{
+		ArgumentNullException.ThrowIfNull(ex);
+
+		Exception innermost = ex;
+		while (innermost.InnerException is { } inner)
+		{
+			innermost = inner;
+		}
+
+		string outer = ex.Message.Trim();
+		string cause = innermost.Message.Trim();
+
+		if (ReferenceEquals(innermost, ex) || cause.Length == 0 || outer.Contains(cause, StringComparison.Ordinal))
+		{
+			return outer;
+		}
+
+		const string SeeInner = ", see inner exception.";
+		string lead = outer.EndsWith(SeeInner, StringComparison.OrdinalIgnoreCase) ? outer[..^SeeInner.Length] : outer.TrimEnd('.');
+		return $"{lead}: {cause}";
 	}
 
 	/// <summary>Deletes a working file if it is there; a file that cannot be deleted is harmless clutter.</summary>

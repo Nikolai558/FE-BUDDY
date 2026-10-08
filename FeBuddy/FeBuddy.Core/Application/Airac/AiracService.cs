@@ -145,7 +145,7 @@ public static class AiracService
 			bool includeVatsimRadar = TelephonySettingsParser.IncludesVatsimRadarList(settings.Telephony);
 
 			progress?.Report(new AiracServiceProgress("AIRAC", includeVatsimRadar
-				? "Downloading the latest FAA telephony pages and VATSIM-Radar Virtual Airline List"
+				? "Downloading the latest FAA telephony pages and virtual airline list"
 				: "Downloading the latest FAA telephony pages"));
 			AiracSharedDataLoadResult<TelephonyDataCollection> loaded =
 				await AiracSharedDataLoader.LoadTelephonyAsync(includeVatsimRadar, cancellationToken).ConfigureAwait(false);

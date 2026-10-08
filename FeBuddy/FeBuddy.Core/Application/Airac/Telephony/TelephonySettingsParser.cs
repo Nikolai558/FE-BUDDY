@@ -16,8 +16,8 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 /// <remarks>
 /// <para>
 /// Telephony's only output is its alias file, so there is little to read: where to write, the
-/// user's virtual airlines - numbered, merged in number order - and whether the VATSIM-Radar
-/// Virtual Airline List is merged too:
+/// user's virtual airlines - numbered, merged in number order - and whether the virtual airline
+/// list is merged too:
 /// </para>
 /// <code>
 /// VirtualAirlines.1.Designator      = DVA
@@ -44,7 +44,7 @@ public static class TelephonySettingsParser
 	/// <summary>A virtual airline's virtual organization, under <see cref="VirtualAirlinesPrefix"/> and its number.</summary>
 	public const string OrganizationKey = "Organization";
 
-	/// <summary>Whether the VATSIM-Radar Virtual Airline List is written too: <c>Y</c> or <c>N</c> (the default).</summary>
+	/// <summary>Whether the virtual airline list is written too: <c>Y</c> or <c>N</c> (the default).</summary>
 	public const string IncludeVatsimRadarKey = "IncludeVatsimRadarVirtualAirlines";
 
 	private const string LogSource = "TelephonySettingsParser";
@@ -109,7 +109,7 @@ public static class TelephonySettingsParser
 	}
 
 	/// <summary>
-	/// Whether a Telephony settings block includes the VATSIM-Radar Virtual Airline List, so the AIRAC
+	/// Whether a Telephony settings block includes the virtual airline list, so the AIRAC
 	/// Service knows to download it before the run. A value that is neither <c>Y</c> nor <c>N</c> counts
 	/// as no here; <see cref="Parse"/> is what reports it.
 	/// </summary>

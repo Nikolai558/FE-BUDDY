@@ -29,8 +29,8 @@ internal sealed record TelephonyRun(IReadOnlyList<ServiceMessage> DownloadMessag
 internal static class TelephonyRunner
 {
 	/// <summary>
-	/// Downloads (or falls back on) the FAA telephony pages - and the VATSIM-Radar Virtual Airline
-	/// List when the settings include it - and runs the Telephony sub-service against them using the
+	/// Downloads (or falls back on) the FAA telephony pages - and the virtual airline list when the
+	/// settings include it - and runs the Telephony sub-service against them using the
 	/// settings in <see cref="HarnessSettings.TelephonySettings"/>.
 	/// </summary>
 	/// <returns>What the downloads said and what the service built and wrote, for <see cref="ConsoleReport"/> to print.</returns>

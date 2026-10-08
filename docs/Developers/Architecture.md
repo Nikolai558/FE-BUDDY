@@ -71,17 +71,28 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
 |---|---|---|---|
 | Wx Stations' station list | aviationweather.gov | `WxStations\stations.cache.xml` | every run that includes Wx Stations |
 | Telephony's ICAO register and U.S. special call signs | FAA Order JO 7340.2, Chapter 3 | `Telephony\telephony_register.html`, `us_special_call_signs.html` | every run that includes Telephony |
-| The VATSIM-Radar Virtual Airline List | VATSIM-Radar (`data.vatsim-radar.com/airlines/all`, its `virtual` array) | `Telephony\vatsim_radar_airlines.json` | every run whose Telephony block includes it |
+| The virtual airline list, part 1 | GNG's fictional airlines (`gng.aero-nav.com`, `icao_fhairlines`) | `Telephony\gng_fhairlines.json` | runs whose Telephony block includes it, at most once a day |
+| The virtual airline list, part 2 | VATSIM-Radar's own list on GitHub (`VATSIM-Radar/data`, `custom-data/airlines.json`) | `Telephony\vatsim_radar_custom_airlines.json` | runs whose Telephony block includes it, at most once a day |
 | The d-TPP Metafile (Procedures) | the FAA, one per cycle | `d-tpp_Metafile.xml` in the cycle's folder | at launch, once per cycle |
 
 - **Wx Stations and Telephony** aren't published per cycle, so one copy is kept under
   `%APPDATA%\FE-Buddy` and refreshed by every run that needs it (`AiracSharedDataLoader`, through
   `WxStationDownloader` and `TelephonyDownloader`). `SharedDataDownload.RefreshAsync` parses a new
   download before it replaces the kept copy, so a bad download never overwrites a good one. A
-  failed download falls back on the kept copy with an advisory naming its age. With no copy at all,
-  the sub-service writes nothing and the run carries an error; the rest of the run completes. The
-  U.S. special call signs and the VATSIM-Radar list are optional: without them, Telephony goes on
-  with a warning.
+  failed download falls back on the kept copy with an advisory naming its age, and its reason names
+  the innermost exception too. With no copy at all, the sub-service writes nothing and the run
+  carries an error; the rest of the run completes. The U.S. special call signs and the virtual
+  airline list are optional: without them, Telephony goes on with a warning.
+- **The virtual airline list** is merged the way VATSIM-Radar merges it (`VatsimRadarVirtualAirlines.Merge`):
+  every GNG row, then each of VATSIM-Radar's virtual airlines replacing the first GNG row with its 3LD
+  or added at the end. Each part is kept, checked (GNG: `rows` numbers `records`, at least 100; GitHub:
+  an array with a virtual airline) and fallen back on by itself, so one part failing never cuts the
+  other short. A run uses a copy under 24 hours old without downloading (`SharedDataRefreshResult.Reused`);
+  the Telephony tab's button always downloads. 3.0.0-beta.4's single `vatsim_radar_airlines.json`
+  (from `data.vatsim-radar.com`, which only takes TLS 1.3 - Windows 10 can't) is read only while
+  neither part has a copy, and deleted once both have one.
+- **`Telephony.txt` writes only the first operator for each 3LD and telephony** (`TelephonyBuilder`):
+  the FAA's, then the user's virtual airlines, then the list's. The rest are named in Info messages.
 - **The d-TPP Metafile** is keyed by cycle, so each cycle folder gets its own
   (`DtppDownloader.EnsureCycleHasMetafileAsync`). The FAA posts it only 15-18 days before the cycle
   starts; a 404 is `NotYetPublished`, retried at the next launch, and the General tab shows the

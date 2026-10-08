@@ -49,10 +49,12 @@ columns. A tag is struck through while that file is off, and a card whose files 
 greyed out. Where a card changes two files differently, a line for each says how.
 
 Each sub-service tab but Concatenate Aliases starts with **What You'll Get with the Current
-Settings**: what its files will hold, under each file's tag, one filter per line. A line starting
-with **with only** narrows the lines above, and one starting with **along with** adds to them.
-Where its files get different things, each file has its own lines, and **Outputs include** lists
-what narrows one file further (Procedures: `Procedure_Changes.md` keeps only what changed).
+Settings**: what its files will hold, under each file's tag, one filter per line. Read top to
+bottom, chips and all, it's one sentence: "Every STAR **for** airports in ZOB **and only** those
+amended this cycle". **for** and **in** say where, **but only** and **and only** narrow the lines
+above, and **along with** adds to them. Where its files get different things, each file has its own
+lines, and **Outputs include** lists what narrows one file further (Procedures:
+`Procedure_Changes.md` keeps only what changed).
 
 ### Saving
 

@@ -674,13 +674,13 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		string? listed = airports.Length == 0 ? null
 			: airports.Length <= 6 ? SummaryLines.Join(airports, "and")
 			: $"the {airports.Length} airports you listed";
-		string? region = _includeRoiAirports ? RegionLine("airports inside the region") : null;
+		string? region = _includeRoiAirports ? RegionLine("airports within the region") : null;
 
-		// Whichever way in comes first says what the charts are; the rest add to it.
+		// Whichever way in comes first says what the charts are for; the rest add to it.
 		SummaryLines documents = new();
-		documents.Add(SummaryJoin.First, facilities.Length > 0 ? $"Charts within {SummaryLines.Join(facilities, "and")}" : null);
-		documents.Add(SummaryJoin.AlongWith, listed is not null && documents.IsEmpty ? $"Charts at {listed}" : listed);
-		documents.Add(SummaryJoin.AlongWith, region is not null && documents.IsEmpty ? $"Charts at {region}" : region);
+		documents.Add(SummaryJoin.First, facilities.Length > 0 ? $"Charts for airports within {SummaryLines.Join(facilities, "and")}" : null);
+		documents.Add(SummaryJoin.AlongWith, listed is not null && documents.IsEmpty ? $"Charts for {listed}" : listed);
+		documents.Add(SummaryJoin.AlongWith, region is not null && documents.IsEmpty ? $"Charts for {region}" : region);
 
 		bool wholeAirports = !documents.IsEmpty;
 		bool picked = names.Length > 0 || pairs.Length > 0;
@@ -696,8 +696,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			: picked ? $"these types: {SummaryLines.Join(chartTypes, "and")} (the procedures you named are always included)"
 			: $"these types: {SummaryLines.Join(chartTypes, "and")}";
 
+		// With nothing picked, there is nothing for a document to keep.
 		IReadOnlyList<SummaryLine> includes = new SummaryLines(joinFirstLine: true)
-			.Add(SummaryJoin.First, GenerateChangesDocument ? "`Procedure_Changes.md`: only those that were added, changed, or deleted this cycle" : null)
+			.Add(SummaryJoin.First, GenerateChangesDocument && (wholeAirports || picked)
+				? "`Procedure_Changes.md`: only those that were added, changed, or deleted this cycle"
+				: null)
 			.Add(SummaryJoin.WithOnly, types)
 			.ToList();
 

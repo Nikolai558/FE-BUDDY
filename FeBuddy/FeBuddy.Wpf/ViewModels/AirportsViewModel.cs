@@ -147,7 +147,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	{
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, "Every open airport")
-			.Add(SummaryJoin.WithOnly, RegionLine("those with their reference point inside the region"))
+			.Add(SummaryJoin.AndOnly, RegionLine("those with their reference point inside the region"))
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()

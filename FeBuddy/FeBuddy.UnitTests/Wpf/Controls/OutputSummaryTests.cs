@@ -22,7 +22,7 @@ public sealed class OutputSummaryTests
 
 		foreach (string line in lines)
 		{
-			built.Add(SummaryJoin.WithOnly, line);
+			built.Add(SummaryJoin.AndOnly, line);
 		}
 
 		return new SummaryBlock(outputs, built.ToList());
@@ -37,14 +37,35 @@ public sealed class OutputSummaryTests
 		Assert.True(built.IsEmpty);
 
 		IReadOnlyList<SummaryLine> lines = built
-			.Add(SummaryJoin.WithOnly, null)
+			.Add(SummaryJoin.AndOnly, null)
 			.Add(SummaryJoin.AlongWith, "Every open airport")
-			.Add(SummaryJoin.WithOnly, " ")
+			.Add(SummaryJoin.AndOnly, " ")
 			.Add(SummaryJoin.AlongWith, "BRWNZ FIVE")
 			.ToList();
 
 		Assert.False(built.IsEmpty);
 		Assert.Equal([new SummaryLine(SummaryJoin.First, "Every open airport"), new SummaryLine(SummaryJoin.AlongWith, "BRWNZ FIVE")], lines);
+	}
+
+	/// <summary>A narrowing reads "but only" right below the first line and "and only" anywhere else, whichever is asked for.</summary>
+	[Fact]
+	public void a_narrowing_reads_but_only_below_the_first_line_and_and_only_after_that()
+	{
+		IReadOnlyList<SummaryLine> straight = new SummaryLines()
+			.Add(SummaryJoin.First, "Every STAR")
+			.Add(SummaryJoin.AndOnly, "those amended this cycle")
+			.Add(SummaryJoin.ButOnly, "those inside the region")
+			.ToList();
+
+		Assert.Equal([SummaryJoin.First, SummaryJoin.ButOnly, SummaryJoin.AndOnly], straight.Select(line => line.Join));
+
+		IReadOnlyList<SummaryLine> placed = new SummaryLines()
+			.Add(SummaryJoin.First, "Every STAR")
+			.Add(SummaryJoin.For, "airports in ZOB")
+			.Add(SummaryJoin.ButOnly, "those amended this cycle")
+			.ToList();
+
+		Assert.Equal([SummaryJoin.First, SummaryJoin.For, SummaryJoin.AndOnly], placed.Select(line => line.Join));
 	}
 
 	/// <summary>"Outputs include" lines each say how they narrow the block, the first one too.</summary>
@@ -60,6 +81,10 @@ public sealed class OutputSummaryTests
 
 	[Theory]
 	[InlineData(SummaryJoin.First, "", false)]
+	[InlineData(SummaryJoin.For, "for", true)]
+	[InlineData(SummaryJoin.In, "in", true)]
+	[InlineData(SummaryJoin.ButOnly, "but only", true)]
+	[InlineData(SummaryJoin.AndOnly, "and only", true)]
 	[InlineData(SummaryJoin.WithOnly, "with only", true)]
 	[InlineData(SummaryJoin.AlongWith, "along with", true)]
 	public void each_line_after_the_first_starts_with_a_chip(SummaryJoin join, string expected, bool hasJoin)

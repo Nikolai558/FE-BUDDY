@@ -272,7 +272,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, navaids)
-			.Add(SummaryJoin.WithOnly, RegionLine("those inside the region"))
+			.Add(SummaryJoin.AndOnly, RegionLine("those inside the region"))
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()

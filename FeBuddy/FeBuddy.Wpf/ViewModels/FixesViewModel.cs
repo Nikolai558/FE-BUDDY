@@ -388,23 +388,36 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	}
 
 	/// <inheritdoc />
-	/// <remarks>The fix uses and charts ticked count only in their own file layout.</remarks>
+	/// <remarks>
+	/// The fix uses and charts ticked count only in their own file layout, named as their boxes are
+	/// (<c>ENROUTE LOW</c>, not its token). With no fixes, the region has nothing to narrow.
+	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
-		string fixes = _outputBy switch
+		// Before a cycle is parsed there are no fix use boxes: the tokens stand in, the same as the names.
+		string[] fixUses = FixUses.Count > 0 ? [.. FixUses.Where(t => t.IsSelected).Select(t => t.Label)] : [.. IncludedFixUseTokens()];
+		string[] charts = [.. Charts.Where(t => t.IsSelected).Select(t => t.Token == FixCharts.NoChart ? "no chart" : t.Label)];
+
+		string? fixes = _outputBy switch
 		{
-			FixOutputBy.FixUse when ExcludedFixUseTokens().Any() => $"Fixes used as {SummaryLines.Join([.. IncludedFixUseTokens()], "or")}",
+			FixOutputBy.FixUse when fixUses.Length == 0 => null,
+			FixOutputBy.FixUse when ExcludedFixUseTokens().Any() => $"Fixes used as {SummaryLines.Join(fixUses, "or")}",
 			FixOutputBy.Chart when Charts.Count == 0 => "Fixes on the charts you ticked, once the cycle's chart list is loaded",
-			FixOutputBy.Chart when ExcludedChartTokens().Any() => $"Fixes on {SummaryLines.Join([.. IncludedChartTokens()], "or")}",
-			FixOutputBy.ChartAndFixUse => Combinations.Count > 0
-				? $"Fixes in {SummaryLines.Join([.. Combinations.Select(c => c.Label)], "or")}"
-				: "No fixes until you add a chart + fix use combination",
+			FixOutputBy.Chart when charts.Length == 0 => null,
+			FixOutputBy.Chart when ExcludedChartTokens().Any() => $"Fixes on {SummaryLines.Join(charts, "or")}",
+			FixOutputBy.ChartAndFixUse when Combinations.Count == 0 => null,
+			FixOutputBy.ChartAndFixUse => $"Fixes in these chart + fix use combinations: {SummaryLines.Join([.. Combinations.Select(c => c.Label)], "and")}",
 			_ => "Every fix",
 		};
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, fixes)
-			.Add(SummaryJoin.WithOnly, RegionLine("those inside the region"))
+			.Add(SummaryJoin.First, fixes ?? _outputBy switch
+			{
+				FixOutputBy.FixUse => "No fixes: tick a fix use",
+				FixOutputBy.Chart => "No fixes: tick a chart",
+				_ => "No fixes until you add a chart + fix use combination",
+			})
+			.Add(SummaryJoin.AndOnly, fixes is null ? null : RegionLine("those inside the region"))
 			.ToList());
 	}
 

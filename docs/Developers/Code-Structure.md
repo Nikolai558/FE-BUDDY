@@ -234,7 +234,8 @@ Say, Preferred Routes:
    tags the card and greys it while they're all off), and the What You'll Get card under the
    Attention card (`cards:SummaryCard`, filled by overriding `BuildWhatYoullGet()`: a `SummaryBlock`
    of filter lines per output, or one for outputs that get the same, each line after the first
-   joined by `SummaryJoin.WithOnly` or `AlongWith`, with any `Includes` lines under "Outputs
+   joined by a `SummaryJoin` chip so the block reads as one sentence (`SummaryLines` words a
+   narrowing "but only" or "and only" by where it falls), with any `Includes` lines under "Outputs
    include", also used by its `BuildPreviewSummary()`); and, in `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that
    puts its `BuildSettingsBlock()` into the run's settings.
 

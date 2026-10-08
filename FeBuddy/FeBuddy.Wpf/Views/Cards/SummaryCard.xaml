@@ -1,7 +1,7 @@
 <!--
     SummaryCard  -  "What You'll Get with the Current Settings", the top card of every AIRAC
     sub-service tab: for each output that's on, headed by its tag, the filters that pick what it
-    gets, one per line, each after the first starting with a "with only" or "along with" chip. Binds
+    gets, one per line, each after the first starting with a chip ("for", "and only", ...). Binds
     to the tab's WhatYoullGet (ServiceTabViewModel); the Preview Settings tab shows the same summary.
 
     Usage:

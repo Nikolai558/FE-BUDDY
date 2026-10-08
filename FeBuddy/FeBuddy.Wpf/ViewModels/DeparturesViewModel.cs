@@ -309,12 +309,12 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		string[] artccs = [.. SelectedArtccs()];
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, IncludeObstacleDepartures ? "Every SID and obstacle departure" : "Every SID, but no obstacle departures")
-			.Add(SummaryJoin.WithOnly, artccs.Length == 0 ? null : $"those in {SummaryLines.Join(artccs, "and")}")
-			.Add(SummaryJoin.WithOnly, DescribeAmendmentFilter())
-			.Add(SummaryJoin.WithOnly, RegionLine(_roiMode == DepartureRoiMode.Waypoint
+			.Add(SummaryJoin.First, IncludeObstacleDepartures ? "Every SID and obstacle departure" : "Every SID (no obstacle departures)")
+			.Add(SummaryJoin.In, artccs.Length == 0 ? null : SummaryLines.Join(artccs, "and"))
+			.Add(SummaryJoin.AndOnly, DescribeAmendmentFilter())
+			.Add(SummaryJoin.AndOnly, RegionLine(_roiMode == DepartureRoiMode.Waypoint
 				? "those with at least one fix inside the region"
-				: "those at an airport inside the region"))
+				: "those from an airport inside the region"))
 			.ToList());
 	}
 

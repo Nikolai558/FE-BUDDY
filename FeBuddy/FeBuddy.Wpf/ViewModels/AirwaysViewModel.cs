@@ -449,25 +449,33 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
-		// Before a cycle is parsed the toggle list is empty: the saved exclusions stand in.
+		// Before a cycle is parsed the toggle list is empty: the saved exclusions stand in, and only
+		// they can be named.
 		string[] excluded = Designations.Count > 0
 			? [.. Designations.Where(d => !d.Included).Select(d => d.Designation)]
 			: [.. ParseExcludedFromConfig().OrderBy(d => d, StringComparer.OrdinalIgnoreCase)];
+		string[] included = [.. Designations.Where(d => d.Included).Select(d => d.Designation)];
 
-		string airways = excluded.Length == 0
-			? "Every airway"
-			: $"Every airway except the {SummaryLines.Join(excluded, "and")} airways";
+		bool none = Designations.Count > 0 && included.Length == 0;
 
-		bool aliasUsesRegion = AliasRoiAirwaysOnly && HasRoi;
+		// Name the shorter list: what is left out, or what is kept.
+		string airways = excluded.Length == 0 ? "Every airway"
+			: none ? "No airways: tick a type under Airway Types to Include"
+			: Designations.Count == 0 || excluded.Length <= included.Length ? $"Every airway except the {SummaryLines.Join(excluded, "and")} airways"
+			: $"The {SummaryLines.Join(included, "and")} airways";
+
+		// With no airways, the region has nothing to narrow.
+		bool hasRoi = HasRoi && !none;
+		bool aliasUsesRegion = AliasRoiAirwaysOnly && hasRoi;
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, airways)
-			.Add(SummaryJoin.WithOnly, RegionLine("those that cross the region, cut off at its edge"))
+			.Add(SummaryJoin.AndOnly, hasRoi ? RegionLine("those that cross the region, cut off at its edge") : null)
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, aliasUsesRegion || !HasRoi ? airways : $"{airways}, in the region or not")
-			.Add(SummaryJoin.WithOnly, aliasUsesRegion ? RegionLine("those that cross the region, each with all of its fixes") : null)
+			.Add(SummaryJoin.First, aliasUsesRegion || !hasRoi ? airways : $"{airways}, in the region or not")
+			.Add(SummaryJoin.AndOnly, aliasUsesRegion ? RegionLine("those that cross the region, each with all of its fixes") : null)
 			.ToList());
 	}
 

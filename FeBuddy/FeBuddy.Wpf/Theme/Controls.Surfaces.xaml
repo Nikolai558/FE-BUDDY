@@ -15,7 +15,7 @@
         Chip.Text       TextBlock - the label inside a chip
         ctl:OutputTag   (implicit DataTemplate) an output tag: Alias, GeoJSON, Changes, JSON
         ctl:OutputLine  (implicit) one output's tag and what a card does to it
-        OutputSummary.Line (DataTemplate) one What You'll Get line: its "with only" / "along with" chip, then its text
+        OutputSummary.Line (DataTemplate) one What You'll Get line: its chip ("for", "and only", ...), then its text
         ctl:OutputSummary (implicit) a tab's What You'll Get summary: blocks headed by their outputs' tags
         Nav.List        ListBox - the side navigation
         Nav.Item        ListBoxItem - one nav row (icon + label + active bar)
@@ -403,9 +403,9 @@
         </Setter>
     </Style>
 
-    <!-- One line of a What You'll Get summary (tabm:SummaryLine): a "with only" or "along with" chip
-         when it has one, then its text, file names between backticks shown as code. A line that
-         wraps stays clear of its chip. -->
+    <!-- One line of a What You'll Get summary (tabm:SummaryLine): its chip ("for", "but only",
+         "along with", ...) when it has one, then its text, file names between backticks shown as
+         code. A line that wraps stays clear of its chip. -->
     <DataTemplate x:Key="OutputSummary.Line" DataType="{x:Type tabm:SummaryLine}">
         <Grid Margin="0,1">
             <Grid.ColumnDefinitions>

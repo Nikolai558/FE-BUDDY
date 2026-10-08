@@ -43,7 +43,8 @@ public abstract class ServiceTabViewModel : ObservableObject
 
 	/// <summary>
 	/// The tab's "What You'll Get" summary: for the outputs that are on, the filters that pick what
-	/// they get, one per line, each after the first narrowing ("with only") or adding ("along with").
+	/// they get, one per line, each after the first saying where ("for"), narrowing ("and only") or
+	/// adding ("along with"), so a block reads as one sentence.
 	/// The tab's top card and its Preview Settings section both show it. Empty for a tab with nothing
 	/// to sum up.
 	/// </summary>

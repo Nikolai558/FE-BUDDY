@@ -8,7 +8,8 @@ namespace FeBuddy.Wpf.Controls;
 /// <summary>
 /// A sub-service's "What You'll Get" summary (<see cref="SummaryBlock"/>): each block headed by its
 /// outputs' tags, then the filters that pick what they get, one per line, each after the first
-/// starting with a <c>with only</c> or <c>along with</c> chip, then any "Outputs include" lines.
+/// starting with a chip (<c>for</c>, <c>and only</c>, <c>along with</c>, ...) so the block reads as
+/// one sentence, then any "Outputs include" lines.
 /// Shown by the What You'll Get card at the top of each sub-service tab and by that tab's section
 /// on the Preview Settings tab; its look is in Theme/Controls.Surfaces.xaml.
 /// <code>

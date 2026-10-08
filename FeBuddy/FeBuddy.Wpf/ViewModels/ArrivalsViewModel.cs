@@ -311,11 +311,11 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, "Every STAR")
-			.Add(SummaryJoin.WithOnly, artccs.Length == 0 ? null : $"those for airports in {SummaryLines.Join(artccs, "and")}")
-			.Add(SummaryJoin.WithOnly, DescribeAmendmentFilter())
-			.Add(SummaryJoin.WithOnly, RegionLine(_roiMode == ArrivalRoiMode.Waypoint
+			.Add(SummaryJoin.For, artccs.Length == 0 ? null : $"airports in {SummaryLines.Join(artccs, "and")}")
+			.Add(SummaryJoin.AndOnly, DescribeAmendmentFilter())
+			.Add(SummaryJoin.AndOnly, RegionLine(_roiMode == ArrivalRoiMode.Waypoint
 				? "those with at least one fix inside the region"
-				: "those at an airport inside the region"))
+				: "those for an airport inside the region"))
 			.ToList());
 	}
 

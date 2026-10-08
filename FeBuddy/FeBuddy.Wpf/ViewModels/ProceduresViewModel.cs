@@ -674,7 +674,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		string? listed = airports.Length == 0 ? null
 			: airports.Length <= 6 ? SummaryLines.Join(airports, "and")
 			: $"the {airports.Length} airports you listed";
-		string? region = _includeRoiAirports ? RegionLine("airports within the region") : null;
+		string? region = _includeRoiAirports ? RoiLine(roi => $"airports within {roi}") : null;
 
 		// Whichever way in comes first says what the charts are for; the rest add to it.
 		SummaryLines documents = new();

@@ -147,11 +147,11 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	{
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, "Every open airport")
-			.Add(SummaryJoin.AndOnly, RegionLine("those with their reference point inside the region"))
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"those with their reference point inside {roi}"))
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, HasRoi ? "Every open airport, in the region or not" : "Every open airport")
+			.Add(SummaryJoin.First, RoiLine(roi => $"Every open airport, inside {roi} or not") ?? "Every open airport")
 			.ToList());
 	}
 

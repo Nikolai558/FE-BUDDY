@@ -214,7 +214,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, artccs.Length == 0 ? "Every ARTCC boundary" : $"The boundaries of {SummaryLines.Join(artccs, "and")}")
-			.Add(SummaryJoin.AndOnly, RegionLine("the parts inside the region"))
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"the parts inside {roi}"))
 			.ToList());
 	}
 

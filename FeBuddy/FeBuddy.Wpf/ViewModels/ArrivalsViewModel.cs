@@ -313,9 +313,9 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			.Add(SummaryJoin.First, "Every STAR")
 			.Add(SummaryJoin.For, artccs.Length == 0 ? null : $"airports in {SummaryLines.Join(artccs, "and")}")
 			.Add(SummaryJoin.AndOnly, DescribeAmendmentFilter())
-			.Add(SummaryJoin.AndOnly, RegionLine(_roiMode == ArrivalRoiMode.Waypoint
-				? "those with at least one fix inside the region"
-				: "those for an airport inside the region"))
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => _roiMode == ArrivalRoiMode.Waypoint
+				? $"those with at least one fix inside {roi}"
+				: $"those for an airport inside {roi}"))
 			.ToList());
 	}
 

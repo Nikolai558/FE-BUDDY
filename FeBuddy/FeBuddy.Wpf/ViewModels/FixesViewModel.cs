@@ -417,7 +417,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 				FixOutputBy.Chart => "No fixes: tick a chart",
 				_ => "No fixes until you add a chart + fix use combination",
 			})
-			.Add(SummaryJoin.AndOnly, fixes is null ? null : RegionLine("those inside the region"))
+			.Add(SummaryJoin.AndOnly, fixes is null ? null : RoiLine(roi => $"those inside {roi}"))
 			.ToList());
 	}
 

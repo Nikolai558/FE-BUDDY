@@ -24,7 +24,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   a chip in place of AND, OR and PLUS, so the lines read as one sentence: "Every STAR **for**
   airports in ZOB **and only** those amended this cycle". **for** and **in** say where, **but only**
   and **and only** narrow, and **along with** adds. What narrows one file further is listed under
-  **Outputs include**.
+  **Outputs include**. A line about the ROI says which one: "the default ROI", or "the ROI specific
+  to the Airports sub-service" when the tab has its own.
 - Bug #334 - What You'll Get lists ARTCCs and facilities with "and", not "or": the list is
   inclusive. On Procedures, the airports listed and the region add to the facilities, and the alias
   line names only the documents that are on. Lists use the Oxford comma.

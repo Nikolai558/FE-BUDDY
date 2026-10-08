@@ -470,12 +470,12 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, airways)
-			.Add(SummaryJoin.AndOnly, hasRoi ? RegionLine("those that cross the region, cut off at its edge") : null)
+			.Add(SummaryJoin.AndOnly, hasRoi ? $"those that cross {RoiName}, cut off at its edge" : null)
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, aliasUsesRegion || !hasRoi ? airways : $"{airways}, in the region or not")
-			.Add(SummaryJoin.AndOnly, aliasUsesRegion ? RegionLine("those that cross the region, each with all of its fixes") : null)
+			.Add(SummaryJoin.First, aliasUsesRegion || !hasRoi ? airways : $"{airways}, inside {RoiName} or not")
+			.Add(SummaryJoin.AndOnly, aliasUsesRegion ? $"those that cross {RoiName}, each with all of its fixes" : null)
 			.ToList());
 	}
 

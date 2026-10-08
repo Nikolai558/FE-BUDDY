@@ -108,7 +108,7 @@ public sealed class WhatYoullGetTests : IDisposable
 				"Every SID (no obstacle departures)",
 				"in ZNY and ZOB",
 				"and only those amended in the last 4 cycles",
-				"and only those from an airport inside the region (this tab's own)",
+				"and only those from an airport inside the ROI specific to the Departures sub-service",
 			],
 			Lines(Assert.Single(tab.WhatYoullGet)));
 	}
@@ -145,7 +145,7 @@ public sealed class WhatYoullGetTests : IDisposable
 				"Every STAR",
 				"for airports in ZAB, ZLA, and ZOA",
 				"and only those amended this cycle",
-				"and only those with at least one fix inside the region (your default)",
+				"and only those with at least one fix inside the default ROI",
 			],
 			Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
 	}
@@ -170,7 +170,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
 
 		Assert.Equal(
-			["Every STAR", "but only those for an airport inside the region (your default)"],
+			["Every STAR", "but only those for an airport inside the default ROI"],
 			Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
 	}
 
@@ -208,12 +208,35 @@ public sealed class WhatYoullGetTests : IDisposable
 
 		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGet), changed);
 		Assert.Equal([Geojson, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
-		Assert.Equal(["Every open airport", "but only those with their reference point inside the region (your default)"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["Every open airport, in the region or not"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["Every open airport", "but only those with their reference point inside the default ROI"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["Every open airport, inside the default ROI or not"], Lines(tab.WhatYoullGet[1]));
 
 		Attach(tab, AiracSubServices.AirportsKey, Alias);
 
-		Assert.Equal(["Every open airport, in the region or not"], Lines(Assert.Single(tab.WhatYoullGet)));
+		Assert.Equal(["Every open airport, inside the default ROI or not"], Lines(Assert.Single(tab.WhatYoullGet)));
+	}
+
+	/// <summary>The summary says ROI, and which one: the default, or the one the tab has of its own.</summary>
+	[Fact]
+	public void airports_names_its_own_roi_when_it_has_one()
+	{
+		AirportsViewModel tab = new() { OverrideRoi = true };
+
+		Assert.Equal(
+			["Every open airport", "but only those with their reference point inside the ROI specific to the Airports sub-service"],
+			Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["Every open airport, inside the ROI specific to the Airports sub-service or not"], Lines(tab.WhatYoullGet[1]));
+	}
+
+	[Fact]
+	public void navaids_alias_file_gets_them_inside_the_roi_or_not()
+	{
+		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
+		UserConfigFile.TrySetValue("Services.AiracService.Navaids.ExcludedTypes", "VOT");
+		NavaidsViewModel tab = new();
+
+		Assert.Equal(["Every NAVAID in service except VOT", "but only those inside the default ROI"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["Every NAVAID in service except VOT, inside the default ROI or not"], Lines(tab.WhatYoullGet[1]));
 	}
 
 	// ---- Airways ----
@@ -242,13 +265,13 @@ public sealed class WhatYoullGetTests : IDisposable
 
 		tab.OverrideRoi = true;
 
-		Assert.Equal(["Every airway except the Y airways", "but only those that cross the region, cut off at its edge (this tab's own)"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["Every airway except the Y airways, in the region or not"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["Every airway except the Y airways", "but only those that cross the ROI specific to the Airways sub-service, cut off at its edge"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["Every airway except the Y airways, inside the ROI specific to the Airways sub-service or not"], Lines(tab.WhatYoullGet[1]));
 
 		tab.AliasRoiAirwaysOnly = true;
 
 		Assert.Equal(
-			["Every airway except the Y airways", "but only those that cross the region, each with all of its fixes (this tab's own)"],
+			["Every airway except the Y airways", "but only those that cross the ROI specific to the Airways sub-service, each with all of its fixes"],
 			Lines(tab.WhatYoullGet[1]));
 	}
 
@@ -300,7 +323,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		UserConfigFile.TrySetValue("Services.AiracService.ArtccBoundaries.LocationFilter", "ZLA,ZOA");
 
 		Assert.Equal(
-			["The boundaries of ZLA and ZOA", "but only the parts inside the region (your default)"],
+			["The boundaries of ZLA and ZOA", "but only the parts inside the default ROI"],
 			Lines(Assert.Single(new ArtccBoundariesViewModel().WhatYoullGet)));
 	}
 
@@ -349,7 +372,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	{
 		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
 
-		Assert.Equal(["Every fix", "but only those inside the region (your default)"], Lines(Assert.Single(FixesTab().WhatYoullGet)));
+		Assert.Equal(["Every fix", "but only those inside the default ROI"], Lines(Assert.Single(FixesTab().WhatYoullGet)));
 	}
 
 	// ---- Telephony ----
@@ -396,7 +419,7 @@ public sealed class WhatYoullGetTests : IDisposable
 			[
 				"Charts for airports within ZOB",
 				"along with CLE and DTW",
-				"along with airports within the region (this tab's own)",
+				"along with airports within the ROI specific to the Procedures sub-service",
 				"along with BRWNZ FIVE, wherever it's published",
 			],
 			Lines(tab.WhatYoullGet[0]));
@@ -466,7 +489,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.IncludeRoiAirports", "Y");
 
 		Assert.Equal(
-			["Charts for airports within the region (your default)"],
+			["Charts for airports within the default ROI"],
 			Lines(Assert.Single(ProceduresTab(Json).WhatYoullGet)));
 	}
 

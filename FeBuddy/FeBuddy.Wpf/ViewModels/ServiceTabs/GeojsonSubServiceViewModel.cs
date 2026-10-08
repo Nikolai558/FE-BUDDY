@@ -252,13 +252,18 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	public bool HasRoi => OverrideRoi || DefaultRoiStore.Load() is not null;
 
 	/// <summary>
-	/// A "What You'll Get" line about the region of interest - what it keeps, and whose region it
-	/// is - or <see langword="null"/> while there is no region, so nothing is left out.
+	/// Which ROI the run uses, for a "What You'll Get" line: <c>the default ROI</c>, or this
+	/// sub-service's own, e.g. <c>the ROI specific to the Airports sub-service</c>.
 	/// </summary>
-	/// <param name="keeps">What the region keeps, e.g. <c>those inside the region</c>.</param>
-	/// <returns>e.g. <c>those inside the region (your default)</c>.</returns>
-	protected string? RegionLine(string keeps) =>
-		HasRoi ? $"{keeps} ({(OverrideRoi ? "this tab's own" : "your default")})" : null;
+	protected string RoiName => OverrideRoi ? $"the ROI specific to the {Title} sub-service" : "the default ROI";
+
+	/// <summary>
+	/// A "What You'll Get" line about the ROI - what it keeps, naming which ROI it is - or
+	/// <see langword="null"/> while there is none, so nothing is left out.
+	/// </summary>
+	/// <param name="keeps">What the ROI keeps, given its name, e.g. <c>roi => $"those inside {roi}"</c>.</param>
+	/// <returns>e.g. <c>those inside the default ROI</c>.</returns>
+	protected string? RoiLine(Func<string, string> keeps) => HasRoi ? keeps(RoiName) : null;
 
 	/// <inheritdoc />
 	public ICommand PickRoiOnMapCommand { get; }

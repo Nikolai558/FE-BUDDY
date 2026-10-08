@@ -272,11 +272,11 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, navaids)
-			.Add(SummaryJoin.AndOnly, RegionLine("those inside the region"))
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"those inside {roi}"))
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, HasRoi ? $"{navaids}, in the region or not" : navaids)
+			.Add(SummaryJoin.First, RoiLine(roi => $"{navaids}, inside {roi} or not") ?? navaids)
 			.ToList());
 	}
 

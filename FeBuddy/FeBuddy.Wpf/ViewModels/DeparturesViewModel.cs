@@ -312,9 +312,9 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			.Add(SummaryJoin.First, IncludeObstacleDepartures ? "Every SID and obstacle departure" : "Every SID (no obstacle departures)")
 			.Add(SummaryJoin.In, artccs.Length == 0 ? null : SummaryLines.Join(artccs, "and"))
 			.Add(SummaryJoin.AndOnly, DescribeAmendmentFilter())
-			.Add(SummaryJoin.AndOnly, RegionLine(_roiMode == DepartureRoiMode.Waypoint
-				? "those with at least one fix inside the region"
-				: "those from an airport inside the region"))
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => _roiMode == DepartureRoiMode.Waypoint
+				? $"those with at least one fix inside {roi}"
+				: $"those from an airport inside {roi}"))
 			.ToList());
 	}
 

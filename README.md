@@ -61,18 +61,12 @@ quiz for your controllers. Some 2.x tools aren't in 3.0 yet - see
 - **Something wrong?** [FAQ and troubleshooting](docs/Users/FAQ-and-Troubleshooting.md).
 - **Everything else:** [all docs](docs/README.md), including the [glossary](docs/Users/Glossary.md).
 
-FE-Buddy 2.x: [instructions](https://docs.google.com/presentation/d/e/2PACX-1vRMd6PIRrj0lPb4sAi9KB7iM3u5zn0dyUVLqEcD9m2e71nf0UPyEmkOs4ZwYsQdl7smopjdvw_iWEyP/embed)
-and [reducing CRC output before vNAS upload](https://docs.google.com/presentation/d/e/2PACX-1vQ2y4m6S31lMc6DuJ9HxzW3k76w6fWrVDxomRQSwGiCS176g5kMrdRpTJi_pSwgEndRbvOXG9w5aoyM/embed)
-(Google Slides).
-
 ---
 
 ### REQUIREMENTS
 
 - Windows 10 or 11 (64-bit)
 - An internet connection (to download the FAA data)
-
-Nothing else - FE-Buddy carries its own .NET runtime.
 
 ---
 
@@ -115,6 +109,7 @@ Open an [issue](https://github.com/Nikolai558/FE-BUDDY/issues), or ask on the FE
 - Jon Galad - v3.0 icon and logo design
 - Nick Shuster - v3.0 icon and logo design
 - [Natural Earth](https://www.naturalearthdata.com) - The map's base layers (US states and coastlines, public domain)
+- [GNG](https://gng.aero-nav.com/) - Virtual Airline data
 
 If your name is listed above and you'd like a different link attached to it, or if your name should
 be listed here but isn't, please let us know via a pull request or on our Discord. We want to make

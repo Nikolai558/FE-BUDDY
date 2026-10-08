@@ -12,9 +12,10 @@ namespace FeBuddy.UnitTests.Application.Airac.Telephony;
 /// card versus are counted as left out (no designator, no telephony, expired), the two date formats
 /// the FAA prints an expiration in, an unreadable expiration being kept with a warning, every value
 /// upper-cased and trimmed into <see cref="TelephonyEntry"/>, entry order (assignments, then special
-/// call signs, then the user's virtual airlines, then the VATSIM-Radar list's), and the null-argument
-/// check - plus the VATSIM-Radar list: left out unless included, one of the user's own written once,
-/// one that differs written too, and entries that could not be a virtual airline left out and named.
+/// call signs, then the user's virtual airlines, then the virtual airline list's), and the null-argument
+/// check - plus the virtual airline list: left out unless included, and entries that could not be a
+/// virtual airline left out and named. And only the first entry for each 3LD and telephony written
+/// (issues #336, #339): a real operator's over any virtual airline, the user's own over the list's.
 /// </summary>
 public sealed class TelephonyBuilderTests
 {
@@ -277,35 +278,38 @@ public sealed class TelephonyBuilderTests
 		Assert.DoesNotContain(TelephonyBuilder.Read(data, Today, null).Entries, entry => entry.Kind == TelephonyEntryKind.VirtualAirline);
 	}
 
-	// ---- the VATSIM-Radar Virtual Airline List ----
+	// ---- the virtual airline list ----
 
-	private static TelephonyDataCollection DataWithVatsimRadar(params VatsimRadarAirline[] list)
+	private static TelephonyDataCollection DataWithList(params VatsimRadarAirline[] list)
 	{
 		TelephonyDataCollection data = Data([Assignment("DELTA AIR LINES, INC.", "UNITED STATES", "DELTA", "DAL")]);
 		data.VatsimRadarAirlines = [.. list];
 		return data;
 	}
 
+	private static string[] Cards(TelephonyBuildResult result) =>
+		[.. result.Entries.Select(entry => $"{entry.Identifier} / {entry.Telephony} / {entry.Organization}")];
+
 	[Fact]
-	public void the_vatsim_radar_lists_virtual_airlines_come_after_yours_sorted_and_upper_cased()
+	public void the_lists_virtual_airlines_come_after_yours_sorted_and_upper_cased()
 	{
-		TelephonyDataCollection data = DataWithVatsimRadar(
+		TelephonyDataCollection data = DataWithList(
 			new VatsimRadarAirline("OCN", "vOCN", "Ocean"),
-			new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta"));
+			new VatsimRadarAirline("ASK", "Airsky", "Airsky"));
 
 		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today, [new VirtualAirline("ZZV", "ZULU", "Zulu Virtual")], includeVatsimRadar: true);
 
 		Assert.Equal(
-			["DAL / DELTA / DELTA AIR LINES, INC.", "ZZV / ZULU / ZULU VIRTUAL", "DAL / DELTA / FLY DELTA VIRTUAL", "OCN / OCEAN / VOCN"],
-			result.Entries.Select(entry => $"{entry.Identifier} / {entry.Telephony} / {entry.Organization}"));
+			["DAL / DELTA / DELTA AIR LINES, INC.", "ZZV / ZULU / ZULU VIRTUAL", "ASK / AIRSKY / AIRSKY", "OCN / OCEAN / VOCN"],
+			Cards(result));
 		Assert.Equal(2, result.VatsimRadarVirtualAirlineCount);
 		Assert.Empty(result.Messages);
 	}
 
 	[Fact]
-	public void the_vatsim_radar_list_is_left_out_unless_included()
+	public void the_list_is_left_out_unless_included()
 	{
-		TelephonyDataCollection data = DataWithVatsimRadar(new VatsimRadarAirline("OCN", "vOCN", "Ocean"));
+		TelephonyDataCollection data = DataWithList(new VatsimRadarAirline("OCN", "vOCN", "Ocean"));
 
 		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today);
 
@@ -313,49 +317,140 @@ public sealed class TelephonyBuilderTests
 		Assert.Equal(0, result.VatsimRadarVirtualAirlineCount);
 	}
 
-	/// <summary>Exactly yours - ignoring case - is written once, as yours; differing only in its virtual organization, it is another card.</summary>
+	/// <summary>
+	/// Issues #336 and #339: a virtual airline with a real operator's 3LD and telephony - whatever its
+	/// virtual organization, and whether it is the user's own or the list's - is left out, and named.
+	/// </summary>
 	[Fact]
-	public void a_vatsim_radar_virtual_airline_that_is_yours_already_is_written_once_and_one_that_differs_gets_its_own_card()
+	public void a_virtual_airline_with_a_real_operators_3ld_and_telephony_is_left_out_and_named()
 	{
-		TelephonyDataCollection data = DataWithVatsimRadar(
+		TelephonyDataCollection data = Data(
+		[
+			Assignment("AMERICAN AIRLINES INC.", "UNITED STATES", "AMERICAN", "AAL"),
+			Assignment("VIRGIN ATLANTIC AIRWAYS LTD", "UNITED KINGDOM", "VIRGIN", "VIR"),
+		]);
+		data.VatsimRadarAirlines = [new VatsimRadarAirline("AAL", "American Virtual", "American"), new VatsimRadarAirline("VIR", "VRGN Virtual", "Virgin")];
+
+		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today, [new VirtualAirline("aal", "american", "My American")], includeVatsimRadar: true);
+
+		Assert.Equal(
+			["AAL / AMERICAN / AMERICAN AIRLINES INC.", "VIR / VIRGIN / VIRGIN ATLANTIC AIRWAYS LTD"],
+			Cards(result));
+		Assert.Equal(0, result.VatsimRadarVirtualAirlineCount);
+		Assert.Equal(
+			[
+				"1 of your virtual airlines has the same 3LD and telephony as a real operator, so only the real operator was written: " +
+					"AAL AMERICAN (MY AMERICAN).",
+				"2 virtual airline(s) on the Virtual Airline List (GNG + VATSIM-Radar) have the same 3LD and telephony as a real operator, " +
+					"so only the real operator was written: AAL AMERICAN (AMERICAN VIRTUAL), VIR VIRGIN (VRGN VIRTUAL).",
+			],
+			result.Messages.Select(message => message.Text));
+		Assert.All(result.Messages, message => Assert.Equal(LogLevel.Info, message.Level));
+	}
+
+	/// <summary>The user's own comes before the list's: one of the list's with the same 3LD and telephony is left out, whatever its organization.</summary>
+	[Fact]
+	public void one_of_the_lists_with_one_of_yours_3ld_and_telephony_is_left_out_and_yours_is_written()
+	{
+		TelephonyDataCollection data = DataWithList(
 			new VatsimRadarAirline("DVA", "Delta Virtual", "Delta"),
 			new VatsimRadarAirline("DVA", "Rustic Virtual", "Delta"));
 
-		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today, [new VirtualAirline("DVA", "DELTA", "DELTA VIRTUAL")], includeVatsimRadar: true);
+		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today, [new VirtualAirline("DVA", "DELTA", "My Delta")], includeVatsimRadar: true);
 
 		Assert.Equal(
-			["DELTA VIRTUAL", "RUSTIC VIRTUAL"],
+			["MY DELTA"],
 			result.Entries.Where(entry => entry.Kind == TelephonyEntryKind.VirtualAirline).Select(entry => entry.Organization));
-		Assert.Equal(1, result.VatsimRadarVirtualAirlineCount);
-
-		ServiceMessage note = Assert.Single(result.Messages);
-		Assert.Equal(LogLevel.Info, note.Level);
-		Assert.Equal(
-			"1 of your virtual airlines is also on the VATSIM-Radar Virtual Airline List, so each was written once, as yours: DVA (DELTA, DELTA VIRTUAL).",
-			note.Text);
-	}
-
-	[Fact]
-	public void two_of_yours_on_the_vatsim_radar_list_are_named_together()
-	{
-		TelephonyDataCollection data = DataWithVatsimRadar(
-			new VatsimRadarAirline("DVA", "Delta Virtual", "Delta"),
-			new VatsimRadarAirline("OCN", "vOCN", "Ocean"));
-
-		TelephonyBuildResult result = TelephonyBuilder.Read(
-			data, Today, [new VirtualAirline("DVA", "DELTA", "Delta Virtual"), new VirtualAirline("OCN", "OCEAN", "VOCN")], includeVatsimRadar: true);
-
 		Assert.Equal(0, result.VatsimRadarVirtualAirlineCount);
 		Assert.Equal(
-			"2 of your virtual airlines are also on the VATSIM-Radar Virtual Airline List, so each was written once, as yours: " +
-			"DVA (DELTA, DELTA VIRTUAL); OCN (OCEAN, VOCN).",
+			"2 virtual airline(s) on the Virtual Airline List (GNG + VATSIM-Radar) have the same 3LD and telephony as one of yours, " +
+			"so only yours was written: DVA DELTA (DELTA VIRTUAL), DVA DELTA (RUSTIC VIRTUAL).",
 			Assert.Single(result.Messages).Text);
 	}
 
+	/// <summary>GNG lists some 3LDs more than once: of the list's with the same 3LD and telephony, only the first (sorted) is written.</summary>
 	[Fact]
-	public void a_vatsim_radar_entry_that_could_not_be_a_virtual_airline_of_yours_is_left_out_and_named()
+	public void of_the_lists_with_the_same_3ld_and_telephony_only_the_first_is_written()
 	{
-		TelephonyDataCollection data = DataWithVatsimRadar(
+		TelephonyDataCollection data = DataWithList(
+			new VatsimRadarAirline("SKA", "Sky Jet", "Skyjet"),
+			new VatsimRadarAirline("SKA", "Skyjet Airlines Virtual", "Skyjet"),
+			new VatsimRadarAirline("SKA", "Sky Air", "Skyair"));
+
+		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today, includeVatsimRadar: true);
+
+		Assert.Equal(["SKA / SKYAIR / SKY AIR", "SKA / SKYJET / SKY JET"], Cards(result).Skip(1));
+		Assert.Equal(2, result.VatsimRadarVirtualAirlineCount);
+		Assert.Equal(
+			"1 virtual airline(s) on the Virtual Airline List (GNG + VATSIM-Radar) repeat an earlier one's 3LD and telephony, " +
+			"so only the first was written: SKA SKYJET (SKYJET AIRLINES VIRTUAL).",
+			Assert.Single(result.Messages).Text);
+	}
+
+	/// <summary>Two of the user's own with the same 3LD and telephony (a hand-edited config): only the first is written.</summary>
+	[Fact]
+	public void of_yours_with_the_same_3ld_and_telephony_only_the_first_is_written()
+	{
+		TelephonyBuildResult result = TelephonyBuilder.Read(
+			Data(), Today, [new VirtualAirline("DVA", "DELTA", "Delta Virtual"), new VirtualAirline("DVA", "DELTA", "Rustic Virtual")]);
+
+		Assert.Equal(["DVA / DELTA / DELTA VIRTUAL"], Cards(result));
+		Assert.Equal(
+			"1 of your virtual airlines has the same 3LD and telephony as another of yours, so only the first was written: DVA DELTA (RUSTIC VIRTUAL).",
+			Assert.Single(result.Messages).Text);
+	}
+
+	/// <summary>The FAA's own repeats - the same 3LD and telephony, another company or country - are written once too, the first.</summary>
+	[Fact]
+	public void of_the_faas_rows_with_the_same_3ld_and_telephony_only_the_first_is_written()
+	{
+		TelephonyDataCollection data = Data(
+			[
+				Assignment("FIRST COMPANY", "FRANCE", "SAMECALL", "SAM"),
+				Assignment("SECOND COMPANY", "SPAIN", "samecall", "sam"),
+			],
+			[SpecialCallSign("SAMECALL", "SAM", "AN AGENCY", "N/A")]);
+
+		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today);
+
+		Assert.Equal(["SAM / SAMECALL / FIRST COMPANY"], Cards(result));
+		Assert.Equal(
+			"2 FAA telephony row(s) repeat an earlier row's 3LD and telephony, so only the first was written: " +
+			"SAM SAMECALL (SECOND COMPANY), SAM SAMECALL (AN AGENCY).",
+			Assert.Single(result.Messages).Text);
+	}
+
+	/// <summary>The same 3LD with another telephony - or the same telephony with another 3LD - is another operator, still written.</summary>
+	[Fact]
+	public void another_telephony_or_another_3ld_is_another_operator()
+	{
+		TelephonyDataCollection data = DataWithList(
+			new VatsimRadarAirline("DAL", "Delta Virtual", "Delta Virtual"),
+			new VatsimRadarAirline("DVA", "Delta Virtual", "Delta"));
+
+		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today, includeVatsimRadar: true);
+
+		Assert.Equal(3, result.Entries.Count);
+		Assert.Empty(result.Messages);
+	}
+
+	/// <summary>A long list of left-out entries names twenty, then says how many more.</summary>
+	[Fact]
+	public void a_long_list_left_out_names_twenty_then_how_many_more()
+	{
+		TelephonyDataCollection data = Data([.. Enumerable.Range(0, 25).Select(i => Assignment($"COMPANY {i}", "X", "SAMECALL", "SAM"))]);
+
+		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today);
+
+		string text = Assert.Single(result.Messages).Text;
+		Assert.StartsWith("24 FAA telephony row(s) repeat", text, StringComparison.Ordinal);
+		Assert.EndsWith("SAM SAMECALL (COMPANY 20), and 4 more.", text, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void a_list_entry_that_could_not_be_a_virtual_airline_of_yours_is_left_out_and_named()
+	{
+		TelephonyDataCollection data = DataWithList(
 			new VatsimRadarAirline("PHENX", "Phoenix AirV", "PHOENIX"),
 			new VatsimRadarAirline("C", "United States Coast Guard Virtual", "COAST GUARD"),
 			new VatsimRadarAirline("ASK", "AIRSKY", "AIRSKY"));
@@ -366,7 +461,7 @@ public sealed class TelephonyBuilderTests
 		ServiceMessage note = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, note.Level);
 		Assert.Equal(
-			"2 virtual airline(s) on the VATSIM-Radar Virtual Airline List were left out: a 3LD that isn't three letters, " +
+			"2 virtual airline(s) on the Virtual Airline List (GNG + VATSIM-Radar) were left out: a 3LD that isn't three letters, " +
 			"or a telephony with no letter or digit (C, PHENX).",
 			note.Text);
 	}

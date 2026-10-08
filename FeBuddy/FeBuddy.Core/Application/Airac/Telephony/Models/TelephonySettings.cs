@@ -21,7 +21,7 @@ public sealed record TelephonySettings
 	public IReadOnlyList<VirtualAirline> VirtualAirlines { get; init; } = [];
 
 	/// <summary>
-	/// Whether the VATSIM-Radar Virtual Airline List's virtual airlines are written too, after the
+	/// Whether the virtual airline list's virtual airlines are written too, after the
 	/// user's own (see <see cref="VatsimRadarVirtualAirlines"/>). Default: no.
 	/// </summary>
 	public bool IncludeVatsimRadarVirtualAirlines { get; init; }

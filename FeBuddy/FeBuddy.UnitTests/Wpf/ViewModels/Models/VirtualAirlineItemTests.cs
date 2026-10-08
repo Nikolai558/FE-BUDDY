@@ -98,16 +98,34 @@ public sealed class VirtualAirlineItemTests
 	}
 
 	[Fact]
-	public void it_starts_off_the_vatsim_radar_list_and_reports_being_put_on_it()
+	public void it_starts_off_the_list_and_reports_being_put_on_it_with_its_note()
 	{
 		VirtualAirlineItem item = new("DAL", "DELTA", "Fly Delta Virtual");
 		List<string?> raised = Watch(item);
 
 		Assert.False(item.IsOnVatsimRadarList);
+		Assert.False(item.HasNote);
 
 		item.IsOnVatsimRadarList = true;
 
 		Assert.True(item.IsOnVatsimRadarList);
-		Assert.Equal([nameof(VirtualAirlineItem.IsOnVatsimRadarList)], raised);
+		Assert.Equal("Same 3LD and telephony as one on the list, so the list's is left out.", item.Note);
+		Assert.Equal([nameof(VirtualAirlineItem.IsOnVatsimRadarList), nameof(VirtualAirlineItem.Note), nameof(VirtualAirlineItem.HasNote)], raised);
+	}
+
+	/// <summary>A real operator with its 3LD and telephony means it isn't written - which says more than the list's match, so it wins.</summary>
+	[Fact]
+	public void a_real_operators_note_comes_before_the_lists()
+	{
+		VirtualAirlineItem item = new("AAL", "AMERICAN", "American Virtual") { IsOnVatsimRadarList = true };
+		List<string?> raised = Watch(item);
+
+		item.RealOperator = "AMERICAN AIRLINES INC.";
+
+		Assert.Equal("Same 3LD and telephony as a real operator (AMERICAN AIRLINES INC.), so it's left out of Telephony.txt.", item.Note);
+		Assert.Equal([nameof(VirtualAirlineItem.RealOperator), nameof(VirtualAirlineItem.Note), nameof(VirtualAirlineItem.HasNote)], raised);
+
+		item.RealOperator = "AMERICAN AIRLINES INC.";
+		Assert.Equal(3, raised.Count);
 	}
 }

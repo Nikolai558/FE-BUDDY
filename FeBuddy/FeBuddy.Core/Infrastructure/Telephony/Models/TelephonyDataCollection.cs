@@ -3,7 +3,7 @@ namespace FeBuddy.Core.Infrastructure.Telephony.Models;
 /// <summary>
 /// The parsed FAA telephony pages: every row of the ICAO register (Chapter 3, Section 1) and of the
 /// U.S. special call signs (Chapter 3, Section 4), as <see cref="Parsers.TelephonyHtmlParser"/>
-/// returns them - and the VATSIM-Radar Virtual Airline List, when the user includes it.
+/// returns them - and the virtual airline list, when the user includes it.
 /// </summary>
 public class TelephonyDataCollection
 {
@@ -17,7 +17,7 @@ public class TelephonyDataCollection
 	public List<TelephonyHtmlDataModel.SpecialCallSign> SpecialCallSigns { get; set; } = [];
 
 	/// <summary>
-	/// Every virtual airline on the VATSIM-Radar Virtual Airline List, in the list's order (see
+	/// Every virtual airline on the virtual airline list, in the list's order (see
 	/// <see cref="Parsers.VatsimRadarAirlineParser"/>); empty when the user does not include it, or
 	/// FE-Buddy has no copy of it.
 	/// </summary>

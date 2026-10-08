@@ -18,6 +18,18 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### AIRAC Service
+- Bug #338 - Telephony: the virtual airline list downloads on Windows 10 again. It now comes straight
+  from the two sources VATSIM-Radar builds it from - GNG's fictional airlines and VATSIM-Radar's own
+  list on GitHub - each kept and fallen back on by itself, and downloaded at most once a day. It's now
+  called the **Virtual Airline List (GNG + VATSIM-Radar)**.
+- Bug #339, Feature #336 - Telephony: only one card is written for each 3LD and telephony. A virtual
+  airline with a real operator's (`AAL AMERICAN`, `VIR VIRGIN`) is left out, and so is one of the
+  list's with one of yours; the Review tab names them, and the tab flags yours.
+- Feature #337 - Telephony: a part of the list that couldn't be downloaded is named in amber, with
+  why and which copy is used instead.
+- A download that fails now says why in full: the Review tab and the log name the underlying cause
+  (a TLS error, say), not just "see inner exception".
 
 ---
 

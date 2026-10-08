@@ -233,9 +233,12 @@ the operator's card. Operators that share a command show a card each. The region
 
 - **Virtual Airlines** - add your facility's own (3LD, telephony and virtual organization). Each gets
   the same two commands and a card marked `--VA--`, after any real operator sharing the command.
-  - **Include the VATSIM-Radar Virtual Airline List** adds its ~700 virtual airlines after yours,
-    downloaded every run (**Download the latest list** fetches it now). One of yours exactly the same
-    as one on the list can't be added; one that differs at all gets its own card.
+  Only one card is written for each 3LD and telephony: a virtual airline with a real operator's is
+  left out (the tab flags yours), and so is one of the list's with yours.
+  - **Include the Virtual Airline List (GNG + VATSIM-Radar)** adds about 700 virtual airlines after
+    yours: the list VATSIM-Radar shows, built from GNG's fictional airlines and VATSIM-Radar's own
+    additions. Runs download each part at most once a day; **Download the latest list** fetches both
+    now. A part that can't be downloaded is named in amber, and its last copy is used.
 - **Telephony Data** - FAA Order JO 7340.2, Chapter 3, downloaded every run. Entries with no
   three-letter designator or no telephony, and expired special call signs, are left out.
 

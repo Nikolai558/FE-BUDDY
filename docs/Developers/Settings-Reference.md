@@ -435,7 +435,7 @@ tab's ROI override if it has one, otherwise the default ROI.
 | `VirtualAirlines.<n>.Designator` | | a virtual airline's three-letter designator (`<n>` from 1) | none |
 | `VirtualAirlines.<n>.Telephony` | | its telephony | none |
 | `VirtualAirlines.<n>.Organization` | | its virtual organization | none |
-| `IncludeVatsimRadarVirtualAirlines` | | `Y` / `N` - also write the VATSIM-Radar Virtual Airline List | `N` |
+| `IncludeVatsimRadarVirtualAirlines` | | `Y` / `N` - also write the virtual airline list (GNG + VATSIM-Radar; the key keeps its old name) | `N` |
 
 - No `FebProperties`, `CrcDefaultsFor` or `Crc.*`, and no region: the ROI keys are accepted and
   ignored, and `IncludeFebCustomProperties = Y` warns.

@@ -4,8 +4,8 @@
     action bar, and the tab host owns the page's single scroller.
 
     Telephony's only output is its alias file, which covers every operator, so there is no
-    choice to make about it - only the virtual airlines to add to it: the VATSIM-Radar
-    Virtual Airline List, ticked or not, and the user's own, listed on the Virtual Airlines card
+    choice to make about it - only the virtual airlines to add to it: the Virtual Airline
+    List (GNG + VATSIM-Radar), ticked or not, and the user's own, listed on the Virtual Airlines card
     the way the Fixes tab lists its combinations - see TelephonyViewModel's class remarks.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.TelephonyView"
@@ -50,15 +50,19 @@
             <ctl:Card Header="Virtual Airlines" Outputs="Alias" bhv:FieldState.Error="{Binding FieldErrors[VirtualAirlines]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               bhv:InlineCode.Text="Adds virtual airlines to `Telephony.txt`. Each gets a `--VA--` card with its 3LD, telephony and organization, under `.id` plus its 3LD and `.id` plus its telephony. When a command fits more than one, it shows each of them, real operators first." />
+                               bhv:InlineCode.Text="Adds virtual airlines to `Telephony.txt`. Each gets a `--VA--` card with its 3LD, telephony and organization, under `.id` plus its 3LD and `.id` plus its telephony. When a command fits more than one, it shows each of them, real operators first. Only one card is written for each 3LD and telephony: a virtual airline with a real operator's is left out." />
 
-                    <!-- the VATSIM-Radar list: one tick, and what FE-Buddy has of it -->
-                    <CheckBox Content="Include the VATSIM-Radar Virtual Airline List" IsChecked="{Binding IncludeVatsimRadarList}" Margin="0,4,0,0" />
+                    <!-- the virtual airline list: one tick, and what FE-Buddy has of it -->
+                    <CheckBox Content="Include the Virtual Airline List (GNG + VATSIM-Radar)" IsChecked="{Binding IncludeVatsimRadarList}" Margin="0,4,0,0" />
                     <StackPanel Margin="26,4,0,0" MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
                         <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                   bhv:InlineCode.Text="About 700 virtual airlines from VATSIM-Radar (`data.vatsim-radar.com`), added after yours, each with its own `--VA--` card. You can't add one of your own that exactly matches one on the list. If it differs at all, it gets its own card." />
+                                   bhv:InlineCode.Text="About 700 virtual airlines, the same list VATSIM-Radar shows: GNG's fictional airlines (`gng.aero-nav.com`) plus VATSIM-Radar's own additions (VATSIM-Radar/data on GitHub). Added after yours, each with its own `--VA--` card. Runs download each list at most once a day; Download the latest list gets them now." />
                         <StackPanel Visibility="{Binding IncludeVatsimRadarList, Converter={StaticResource BoolToVis}}" Margin="0,6,0,0">
                             <TextBlock Text="{Binding VatsimRadarListStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
+                            <!-- a part that couldn't be downloaded, in amber so it isn't missed (issue #337) -->
+                            <TextBlock Text="{Binding VatsimRadarListWarning}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                       Foreground="{StaticResource Brush.Warn}" Margin="0,4,0,0"
+                                       Visibility="{Binding HasVatsimRadarListWarning, Converter={StaticResource BoolToVis}}" />
                             <Button Content="Download the latest list" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                                     Margin="0,6,0,0" Command="{Binding DownloadVatsimRadarListCommand}"
                                     ToolTip="Download it now, to check your virtual airlines against it" />
@@ -89,9 +93,9 @@
                                             <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Body.Strong}" />
                                             <TextBlock Text="{Binding Organization}" Style="{StaticResource Text.Body}" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Text="{Binding Commands}" Style="{StaticResource Text.Caption}" FontFamily="{StaticResource Font.Mono}" />
-                                            <TextBlock Text="Also on the VATSIM-Radar list, so it's written once." Style="{StaticResource Text.Caption}"
+                                            <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Caption}"
                                                        Foreground="{StaticResource Brush.Warn}" TextWrapping="Wrap"
-                                                       Visibility="{Binding IsOnVatsimRadarList, Converter={StaticResource BoolToVis}}" />
+                                                       Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>

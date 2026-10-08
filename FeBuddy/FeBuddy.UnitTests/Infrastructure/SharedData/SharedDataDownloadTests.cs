@@ -331,6 +331,117 @@ public sealed class SharedDataDownloadTests : IDisposable
 		}
 	}
 
+	// ---- reusing a new enough copy ----
+
+	/// <summary>A copy younger than the age asked for is used as it is - nothing downloaded, nothing replaced - and logged as such.</summary>
+	[Fact]
+	public async Task a_copy_younger_than_the_age_asked_for_is_used_without_downloading()
+	{
+		string destination = Path.Combine(_testRoot, "kept", "recent.txt");
+		Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+		File.WriteAllText(destination, "kept copy");
+		DateTime keptUtc = DateTime.UtcNow.AddHours(-2);
+		File.SetLastWriteTimeUtc(destination, keptUtc);
+		bool validated = false;
+
+		SharedDataRefreshResult result = await SharedDataDownload.RefreshAsync(
+			"http://127.0.0.1:1/never-asked", destination, CopyAsIs, _ => validated = true, "test data",
+			reuseCopyYoungerThan: TimeSpan.FromHours(24), CancellationToken.None);
+
+		Assert.True(result.Reused);
+		Assert.False(result.IsFresh);
+		Assert.True(result.HasCopy);
+		Assert.Null(result.FailureReason);
+		Assert.Equal(keptUtc, result.DownloadedUtc);
+		Assert.False(validated);
+		Assert.Equal("kept copy", File.ReadAllText(destination));
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Used FE-Buddy's copy of the test data from ", StringComparison.Ordinal)
+			&& e.Message.EndsWith("without downloading it: it is under 24 hours old.", StringComparison.Ordinal));
+	}
+
+	/// <summary>A copy as old as the age asked for or older - or dated in the future - is downloaded again.</summary>
+	[Theory]
+	[InlineData(-25.0)]
+	[InlineData(3.0)]
+	public async Task a_copy_not_younger_than_the_age_asked_for_is_downloaded_again(double hoursFromNow)
+	{
+		string destination = Path.Combine(_testRoot, "kept", "old.txt");
+		Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+		File.WriteAllText(destination, "kept copy");
+		File.SetLastWriteTimeUtc(destination, DateTime.UtcNow.AddHours(hoursFromNow));
+
+		(HttpListener listener, string url) = StartServer(Encoding.UTF8.GetBytes("new payload"));
+
+		try
+		{
+			SharedDataRefreshResult result = await SharedDataDownload.RefreshAsync(
+				url, destination, CopyAsIs, AcceptAnything, "test data", reuseCopyYoungerThan: TimeSpan.FromHours(24), CancellationToken.None);
+
+			Assert.True(result.IsFresh);
+			Assert.False(result.Reused);
+			Assert.Equal("new payload", File.ReadAllText(destination));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
+
+	[Fact]
+	public void a_reused_result_has_a_copy_but_is_not_fresh()
+	{
+		SharedDataRefreshResult result = new("C:\\kept\\file.txt", DateTime.UtcNow, FailureReason: null) { Reused = true };
+
+		Assert.False(result.IsFresh);
+		Assert.True(result.HasCopy);
+	}
+
+	// ---- why a download failed ----
+
+	/// <summary>The innermost cause is logged and reported too - .NET's own "see inner exception" says nothing (issue #338).</summary>
+	[Fact]
+	public async Task a_failure_names_its_innermost_cause_in_the_log_and_the_reason()
+	{
+		string destination = Path.Combine(_testRoot, "kept", "inner.txt");
+		(HttpListener listener, string url) = StartServer(Encoding.UTF8.GetBytes("payload"));
+
+		try
+		{
+			SharedDataRefreshResult result = await SharedDataDownload.RefreshAsync(
+				url, destination, CopyAsIs,
+				validate: _ => throw new HttpRequestException(
+					"The SSL connection could not be established, see inner exception.",
+					new System.Security.Authentication.AuthenticationException(
+						"Authentication failed, see inner exception.",
+						new System.ComponentModel.Win32Exception(unchecked((int)0x80090331), "The client and server cannot communicate, because they do not possess a common algorithm."))),
+				"test data", CancellationToken.None);
+
+			const string Expected = "The SSL connection could not be established: The client and server cannot communicate, because they do not possess a common algorithm.";
+			Assert.Equal(Expected, result.FailureReason);
+			Assert.Contains(AppLog.Entries, e => e.Message.EndsWith(Expected, StringComparison.Ordinal));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
+
+	[Theory]
+	[InlineData("Response status code does not indicate success: 500 (Internal Server Error).", null, "Response status code does not indicate success: 500 (Internal Server Error).")]
+	[InlineData("Outer problem.", "The real cause.", "Outer problem: The real cause.")]
+	[InlineData("Outer problem, see inner exception.", "The real cause.", "Outer problem: The real cause.")]
+	[InlineData("Outer problem: The real cause.", "The real cause.", "Outer problem: The real cause.")]
+	[InlineData("Outer problem.", "", "Outer problem.")]
+	public void the_reason_is_the_message_and_the_innermost_cause_when_it_says_more(string outer, string? inner, string expected)
+	{
+		Exception ex = inner is null ? new InvalidOperationException(outer) : new InvalidOperationException(outer, new IOException(inner));
+
+		Assert.Equal(expected, SharedDataDownload.DescribeFailure(ex));
+		Assert.Throws<ArgumentNullException>(() => SharedDataDownload.DescribeFailure(null!));
+	}
+
 	// ---- SharedDataDirectory ----
 
 	[Fact]

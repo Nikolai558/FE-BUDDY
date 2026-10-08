@@ -14,7 +14,8 @@ namespace FeBuddy.UnitTests.Application.Airac;
 /// Exercises <see cref="AiracSharedDataLoader"/>'s internal overloads with fake refresh functions,
 /// a fixed clock and small real files on disk: the fresh/stale/no-copy/unreadable-copy message and
 /// data shapes for both Wx Stations (required) and Telephony (register required, special call
-/// signs and the VATSIM-Radar Virtual Airline List optional - the list only when included), and
+/// signs and the virtual airline list optional - the list only when included, each of its two parts
+/// falling back on its own, the older single copy only while neither has one), and
 /// <see cref="AiracSharedDataLoader.DescribeAge"/>'s boundaries.
 /// </summary>
 public sealed class AiracSharedDataLoaderTests : IDisposable
@@ -179,74 +180,198 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 		Assert.Equal("Downloaded the latest FAA U.S. special call signs.", result.Messages[1].Text);
 	}
 
-	// ---- Telephony: the VATSIM-Radar Virtual Airline List ----
+	// ---- Telephony: the virtual airline list (GNG + VATSIM-Radar) ----
 
-	private const string ValidVatsimRadarJson =
-		"""{ "airlines": [], "virtual": [{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }] }""";
+	/// <summary>GNG's list: 100 rows (the fewest a copy may have), the first two DAL and SKA, then fillers.</summary>
+	private static string GngJson()
+	{
+		IEnumerable<string> rows = new[]
+			{
+				"""{ "icao": "DAL", "airline": "GNG DELTA", "callsign": "GNGDELTA" }""",
+				"""{ "icao": "SKA", "airline": "SKY AIR", "callsign": "SKYAIR" }""",
+			}
+			.Concat(Enumerable.Range(0, 98).Select(i => $$"""{ "icao": "Q{{i:00}}", "airline": "FILLER {{i}}", "callsign": "FILLER{{i}}" }"""));
+
+		return $$"""{ "records": 100, "page": 1, "total": 1, "rows": [{{string.Join(",", rows)}}] }""";
+	}
+
+	private const string VatsimRadarJson =
+		"""[{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }, { "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }]""";
+
+	private const string OlderCopyJson =
+		"""{ "airlines": [], "virtual": [{ "icao": "WAT", "name": "Walker Air", "callsign": "Walker", "virtual": true }] }""";
 
 	private TelephonyRefreshResult FreshPages() => new(
 		new SharedDataRefreshResult(WriteFile("register.html", ValidRegisterHtml), NowUtc, FailureReason: null),
 		new SharedDataRefreshResult(WriteFile("special.html", ValidSpecialCallSignsHtml), NowUtc, FailureReason: null));
 
+	private static Func<CancellationToken, Task<VirtualAirlineListRefreshResult>> Refresh(VirtualAirlineListRefreshResult result) =>
+		_ => Task.FromResult(result);
+
+	private SharedDataRefreshResult FreshGng() => new(WriteFile("gng.json", GngJson()), NowUtc, FailureReason: null);
+
+	private SharedDataRefreshResult FreshVatsimRadar() => new(WriteFile("vatsim_radar.json", VatsimRadarJson), NowUtc, FailureReason: null);
+
+	/// <summary>Both parts fresh: merged - VATSIM-Radar's DAL takes over GNG's, OCN is added - with an Info message for each.</summary>
 	[Fact]
-	public async Task the_vatsim_radar_list_when_included_and_fresh_is_added_with_an_info_message()
+	public async Task the_list_when_included_and_fresh_is_both_parts_merged_with_an_info_message_each()
 	{
-		string listPath = WriteFile("airlines.json", ValidVatsimRadarJson);
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()), Refresh(new VirtualAirlineListRefreshResult(FreshGng(), FreshVatsimRadar())), NowUtc, CancellationToken.None);
+
+		List<VatsimRadarAirline> list = result.Data!.VatsimRadarAirlines;
+		Assert.Equal(101, list.Count);
+		Assert.Equal(new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta"), list[0]);
+		Assert.Equal(new VatsimRadarAirline("OCN", "vOCN", "Ocean"), list[^1]);
+
+		Assert.Equal(4, result.Messages.Count);
+		Assert.Equal("Downloaded the latest GNG fictional airline list.", result.Messages[2].Text);
+		Assert.Equal("Downloaded the latest VATSIM-Radar airline list.", result.Messages[3].Text);
+		Assert.All(result.Messages, m => Assert.Equal(LogLevel.Info, m.Level));
+	}
+
+	/// <summary>A copy under a day old is used without downloading, and the run says so - not "Downloaded the latest".</summary>
+	[Fact]
+	public async Task a_part_used_without_downloading_says_so()
+	{
+		DateTime keptUtc = NowUtc.AddHours(-3);
+		SharedDataRefreshResult reused = new(WriteFile("gng.json", GngJson()), keptUtc, FailureReason: null) { Reused = true };
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(FreshPages()), Refresh(new SharedDataRefreshResult(listPath, NowUtc, FailureReason: null)), NowUtc, CancellationToken.None);
+			Refresh(FreshPages()), Refresh(new VirtualAirlineListRefreshResult(reused, FreshVatsimRadar())), NowUtc, CancellationToken.None);
 
-		Assert.Equal(new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta"), Assert.Single(result.Data!.VatsimRadarAirlines));
-		Assert.Equal(3, result.Messages.Count);
-		Assert.Equal("Downloaded the latest VATSIM-Radar Virtual Airline List.", result.Messages[2].Text);
+		Assert.Equal(
+			$"Used FE-Buddy's copy of the GNG fictional airline list from {keptUtc.ToLocalTime():d MMM yyyy HH:mm}: it's less than a day old, so it wasn't downloaded again.",
+			result.Messages[2].Text);
 		Assert.Equal(LogLevel.Info, result.Messages[2].Level);
+		Assert.Equal(101, result.Data!.VatsimRadarAirlines.Count);
 	}
 
 	[Fact]
-	public async Task the_vatsim_radar_list_when_not_included_is_not_there_and_says_nothing()
+	public async Task the_list_when_not_included_is_not_there_and_says_nothing()
 	{
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(FreshPages()), refreshVatsimRadar: null, NowUtc, CancellationToken.None);
+			Refresh(FreshPages()), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.Empty(result.Data!.VatsimRadarAirlines);
 		Assert.Equal(2, result.Messages.Count);
 	}
 
-	/// <summary>The list is optional, like the U.S. special call signs: without it the run goes on, with an advisory warning.</summary>
+	/// <summary>Each part falls back on its own last good copy: a failed download keeps the other part's fresh one.</summary>
 	[Fact]
-	public async Task the_vatsim_radar_list_with_no_copy_is_left_out_with_an_advisory_warning_and_the_run_goes_on()
+	public async Task a_part_that_fails_uses_its_last_good_copy_beside_the_others_fresh_one()
+	{
+		SharedDataRefreshResult stale = new(WriteFile("vatsim_radar.json", VatsimRadarJson), NowUtc.AddDays(-4), "The SSL connection could not be established: TLS alert");
+
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()), Refresh(new VirtualAirlineListRefreshResult(FreshGng(), stale)), NowUtc, CancellationToken.None);
+
+		Assert.Equal(101, result.Data!.VatsimRadarAirlines.Count);
+		ServiceMessage warning = result.Messages[3];
+		Assert.Equal(LogLevel.Warning, warning.Level);
+		Assert.True(warning.IsAdvisory);
+		Assert.Contains("VATSIM-Radar airline list (The SSL connection could not be established: TLS alert)", warning.Text, StringComparison.Ordinal);
+		Assert.Contains("4 days old", warning.Text, StringComparison.Ordinal);
+	}
+
+	/// <summary>A part with no copy at all leaves the list to the other part alone, with a warning saying so.</summary>
+	[Fact]
+	public async Task a_part_with_no_copy_leaves_the_other_alone_with_a_warning()
 	{
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(FreshPages()), Refresh(new SharedDataRefreshResult(null, null, "list download failed")), NowUtc, CancellationToken.None);
+			Refresh(FreshPages()),
+			Refresh(new VirtualAirlineListRefreshResult(new SharedDataRefreshResult(null, null, "GNG is down"), FreshVatsimRadar())),
+			NowUtc,
+			CancellationToken.None);
 
-		Assert.NotNull(result.Data);
-		Assert.Single(result.Data!.Assignments);
-		Assert.Empty(result.Data.VatsimRadarAirlines);
+		Assert.Equal(["DAL", "OCN"], result.Data!.VatsimRadarAirlines.Select(a => a.Icao));
 
 		ServiceMessage warning = result.Messages[2];
 		Assert.Equal(LogLevel.Warning, warning.Level);
 		Assert.True(warning.IsAdvisory);
-		Assert.Contains("list download failed", warning.Text, StringComparison.Ordinal);
-		Assert.Contains("Telephony.txt leaves it out", warning.Text, StringComparison.Ordinal);
+		Assert.Contains("GNG is down", warning.Text, StringComparison.Ordinal);
+		Assert.Contains("the virtual airline list has only the VATSIM-Radar airline list's airlines", warning.Text, StringComparison.Ordinal);
 	}
 
+	/// <summary>The list is optional, like the U.S. special call signs: with no copy of anything the run goes on, with advisory warnings.</summary>
 	[Fact]
-	public async Task a_vatsim_radar_copy_that_cannot_be_read_is_left_out_with_an_error()
+	public async Task the_list_with_no_copy_of_either_part_is_left_out_and_the_run_goes_on()
 	{
-		string listPath = WriteFile("airlines.json", UnparsableHtml);
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()),
+			Refresh(new VirtualAirlineListRefreshResult(new SharedDataRefreshResult(null, null, "GNG is down"), new SharedDataRefreshResult(null, null, "GitHub is down"))),
+			NowUtc,
+			CancellationToken.None);
+
+		Assert.NotNull(result.Data);
+		Assert.Single(result.Data!.Assignments);
+		Assert.Empty(result.Data.VatsimRadarAirlines);
+		Assert.Equal(4, result.Messages.Count);
+		Assert.All(result.Messages.Skip(2), m => Assert.True(m.IsAdvisory));
+		Assert.Contains("Telephony.txt leaves the virtual airline list out", result.Messages[3].Text, StringComparison.Ordinal);
+	}
+
+	/// <summary>The older single copy is the last resort: used only while neither part has a copy.</summary>
+	[Fact]
+	public async Task the_older_copy_is_used_only_while_neither_part_has_a_copy()
+	{
+		string olderPath = WriteFile("vatsim_radar_airlines.json", OlderCopyJson);
+		SharedDataRefreshResult noGng = new(null, null, "GNG is down");
+		SharedDataRefreshResult noVatsimRadar = new(null, null, "GitHub is down");
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(FreshPages()), Refresh(new SharedDataRefreshResult(listPath, NowUtc.AddDays(-2), "list download failed")), NowUtc, CancellationToken.None);
+			Refresh(FreshPages()),
+			Refresh(new VirtualAirlineListRefreshResult(noGng, noVatsimRadar, olderPath, NowUtc.AddDays(-2))),
+			NowUtc,
+			CancellationToken.None);
 
-		Assert.Empty(result.Data!.VatsimRadarAirlines);
-		Assert.Equal(4, result.Messages.Count);
-		Assert.True(result.Messages[2].IsAdvisory);
-		Assert.Equal(LogLevel.Error, result.Messages[3].Level);
-		Assert.Contains("VATSIM-Radar Virtual Airline List can't be read", result.Messages[3].Text, StringComparison.Ordinal);
+		Assert.Equal(new VatsimRadarAirline("WAT", "Walker Air", "Walker"), Assert.Single(result.Data!.VatsimRadarAirlines));
+		Assert.Contains("this run used FE-Buddy's older copy of the whole list", result.Messages[2].Text, StringComparison.Ordinal);
+
+		ServiceMessage older = result.Messages[^1];
+		Assert.Equal(LogLevel.Warning, older.Level);
+		Assert.True(older.IsAdvisory);
+		Assert.StartsWith("FE-Buddy has no copy of either part of the virtual airline list yet, so this run used its older copy of the whole list from ", older.Text, StringComparison.Ordinal);
+		Assert.Contains("(2 days old)", older.Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
-	public async Task with_no_register_the_vatsim_radar_list_is_not_downloaded_at_all()
+	public async Task a_part_whose_copy_cannot_be_read_is_left_out_with_an_error()
+	{
+		string unreadable = WriteFile("gng.json", UnparsableHtml);
+
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()),
+			Refresh(new VirtualAirlineListRefreshResult(new SharedDataRefreshResult(unreadable, NowUtc.AddDays(-2), "GNG is down"), FreshVatsimRadar())),
+			NowUtc,
+			CancellationToken.None);
+
+		Assert.Equal(2, result.Data!.VatsimRadarAirlines.Count);
+		Assert.Equal(5, result.Messages.Count);
+		ServiceMessage error = result.Messages[4];
+		Assert.Equal(LogLevel.Error, error.Level);
+		Assert.StartsWith("FE-Buddy's copy of the GNG fictional airline list can't be read", error.Text, StringComparison.Ordinal);
+		Assert.EndsWith("so the virtual airline list leaves its airlines out.", error.Text, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task an_older_copy_that_cannot_be_read_is_left_out_with_an_error()
+	{
+		string olderPath = WriteFile("vatsim_radar_airlines.json", UnparsableHtml);
+
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()),
+			Refresh(new VirtualAirlineListRefreshResult(new SharedDataRefreshResult(null, null, "down"), new SharedDataRefreshResult(null, null, "down"), olderPath)),
+			NowUtc,
+			CancellationToken.None);
+
+		Assert.Empty(result.Data!.VatsimRadarAirlines);
+		Assert.Equal(LogLevel.Error, result.Messages[^1].Level);
+		Assert.Contains("Telephony.txt leaves the virtual airline list out", result.Messages[^1].Text, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task with_no_register_the_list_is_not_downloaded_at_all()
 	{
 		bool asked = false;
 		TelephonyRefreshResult refreshed = new(
@@ -258,7 +383,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			_ =>
 			{
 				asked = true;
-				return Task.FromResult(new SharedDataRefreshResult(null, null, "unused"));
+				return Task.FromResult(new VirtualAirlineListRefreshResult(new SharedDataRefreshResult(null, null, "unused"), new SharedDataRefreshResult(null, null, "unused")));
 			},
 			NowUtc,
 			CancellationToken.None);

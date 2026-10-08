@@ -527,7 +527,7 @@ internal static class HarnessSettings
 			{ "VirtualAirlines.2.Telephony", "DEVIL AIR" },
 			{ "VirtualAirlines.2.Organization", "Rustic Virtual" },
 
-			// "Y" downloads the VATSIM-Radar Virtual Airline List too and adds its virtual airlines after these.
+			// "Y" downloads the virtual airline list too and adds its virtual airlines after these.
 			{ "IncludeVatsimRadarVirtualAirlines", "N" },
 		};
 

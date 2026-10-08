@@ -15,8 +15,14 @@ namespace FeBuddy.Core.Infrastructure.SharedData.Models;
 /// </param>
 public sealed record SharedDataRefreshResult(string? FilePath, DateTime? DownloadedUtc, string? FailureReason)
 {
+	/// <summary>
+	/// Whether the kept copy was used without downloading, because it was new enough
+	/// (see <see cref="SharedDataDownload.RefreshAsync(string, string, Action{string, string}, Action{string}, string, TimeSpan?, CancellationToken)"/>).
+	/// </summary>
+	public bool Reused { get; init; }
+
 	/// <summary>Whether the copy to use was downloaded just now.</summary>
-	public bool IsFresh => FilePath is not null && FailureReason is null;
+	public bool IsFresh => FilePath is not null && FailureReason is null && !Reused;
 
 	/// <summary>Whether there is a copy to use at all, fresh or not.</summary>
 	public bool HasCopy => FilePath is not null;

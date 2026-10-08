@@ -13,6 +13,25 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-08
+<!--
+PostId: 2026-10-08.1
+-->
+
+**Version 3.0.0-beta.5 Compiled!**
+
+A hotfix for Telephony's virtual airlines
+
+- **Windows 10**: the virtual airline list downloads again
+- The list now comes straight from its two sources: **GNG** and **VATSIM-Radar's GitHub**. Each is saved and falls back on its own copy, and runs download each one at most once a day (**Download the latest list** gets them now)
+- **One card for each 3LD and telephony**: a virtual airline with the same 3LD and telephony as a real operator (`AAL AMERICAN`) is left out. The Review tab names them, and the Telephony tab flags yours
+- If part of the list can't be downloaded, the tab says so in amber, with the reason
+- When a download fails, FE-Buddy now gives the underlying cause (a TLS error, say), not just "see inner exception"
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.5)!!!
+
+---
+
 ## 2026-10-07
 <!--
 PostId: 2026-10-07.1

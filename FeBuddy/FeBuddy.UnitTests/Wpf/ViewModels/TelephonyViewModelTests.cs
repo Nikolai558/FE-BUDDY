@@ -9,6 +9,7 @@ using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.SharedData.Models;
+using FeBuddy.Core.Infrastructure.Telephony.Models;
 
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
@@ -16,10 +17,12 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 /// Covers the Virtual Airlines card of <see cref="TelephonyViewModel"/>: adding, editing, deleting
 /// and cancelling in the editor, what the editor lets through and says, what is saved and sent to a
 /// run, a hand-written entry that cannot be written, the Preview Settings row and the run summary -
-/// against a throwaway config. No command that opens a dialog is run. Also the VATSIM-Radar Virtual
-/// Airline List: the choice saved and sent, an exact match turned away with a warning, one that
-/// differs let through with a heads-up, the user's own flagged, the copy's status, and downloading
-/// it - through a stand-in, never the network.
+/// against a throwaway config. No command that opens a dialog is run. Also the virtual airline list
+/// (GNG + VATSIM-Radar): the choice saved and sent, an exact match turned away with a warning, one
+/// with the same 3LD and telephony let through with a heads-up, the user's own flagged, the copies'
+/// status and what went wrong with them (in amber), and downloading them - through a stand-in, never
+/// the network. And the real operators: one of the user's own with a real operator's 3LD and
+/// telephony is flagged, as it won't be written.
 /// </summary>
 [Collection("AppLog")]
 public sealed class TelephonyViewModelTests : IDisposable
@@ -255,16 +258,18 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.Equal("Already in the list.", tab.VirtualAirlineEditorHint);
 	}
 
-	/// <summary>Same 3LD and telephony under another organization is a different virtual airline.</summary>
+	/// <summary>Only one card is written for each 3LD and telephony, so another organization with them can't be added either.</summary>
 	[Fact]
-	public void the_same_3ld_and_telephony_with_another_organization_is_not_a_duplicate()
+	public void the_same_3ld_and_telephony_with_another_organization_cannot_be_added()
 	{
 		TelephonyViewModel tab = TabWith(("DVA", "DELTA", "Delta Virtual"));
 
-		FillEditor(tab, "DVA", "DELTA", "Rustic Virtual");
+		FillEditor(tab, "dva", "Delta", "Rustic Virtual");
 
-		Assert.True(tab.ConfirmVirtualAirlineCommand.CanExecute(null));
-		Assert.Equal(string.Empty, tab.VirtualAirlineEditorHint);
+		Assert.False(tab.ConfirmVirtualAirlineCommand.CanExecute(null));
+		Assert.Equal(
+			"Already in the list as DVA · DELTA · Delta Virtual. Only one virtual airline is written for each 3LD and telephony.",
+			tab.VirtualAirlineEditorHint);
 	}
 
 	[Fact]
@@ -761,25 +766,33 @@ public sealed class TelephonyViewModelTests : IDisposable
 	}
 
 	[Fact]
-	public void the_run_summary_says_how_many_virtual_airlines_came_from_the_vatsim_radar_list()
+	public void the_run_summary_says_how_many_virtual_airlines_came_from_the_list()
 	{
 		SubServiceRunResult run = new TelephonyViewModel().DescribeRunResult(RunResult(virtualAirlines: 250, fromVatsimRadar: 248))!;
 
 		Assert.Equal(
-			"Telephony.txt: 9 command(s) for 3 ICAO operator(s), 2 U.S. special call sign(s) and 250 virtual airline(s) (248 from the VATSIM-Radar list)",
+			"Telephony.txt: 9 command(s) for 3 ICAO operator(s), 2 U.S. special call sign(s) and 250 virtual airline(s) (248 from the virtual airline list)",
 			run.Summary);
 	}
 
-	// ---- the VATSIM-Radar Virtual Airline List ----
+	// ---- the virtual airline list (GNG + VATSIM-Radar) ----
 
 	private static readonly DateTime ListDownloadedUtc = new(2026, 10, 1, 8, 0, 0, DateTimeKind.Utc);
 
-	/// <summary>A copy of the list holding these virtual airlines, downloaded <see cref="ListDownloadedUtc"/>.</summary>
+	/// <summary>A copy of the list holding these virtual airlines, both parts downloaded <see cref="ListDownloadedUtc"/>.</summary>
 	private static VatsimRadarCopy ListOf(params (string Designator, string Telephony, string Organization)[] airlines) =>
-		new([.. airlines.Select(va => new VirtualAirline(va.Designator, va.Telephony, va.Organization))], ListDownloadedUtc);
+		new([.. airlines.Select(va => new VirtualAirline(va.Designator, va.Telephony, va.Organization))], ListDownloadedUtc)
+		{
+			GngDownloadedUtc = ListDownloadedUtc,
+			VatsimRadarDownloadedUtc = ListDownloadedUtc,
+		};
+
+	/// <summary>A refresh in which neither part could be downloaded, and FE-Buddy has no copy of either.</summary>
+	private static VirtualAirlineListRefreshResult Offline() =>
+		new(new SharedDataRefreshResult(null, null, "offline"), new SharedDataRefreshResult(null, null, "offline"));
 
 	/// <summary>A tab using this copy of the list, whose downloads count how often they are asked for and never touch the network.</summary>
-	private static (TelephonyViewModel Tab, Func<int> Downloads) TabUsing(VatsimRadarCopy? copy, SharedDataRefreshResult? downloadResult = null)
+	private static (TelephonyViewModel Tab, Func<int> Downloads) TabUsing(VatsimRadarCopy? copy, VirtualAirlineListRefreshResult? downloadResult = null)
 	{
 		int downloads = 0;
 		TelephonyViewModel tab = new()
@@ -787,7 +800,7 @@ public sealed class TelephonyViewModelTests : IDisposable
 			RefreshVatsimRadarList = _ =>
 			{
 				downloads++;
-				return Task.FromResult(downloadResult ?? new SharedDataRefreshResult(null, null, "offline"));
+				return Task.FromResult(downloadResult ?? Offline());
 			},
 		};
 
@@ -796,7 +809,7 @@ public sealed class TelephonyViewModelTests : IDisposable
 	}
 
 	[Fact]
-	public void the_vatsim_radar_list_is_off_to_start_with_and_its_choice_is_saved_loaded_and_sent()
+	public void the_list_is_off_to_start_with_and_its_choice_is_saved_loaded_and_sent()
 	{
 		(TelephonyViewModel tab, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")));
 
@@ -825,7 +838,7 @@ public sealed class TelephonyViewModelTests : IDisposable
 		FillEditor(tab, "dal", "DELTA", "fly delta virtual");
 
 		Assert.Equal(
-			"Already on the VATSIM-Radar Virtual Airline List, which you've chosen to include, as DAL · DELTA · Fly Delta Virtual. " +
+			"Already on the Virtual Airline List (GNG + VATSIM-Radar), which you've chosen to include, as DAL · DELTA · Fly Delta Virtual. " +
 			"It's written from there, so it can't be added again.",
 			tab.VirtualAirlineEditorHint);
 		Assert.False(tab.ConfirmVirtualAirlineCommand.CanExecute(null));
@@ -834,9 +847,9 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.Empty(tab.VirtualAirlines);
 	}
 
-	/// <summary>Not exactly the same - another virtual organization here - is the user's to add, with a heads-up that both are written.</summary>
+	/// <summary>The same 3LD and telephony for another virtual organization can be added: only the user's is written, and the card says so.</summary>
 	[Fact]
-	public void with_the_list_included_one_that_differs_at_all_can_be_added_with_a_heads_up()
+	public void with_the_list_included_one_with_its_3ld_and_telephony_can_be_added_and_only_yours_is_written()
 	{
 		(TelephonyViewModel tab, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")));
 		tab.IncludeVatsimRadarList = true;
@@ -845,13 +858,14 @@ public sealed class TelephonyViewModelTests : IDisposable
 
 		Assert.Equal(string.Empty, tab.VirtualAirlineEditorHint);
 		Assert.Equal(
-			"The VATSIM-Radar Virtual Airline List also has DAL · DELTA, for Fly Delta Virtual. Yours is written too, with a card of its own.",
+			"The Virtual Airline List (GNG + VATSIM-Radar) also has DAL · DELTA, for Fly Delta Virtual. Only yours is written.",
 			tab.VirtualAirlineEditorNote);
 		Assert.True(tab.ConfirmVirtualAirlineCommand.CanExecute(null));
 
 		tab.ConfirmVirtualAirlineCommand.Execute(null);
 		Assert.Equal(["DAL / DELTA / Delta Virtual Airlines"], Rows(tab));
-		Assert.False(tab.VirtualAirlines[0].IsOnVatsimRadarList);
+		Assert.True(tab.VirtualAirlines[0].IsOnVatsimRadarList);
+		Assert.Equal("Same 3LD and telephony as one on the list, so the list's is left out.", tab.VirtualAirlines[0].Note);
 	}
 
 	[Fact]
@@ -866,35 +880,100 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.True(tab.ConfirmVirtualAirlineCommand.CanExecute(null));
 	}
 
-	/// <summary>One added before the list was included is flagged, not removed: the run writes it once.</summary>
+	/// <summary>One added before the list was included is flagged, not removed: only it is written.</summary>
 	[Fact]
-	public void one_of_yours_that_is_on_the_list_is_flagged_while_the_list_is_included()
+	public void one_of_yours_with_a_lists_3ld_and_telephony_is_flagged_while_the_list_is_included()
 	{
 		(TelephonyViewModel tab, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")));
-		Add(tab, "DAL", "DELTA", "Fly Delta Virtual");
+		Add(tab, "DAL", "DELTA", "Delta Virtual Airlines");
 		Add(tab, "DVA", "DELTA", "Delta Virtual");
 
-		Assert.All(tab.VirtualAirlines, item => Assert.False(item.IsOnVatsimRadarList));
+		Assert.All(tab.VirtualAirlines, item => Assert.False(item.HasNote));
 
 		tab.IncludeVatsimRadarList = true;
 		Assert.Equal([true, false], tab.VirtualAirlines.Select(item => item.IsOnVatsimRadarList));
+		Assert.Equal([true, false], tab.VirtualAirlines.Select(item => item.HasNote));
 
 		tab.IncludeVatsimRadarList = false;
 		Assert.All(tab.VirtualAirlines, item => Assert.False(item.IsOnVatsimRadarList));
 	}
 
+	/// <summary>A real operator with the same 3LD and telephony means the user's won't be written: the editor and the row say so.</summary>
 	[Fact]
-	public void the_lists_status_says_how_old_the_copy_is_and_how_many_it_has_or_that_there_is_none()
+	public void one_with_a_real_operators_3ld_and_telephony_is_flagged_as_left_out()
+	{
+		(TelephonyViewModel tab, _) = TabUsing(null);
+		tab.UseRealOperators(new Dictionary<(string Designator, string Telephony), string> { [("AAL", "AMERICAN")] = "AMERICAN AIRLINES INC." });
+
+		FillEditor(tab, "aal", "American", "American Virtual");
+
+		Assert.Equal(string.Empty, tab.VirtualAirlineEditorHint);
+		Assert.Equal(
+			"AAL · AMERICAN is a real operator (AMERICAN AIRLINES INC.), so yours won't be written: Telephony.txt writes only the real operator's card.",
+			tab.VirtualAirlineEditorNote);
+		Assert.True(tab.ConfirmVirtualAirlineCommand.CanExecute(null));
+
+		tab.ConfirmVirtualAirlineCommand.Execute(null);
+		VirtualAirlineItem item = Assert.Single(tab.VirtualAirlines);
+		Assert.Equal("AMERICAN AIRLINES INC.", item.RealOperator);
+		Assert.Equal("Same 3LD and telephony as a real operator (AMERICAN AIRLINES INC.), so it's left out of Telephony.txt.", item.Note);
+
+		tab.UseRealOperators(new Dictionary<(string Designator, string Telephony), string>());
+		Assert.False(item.HasNote);
+	}
+
+	/// <summary>The real operators come from FE-Buddy's copies of the FAA's pages: the first of each 3LD (or identifier) and telephony.</summary>
+	[Fact]
+	public void the_real_operators_are_read_from_the_faa_pages()
+	{
+		Directory.CreateDirectory(_root);
+		string register = Path.Combine(_root, "register.html");
+		string special = Path.Combine(_root, "special.html");
+		File.WriteAllText(register,
+			"<table><thead><tr><th>Company</th><th>Country</th><th>Telephony</th><th>3-Ltr</th></tr></thead><tbody>" +
+			"<tr><td>AMERICAN AIRLINES INC.</td><td>UNITED STATES</td><td>AMERICAN</td><td>AAL</td></tr>" +
+			"<tr><td>ANOTHER AMERICAN</td><td>UNITED STATES</td><td>AMERICAN</td><td>aal</td></tr>" +
+			"<tr><td>NO DESIGNATOR</td><td>FRANCE</td><td>NOBODY</td><td>...</td></tr>" +
+			"</tbody></table>");
+		File.WriteAllText(special,
+			"<table><thead><tr><th>Telephony/Call Sign</th><th>Identifier</th><th>Company or Operating Agency</th><th>Expiration Date</th></tr></thead>" +
+			"<tbody><tr><td>AIR SIX</td><td>ARSIX</td><td>NYC Environmental Protection</td><td>N/A</td></tr></tbody></table>");
+
+		IReadOnlyDictionary<(string Designator, string Telephony), string> operators = TelephonyViewModel.ReadRealOperators(register, special);
+
+		Assert.Equal(2, operators.Count);
+		Assert.Equal("AMERICAN AIRLINES INC.", operators[("AAL", "AMERICAN")]);
+		Assert.Equal("NYC Environmental Protection", operators[("ARSIX", "AIR SIX")]);
+		Assert.Empty(TelephonyViewModel.ReadRealOperators(Path.Combine(_root, "none.html"), Path.Combine(_root, "none.html")));
+		Assert.Empty(TelephonyViewModel.ReadRealOperators(special, Path.Combine(_root, "none.html")));
+	}
+
+	[Fact]
+	public void the_lists_status_says_how_old_the_copies_are_and_how_many_they_have_or_that_there_is_none()
 	{
 		(TelephonyViewModel withCopy, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual"), ("OCN", "Ocean", "vOCN")));
 		(TelephonyViewModel withoutCopy, _) = TabUsing(null);
+		(TelephonyViewModel withOlderCopy, _) = TabUsing(ListOf(("OCN", "Ocean", "vOCN")) with { IsOlderCopy = true, GngDownloadedUtc = null, VatsimRadarDownloadedUtc = null });
 
 		Assert.Equal(
-			$"FE-Buddy's copy is from {ListDownloadedUtc.ToLocalTime():d MMM yyyy}: 2 virtual airlines. Every run downloads the latest list first.",
+			$"FE-Buddy's copy is from {ListDownloadedUtc.ToLocalTime():d MMM yyyy}: 2 virtual airlines.",
 			withCopy.VatsimRadarListStatus);
+		Assert.False(withCopy.HasVatsimRadarListWarning);
 		Assert.Equal(
-			"FE-Buddy has no copy yet, so a virtual airline you add can't be checked against it. Every run downloads the latest list first.",
+			"FE-Buddy has no copy yet, so a virtual airline you add can't be checked against it.",
 			withoutCopy.VatsimRadarListStatus);
+		Assert.StartsWith("FE-Buddy's older copy of the list is from ", withOlderCopy.VatsimRadarListStatus, StringComparison.Ordinal);
+		Assert.Equal("Using FE-Buddy's older copy of the list until its two parts can be downloaded.", withOlderCopy.VatsimRadarListWarning);
+	}
+
+	/// <summary>A part FE-Buddy has no copy of is a warning, in amber, even before anything is downloaded.</summary>
+	[Fact]
+	public void a_part_with_no_copy_is_a_warning()
+	{
+		(TelephonyViewModel tab, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")) with { GngDownloadedUtc = null });
+
+		Assert.True(tab.HasVatsimRadarListWarning);
+		Assert.Equal("FE-Buddy has no copy of the GNG fictional airline list yet, so the list is missing its airlines.", tab.VatsimRadarListWarning);
 	}
 
 	/// <summary>Ticking the box with no copy fetches one, so the editor has something to check against; with a copy it doesn't.</summary>
@@ -909,25 +988,35 @@ public sealed class TelephonyViewModelTests : IDisposable
 
 		Assert.Equal(1, downloadsWithout());
 		Assert.Equal(0, downloadsWith());
-		Assert.Contains("The latest couldn't be downloaded (offline).", withoutCopy.VatsimRadarListStatus, StringComparison.Ordinal);
+		Assert.Contains("Couldn't download the GNG fictional airline list (offline), and FE-Buddy has no copy of it", withoutCopy.VatsimRadarListWarning, StringComparison.Ordinal);
 		Assert.False(withoutCopy.IsDownloadingVatsimRadarList);
 	}
 
+	/// <summary>A download reads both fresh parts, merged; a part that failed is named in amber with the copy used instead (issue #337).</summary>
 	[Fact]
-	public async Task a_download_uses_the_fresh_copy_and_then_checks_against_it()
+	public async Task a_download_uses_the_fresh_copies_and_names_a_part_that_failed()
 	{
-		string path = Path.Combine(_root, "vatsim_radar_airlines.json");
 		Directory.CreateDirectory(_root);
-		File.WriteAllText(path, """{ "virtual": [{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }] }""");
-		(TelephonyViewModel tab, Func<int> downloads) = TabUsing(null, new SharedDataRefreshResult(path, DateTime.UtcNow, FailureReason: null));
+		string gng = Path.Combine(_root, "gng.json");
+		string vatsimRadar = Path.Combine(_root, "vr.json");
+		File.WriteAllText(gng, $$"""{ "records": 100, "rows": [{{string.Join(",", Enumerable.Range(0, 99).Select(i => $$$"""{ "icao": "Q{{{i:00}}}", "airline": "F", "callsign": "F" }""").Prepend("""{ "icao": "WAT", "airline": "Walker Air", "callsign": "Walker" }"""))}}] }""");
+		File.WriteAllText(vatsimRadar, """[{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }]""");
+		DateTime keptUtc = DateTime.UtcNow.AddDays(-3);
+		File.SetLastWriteTimeUtc(vatsimRadar, keptUtc);
+
+		VirtualAirlineListRefreshResult refreshed = new(
+			new SharedDataRefreshResult(gng, DateTime.UtcNow, FailureReason: null),
+			new SharedDataRefreshResult(vatsimRadar, keptUtc, "The SSL connection could not be established: TLS alert"));
+		(TelephonyViewModel tab, Func<int> downloads) = TabUsing(null, refreshed);
 		tab.IncludeVatsimRadarList = true;
 
 		await tab.DownloadVatsimRadarListAsync();
 
 		Assert.Equal(2, downloads());
-		Assert.StartsWith("FE-Buddy's copy is from ", tab.VatsimRadarListStatus, StringComparison.Ordinal);
-		Assert.Contains(": 1 virtual airlines.", tab.VatsimRadarListStatus, StringComparison.Ordinal);
-		Assert.DoesNotContain("couldn't", tab.VatsimRadarListStatus, StringComparison.Ordinal);
+		Assert.Contains(": 2 virtual airlines.", tab.VatsimRadarListStatus, StringComparison.Ordinal);
+		Assert.Equal(
+			$"Couldn't download the latest VATSIM-Radar airline list (The SSL connection could not be established: TLS alert), so FE-Buddy's copy from {keptUtc.ToLocalTime():d MMM yyyy} is used.",
+			tab.VatsimRadarListWarning);
 
 		FillEditor(tab, "OCN", "OCEAN", "vOCN");
 		Assert.False(tab.ConfirmVirtualAirlineCommand.CanExecute(null));
@@ -941,20 +1030,22 @@ public sealed class TelephonyViewModelTests : IDisposable
 
 		await tab.DownloadVatsimRadarListAsync();
 
-		Assert.Contains(": 1 virtual airlines. The latest couldn't be downloaded (no network stack).", tab.VatsimRadarListStatus, StringComparison.Ordinal);
+		Assert.Contains(": 1 virtual airlines.", tab.VatsimRadarListStatus, StringComparison.Ordinal);
+		Assert.Equal("Couldn't download the latest list (no network stack).", tab.VatsimRadarListWarning);
 		Assert.False(tab.IsDownloadingVatsimRadarList);
 	}
 
 	[Fact]
 	public void the_preview_says_whether_the_list_is_included_and_what_fe_buddy_has_of_it()
 	{
-		(TelephonyViewModel tab, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")));
+		(TelephonyViewModel tab, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")) with { GngDownloadedUtc = null });
 
-		string Row() => tab.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "VATSIM-Radar list").Value;
+		string Row() => tab.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Virtual airline list").Value;
 
 		Assert.Equal("Not included", Row());
 
 		tab.IncludeVatsimRadarList = true;
 		Assert.StartsWith("Included. FE-Buddy's copy is from ", Row(), StringComparison.Ordinal);
+		Assert.EndsWith("FE-Buddy has no copy of the GNG fictional airline list yet, so the list is missing its airlines.", Row(), StringComparison.Ordinal);
 	}
 }

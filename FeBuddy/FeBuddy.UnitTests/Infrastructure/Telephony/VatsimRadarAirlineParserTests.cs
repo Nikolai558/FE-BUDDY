@@ -7,11 +7,12 @@ using FeBuddy.Core.Infrastructure.Telephony.Parsers;
 namespace FeBuddy.UnitTests.Infrastructure.Telephony;
 
 /// <summary>
-/// Covers <see cref="VatsimRadarAirlineParser"/> against small real files: only the <c>virtual</c>
-/// array is read, trimmed and in the list's order; an entry missing a value, or with one that is not
-/// text or is blank, is skipped; a copy kept by beta.3 or earlier (one JSON array) is still read; and
-/// a file that is not the list - not JSON, or JSON with no array of virtual airlines - throws, which
-/// is what keeps a bad download from replacing FE-Buddy's copy.
+/// Covers <see cref="VatsimRadarAirlineParser"/> against small real files: VATSIM-Radar's GitHub list
+/// (one JSON array), as a fresh download is checked - only its virtual airlines, at least one of them -
+/// and the older single copy beta.4 and earlier kept (beta.4's object, whose <c>virtual</c> array is
+/// read; beta.3's array). An entry missing a value, or with one that is not text or is blank, is
+/// skipped; and a file that is not the list throws, which is what keeps a bad download from replacing
+/// FE-Buddy's copy.
 /// </summary>
 public sealed class VatsimRadarAirlineParserTests : IDisposable
 {
@@ -33,7 +34,45 @@ public sealed class VatsimRadarAirlineParserTests : IDisposable
 		return path;
 	}
 
-	/// <summary>The shape <c>data.vatsim-radar.com/airlines/all</c> serves; NWR is issue #317's test case.</summary>
+	// ---- VATSIM-Radar's GitHub list, as a download is checked ----
+
+	/// <summary>Only the virtual airlines - not the RAAF, the US Navy and the like - trimmed, in the list's order.</summary>
+	[Fact]
+	public void the_github_list_gives_its_virtual_airlines()
+	{
+		string path = Write("""
+			[
+			  { "icao": " OCN ", "name": " vOCN ", "callsign": " Ocean ", "virtual": true, "country": "US" },
+			  { "icao": "RSF", "name": "Royal Australian Air Force", "callsign": "AUSSIE", "virtual": false },
+			  { "icao": "NWR", "name": "NICKS AIR", "callsign": "FABULOUS", "virtual": true }
+			]
+			""");
+
+		Assert.Equal(
+			[new VatsimRadarAirline("OCN", "vOCN", "Ocean"), new VatsimRadarAirline("NWR", "NICKS AIR", "FABULOUS")],
+			VatsimRadarAirlineParser.ParseGitHubList(path));
+	}
+
+	/// <summary>A download that isn't the array - beta.4's object included - or has no virtual airline isn't the list.</summary>
+	[Theory]
+	[InlineData("""{ "virtual": [{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }] }""")]
+	[InlineData("""[{ "icao": "RSF", "name": "RAAF", "callsign": "AUSSIE", "virtual": false }]""")]
+	[InlineData("[]")]
+	public void a_download_that_is_not_the_github_list_or_has_no_virtual_airline_is_refused(string json)
+	{
+		Assert.Throws<InvalidDataException>(() => VatsimRadarAirlineParser.ParseGitHubList(Write(json)));
+	}
+
+	[Fact]
+	public void the_github_check_refuses_what_is_not_json_and_a_blank_path()
+	{
+		Assert.ThrowsAny<JsonException>(() => VatsimRadarAirlineParser.ParseGitHubList(Write("<html></html>")));
+		Assert.Throws<ArgumentException>(() => VatsimRadarAirlineParser.ParseGitHubList(" "));
+	}
+
+	// ---- a kept copy, the older single copy included ----
+
+	/// <summary>The shape beta.4's older single copy has (<c>data.vatsim-radar.com/airlines/all</c>); NWR is issue #317's test case.</summary>
 	[Fact]
 	public void only_the_virtual_array_is_read_trimmed_and_in_the_lists_order()
 	{

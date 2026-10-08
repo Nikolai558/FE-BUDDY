@@ -95,7 +95,7 @@ public static class TelephonyService
 	/// <summary>
 	/// The one-line summary of the file: its commands, how many show more than one operator, and
 	/// what was left out and why. Virtual airlines are named only when there are some, and the
-	/// VATSIM-Radar list's only when it gave some.
+	/// virtual airline list's only when it gave some.
 	/// </summary>
 	private static string SummaryText(TelephonyBuildResult build, TelephonyAliasGenerateResult alias, string aliasFileName)
 	{
@@ -103,7 +103,7 @@ public static class TelephonyService
 		int special = Count(build, TelephonyEntryKind.UsSpecialCallSign);
 		int virtualAirlines = Count(build, TelephonyEntryKind.VirtualAirline);
 		string fromVatsimRadar = build.VatsimRadarVirtualAirlineCount > 0
-			? $" ({build.VatsimRadarVirtualAirlineCount:N0} from the VATSIM-Radar list)"
+			? $" ({build.VatsimRadarVirtualAirlineCount:N0} from the virtual airline list)"
 			: string.Empty;
 
 		string operators = virtualAirlines > 0

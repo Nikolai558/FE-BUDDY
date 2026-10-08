@@ -133,7 +133,7 @@ public static class AiracSubServices
 			new SubServiceHelp(
 				"Operators' call signs from the FAA's telephony list, and your facility's virtual airlines, as .id commands. Alias file only.",
 				Alias: "Telephony.txt: an .id command for each operator's 3LD and its telephony, Ex: .idAVA and .idAVIANCA, " +
-					"showing who it is. Add your virtual airlines, and VATSIM-Radar's list if you want it. The region doesn't apply.")),
+					"showing who it is. Add your virtual airlines, and the virtual airline list (GNG + VATSIM-Radar) if you want it. The region doesn't apply.")),
 		new SubServiceDescriptor(WxStationsKey, "Wx Stations", 100, () => new WxStationsViewModel(),
 			Outputs: SubServiceOutputKinds.Geojson,
 			Help: new SubServiceHelp(

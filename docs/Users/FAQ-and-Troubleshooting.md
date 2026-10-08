@@ -20,9 +20,10 @@ separate counter. The real version is at the top of FE-Buddy's window.
 
 ### Does FE-Buddy send my data anywhere?
 
-No. It downloads public data (the FAA's, aviationweather.gov's and, if you choose it, VATSIM-Radar's
-virtual airline list), asks a public time service for the current UTC time, checks GitHub for updates
-and News, and downloads any custom alias file you point it at. Your settings stay in
+No. It downloads public data (the FAA's, aviationweather.gov's and, if you choose it, the virtual
+airline list from GNG and VATSIM-Radar's GitHub), asks a public time service for the current UTC
+time, checks GitHub for updates and News, and downloads any custom alias file you point it at. Your
+settings stay in
 `%APPDATA%\FE-Buddy\User Configurations`. A saved token or password lives in Windows Credential Manager
 and is only sent to the websites you allow.
 
@@ -34,9 +35,10 @@ token, delete it on GitHub too. To give FE-Buddy 3 a token, use Settings ▸ Cre
 
 ### What happens if Wx Stations or Telephony can't download their data?
 
-Every run downloads the latest. If that fails it uses FE-Buddy's last copy, and the Review tab says
-how old it is. With no copy at all (a first run offline) that sub-service writes nothing; the rest of
-the run goes on.
+Every run downloads the latest - except the virtual airline list's two parts, each downloaded at most
+once a day. If a download fails it uses FE-Buddy's last copy, and the Review tab says how old it is and
+why the download failed. With no copy at all (a first run offline) that sub-service writes nothing;
+the rest of the run goes on.
 
 ### Why is the same command in Departures.txt and Arrivals.txt?
 

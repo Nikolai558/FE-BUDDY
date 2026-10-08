@@ -5,10 +5,9 @@ using FeBuddy.Core.Infrastructure.Telephony.Models;
 namespace FeBuddy.Core.Infrastructure.Telephony.Parsers;
 
 /// <summary>
-/// Reads VATSIM-Radar's airline list (<see cref="TelephonyFiles.VatsimRadarAirlinesUrl"/>): a JSON
-/// object whose <c>virtual</c> array holds the virtual airlines, each
-/// <c>{ "icao", "name", "callsign", "virtual": true }</c>. Its <c>airlines</c> array, the real
-/// airlines, is not read: the FAA register already has them.
+/// Reads VATSIM-Radar's own airline list (<see cref="TelephonyFiles.VatsimRadarAirlinesUrl"/>): one JSON
+/// array of <c>{ "icao", "name", "callsign", "virtual", "country"? }</c>. Only the virtual airlines are
+/// read; the rest (RAAF, US Navy and the like) are not.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,17 +17,48 @@ namespace FeBuddy.Core.Infrastructure.Telephony.Parsers;
 /// Telephony sub-service's call, not this parser's.
 /// </para>
 /// <para>
-/// A copy kept by FE-Buddy 3.0.0-beta.3 or earlier is the list FE-Buddy used to download, GitHub's
-/// <c>custom-data/airlines.json</c>: one JSON array of the same entries. It is read the same way
-/// until the next download replaces it, so an offline run still has its virtual airlines.
+/// <see cref="Parse"/> also reads the one copy FE-Buddy 3.0.0-beta.4 and earlier kept
+/// (<see cref="TelephonyFiles.OlderVatsimRadarAirlinesFileName"/>): beta.4's merged list from
+/// <c>data.vatsim-radar.com</c>, a JSON object whose <c>virtual</c> array holds the same entries - or,
+/// from beta.3 and earlier, this same GitHub array.
 /// </para>
 /// </remarks>
 public static class VatsimRadarAirlineParser
 {
-	/// <summary>The array of virtual airlines in the list's JSON object.</summary>
+	/// <summary>The array of virtual airlines in beta.4's merged list.</summary>
 	private const string VirtualAirlinesProperty = "virtual";
 
-	/// <summary>Reads the virtual airlines from a copy of the list.</summary>
+	/// <summary>
+	/// Reads the virtual airlines from a copy of VATSIM-Radar's GitHub list, as a fresh download is
+	/// checked: it has to be the JSON array, with at least one virtual airline.
+	/// </summary>
+	/// <param name="path">The copy's path.</param>
+	/// <returns>Every virtual airline with all three values, trimmed, in the list's order.</returns>
+	/// <exception cref="JsonException">The file is not JSON.</exception>
+	/// <exception cref="InvalidDataException">The file is JSON, but not the list, or has no virtual airline.</exception>
+	public static IReadOnlyList<VatsimRadarAirline> ParseGitHubList(string path)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+		using FileStream stream = File.OpenRead(path);
+		using JsonDocument document = JsonDocument.Parse(stream);
+
+		if (document.RootElement.ValueKind != JsonValueKind.Array)
+		{
+			throw new InvalidDataException($"'{path}' is not VATSIM-Radar's airline list: it is not a JSON array.");
+		}
+
+		IReadOnlyList<VatsimRadarAirline> airlines = Read(document.RootElement);
+
+		return airlines.Count > 0
+			? airlines
+			: throw new InvalidDataException($"'{path}' has no virtual airlines.");
+	}
+
+	/// <summary>
+	/// Reads the virtual airlines from a kept copy: VATSIM-Radar's GitHub list, or the older single copy
+	/// beta.4 and earlier kept.
+	/// </summary>
 	/// <param name="path">The copy's path.</param>
 	/// <returns>Every virtual airline with all three values, trimmed, in the list's order.</returns>
 	/// <exception cref="JsonException">The file is not JSON.</exception>
@@ -47,15 +77,21 @@ public static class VatsimRadarAirlineParser
 				&& virtualAirlines.ValueKind == JsonValueKind.Array ? virtualAirlines
 			: throw new InvalidDataException($"'{path}' is not the VATSIM-Radar airline list: it has no array of virtual airlines.");
 
+		return Read(entries);
+	}
+
+	/// <summary>The virtual airlines in an array of entries.</summary>
+	private static List<VatsimRadarAirline> Read(JsonElement entries)
+	{
 		List<VatsimRadarAirline> airlines = [];
 
 		foreach (JsonElement entry in entries.EnumerateArray())
 		{
 			if (entry.ValueKind == JsonValueKind.Object
 				&& entry.TryGetProperty("virtual", out JsonElement isVirtual) && isVirtual.ValueKind == JsonValueKind.True
-				&& Text(entry, "icao") is { } icao
-				&& Text(entry, "name") is { } name
-				&& Text(entry, "callsign") is { } callsign)
+				&& AirlineJson.Text(entry, "icao") is { } icao
+				&& AirlineJson.Text(entry, "name") is { } name
+				&& AirlineJson.Text(entry, "callsign") is { } callsign)
 			{
 				airlines.Add(new VatsimRadarAirline(icao, name, callsign));
 			}
@@ -63,12 +99,4 @@ public static class VatsimRadarAirlineParser
 
 		return airlines;
 	}
-
-	/// <summary>A property's trimmed text, or <see langword="null"/> when it is missing, not text, or blank.</summary>
-	private static string? Text(JsonElement entry, string property) =>
-		entry.TryGetProperty(property, out JsonElement value)
-		&& value.ValueKind == JsonValueKind.String
-		&& value.GetString()?.Trim() is { Length: > 0 } text
-			? text
-			: null;
 }

@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.5
 ### AIRAC Service
 - Bug #338 - Telephony: the virtual airline list downloads on Windows 10 again. It now comes straight
   from the two sources VATSIM-Radar builds it from - GNG's fictional airlines and VATSIM-Radar's own

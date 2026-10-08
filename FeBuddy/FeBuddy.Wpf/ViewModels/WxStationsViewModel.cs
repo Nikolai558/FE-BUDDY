@@ -143,8 +143,8 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, "every US and US-territory station that reports METARs")
-			.Add(SummaryJoin.And, RegionLine("inside the region"))
+			.Add(SummaryJoin.First, "Every US and US-territory station that reports METARs")
+			.Add(SummaryJoin.WithOnly, RegionLine("those inside the region"))
 			.ToList());
 	}
 

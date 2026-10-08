@@ -146,12 +146,12 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, "every open airport")
-			.Add(SummaryJoin.And, RegionLine("with its reference point inside the region"))
+			.Add(SummaryJoin.First, "Every open airport")
+			.Add(SummaryJoin.WithOnly, RegionLine("those with their reference point inside the region"))
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, HasRoi ? "every open airport, in the region or not" : "every open airport")
+			.Add(SummaryJoin.First, HasRoi ? "Every open airport, in the region or not" : "Every open airport")
 			.ToList());
 	}
 

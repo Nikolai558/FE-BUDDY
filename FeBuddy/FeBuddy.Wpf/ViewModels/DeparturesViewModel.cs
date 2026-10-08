@@ -309,12 +309,12 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		string[] artccs = [.. SelectedArtccs()];
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, IncludeObstacleDepartures ? "SIDs and obstacle departures" : "SIDs only, no obstacle departures")
-			.Add(SummaryJoin.And, artccs.Length == 0 ? "in every ARTCC" : $"in {SummaryLines.Join(artccs, "or")}")
-			.Add(SummaryJoin.And, DescribeAmendmentFilter().TrimStart(',', ' '))
-			.Add(SummaryJoin.And, RegionLine(_roiMode == DepartureRoiMode.Waypoint
-				? "with at least one fix inside the region"
-				: "at an airport inside the region"))
+			.Add(SummaryJoin.First, IncludeObstacleDepartures ? "Every SID and obstacle departure" : "Every SID, but no obstacle departures")
+			.Add(SummaryJoin.WithOnly, artccs.Length == 0 ? null : $"those in {SummaryLines.Join(artccs, "and")}")
+			.Add(SummaryJoin.WithOnly, DescribeAmendmentFilter())
+			.Add(SummaryJoin.WithOnly, RegionLine(_roiMode == DepartureRoiMode.Waypoint
+				? "those with at least one fix inside the region"
+				: "those at an airport inside the region"))
 			.ToList());
 	}
 
@@ -432,22 +432,22 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		&& value >= min
 		&& value <= max;
 
-	/// <summary>The amendment part of the "Includes" sentence; empty when there is no amendment filter.</summary>
-	/// <returns>e.g. ", amended in the last 4 cycles".</returns>
-	private string DescribeAmendmentFilter()
+	/// <summary>The amendment filter as a What You'll Get line; <see langword="null"/> when there is none.</summary>
+	/// <returns>e.g. <c>those amended in the last 4 cycles</c>.</returns>
+	private string? DescribeAmendmentFilter()
 	{
 		return _amendmentFilter switch
 		{
 			DepartureAmendmentFilter.Cycles => TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out int cycles) && cycles == 1
-								? ", amended this cycle"
-								: $", amended in the last {AmendedWithinCycles.Trim()} cycles",
+								? "those amended this cycle"
+								: $"those amended in the last {AmendedWithinCycles.Trim()} cycles",
 			DepartureAmendmentFilter.Days => TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out int days) && days == 1
-								? ", amended in the last day"
-								: $", amended in the last {AmendedWithinDays.Trim()} days",
+								? "those amended in the last day"
+								: $"those amended in the last {AmendedWithinDays.Trim()} days",
 			DepartureAmendmentFilter.Date => AmendedOnOrAfter is { } onOrAfter
-								? $", amended on or after {onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture)}"
-								: ", amended on or after a date not yet picked",
-			_ => string.Empty,
+								? $"those amended on or after {onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture)}"
+								: "those amended on or after a date not yet picked",
+			_ => null,
 		};
 	}
 

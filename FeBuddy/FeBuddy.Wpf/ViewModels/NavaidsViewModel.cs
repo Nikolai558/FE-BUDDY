@@ -266,13 +266,13 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		string[] excluded = [.. ExcludedTypeNames()];
 
 		// Name the shorter list: what is left out, or what is kept.
-		string navaids = excluded.Length == 0 ? "every NAVAID in service"
-			: excluded.Length <= included.Length ? $"every NAVAID in service except {SummaryLines.Join(excluded, "and")}"
+		string navaids = excluded.Length == 0 ? "Every NAVAID in service"
+			: excluded.Length <= included.Length ? $"Every NAVAID in service except {SummaryLines.Join(excluded, "and")}"
 			: $"NAVAIDs in service that are {SummaryLines.Join(included, "or")}";
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, navaids)
-			.Add(SummaryJoin.And, RegionLine("inside the region"))
+			.Add(SummaryJoin.WithOnly, RegionLine("those inside the region"))
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()

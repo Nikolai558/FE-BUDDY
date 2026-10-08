@@ -117,7 +117,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		AirportProcedures.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAirportProcedures));
 
 		ChartTypeToggles = [.. ChartTypeOptions
-			.Select(o => new ProcedureOptionToggle(o.Code, $"{o.Label} ({o.Code})", isSelected: false, OnListToggleChanged))];
+			.Select(o => new ProcedureOptionToggle(o.Code, $"{o.Label} ({ShownCode(o.Code)})", isSelected: false, OnListToggleChanged))];
 
 		JsonFieldToggles = [.. ProcedureJsonFieldOptions.All
 			.Select(o => new ProcedureOptionToggle(CoreFebProperties.Name(o.Field), o.Label, isSelected: false, OnListToggleChanged))];
@@ -658,65 +658,68 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	/// <remarks>
 	/// Unlike every other tab, the documents' airports come in several ways at once - the
-	/// facilities, the airports listed, the region - any of which brings an airport in; the chart
-	/// types then narrow what a whole airport gives, and procedures picked by name are added on
-	/// top. The alias file never follows any of it.
+	/// facilities, the airports listed, the region - each adding to the others, and procedures
+	/// picked by name are added too. Under "Outputs include", <c>Procedure_Changes.md</c> keeps only
+	/// what changed, and the chart types narrow what a whole airport gives, never a procedure picked
+	/// by name. The alias file never follows any of it.
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
 		string[] facilities = [.. SelectedFacilityIds()];
 		string[] airports = [.. Airports];
-		string[] chartTypes = [.. ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)];
+		string[] chartTypes = [.. ChartTypeToggles.Where(t => t.IsSelected).Select(t => ShownCode(t.Token))];
 		string[] names = [.. ProcedureNames];
 		string[] pairs = [.. AirportProcedures.Select(p => p.Label)];
 
-		List<string> airportsIn = [];
+		string? listed = airports.Length == 0 ? null
+			: airports.Length <= 6 ? SummaryLines.Join(airports, "and")
+			: $"the {airports.Length} airports you listed";
+		string? region = _includeRoiAirports ? RegionLine("airports inside the region") : null;
 
-		if (facilities.Length > 0)
-		{
-			airportsIn.Add($"at airports in {SummaryLines.Join(facilities, "or")}");
-		}
-
-		if (airports.Length > 0)
-		{
-			airportsIn.Add(airports.Length <= 6 ? $"at {SummaryLines.Join(airports, "or")}" : $"at the {airports.Length} airports you listed");
-		}
-
-		if (_includeRoiAirports && RegionLine("at an airport inside the region") is { } region)
-		{
-			airportsIn.Add(region);
-		}
-
+		// Whichever way in comes first says what the charts are; the rest add to it.
 		SummaryLines documents = new();
+		documents.Add(SummaryJoin.First, facilities.Length > 0 ? $"Charts within {SummaryLines.Join(facilities, "and")}" : null);
+		documents.Add(SummaryJoin.AlongWith, listed is not null && documents.IsEmpty ? $"Charts at {listed}" : listed);
+		documents.Add(SummaryJoin.AlongWith, region is not null && documents.IsEmpty ? $"Charts at {region}" : region);
 
-		for (int i = 0; i < airportsIn.Count; i++)
-		{
-			documents.Add(SummaryJoin.Or, i == 0 ? $"every chart {airportsIn[0]}" : airportsIn[i]);
-		}
+		bool wholeAirports = !documents.IsEmpty;
+		bool picked = names.Length > 0 || pairs.Length > 0;
 
-		if (airportsIn.Count > 0)
-		{
-			documents.Add(SummaryJoin.And, chartTypes.Length > 0 ? $"of these types: {SummaryLines.Join(chartTypes, "and")}" : "of no type yet: tick a chart type");
-		}
-
-		documents.Add(SummaryJoin.Plus, names.Length > 0
+		documents.Add(SummaryJoin.AlongWith, names.Length > 0
 			? $"{SummaryLines.Join(names, "and")}, wherever {(names.Length == 1 ? "it's" : "they're")} published"
 			: null);
-		documents.Add(SummaryJoin.Plus, pairs.Length > 0 ? SummaryLines.Join(pairs, "and") : null);
+		documents.Add(SummaryJoin.AlongWith, pairs.Length > 0 ? SummaryLines.Join(pairs, "and") : null);
+		documents.Add(SummaryJoin.First, wholeAirports || picked ? null : "Nothing yet: pick a facility, an airport, or a procedure");
 
-		if (airportsIn.Count == 0 && names.Length == 0 && pairs.Length == 0)
+		string? types = !wholeAirports ? null
+			: chartTypes.Length == 0 ? "these types: none yet, so tick one under Chart Types"
+			: picked ? $"these types: {SummaryLines.Join(chartTypes, "and")} (the procedures you named are always included)"
+			: $"these types: {SummaryLines.Join(chartTypes, "and")}";
+
+		IReadOnlyList<SummaryLine> includes = new SummaryLines(joinFirstLine: true)
+			.Add(SummaryJoin.First, GenerateChangesDocument ? "`Procedure_Changes.md`: only those that were added, changed, or deleted this cycle" : null)
+			.Add(SummaryJoin.WithOnly, types)
+			.ToList();
+
+		yield return new SummaryBlock(SubServiceOutputKinds.ProcedureChanges | SubServiceOutputKinds.ProceduresJson, documents.ToList()) { Includes = includes };
+
+		string[] documentsOn = [.. new[]
 		{
-			documents.Add(SummaryJoin.First, "nothing yet: pick a facility, an airport or a procedure");
-		}
-
-		documents.Add(SummaryJoin.And, GenerateChangesDocument ? "in Procedure_Changes.md, only those added, changed or deleted this cycle" : null);
-
-		yield return new SummaryBlock(SubServiceOutputKinds.ProcedureChanges | SubServiceOutputKinds.ProceduresJson, documents.ToList());
+			GenerateChangesDocument ? "`Procedure_Changes.md`" : null,
+			GenerateProceduresJson ? "`Procedures.json`" : null,
+		}.OfType<string>()];
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, "every chart at every airport in the d-TPP metafile, not just the ones you pick for the documents")
+			.Add(SummaryJoin.First, documentsOn.Length == 0
+				? "Every chart at every airport in the d-TPP metafile"
+				: $"Every chart at every airport in the d-TPP metafile, not just the ones you chose for {SummaryLines.Join(documentsOn, "and")}")
 			.ToList());
 	}
+
+	/// <summary>A chart type's code as people know it: the d-TPP's <c>STR</c> is a STAR.</summary>
+	/// <param name="code">The d-TPP's code, as saved and sent.</param>
+	/// <returns>The code to show.</returns>
+	private static string ShownCode(string code) => code == ProcedureChartTypes.Star ? "STAR" : code;
 
 	// ================= save contract =================
 

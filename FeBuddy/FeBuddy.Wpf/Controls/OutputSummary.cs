@@ -6,11 +6,11 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 namespace FeBuddy.Wpf.Controls;
 
 /// <summary>
-/// A sub-service's "What You'll Get" summary (<see cref="SummaryBlock"/>): the filters that pick
-/// what each output gets, one per line, with AND, OR or PLUS in the margin. Where the outputs get
-/// different things, each block starts with its outputs' tags. Shown by the What You'll Get card at
-/// the top of each sub-service tab and by that tab's section on the Preview Settings tab; its look
-/// is in Theme/Controls.Surfaces.xaml.
+/// A sub-service's "What You'll Get" summary (<see cref="SummaryBlock"/>): each block headed by its
+/// outputs' tags, then the filters that pick what they get, one per line, each after the first
+/// starting with a <c>with only</c> or <c>along with</c> chip, then any "Outputs include" lines.
+/// Shown by the What You'll Get card at the top of each sub-service tab and by that tab's section
+/// on the Preview Settings tab; its look is in Theme/Controls.Surfaces.xaml.
 /// <code>
 /// &lt;ctl:OutputSummary Blocks="{Binding WhatYoullGet}" /&gt;
 /// </code>
@@ -36,22 +36,24 @@ public sealed class OutputSummary : Control
 		set => SetValue(BlocksProperty, value);
 	}
 
-	/// <summary>The blocks as drawn: each with its outputs' tags when there is more than one block, and its lines.</summary>
+	/// <summary>The blocks as drawn: each with its outputs' tags, its lines, and its "Outputs include" lines.</summary>
 	public IReadOnlyList<OutputSummaryItem> Items => (IReadOnlyList<OutputSummaryItem>)GetValue(ItemsProperty);
 
 	private void Refresh()
 	{
-		IReadOnlyList<SummaryBlock> blocks = Blocks ?? [];
-		bool tagged = blocks.Count > 1;
-
-		List<OutputSummaryItem> items = [.. blocks.Select(block =>
-			new OutputSummaryItem(tagged ? OutputTag.For(block.Outputs, block.Outputs) : [], block.Lines))];
+		List<OutputSummaryItem> items = [.. (Blocks ?? []).Select(block =>
+			new OutputSummaryItem(OutputTag.For(block.Outputs, block.Outputs), block.Lines, block.Includes))];
 
 		SetValue(ItemsKey, items);
 	}
 }
 
 /// <summary>One block of an <see cref="OutputSummary"/> as drawn.</summary>
-/// <param name="Tags">Its outputs' tags; none when it is the only block (the card's own tags say then).</param>
+/// <param name="Tags">Its outputs' tags, which head it.</param>
 /// <param name="Lines">Its lines.</param>
-public sealed record OutputSummaryItem(IReadOnlyList<OutputTag> Tags, IReadOnlyList<SummaryLine> Lines);
+/// <param name="Includes">Its "Outputs include" lines; none for most blocks.</param>
+public sealed record OutputSummaryItem(IReadOnlyList<OutputTag> Tags, IReadOnlyList<SummaryLine> Lines, IReadOnlyList<SummaryLine> Includes)
+{
+	/// <summary>Whether the block has "Outputs include" lines.</summary>
+	public bool HasIncludes => Includes.Count > 0;
+}

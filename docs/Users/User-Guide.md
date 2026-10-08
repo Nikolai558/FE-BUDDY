@@ -48,9 +48,11 @@ Each card's title row tags the files its settings change: **Alias**, **GeoJSON**
 columns. A tag is struck through while that file is off, and a card whose files are all off is
 greyed out. Where a card changes two files differently, a line for each says how.
 
-Each sub-service tab but Concatenate Aliases starts with **What You'll Get**: what its files will
-hold, one filter per line. **AND** narrows the lines above, **OR** is another way in, and **PLUS**
-adds something on top. Where its files get different things, each file has its own lines.
+Each sub-service tab but Concatenate Aliases starts with **What You'll Get with the Current
+Settings**: what its files will hold, under each file's tag, one filter per line. A line starting
+with **with only** narrows the lines above, and one starting with **along with** adds to them.
+Where its files get different things, each file has its own lines, and **Outputs include** lists
+what narrows one file further (Procedures: `Procedure_Changes.md` keeps only what changed).
 
 ### Saving
 

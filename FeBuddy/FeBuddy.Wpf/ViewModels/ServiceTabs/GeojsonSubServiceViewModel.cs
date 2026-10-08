@@ -255,8 +255,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// A "What You'll Get" line about the region of interest - what it keeps, and whose region it
 	/// is - or <see langword="null"/> while there is no region, so nothing is left out.
 	/// </summary>
-	/// <param name="keeps">What the region keeps, e.g. <c>at an airport inside the region</c>.</param>
-	/// <returns>e.g. <c>at an airport inside the region (your default ROI)</c>.</returns>
+	/// <param name="keeps">What the region keeps, e.g. <c>those inside the region</c>.</param>
+	/// <returns>e.g. <c>those inside the region (your default)</c>.</returns>
 	protected string? RegionLine(string keeps) =>
 		HasRoi ? $"{keeps} ({(OverrideRoi ? "this tab's own" : "your default")})" : null;
 

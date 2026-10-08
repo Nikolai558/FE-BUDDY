@@ -4,6 +4,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -12,10 +13,11 @@ using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers the "What You'll Get" card of a few sub-service tabs (issue #314): one line per filter
-/// that is set, a block per output only where the outputs get different things, the outputs that
-/// are off left out, and the card told again when a setting, the region or an output changes -
-/// against a throwaway config.
+/// Covers the "What You'll Get" card of a few sub-service tabs (issues #314, #333, #334): one line
+/// per filter that is set, each after the first narrowing ("with only") or adding ("along with"),
+/// lists that read as inclusive, a block per output only where the outputs get different things,
+/// the outputs that are off left out, and the card told again when a setting, the region or an
+/// output changes - against a throwaway config.
 /// </summary>
 [Collection("AppLog")]
 public sealed class WhatYoullGetTests : IDisposable
@@ -50,8 +52,13 @@ public sealed class WhatYoullGetTests : IDisposable
 		}
 	}
 
-	/// <summary>A block's lines as the card reads them: <c>AND in ZNY or ZOB</c>.</summary>
-	private static string[] Lines(SummaryBlock block) => [.. block.Lines.Select(line => $"{line.JoinWord} {line.Text}".Trim())];
+	/// <summary>A block's lines as the card reads them: <c>with only those in ZNY and ZOB</c>.</summary>
+	private static string[] Lines(SummaryBlock block) => Read(block.Lines);
+
+	/// <summary>A block's "Outputs include" lines as the card reads them.</summary>
+	private static string[] Includes(SummaryBlock block) => Read(block.Includes);
+
+	private static string[] Read(IReadOnlyList<SummaryLine> lines) => [.. lines.Select(line => $"{line.JoinWord} {line.Text}".Trim())];
 
 	/// <summary>Turns on only <paramref name="on"/> for the tab's sub-service, as the General tab would.</summary>
 	private static SubServiceRow Attach(GeojsonSubServiceViewModel tab, string key, SubServiceOutputKinds on)
@@ -78,7 +85,8 @@ public sealed class WhatYoullGetTests : IDisposable
 
 		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
 		Assert.Equal(Alias | Geojson, block.Outputs);
-		Assert.Equal(["SIDs and obstacle departures", "AND in every ARTCC"], Lines(block));
+		Assert.Equal(["Every SID and obstacle departure"], Lines(block));
+		Assert.Empty(block.Includes);
 	}
 
 	[Fact]
@@ -97,12 +105,34 @@ public sealed class WhatYoullGetTests : IDisposable
 		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGetOutputs), changed);
 		Assert.Equal(
 			[
-				"SIDs only, no obstacle departures",
-				"AND in ZNY or ZOB",
-				"AND amended in the last 4 cycles",
-				"AND at an airport inside the region (this tab's own)",
+				"Every SID, but no obstacle departures",
+				"with only those in ZNY and ZOB",
+				"with only those amended in the last 4 cycles",
+				"with only those at an airport inside the region (this tab's own)",
 			],
 			Lines(Assert.Single(tab.WhatYoullGet)));
+	}
+
+	// ---- Arrivals ----
+
+	/// <summary>Issue #334: ARTCCs are listed with "and" - the list is inclusive - and the Oxford comma.</summary>
+	[Fact]
+	public void arrivals_lists_its_artccs_as_inclusive_with_the_amendment_and_a_waypoint_region()
+	{
+		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.ArtccFilter", "ZLA,ZOA,ZAB");
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.Filter", "Cycles");
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.WithinCycles", "1");
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Roi.Mode", "Waypoint");
+
+		Assert.Equal(
+			[
+				"Every STAR",
+				"with only those for airports in ZAB, ZLA, and ZOA",
+				"with only those amended this cycle",
+				"with only those with at least one fix inside the region (your default)",
+			],
+			Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
 	}
 
 	[Fact]
@@ -131,7 +161,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	public void airports_splits_into_a_block_per_output_once_a_region_narrows_the_geojson()
 	{
 		AirportsViewModel tab = new();
-		Assert.Equal(["every open airport"], Lines(Assert.Single(tab.WhatYoullGet)));
+		Assert.Equal(["Every open airport"], Lines(Assert.Single(tab.WhatYoullGet)));
 		Assert.Equal(Alias | Geojson, tab.WhatYoullGetOutputs);
 		List<string?> changed = Changed(tab);
 
@@ -139,12 +169,12 @@ public sealed class WhatYoullGetTests : IDisposable
 
 		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGet), changed);
 		Assert.Equal([Geojson, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
-		Assert.Equal(["every open airport", "AND with its reference point inside the region (your default)"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["every open airport, in the region or not"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["Every open airport", "with only those with their reference point inside the region (your default)"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["Every open airport, in the region or not"], Lines(tab.WhatYoullGet[1]));
 
 		Attach(tab, AiracSubServices.AirportsKey, Alias);
 
-		Assert.Equal(["every open airport, in the region or not"], Lines(Assert.Single(tab.WhatYoullGet)));
+		Assert.Equal(["Every open airport, in the region or not"], Lines(Assert.Single(tab.WhatYoullGet)));
 	}
 
 	// ---- Airways ----
@@ -169,17 +199,17 @@ public sealed class WhatYoullGetTests : IDisposable
 		AirwaysViewModel tab = AirwaysTab("J", "V", "Y");
 		tab.Designations.Single(d => d.Designation == "Y").Included = false;
 
-		Assert.Equal(["every airway except the Y airways"], Lines(Assert.Single(tab.WhatYoullGet)));
+		Assert.Equal(["Every airway except the Y airways"], Lines(Assert.Single(tab.WhatYoullGet)));
 
 		tab.OverrideRoi = true;
 
-		Assert.Equal(["every airway except the Y airways", "AND that cross the region, cut off at its edge (this tab's own)"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["every airway except the Y airways, in the region or not"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["Every airway except the Y airways", "with only those that cross the region, cut off at its edge (this tab's own)"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["Every airway except the Y airways, in the region or not"], Lines(tab.WhatYoullGet[1]));
 
 		tab.AliasRoiAirwaysOnly = true;
 
 		Assert.Equal(
-			["every airway except the Y airways", "AND that cross the region, each with all of its fixes (this tab's own)"],
+			["Every airway except the Y airways", "with only those that cross the region, each with all of its fixes (this tab's own)"],
 			Lines(tab.WhatYoullGet[1]));
 	}
 
@@ -187,9 +217,24 @@ public sealed class WhatYoullGetTests : IDisposable
 	[Fact]
 	public void airways_before_a_cycle_uses_the_saved_exclusions()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.Airways.ExcludedDesignations", "V,J");
+		UserConfigFile.TrySetValue("Services.AiracService.Airways.ExcludedDesignations", "V,J,Q");
 
-		Assert.Equal(["every airway except the J and V airways"], Lines(Assert.Single(new AirwaysViewModel().WhatYoullGet)));
+		Assert.Equal(["Every airway except the J, Q, and V airways"], Lines(Assert.Single(new AirwaysViewModel().WhatYoullGet)));
+	}
+
+	// ---- Telephony ----
+
+	[Fact]
+	public void telephony_adds_the_virtual_airline_list_along_with_the_faa_operators()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Telephony.IncludeVatsimRadarVirtualAirlines", "Y");
+
+		Assert.Equal(
+			[
+				"Every operator in the FAA's telephony pages, except expired U.S. special call signs",
+				$"along with the {VatsimRadarVirtualAirlines.ListName}",
+			],
+			Lines(Assert.Single(new TelephonyViewModel().WhatYoullGet)));
 	}
 
 	// ---- Procedures ----
@@ -201,8 +246,13 @@ public sealed class WhatYoullGetTests : IDisposable
 		return tab;
 	}
 
+	/// <summary>
+	/// Issues #333 and #334: each way an airport comes in adds to the first, never "or"; under
+	/// "Outputs include", what Procedure_Changes.md keeps, then the chart types, which never narrow a
+	/// procedure picked by name.
+	/// </summary>
 	[Fact]
-	public void procedures_lists_each_way_an_airport_comes_in_then_the_types_then_what_is_added()
+	public void procedures_adds_each_way_an_airport_comes_in_then_says_what_the_outputs_include()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", "ZOB");
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW");
@@ -214,15 +264,37 @@ public sealed class WhatYoullGetTests : IDisposable
 		Assert.Equal([Changes | Json, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
 		Assert.Equal(
 			[
-				"every chart at airports in ZOB",
-				"OR at CLE or DTW",
-				"OR at an airport inside the region (this tab's own)",
-				"AND of these types: IAP, STR, DP, ODP, DAU and APD",
-				"PLUS BRWNZ FIVE, wherever it's published",
-				"AND in Procedure_Changes.md, only those added, changed or deleted this cycle",
+				"Charts within ZOB",
+				"along with CLE and DTW",
+				"along with airports inside the region (this tab's own)",
+				"along with BRWNZ FIVE, wherever it's published",
 			],
 			Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["every chart at every airport in the d-TPP metafile, not just the ones you pick for the documents"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(
+			[
+				"`Procedure_Changes.md`: only those that were added, changed, or deleted this cycle",
+				"with only these types: IAP, STAR, DP, ODP, DAU, and APD (the procedures you named are always included)",
+			],
+			Includes(tab.WhatYoullGet[0]));
+		Assert.Equal(
+			["Every chart at every airport in the d-TPP metafile, not just the ones you chose for `Procedure_Changes.md` and `Procedures.json`"],
+			Lines(tab.WhatYoullGet[1]));
+	}
+
+	[Fact]
+	public void procedures_with_only_the_airports_listed_starts_with_them()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW,CAK,PIT,ORD,MDW,BUF,IAD,DCA,BWI,RIC,ORF,PHL");
+		ProceduresViewModel tab = ProceduresTab(Changes);
+
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(["Charts at the 13 airports you listed"], Lines(block));
+		Assert.Equal(
+			[
+				"`Procedure_Changes.md`: only those that were added, changed, or deleted this cycle",
+				"with only these types: IAP, STAR, DP, ODP, DAU, and APD",
+			],
+			Includes(block));
 	}
 
 	[Fact]
@@ -237,20 +309,54 @@ public sealed class WhatYoullGetTests : IDisposable
 			type.IsSelected = false;
 		}
 
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
 		Assert.Equal(
 			[
-				"every chart at the 7 airports you listed",
-				"AND of no type yet: tick a chart type",
-				"PLUS BRWNZ FIVE and CLVLD TWO, wherever they're published",
+				"Charts at the 7 airports you listed",
+				"along with BRWNZ FIVE and CLVLD TWO, wherever they're published",
 			],
-			Lines(Assert.Single(tab.WhatYoullGet)));
+			Lines(block));
+		Assert.Equal(["with only these types: none yet, so tick one under Chart Types"], Includes(block));
 	}
 
 	[Fact]
 	public void procedures_with_nothing_picked_says_what_to_pick()
 	{
-		Assert.Equal(
-			["nothing yet: pick a facility, an airport or a procedure"],
-			Lines(Assert.Single(ProceduresTab(Json).WhatYoullGet)));
+		SummaryBlock block = Assert.Single(ProceduresTab(Json).WhatYoullGet);
+
+		Assert.Equal(["Nothing yet: pick a facility, an airport, or a procedure"], Lines(block));
+		Assert.Empty(block.Includes);
+	}
+
+	/// <summary>A procedure picked by name or with its airport, and nothing else, gets no chart types line.</summary>
+	[Fact]
+	public void procedures_picked_one_by_one_need_no_chart_types()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.AirportProcedures", "CLE|ILS OR LOC RWY 06L");
+		ProceduresViewModel tab = ProceduresTab(Changes | Json);
+
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(["CLE — ILS OR LOC RWY 06L"], Lines(block));
+		Assert.Equal(["`Procedure_Changes.md`: only those that were added, changed, or deleted this cycle"], Includes(block));
+	}
+
+	[Theory]
+	[InlineData(Alias | Changes, "Every chart at every airport in the d-TPP metafile, not just the ones you chose for `Procedure_Changes.md`")]
+	[InlineData(Alias | Json, "Every chart at every airport in the d-TPP metafile, not just the ones you chose for `Procedures.json`")]
+	[InlineData(Alias, "Every chart at every airport in the d-TPP metafile")]
+	public void the_procedures_alias_line_names_only_the_documents_that_are_on(SubServiceOutputKinds on, string expected)
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", "ZOB");
+
+		Assert.Equal([expected], Lines(ProceduresTab(on).WhatYoullGet.Single(block => block.Outputs == Alias)));
+	}
+
+	/// <summary>The d-TPP calls a STAR <c>STR</c>: the checkbox and the summary say STAR, and STR is still what is sent.</summary>
+	[Fact]
+	public void the_star_chart_type_shows_as_star_but_is_sent_as_str()
+	{
+		ProcedureOptionToggle star = Assert.Single(ProceduresTab(Json).ChartTypeToggles, type => type.Token == "STR");
+
+		Assert.Equal("STARs (STAR)", star.Label);
 	}
 }

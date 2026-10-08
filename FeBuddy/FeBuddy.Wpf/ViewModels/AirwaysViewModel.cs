@@ -455,19 +455,19 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			: [.. ParseExcludedFromConfig().OrderBy(d => d, StringComparer.OrdinalIgnoreCase)];
 
 		string airways = excluded.Length == 0
-			? "every airway"
-			: $"every airway except the {SummaryLines.Join(excluded, "and")} airways";
+			? "Every airway"
+			: $"Every airway except the {SummaryLines.Join(excluded, "and")} airways";
 
 		bool aliasUsesRegion = AliasRoiAirwaysOnly && HasRoi;
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, airways)
-			.Add(SummaryJoin.And, RegionLine("that cross the region, cut off at its edge"))
+			.Add(SummaryJoin.WithOnly, RegionLine("those that cross the region, cut off at its edge"))
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
 			.Add(SummaryJoin.First, aliasUsesRegion || !HasRoi ? airways : $"{airways}, in the region or not")
-			.Add(SummaryJoin.And, aliasUsesRegion ? RegionLine("that cross the region, each with all of its fixes") : null)
+			.Add(SummaryJoin.WithOnly, aliasUsesRegion ? RegionLine("those that cross the region, each with all of its fixes") : null)
 			.ToList());
 	}
 

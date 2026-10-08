@@ -233,8 +233,9 @@ Say, Preferred Routes:
    its own cards naming the outputs its settings change (`ctl:Card Outputs="Alias, Geojson"`, which
    tags the card and greys it while they're all off), and the What You'll Get card under the
    Attention card (`cards:SummaryCard`, filled by overriding `BuildWhatYoullGet()`: a `SummaryBlock`
-   of filter lines per output, or one for outputs that get the same, also used by its
-   `BuildPreviewSummary()`); and, in `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that
+   of filter lines per output, or one for outputs that get the same, each line after the first
+   joined by `SummaryJoin.WithOnly` or `AlongWith`, with any `Includes` lines under "Outputs
+   include", also used by its `BuildPreviewSummary()`); and, in `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that
    puts its `BuildSettingsBlock()` into the run's settings.
 
 Copy from `Fixes` for the usual shape, `WxStations` for data that doesn't come from NASR, `Telephony`

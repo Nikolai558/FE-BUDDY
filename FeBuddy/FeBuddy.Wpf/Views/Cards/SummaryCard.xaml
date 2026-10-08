@@ -1,6 +1,7 @@
 <!--
-    SummaryCard  -  "What You'll Get", the top card of every AIRAC sub-service tab: for each output
-    that's on, the filters that pick what it gets, one per line, joined by AND, OR and PLUS. Binds
+    SummaryCard  -  "What You'll Get with the Current Settings", the top card of every AIRAC
+    sub-service tab: for each output that's on, headed by its tag, the filters that pick what it
+    gets, one per line, each after the first starting with a "with only" or "along with" chip. Binds
     to the tab's WhatYoullGet (ServiceTabViewModel); the Preview Settings tab shows the same summary.
 
     Usage:
@@ -16,7 +17,7 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:ServiceTabViewModel}"
              d:DesignWidth="820">
-    <ctl:Card Header="What You'll Get" Outputs="{Binding WhatYoullGetOutputs}">
-        <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,4,0,-10" />
+    <ctl:Card Header="What You'll Get with the Current Settings" Outputs="{Binding WhatYoullGetOutputs}">
+        <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,4,0,-12" />
     </ctl:Card>
 </UserControl>

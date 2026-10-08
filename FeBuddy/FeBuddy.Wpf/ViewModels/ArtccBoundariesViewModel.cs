@@ -213,8 +213,8 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 		string[] artccs = [.. SelectedLocationIds()];
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, artccs.Length == 0 ? "every ARTCC's boundary" : $"the boundaries of {SummaryLines.Join(artccs, "and")}")
-			.Add(SummaryJoin.And, RegionLine("cut off at the region's edge"))
+			.Add(SummaryJoin.First, artccs.Length == 0 ? "Every ARTCC's boundary" : $"The boundaries of {SummaryLines.Join(artccs, "and")}")
+			.Add(SummaryJoin.WithOnly, RegionLine("the parts inside the region"))
 			.ToList());
 	}
 

@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.6
 ### AIRAC Service
 - Bug #333 - The What You'll Get card, now **What You'll Get with the Current Settings**, no longer
   indents its first line. Each file's tag heads its lines, and each line after the first starts with

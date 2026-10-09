@@ -31,6 +31,47 @@
             <cards:OutputsCard GeojsonDescription="Map files for each departure, in a folder per airport. Pick which files below."
                                AliasDescription="Writes a command for each departure at each airport that shows all of its fixes on the scope.&#xA;Type . then the airport, the departure and f, Ex: .laxDOTSSf" />
 
+            <!-- ============ area: the ARTCCs, an ROI, or everything ============ -->
+            <cards:AreaCard Outputs="{Binding AreaOutputs}"
+                            Intro="Choose which departures to include. Obstacle departures and the amendment date below still apply."
+                            ArtccsDescription="only departures in the ARTCCs you tick"
+                            RoiDescription="only departures inside an ROI"
+                            EverythingDescription="every departure in the cycle">
+                <cards:AreaCard.ArtccsContent>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                                   Text="ARTCCs appear once the selected cycle's data is loaded."
+                                   Visibility="{Binding HasArtccs, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                        <ItemsControl ItemsSource="{Binding Artccs}" IsEnabled="{Binding IsCycleReady}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type m:ArtccToggle}">
+                                    <CheckBox Content="{Binding Artcc}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                                Margin="0,4,0,0" Command="{Binding ClearArtccsCommand}"
+                                Visibility="{Binding HasArtccs, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                                   Text="Your facility from Settings ▸ Facility Profile starts ticked." />
+                    </StackPanel>
+                </cards:AreaCard.ArtccsContent>
+                <cards:AreaCard.RoiContent>
+                    <StackPanel Margin="0,16,0,0">
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Which Departures the ROI Keeps" />
+                        <RadioButton GroupName="DepartureRoiMode" Content="Every departure from an airport inside the ROI" Margin="0,6,0,0"
+                                     IsChecked="{Binding RoiModeAirport, Mode=TwoWay}" />
+                        <RadioButton GroupName="DepartureRoiMode" Content="Any departure with a fix inside the ROI" Margin="0,3,0,0"
+                                     IsChecked="{Binding RoiModeWaypoint, Mode=TwoWay}" />
+                    </StackPanel>
+                </cards:AreaCard.RoiContent>
+            </cards:AreaCard>
+
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard LinesDescription="The departure's routes as lines. A stretch shared by two routes is drawn once."
                                     SymbolsDescription="A symbol at each of its fixes."
@@ -44,27 +85,6 @@
             <ctl:Card Header="Procedures" Outputs="Alias, Geojson">
                 <StackPanel>
                     <CheckBox Content="Include obstacle departures (ODPs)" IsChecked="{Binding IncludeObstacleDepartures}" Margin="0,4,0,0" />
-
-                    <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="ARTCCs" Margin="0,14,0,0" />
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Only departures in the ARTCCs you tick. Tick none for every ARTCC. Your facility from Settings ▸ Facility Profile starts ticked." />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="ARTCCs appear once the selected cycle's data is loaded."
-                               Visibility="{Binding HasArtccs, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-                    <ItemsControl ItemsSource="{Binding Artccs}" IsEnabled="{Binding IsCycleReady}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type m:ArtccToggle}">
-                                <CheckBox Content="{Binding Artcc}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
-                            Margin="0,6,0,0" Command="{Binding ClearArtccsCommand}"
-                            Visibility="{Binding HasArtccs, Converter={StaticResource BoolToVis}}" />
 
                     <!-- Amendment-date filter. One radio per mode; each mode's input is live only
                          while its radio is checked, and keeps its value when another is picked. -->
@@ -108,19 +128,6 @@
                                Text="Cycles count back from the cycle on the General tab. Ex: with 2610 selected, the last 4 cycles are 2607 to 2610, so a departure last amended in 2606 is left out. Days count back from today." />
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard Outputs="Alias, Geojson">
-                <cards:RoiOverrideCard.AdditionalContent>
-                    <StackPanel Margin="0,14,0,0" IsEnabled="{Binding HasRoi}">
-                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Which Departures the Region Keeps" />
-                        <RadioButton GroupName="DepartureRoiMode" Content="Every departure from an airport inside the region" Margin="0,6,0,0"
-                                     IsChecked="{Binding RoiModeAirport, Mode=TwoWay}" />
-                        <RadioButton GroupName="DepartureRoiMode" Content="Any departure with a fix inside the region" Margin="0,3,0,0"
-                                     IsChecked="{Binding RoiModeWaypoint, Mode=TwoWay}" />
-                    </StackPanel>
-                </cards:RoiOverrideCard.AdditionalContent>
-            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard LinesTitle="Departures — Lines" SymbolsTitle="Departures — Symbols" TextTitle="Departures — Text">

@@ -31,6 +31,16 @@
             <cards:OutputsCard GeojsonDescription="Map files of NAVAIDs. Pick which files below."
                                AliasDescription="Writes .nav commands that show a NAVAID's name, type, frequency and ARTCCs in CRC.&#xA;Type .nav and its identifier or its name with no spaces, Ex: .navAA or .navCEDAR&#xA;When a command fits more than one NAVAID, it shows each of them." />
 
+            <!-- ============ area: an ROI, or everything ============ -->
+            <cards:AreaCard Outputs="{Binding AreaOutputs}"
+                            Intro="Choose which NAVAIDs the GeoJSON includes. The NAVAID types below still apply."
+                            RoiDescription="only NAVAIDs inside an ROI"
+                            EverythingDescription="every NAVAID in service">
+                <cards:AreaCard.Footer>
+                    <ctl:OutputLine Kind="Alias" Text="Every NAVAID of the types ticked below, whichever you pick above." Margin="0,14,0,0" />
+                </cards:AreaCard.Footer>
+            </cards:AreaCard>
+
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
                                     SymbolsDescription="A symbol at each NAVAID."
@@ -76,16 +86,6 @@
                             Visibility="{Binding HasTypes, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard Outputs="Geojson">
-                <cards:RoiOverrideCard.AdditionalContent>
-                    <StackPanel Margin="0,10,0,0">
-                        <ctl:OutputLine Kind="Geojson" Text="Only NAVAIDs inside the region." />
-                        <ctl:OutputLine Kind="Alias" Text="Every NAVAID of the types ticked above. The region doesn't apply." />
-                    </StackPanel>
-                </cards:RoiOverrideCard.AdditionalContent>
-            </cards:RoiOverrideCard>
 
             <!-- ============ symbol style ============ -->
             <ctl:Card Header="NAVAID Symbol Style" Outputs="Geojson" Visibility="{Binding ShowSymbolStyleChoice, Converter={StaticResource BoolToVis}}">

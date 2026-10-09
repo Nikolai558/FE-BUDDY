@@ -1,14 +1,15 @@
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Procedures;
 
 namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 
 /// <summary>
-/// Covers <see cref="ProcedureSettingsParser"/>: every key, the documented defaults, the
-/// "both documents off" and "no inclusion source" guards, <c>AirportProcedures</c> parsing and
-/// validation, unknown <c>ChartTypes</c>/<c>JsonFields</c> entries, and that Procedures has no
-/// GeoJSON/alias/<c>feb.*</c> settings of its own.
+/// Covers <see cref="ProcedureSettingsParser"/>: every key, the documented defaults, the area (and
+/// what a block without one means), the "both documents off" and "no inclusion source" guards,
+/// <c>AirportProcedures</c> parsing and validation, unknown <c>ChartTypes</c>/<c>JsonFields</c>
+/// entries, and that Procedures has no GeoJSON/alias/<c>feb.*</c> settings of its own.
 /// </summary>
 public sealed class ProcedureSettingsParserTests
 {
@@ -36,9 +37,9 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Empty(result.Messages);
 		Assert.True(result.Settings.GenerateChangesDocument);
 		Assert.True(result.Settings.GenerateProceduresJson);
+		Assert.Equal(SubServiceArea.Artccs, result.Settings.Area);
 		Assert.Equal(["ZOB"], result.Settings.Facilities);
 		Assert.Null(result.Settings.PrimaryFacility);
-		Assert.False(result.Settings.IncludeRoiAirports);
 		Assert.Null(result.Settings.Roi);
 		Assert.Empty(result.Settings.Airports);
 		Assert.Empty(result.Settings.Procedures);
@@ -127,48 +128,121 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Equal("ZOB", parsed.PrimaryFacility);
 	}
 
-	// ---- IncludeRoiAirports / Roi ----
+	// ---- Area ----
 
-	[Fact]
-	public void include_roi_airports_without_a_region_of_interest_throws()
+	private static Dictionary<string, string> WithRoi(Dictionary<string, string> settings)
 	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeRoiAirports"] = "Y";
-
-		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
-		Assert.Contains("IncludeRoiAirports", ex.Message);
+		settings["FilterByRoi"] = "Y";
+		settings["RoiSwLat"] = "40.0";
+		settings["RoiSwLon"] = "-89.0";
+		settings["RoiNeLat"] = "43.0";
+		settings["RoiNeLon"] = "-86.0";
+		return settings;
 	}
 
 	[Fact]
-	public void include_roi_airports_with_a_region_of_interest_parses()
+	public void the_roi_area_without_a_region_of_interest_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
+		Assert.Contains("\"Roi\"", ex.Message);
+	}
+
+	/// <summary>Only the area chosen applies: with the ROI, the facilities listed aren't used.</summary>
+	[Fact]
+	public void the_roi_area_reads_the_roi_and_leaves_the_facilities_out()
+	{
+		Dictionary<string, string> settings = WithRoi(MinimalValidSettings());
+		settings["Area"] = "roi";
+
+		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(SubServiceArea.Roi, parsed.Area);
+		Assert.Equal(40.0, parsed.Roi!.SwLat);
+		Assert.Empty(parsed.Facilities);
+	}
+
+	[Fact]
+	public void the_facilities_area_with_none_listed_throws()
 	{
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = @"C:\Output",
-			["IncludeRoiAirports"] = "Y",
-			["FilterByRoi"] = "Y",
-			["RoiSwLat"] = "40.0",
-			["RoiSwLon"] = "-89.0",
-			["RoiNeLat"] = "43.0",
-			["RoiNeLon"] = "-86.0",
+			["Area"] = "Artccs",
+			["Airports"] = "PIT",
 		};
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
+		Assert.Contains("'Facilities' lists none", ex.Message);
+	}
+
+	/// <summary>Everything already has every airport, so the lists that add to the area aren't used.</summary>
+	[Fact]
+	public void everything_leaves_out_the_lists_and_the_facilities()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Everything";
+		settings["Airports"] = "PIT";
+		settings["Procedures"] = "ILS OR LOC RWY 28C";
+		settings["AirportProcedures"] = "PIT|ILS OR LOC RWY 28C";
 
 		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
 
-		Assert.True(parsed.IncludeRoiAirports);
+		Assert.Equal(SubServiceArea.Everything, parsed.Area);
+		Assert.Empty(parsed.Facilities);
+		Assert.Empty(parsed.Airports);
+		Assert.Empty(parsed.Procedures);
+		Assert.Empty(parsed.AirportProcedures);
+	}
+
+	[Fact]
+	public void an_area_procedures_doesnt_offer_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Somewhere";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
+		Assert.Contains("\"Somewhere\"", ex.Message);
+		Assert.Contains("\"None\"", ex.Message);
+	}
+
+	/// <summary>A block without <c>Area</c> means what its settings did before: the ROI's airports with <c>IncludeRoiAirports</c>.</summary>
+	[Fact]
+	public void a_block_without_an_area_takes_include_roi_airports_as_the_roi()
+	{
+		Dictionary<string, string> settings = WithRoi(new(StringComparer.OrdinalIgnoreCase) { ["OutputDirectory"] = @"C:\Output" });
+		settings["IncludeRoiAirports"] = "Y";
+
+		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(SubServiceArea.Roi, parsed.Area);
 		Assert.NotNull(parsed.Roi);
-		Assert.Equal(40.0, parsed.Roi!.SwLat);
+	}
+
+	/// <summary>FilterByRoi alone never meant the ROI here: it was sent whenever a default ROI was set.</summary>
+	[Fact]
+	public void a_block_without_an_area_and_only_filter_by_roi_has_no_area()
+	{
+		Dictionary<string, string> settings = WithRoi(new(StringComparer.OrdinalIgnoreCase) { ["OutputDirectory"] = @"C:\Output" });
+		settings["Airports"] = "PIT";
+
+		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(SubServiceArea.None, parsed.Area);
+		Assert.Null(parsed.Roi);
 	}
 
 	// ---- inclusion source guard ----
 
 	[Fact]
-	public void no_inclusion_source_throws()
+	public void no_area_and_nothing_listed_throws()
 	{
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase) { ["OutputDirectory"] = @"C:\Output" };
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
-		Assert.Contains("inclusion source", ex.Message);
+		Assert.Contains("\"None\"", ex.Message);
 	}
 
 	[Fact]
@@ -361,9 +435,9 @@ public sealed class ProcedureSettingsParserTests
 	[Fact]
 	public void alias_only_settings_with_no_inclusion_source_at_all_parses_fine()
 	{
-		// Neither document is generated, so none of Facilities/Airports/Procedures/
-		// AirportProcedures/IncludeRoiAirports is needed: the alias file covers every airport
-		// in the metafile regardless.
+		// Neither document is generated, so no area and none of Airports/Procedures/
+		// AirportProcedures is needed: the alias file covers every airport in the metafile
+		// regardless.
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = @"C:\Output",
@@ -378,25 +452,28 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Empty(result.Settings.Airports);
 		Assert.Empty(result.Settings.Procedures);
 		Assert.Empty(result.Settings.AirportProcedures);
-		Assert.False(result.Settings.IncludeRoiAirports);
+		Assert.Equal(SubServiceArea.None, result.Settings.Area);
 	}
 
-	[Fact]
-	public void alias_only_settings_with_include_roi_airports_and_no_region_of_interest_parses_fine()
+	[Theory]
+	[InlineData("Roi")]
+	[InlineData("Artccs")]
+	public void alias_only_settings_with_an_area_that_has_nothing_set_parses_fine(string area)
 	{
-		// The "IncludeRoiAirports without ROI" guard only applies when a document is generated.
+		// The area's own checks (an ROI set, a facility listed) only apply when a document is generated.
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = @"C:\Output",
 			["GenerateChangesDocument"] = "N",
 			["GenerateProceduresJson"] = "N",
-			["IncludeRoiAirports"] = "Y",
+			["Area"] = area,
 		};
 
 		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
 
-		Assert.True(parsed.IncludeRoiAirports);
+		Assert.Equal(area, parsed.Area.ToString());
 		Assert.Null(parsed.Roi);
+		Assert.Empty(parsed.Facilities);
 	}
 
 	// ---- CrcDefaultsFor ----
@@ -423,19 +500,16 @@ public sealed class ProcedureSettingsParserTests
 
 	// ---- ROI reuse ----
 
+	/// <summary>The shared ROI keys are read only for the ROI area; with the facilities they're ignored.</summary>
 	[Fact]
-	public void roi_is_parsed_when_filter_by_roi_is_set()
+	public void the_roi_is_read_only_for_the_roi_area()
 	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["FilterByRoi"] = "Y";
-		settings["RoiSwLat"] = "40.0";
-		settings["RoiSwLon"] = "-89.0";
-		settings["RoiNeLat"] = "43.0";
-		settings["RoiNeLon"] = "-86.0";
+		Dictionary<string, string> settings = WithRoi(MinimalValidSettings());
 
-		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+		Assert.Null(ProcedureSettingsParser.Parse(settings).Settings.Roi);
 
-		Assert.NotNull(parsed.Roi);
-		Assert.Equal(40.0, parsed.Roi!.SwLat);
+		settings["Area"] = "Roi";
+
+		Assert.Equal(40.0, ProcedureSettingsParser.Parse(settings).Settings.Roi!.SwLat);
 	}
 }

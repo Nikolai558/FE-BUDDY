@@ -77,35 +77,53 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ facilities ============ -->
-            <ctl:Card Header="Facilities" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="The charts at every airport in the ARTCCs you tick." />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Facilities appear once the selected cycle's data is loaded."
-                               Visibility="{Binding HasFacilities, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-                    <ItemsControl ItemsSource="{Binding Facilities}" IsEnabled="{Binding IsCycleReady}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type m:ArtccToggle}">
-                                <CheckBox Content="{Binding Artcc}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock Text="{Binding PrimaryFacilityCaption}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
-                </StackPanel>
-            </ctl:Card>
+            <!-- ============ area: the facilities, an ROI, everything, or none ============ -->
+            <cards:AreaCard Outputs="{Binding AreaOutputs}"
+                            Intro="Choose which charts the documents include. The Airports, Procedures at Any Airport, and Airport + Procedure cards below can add more, even outside your choice."
+                            ArtccsLabel="Facilities"
+                            ArtccsDescription="charts for airports within the facilities you tick"
+                            RoiDescription="charts for airports within an ROI"
+                            EverythingDescription="charts for every airport in the d-TPP metafile"
+                            NoneDescription="only what you list in the cards below">
+                <cards:AreaCard.ArtccsContent>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                                   Text="Facilities appear once the selected cycle's data is loaded."
+                                   Visibility="{Binding HasFacilities, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                        <ItemsControl ItemsSource="{Binding Facilities}" IsEnabled="{Binding IsCycleReady}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type m:ArtccToggle}">
+                                    <CheckBox Content="{Binding Artcc}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="{Binding PrimaryFacilityCaption}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </cards:AreaCard.ArtccsContent>
+            </cards:AreaCard>
 
-            <!-- ============ airports ============ -->
-            <ctl:Card Header="Airports" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
+            <!-- ============ airports ============
+                 This card and the next two add to the area, even outside it. With Everything, which
+                 already has every airport, they aren't used: they grey out, keeping their lists. -->
+            <ctl:Card Header="Airports" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}"
+                      IsEnabled="{Binding AreListsUsed}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="{Binding Source={x:Static vm:ProceduresViewModel.MaxAirports}, StringFormat='The charts at these airports, up to {0} airports. Type or paste FAA or ICAO IDs, separated by spaces, commas or new lines, then press Enter or Add.'}" />
+                    <DockPanel Margin="0,0,0,10" Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                        <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Info}" FontFamily="{StaticResource Font.Icon}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Top" Margin="0,2,8,0" />
+                        <TextBlock Text="{x:Static vm:ProceduresViewModel.ListsUnusedNote}" Style="{StaticResource Text.Caption}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
+                    </DockPanel>
+                    <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding AirportsIntro}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,8"
+                                   Text="{Binding Source={x:Static vm:ProceduresViewModel.MaxAirports}, StringFormat='Type or paste up to {0} FAA/ICAO IDs, separated by spaces, commas, or new lines, and press ENTER or ADD.'}" />
+                    </StackPanel>
 
                     <ItemsControl ItemsSource="{Binding Airports}" Margin="0,0,0,8">
                         <ItemsControl.ItemTemplate>
@@ -147,17 +165,23 @@
                                TextWrapping="Wrap" MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Foreground="{StaticResource Brush.Danger}"
                                Visibility="{Binding NewAirportHint, Converter={StaticResource StringToVis}}" />
-
-                    <CheckBox Content="Also every airport inside the region (set below)"
-                              IsChecked="{Binding IncludeRoiAirports}" Margin="0,12,0,0" />
                 </StackPanel>
             </ctl:Card>
 
             <!-- ============ procedures at any airport ============ -->
-            <ctl:Card Header="Procedures at Any Airport" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
+            <ctl:Card Header="Procedures at Any Airport" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}"
+                      IsEnabled="{Binding AreListsUsed}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="A procedure at every airport it serves, such as a STAR shared by several airports." />
+                    <DockPanel Margin="0,0,0,10" Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                        <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Info}" FontFamily="{StaticResource Font.Icon}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Top" Margin="0,2,8,0" />
+                        <TextBlock Text="{x:Static vm:ProceduresViewModel.ListsUnusedNote}" Style="{StaticResource Text.Caption}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
+                    </DockPanel>
+                    <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding ProcedureNamesIntro}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,8" Text="Type or pick a procedure, and press ADD." />
+                    </StackPanel>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -206,10 +230,20 @@
             </ctl:Card>
 
             <!-- ============ airport + procedure ============ -->
-            <ctl:Card Header="Airport + Procedure" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}">
+            <ctl:Card Header="Airport + Procedure" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}"
+                      IsEnabled="{Binding AreListsUsed}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="One procedure at one airport." />
+                    <DockPanel Margin="0,0,0,10" Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                        <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Info}" FontFamily="{StaticResource Font.Icon}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Top" Margin="0,2,8,0" />
+                        <TextBlock Text="{x:Static vm:ProceduresViewModel.ListsUnusedNote}" Style="{StaticResource Text.Caption}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
+                    </DockPanel>
+                    <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding AirportProceduresIntro}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,8"
+                                   Text="Press ADD PROCEDURE, type the airport, pick one of its procedures, and press ADD." />
+                    </StackPanel>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -277,7 +311,7 @@
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Which charts the Facilities and Airports cards and the region bring in. Procedures you add by name are always included." />
+                               Text="{Binding ChartTypesIntro}" />
                     <ItemsControl ItemsSource="{Binding ChartTypeToggles}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -308,15 +342,6 @@
                     </ItemsControl>
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard Outputs="ProcedureChanges, ProceduresJson">
-                <cards:RoiOverrideCard.AdditionalContent>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0" TextWrapping="Wrap"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Used only when &quot;Also every airport inside the region&quot; is ticked on the Airports card." />
-                </cards:RoiOverrideCard.AdditionalContent>
-            </cards:RoiOverrideCard>
 
     </StackPanel>
 </UserControl>

@@ -73,7 +73,9 @@ public static class WxStationSettingsParser
 				"'IncludeFebCustomProperties' is \"Y\", but Wx Stations has no FE-Buddy properties to add, so it was ignored."));
 		}
 
-		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(wxStationSettings);
+		// Only the area chosen applies: the ROI, or everything.
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(wxStationSettings, SubServiceSettingsReader.RoiAreas, artccListKey: null);
+		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(wxStationSettings, area);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(wxStationSettings);
 
 		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(

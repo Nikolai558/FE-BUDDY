@@ -76,9 +76,9 @@ public static class ArrivalSettingsParser
 				"Turn at least one file back on, or set GenerateGeojson to \"N\".");
 		}
 
-		IReadOnlyCollection<string> artccFilter = [.. SettingsValueReader.StringList(arrivalSettings, "ArtccFilter")
-			.Select(artcc => artcc.ToUpperInvariant())
-			.Distinct(StringComparer.OrdinalIgnoreCase)];
+		// Only the area chosen applies: the ARTCCs listed, or the ROI, or neither.
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(arrivalSettings, SubServiceSettingsReader.ArtccOrRoiAreas, artccListKey: "ArtccFilter");
+		IReadOnlyCollection<string> artccFilter = SubServiceSettingsReader.ReadAreaArtccs(arrivalSettings, area, "ArtccFilter");
 
 		// Only the value the chosen mode uses is read (and required); the others are ignored.
 		ArrivalAmendmentFilter amendmentFilter = SettingsValueReader.OptionalEnum(
@@ -98,7 +98,7 @@ public static class ArrivalSettingsParser
 			? ParseAmendedOnOrAfter(arrivalSettings)
 			: null;
 
-		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(arrivalSettings);
+		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(arrivalSettings, area);
 		ArrivalRoiMode roiMode = SettingsValueReader.OptionalEnum(
 			arrivalSettings, "RoiMode", ArrivalRoiMode.Airport,
 			hint: "Use \"Airport\" (every arrival of an airport inside the ROI) or \"Waypoint\" " +

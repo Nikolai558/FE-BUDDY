@@ -108,7 +108,9 @@ public static class NavaidSettingsParser
 		(bool includeFebProperties, IReadOnlyList<NavaidFebProperty> febProperties) =
 			SubServiceSettingsReader.ReadFebProperties<NavaidFebProperty>(navaidSettings, example: "navId,navType,freq");
 
-		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(navaidSettings);
+		// Only the area chosen applies: the ROI, or everything.
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(navaidSettings, SubServiceSettingsReader.RoiAreas, artccListKey: null);
+		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(navaidSettings, area);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(navaidSettings);
 
 		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(

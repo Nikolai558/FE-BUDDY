@@ -78,7 +78,9 @@ public static class AirportSettingsParser
 		(bool includeFebProperties, IReadOnlyList<AirportFebProperty> febProperties) =
 			SubServiceSettingsReader.ReadFebProperties<AirportFebProperty>(airportSettings, example: "faaId,icaoId,elev");
 
-		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(airportSettings);
+		// Only the area chosen applies: the ROI, or everything.
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(airportSettings, SubServiceSettingsReader.RoiAreas, artccListKey: null);
+		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(airportSettings, area);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(airportSettings);
 
 		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(

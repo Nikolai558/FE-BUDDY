@@ -10,6 +10,7 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airways;
 using FeBuddy.Core.Domain.Airways.Models;
 using FeBuddy.Core.Domain.Crc.Models;
@@ -137,24 +138,22 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			if (SetProperty(ref _aliasRoiAirwaysOnly, value))
 			{
-				OnPropertyChanged(nameof(RoiOutputs));
-				OnPropertyChanged(nameof(RoiAliasEffect));
+				OnPropertyChanged(nameof(AreaOutputs));
+				OnPropertyChanged(nameof(AreaAliasNote));
 				MarkDirty();
 			}
 		}
 	}
 
-	/// <summary>
-	/// The outputs the region of interest narrows, for its card's tags: the GeoJSON always, and the
-	/// alias file only with <see cref="AliasRoiAirwaysOnly"/>.
-	/// </summary>
-	public SubServiceOutputKinds RoiOutputs =>
+	/// <inheritdoc />
+	/// <remarks>The GeoJSON always, and the alias file only with <see cref="AliasRoiAirwaysOnly"/>.</remarks>
+	public override SubServiceOutputKinds AreaOutputs =>
 		SubServiceOutputKinds.Geojson | (AliasRoiAirwaysOnly ? SubServiceOutputKinds.Alias : SubServiceOutputKinds.None);
 
-	/// <summary>What the region of interest does to the alias file, for its card.</summary>
-	public string RoiAliasEffect => AliasRoiAirwaysOnly
-		? "Only airways that cross the region, each with all of its fixes."
-		: "Every airway. To limit it to the region, choose Only airways that cross the region on the Outputs card.";
+	/// <summary>What the area does to the alias file, for the Area card.</summary>
+	public string AreaAliasNote => AliasRoiAirwaysOnly
+		? "With ROI picked, only airways that cross the ROI, each with all of its fixes, as you picked \"Only airways that cross the ROI\" on the Outputs card."
+		: "Every airway, inside the ROI or not, unless you pick \"Only airways that cross the ROI\" on the Outputs card.";
 
 	/// <summary>Whether a line that crosses 180 degrees longitude is split in two there.</summary>
 	public bool SplitAtAntimeridian { get => _splitAtAntimeridian; set { if (SetProperty(ref _splitAtAntimeridian, value)) MarkDirty(); } }
@@ -163,8 +162,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public ObservableCollection<DesignationToggle> Designations { get; } = [];
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"every airway is included";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.RoiAreas;
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -336,7 +334,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			nameof(OutputBy), nameof(OutputModeHint), nameof(ShowsStrata),
 			nameof(BufferAirwayWaypoints), nameof(FixBufferNm), nameof(NavaidBufferNm),
-			nameof(AliasRoiAirwaysOnly), nameof(RoiOutputs), nameof(RoiAliasEffect), nameof(SplitAtAntimeridian),
+			nameof(AliasRoiAirwaysOnly), nameof(AreaOutputs), nameof(AreaAliasNote), nameof(SplitAtAntimeridian),
 		})
 		{
 			OnPropertyChanged(name);
@@ -430,7 +428,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 				? $"{FixBufferNm.Trim()} NM around fixes, {NavaidBufferNm.Trim()} NM around NAVAIDs"
 				: "No"),
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -444,30 +442,38 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// The designations narrow both files; the region narrows the GeoJSON, and the alias file only
-	/// with ROI airways only. With no region the two blocks are the same, and merge.
+	/// The designations narrow both files; the ROI area narrows the GeoJSON, and the alias file only
+	/// with "Only airways that cross the ROI". With any other area the two blocks are the same, and merge.
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
-		// Before a cycle is parsed the toggle list is empty: the saved exclusions stand in.
+		// Before a cycle is parsed the toggle list is empty: the saved exclusions stand in, and only
+		// they can be named.
 		string[] excluded = Designations.Count > 0
 			? [.. Designations.Where(d => !d.Included).Select(d => d.Designation)]
 			: [.. ParseExcludedFromConfig().OrderBy(d => d, StringComparer.OrdinalIgnoreCase)];
+		string[] included = [.. Designations.Where(d => d.Included).Select(d => d.Designation)];
 
-		string airways = excluded.Length == 0
-			? "every airway"
-			: $"every airway except the {SummaryLines.Join(excluded, "and")} airways";
+		bool none = Designations.Count > 0 && included.Length == 0;
 
-		bool aliasUsesRegion = AliasRoiAirwaysOnly && HasRoi;
+		// Name the shorter list: what is left out, or what is kept.
+		string airways = excluded.Length == 0 ? "Every airway"
+			: none ? "No airways: tick a type under Airway Types to Include"
+			: Designations.Count == 0 || excluded.Length <= included.Length ? $"Every airway except the {SummaryLines.Join(excluded, "and")} airways"
+			: $"The {SummaryLines.Join(included, "and")} airways";
+
+		// With no airways, the region has nothing to narrow.
+		bool hasRoi = HasRoi && !none;
+		bool aliasUsesRegion = AliasRoiAirwaysOnly && hasRoi;
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, airways)
-			.Add(SummaryJoin.And, RegionLine("that cross the region, cut off at its edge"))
+			.Add(SummaryJoin.AndOnly, hasRoi ? $"those that cross {RoiName}, cut off at its edge" : null)
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, aliasUsesRegion || !HasRoi ? airways : $"{airways}, in the region or not")
-			.Add(SummaryJoin.And, aliasUsesRegion ? RegionLine("that cross the region, each with all of its fixes") : null)
+			.Add(SummaryJoin.First, aliasUsesRegion || !hasRoi ? airways : $"{airways}, inside {RoiName} or not")
+			.Add(SummaryJoin.AndOnly, aliasUsesRegion ? $"those that cross {RoiName}, each with all of its fixes" : null)
 			.ToList());
 	}
 

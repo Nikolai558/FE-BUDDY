@@ -87,8 +87,8 @@ every GeoJSON file or specific ones, and fill in the boxes. In DAT and SCT2 to G
 
 ### A file I expected is missing
 
-Look at **Advisories** on the Review tab. A file isn't written when nothing matched - a region with
-no airports, say. An airway with a waypoint that can't be located is left out of everything; its
+Look at **Advisories** on the Review tab. A file isn't written when nothing matched - an ROI with
+no airports, say. Check the tab's **Area** card too: only the area picked there applies. An airway with a waypoint that can't be located is left out of everything; its
 warning is under **Results** ▸ Airways.
 
 ### My custom alias file can't be read

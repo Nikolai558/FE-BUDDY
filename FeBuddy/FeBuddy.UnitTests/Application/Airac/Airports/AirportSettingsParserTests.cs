@@ -56,6 +56,51 @@ public sealed class AirportSettingsParserTests
 		Assert.Throws<ArgumentException>(() => AirportSettingsParser.Parse(new Dictionary<string, string>()));
 	}
 
+	// ---- the area: the ROI or everything (issue #335) ----
+
+	private static Dictionary<string, string> WithRoi()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["FilterByRoi"] = "Y";
+		settings["RoiSwLat"] = "32.5";
+		settings["RoiSwLon"] = "-120";
+		settings["RoiNeLat"] = "37";
+		settings["RoiNeLon"] = "-114";
+		return settings;
+	}
+
+	[Fact]
+	public void the_roi_area_reads_the_roi_and_everything_leaves_it_out()
+	{
+		Dictionary<string, string> settings = WithRoi();
+		settings["Area"] = "Roi";
+
+		Assert.Equal(32.5, AirportSettingsParser.Parse(settings).Settings.Roi!.SwLat);
+
+		settings["Area"] = "Everything";
+
+		Assert.Null(AirportSettingsParser.Parse(settings).Settings.Roi);
+	}
+
+	/// <summary>Airports has no ARTCCs to pick, so the ARTCCs area isn't one it offers.</summary>
+	[Fact]
+	public void the_artccs_area_is_not_one_airports_offers()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Artccs";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => AirportSettingsParser.Parse(settings));
+		Assert.Contains("\"Roi\", \"Everything\"", ex.Message, StringComparison.Ordinal);
+	}
+
+	/// <summary>A block without <c>Area</c> means what it did before: the ROI when FilterByRoi is Y.</summary>
+	[Fact]
+	public void a_block_without_an_area_reads_the_roi_when_filter_by_roi_is_set()
+	{
+		Assert.NotNull(AirportSettingsParser.Parse(WithRoi()).Settings.Roi);
+		Assert.Null(AirportSettingsParser.Parse(MinimalValidSettings()).Settings.Roi);
+	}
+
 	[Fact]
 	public void turning_off_both_geojson_and_the_alias_file_throws()
 	{

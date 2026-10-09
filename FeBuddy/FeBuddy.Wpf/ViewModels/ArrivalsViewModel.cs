@@ -12,6 +12,7 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Arrivals;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -19,8 +20,8 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>Arrivals</b> sub-service tab inside the AIRAC Service screen: which outputs are on (set
-/// on the General tab), which GeoJSON files, which procedures and ARTCCs, the optional region of
-/// interest, which FE-Buddy properties and the CRC ERAM defaults.
+/// on the General tab), which GeoJSON files, the area (the ARTCCs ticked, an ROI, or every
+/// arrival), the amendment date, which FE-Buddy properties and the CRC ERAM defaults.
 /// </summary>
 /// <remarks>
 /// Save, Undo and navigation come from the tab host's action bar; the run is launched by
@@ -66,8 +67,14 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"every arrival is included";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.ArtccOrRoiAreas;
+
+	/// <inheritdoc />
+	protected override IEnumerable<string> AreaArtccIds() => SelectedArtccs();
+
+	/// <inheritdoc />
+	/// <remarks>The area narrows the alias file and the GeoJSON alike.</remarks>
+	public override SubServiceOutputKinds AreaOutputs => SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson;
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -122,15 +129,15 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	// ================= procedures =================
 
 	/// <summary>
-	/// One toggle per ARTCC in the selected cycle's <c>STAR_BASE</c>. The selected set is the
-	/// filter; none selected means every ARTCC. Empty until the cycle's data is loaded.
+	/// One toggle per ARTCC in the selected cycle's <c>STAR_BASE</c>: the ARTCCs area's ARTCCs.
+	/// Empty until the cycle's data is loaded.
 	/// </summary>
 	public ObservableCollection<ArtccToggle> Artccs { get; } = [];
 
 	/// <summary>Whether the ARTCC list has been built from the selected cycle yet.</summary>
 	public bool HasArtccs => Artccs.Count > 0;
 
-	/// <summary>Deselects every ARTCC, which means every ARTCC is included.</summary>
+	/// <summary>Deselects every ARTCC.</summary>
 	public ICommand ClearArtccsCommand { get; }
 
 	/// <summary>Whether procedures are kept whatever their amendment date.</summary>
@@ -174,7 +181,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		set { if (SetProperty(ref _amendedOnOrAfter, value?.Date)) MarkDirty(); }
 	}
 
-	// ================= region of interest =================
+	// ================= area =================
 
 	/// <summary>Whether the ROI selects every arrival of an airport inside it.</summary>
 	public bool RoiModeAirport
@@ -252,10 +259,18 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["GenerateGeojson"] = YesNo(GenerateGeojson),
-			["ArtccFilter"] = string.Join(',', SelectedArtccs()),
 			["AmendmentFilter"] = _amendmentFilter.ToString(),
-			["RoiMode"] = _roiMode.ToString(),
 		};
+
+		// Only what the area uses, so the parser sees exactly what the run will do.
+		if (Area == SubServiceArea.Artccs)
+		{
+			s["ArtccFilter"] = string.Join(',', SelectedArtccs());
+		}
+		else if (Area == SubServiceArea.Roi)
+		{
+			s["RoiMode"] = _roiMode.ToString();
+		}
 
 		// Only the active mode's value; the parser reads that key alone and ignores the others.
 		switch (_amendmentFilter)
@@ -292,7 +307,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
 			new ServicePreviewRow("GeoJSON files", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -301,21 +316,23 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// The filters narrow the alias file and the GeoJSON alike, so there is one block. A STAR shared
-	/// by two ARTCCs goes with each airport's own ARTCC, hence "for airports in".
+	/// The filters narrow the alias file and the GeoJSON alike, so there is one block: the area
+	/// first, then the amendment date. An arrival shared by two ARTCCs goes with each airport's own
+	/// ARTCC, hence "for airports in".
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
 		// Before a cycle is parsed the toggle list is empty; SelectedArtccs falls back to what is saved.
-		string[] artccs = [.. SelectedArtccs()];
+		string[] artccs = Area == SubServiceArea.Artccs ? [.. SelectedArtccs()] : [];
+		bool noArtccs = Area == SubServiceArea.Artccs && artccs.Length == 0;
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, "STARs")
-			.Add(SummaryJoin.And, artccs.Length == 0 ? "for airports in every ARTCC" : $"for airports in {SummaryLines.Join(artccs, "or")}")
-			.Add(SummaryJoin.And, DescribeAmendmentFilter().TrimStart(',', ' '))
-			.Add(SummaryJoin.And, RegionLine(_roiMode == ArrivalRoiMode.Waypoint
-				? "with at least one fix inside the region"
-				: "at an airport inside the region"))
+			.Add(SummaryJoin.First, noArtccs ? "No arrivals yet: tick an ARTCC on the Area card" : "Every arrival")
+			.Add(SummaryJoin.For, artccs.Length == 0 ? null : $"airports in {SummaryLines.Join(artccs, "and")}")
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => _roiMode == ArrivalRoiMode.Waypoint
+				? $"those with at least one fix inside {roi}"
+				: $"those for an airport inside {roi}"))
+			.Add(SummaryJoin.AndOnly, noArtccs ? null : DescribeAmendmentFilter())
 			.ToList());
 	}
 
@@ -431,22 +448,22 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		&& value >= min
 		&& value <= max;
 
-	/// <summary>The amendment part of the "Includes" sentence; empty when there is no amendment filter.</summary>
-	/// <returns>e.g. ", amended in the last 4 cycles".</returns>
-	private string DescribeAmendmentFilter()
+	/// <summary>The amendment filter as a What You'll Get line; <see langword="null"/> when there is none.</summary>
+	/// <returns>e.g. <c>those amended in the last 4 cycles</c>.</returns>
+	private string? DescribeAmendmentFilter()
 	{
 		return _amendmentFilter switch
 		{
 			ArrivalAmendmentFilter.Cycles => TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out int cycles) && cycles == 1
-								? ", amended this cycle"
-								: $", amended in the last {AmendedWithinCycles.Trim()} cycles",
+								? "those amended this cycle"
+								: $"those amended in the last {AmendedWithinCycles.Trim()} cycles",
 			ArrivalAmendmentFilter.Days => TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out int days) && days == 1
-								? ", amended in the last day"
-								: $", amended in the last {AmendedWithinDays.Trim()} days",
+								? "those amended in the last day"
+								: $"those amended in the last {AmendedWithinDays.Trim()} days",
 			ArrivalAmendmentFilter.Date => AmendedOnOrAfter is { } onOrAfter
-								? $", amended on or after {onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture)}"
-								: ", amended on or after a date not yet picked",
-			_ => string.Empty,
+								? $"those amended on or after {onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture)}"
+								: "those amended on or after a date not yet picked",
+			_ => null,
 		};
 	}
 

@@ -10,6 +10,7 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Domain.Procedures;
@@ -28,22 +29,24 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>Procedures</b> sub-service tab inside the AIRAC Service screen: which of the two documents
-/// and the FAA Chart Recall alias file are on (set on the General tab), which
-/// facilities/airports/procedures the documents include, the chart types a whole included airport
-/// is limited to, and the optional <c>Procedures.json</c> fields.
+/// and the FAA Chart Recall alias file are on (set on the General tab), the area the documents cover
+/// (the facilities ticked, an ROI, every airport, or none), the airports and procedures added to it,
+/// the chart types a whole included airport is limited to, and the optional <c>Procedures.json</c>
+/// fields.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Like Telephony, Procedures writes no GeoJSON and has no FE-Buddy properties - it still derives
-/// from <see cref="GeojsonSubServiceViewModel"/> for the alias file and the Region of Interest
-/// override plumbing, but never shows the What Files Do You Want?, FE-Buddy Properties or CRC ERAM
-/// Defaults cards: <see cref="EmitKeys"/> is <c>(null, null, null)</c>, and
-/// <see cref="OutputFiles"/> offers only the alias file.
+/// from <see cref="GeojsonSubServiceViewModel"/> for the alias file and the area plumbing, but never
+/// shows the What Files Do You Want?, FE-Buddy Properties or CRC ERAM Defaults cards:
+/// <see cref="EmitKeys"/> is <c>(null, null, null)</c>, and <see cref="OutputFiles"/> offers only
+/// the alias file.
 /// </para>
 /// <para>
-/// The alias file covers every airport in the d-TPP Metafile; the facility, airport, procedure and
+/// The alias file covers every airport in the d-TPP Metafile; the area, airport, procedure and
 /// chart type choices pick what the two documents cover, so they are only checked while a document
-/// is on.
+/// is on. The Airports, Procedures at Any Airport and Airport + Procedure cards add to the area,
+/// even outside it, except while it is everything (<see cref="AreListsUsed"/>).
 /// </para>
 /// <para>
 /// Its data comes from two places besides the selected cycle's NASR data: the FAA d-TPP Metafile
@@ -60,8 +63,8 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
 	/// <summary>
-	/// The most airports the Airports card holds. Past this many, ticking their ARTCC under
-	/// Facilities, or the region of interest, is the better tool, and the list stays readable.
+	/// The most airports the Airports card holds. Past this many, the facilities or an ROI on the
+	/// Area card is the better tool, and the list stays readable.
 	/// </summary>
 	public const int MaxAirports = 100;
 
@@ -83,7 +86,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		(ProcedureChartTypes.Lah, "LAHSO"),
 	];
 
-	private bool _includeRoiAirports;
 	private bool _suppressListChanges;
 
 	private HashSet<string> _savedFacilities = new(StringComparer.OrdinalIgnoreCase);
@@ -167,8 +169,76 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"the region box on the Airports card adds no airports";
+	protected override IReadOnlyList<SubServiceArea> Areas { get; } =
+		[SubServiceArea.Artccs, SubServiceArea.Roi, SubServiceArea.Everything, SubServiceArea.None];
+
+	/// <inheritdoc />
+	protected override IEnumerable<string> AreaArtccIds() => SelectedFacilityIds();
+
+	/// <inheritdoc />
+	protected override string AreaArtccNoun => "facility";
+
+	/// <inheritdoc />
+	/// <remarks>The two documents: the alias file always has every chart.</remarks>
+	public override SubServiceOutputKinds AreaOutputs => SubServiceOutputKinds.ProcedureChanges | SubServiceOutputKinds.ProceduresJson;
+
+	/// <inheritdoc />
+	/// <remarks>The cards that add to the area say what they add to, and are used only while it isn't everything.</remarks>
+	protected override void OnAreaChanged()
+	{
+		foreach (string name in new[]
+		{
+			nameof(AreListsUsed), nameof(AirportsIntro), nameof(ProcedureNamesIntro), nameof(AirportProceduresIntro),
+			nameof(ChartTypesIntro), nameof(NewAirportHint),
+		})
+		{
+			OnPropertyChanged(name);
+		}
+	}
+
+	// ================= what the cards that add to the area say =================
+
+	/// <summary>
+	/// Whether the Airports, Procedures at Any Airport and Airport + Procedure cards are used: not
+	/// while the area is everything, which already has every airport. Their lists are kept.
+	/// </summary>
+	public bool AreListsUsed => Area != SubServiceArea.Everything;
+
+	/// <summary>What the cards that add to the area say while they aren't used.</summary>
+	public const string ListsUnusedNote =
+		"\"Everything\" already includes every airport, so this card isn't used. Its list is kept in case you pick another area.";
+
+	/// <summary>The Airports card's first line: that its airports are added, even outside the area.</summary>
+	public string AirportsIntro => AddedEvenIfOutside("the airports you list here will be included.");
+
+	/// <summary>The Procedures at Any Airport card's first line.</summary>
+	public string ProcedureNamesIntro =>
+		AddedEvenIfOutside("the procedures you list here will be included at every airport they serve, such as an arrival shared by several airports.");
+
+	/// <summary>The Airport + Procedure card's first line.</summary>
+	public string AirportProceduresIntro => AddedEvenIfOutside("the airport and procedure pairs you add here will be included.");
+
+	/// <summary>The Chart Types card's line: which charts the types narrow, for the area picked.</summary>
+	public string ChartTypesIntro => Area switch
+	{
+		SubServiceArea.Everything => "Only charts of the types you tick are included.",
+		SubServiceArea.None => "Only charts of the types you tick are included from the airports you list. "
+			+ "The procedures you list in Procedures at Any Airport and Airport + Procedure are always included.",
+		_ => $"Only charts of the types you tick are included from {OutsideOf()} and the airports you list. "
+			+ "The procedures you list in Procedures at Any Airport and Airport + Procedure are always included.",
+	};
+
+	/// <summary>
+	/// A card's line about what it adds: <c>Even if outside the ROI, …</c>, or with no area to be
+	/// outside of, just what it adds, capitalised.
+	/// </summary>
+	private string AddedEvenIfOutside(string adds) =>
+		Area is SubServiceArea.Artccs or SubServiceArea.Roi
+			? $"Even if outside {OutsideOf()}, {adds}"
+			: char.ToUpperInvariant(adds[0]) + adds[1..];
+
+	/// <summary>The area the cards add to, as their lines name it: <c>the facilities you tick</c> or <c>the ROI</c>.</summary>
+	private string OutsideOf() => Area == SubServiceArea.Roi ? "the ROI" : "the facilities you tick";
 
 	/// <inheritdoc />
 	/// <remarks>Procedures writes no GeoJSON at all.</remarks>
@@ -354,13 +424,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <summary>Removes an airport from <see cref="Airports"/>.</summary>
 	public ICommand DeleteAirportCommand { get; }
-
-	/// <summary>Whether every included airport also includes every airport inside the region of interest set below.</summary>
-	public bool IncludeRoiAirports
-	{
-		get => _includeRoiAirports;
-		set { if (SetProperty(ref _includeRoiAirports, value)) MarkDirty(); }
-	}
 
 	// ================= procedures at any airport =================
 
@@ -626,16 +689,25 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			["GenerateChangesDocument"] = YesNo(GenerateChangesDocument),
 			["GenerateProceduresJson"] = YesNo(GenerateProceduresJson),
-			["Facilities"] = string.Join(',', SelectedFacilityIds()),
 			// Read fresh from Settings rather than this tab's own config - see the class remarks.
 			["PrimaryFacility"] = UserConfigFile.GetValue(SettingsViewModel.ArtccKey) ?? string.Empty,
-			["IncludeRoiAirports"] = YesNo(_includeRoiAirports),
-			["Airports"] = string.Join(',', Airports),
-			["Procedures"] = string.Join(',', ProcedureNames),
-			["AirportProcedures"] = string.Join(',', AirportProcedures.Select(p => $"{p.Airport}|{p.ProcedureName}")),
 			["ChartTypes"] = string.Join(',', ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)),
 			["JsonFields"] = string.Join(',', JsonFieldToggles.Where(t => t.IsSelected).Select(t => t.Token)),
 		};
+
+		// Only what the area uses, so the parser sees exactly what the run will do: the facilities
+		// for that area, and the lists that add to it unless it's everything.
+		if (Area == SubServiceArea.Artccs)
+		{
+			s["Facilities"] = string.Join(',', SelectedFacilityIds());
+		}
+
+		if (AreListsUsed)
+		{
+			s["Airports"] = string.Join(',', Airports);
+			s["Procedures"] = string.Join(',', ProcedureNames);
+			s["AirportProcedures"] = string.Join(',', AirportProcedures.Select(p => $"{p.Airport}|{p.ProcedureName}"));
+		}
 
 		AddSharedSettings(s);
 		return s;
@@ -648,7 +720,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		[
 			new ServicePreviewRow("Documents", DescribeDocuments()),
 			new ServicePreviewRow("Facilities listed first", DescribePrimaryFacility()),
-			new ServicePreviewRow("Region of interest", _includeRoiAirports ? DescribeRoi() : "Not used"),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("d-TPP data", DtppStatus),
 		];
 
@@ -657,30 +729,38 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// Unlike every other tab, the documents' airports come in several ways at once - the
-	/// facilities, the airports listed, the region - each adding to the others, and procedures
-	/// picked by name are added too. Under "Outputs include", <c>Procedure_Changes.md</c> keeps only
-	/// what changed, and the chart types narrow what a whole airport gives, never a procedure picked
-	/// by name. The alias file never follows any of it.
+	/// Unlike every other tab, the documents' airports come in two ways at once - the area, and the
+	/// airports listed, which add to it - and procedures picked by name are added too. Under
+	/// "Outputs include", <c>Procedure_Changes.md</c> keeps only what changed, and the chart types
+	/// narrow what a whole airport gives, never a procedure picked by name. The alias file never
+	/// follows any of it.
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
-		string[] facilities = [.. SelectedFacilityIds()];
-		string[] airports = [.. Airports];
+		string[] facilities = Area == SubServiceArea.Artccs ? [.. SelectedFacilityIds()] : [];
 		string[] chartTypes = [.. ChartTypeToggles.Where(t => t.IsSelected).Select(t => ShownCode(t.Token))];
-		string[] names = [.. ProcedureNames];
-		string[] pairs = [.. AirportProcedures.Select(p => p.Label)];
+
+		// With everything, the cards that add to the area aren't used.
+		string[] airports = AreListsUsed ? [.. Airports] : [];
+		string[] names = AreListsUsed ? [.. ProcedureNames] : [];
+		string[] pairs = AreListsUsed ? [.. AirportProcedures.Select(p => p.Label)] : [];
+
+		string? area = Area switch
+		{
+			SubServiceArea.Artccs when facilities.Length > 0 => $"Charts for airports within {SummaryLines.Join(facilities, "and")}",
+			SubServiceArea.Roi => RoiLine(roi => $"Charts for airports within {roi}"),
+			SubServiceArea.Everything => "Charts for every airport in the d-TPP metafile",
+			_ => null,
+		};
 
 		string? listed = airports.Length == 0 ? null
 			: airports.Length <= 6 ? SummaryLines.Join(airports, "and")
 			: $"the {airports.Length} airports you listed";
-		string? region = _includeRoiAirports ? RoiLine(roi => $"airports within {roi}") : null;
 
-		// Whichever way in comes first says what the charts are for; the rest add to it.
+		// The area comes first; what the cards list is added to it.
 		SummaryLines documents = new();
-		documents.Add(SummaryJoin.First, facilities.Length > 0 ? $"Charts for airports within {SummaryLines.Join(facilities, "and")}" : null);
+		documents.Add(SummaryJoin.First, area);
 		documents.Add(SummaryJoin.AlongWith, listed is not null && documents.IsEmpty ? $"Charts for {listed}" : listed);
-		documents.Add(SummaryJoin.AlongWith, region is not null && documents.IsEmpty ? $"Charts for {region}" : region);
 
 		bool wholeAirports = !documents.IsEmpty;
 		bool picked = names.Length > 0 || pairs.Length > 0;
@@ -689,7 +769,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			? $"{SummaryLines.Join(names, "and")}, wherever {(names.Length == 1 ? "it's" : "they're")} published"
 			: null);
 		documents.Add(SummaryJoin.AlongWith, pairs.Length > 0 ? SummaryLines.Join(pairs, "and") : null);
-		documents.Add(SummaryJoin.First, wholeAirports || picked ? null : "Nothing yet: pick a facility, an airport, or a procedure");
+		documents.Add(SummaryJoin.First, wholeAirports || picked ? null : "Nothing yet: pick an area, or list an airport or a procedure");
 
 		string? types = !wholeAirports ? null
 			: chartTypes.Length == 0 ? "these types: none yet, so tick one under Chart Types"
@@ -732,8 +812,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		_suppressListChanges = true;
 		try
 		{
-			_includeRoiAirports = GetBool("IncludeRoiAirports", false);
-
 			bool hasSavedFacilities = Get("Facilities") is not null;
 			_savedFacilities = ParseList(Get("Facilities"));
 
@@ -802,7 +880,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	protected override void WriteToConfig()
 	{
 		Set("Facilities", string.Join(',', SelectedFacilityIds()));
-		Set("IncludeRoiAirports", YesNo(_includeRoiAirports));
 		Set("Airports", string.Join(',', Airports));
 		Set("Procedures", string.Join(',', ProcedureNames));
 		Set("AirportProcedures", string.Join(',', AirportProcedures.Select(p => $"{p.Airport}|{p.ProcedureName}")));
@@ -814,11 +891,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
 	{
-		// The Add box's hint depends on the facilities, the region and the list, and any change to
-		// them re-validates.
+		// The Add box's hint depends on the area and the list, and any change to them re-validates.
 		OnPropertyChanged(nameof(NewAirportHint));
 
 		// The choices below only pick what the documents cover; the alias file covers every airport.
+		// The area itself (a facility ticked, an ROI set) is checked with the shared settings.
 		if (GeneratesDocument)
 		{
 			ValidateDocumentSelection(validation);
@@ -827,33 +904,28 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		ValidateSharedSettings(validation);
 	}
 
-	/// <summary>Checks that the documents' facility, airport, procedure and chart type choices include something.</summary>
+	/// <summary>
+	/// Checks that the documents include something: with no area, at least one airport or procedure
+	/// listed; and with whole airports coming in (the area, or airports listed), a chart type ticked.
+	/// </summary>
 	private void ValidateDocumentSelection(ServiceValidation validation)
 	{
-		bool hasFacility = SelectedFacilityIds().Any();
-		bool hasWholeAirportSource = hasFacility || _includeRoiAirports || Airports.Count > 0;
-		bool hasInclusionSource = hasWholeAirportSource || ProcedureNames.Count > 0 || AirportProcedures.Count > 0;
+		bool airportsListed = AreListsUsed && Airports.Count > 0;
+		bool proceduresListed = AreListsUsed && (ProcedureNames.Count > 0 || AirportProcedures.Count > 0);
+		bool hasWholeAirportSource = Area != SubServiceArea.None || airportsListed;
 
-		if (!hasInclusionSource)
+		if (Area == SubServiceArea.None && !airportsListed && !proceduresListed)
 		{
 			validation.AddArea(
 				ServiceAreas.DocumentSelection,
-				"Pick at least one facility, airport or procedure for the documents to include.");
+				"With \"None\" picked on the Area card, list at least one airport or procedure for the documents to include, or pick another area.");
 		}
 
 		if (hasWholeAirportSource && ChartTypeToggles.All(t => !t.IsSelected))
 		{
 			validation.AddArea(
 				ServiceAreas.ChartTypes,
-				"No chart types are ticked, so the facilities, airports and region bring in nothing. Tick at least one chart type.");
-		}
-
-		if (_includeRoiAirports && !HasRoi)
-		{
-			validation.AddArea(
-				ServiceAreas.Roi,
-				"Set a region below or a default one in Settings, or untick "
-				+ "\"Also every airport inside the region\" on the Airports card.");
+				"No chart types are ticked, so the area and the airports you list bring in nothing. Tick at least one chart type.");
 		}
 	}
 
@@ -974,8 +1046,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		HashSet<string> listed = new(Airports, StringComparer.OrdinalIgnoreCase);
 		HashSet<string> adding = new(StringComparer.OrdinalIgnoreCase);
-		HashSet<string> facilities = new(SelectedFacilityIds(), StringComparer.OrdinalIgnoreCase);
-		RegionOfInterest? region = _includeRoiAirports ? RoiInUse() : null;
+		HashSet<string> facilities = Area == SubServiceArea.Artccs
+			? new(SelectedFacilityIds(), StringComparer.OrdinalIgnoreCase)
+			: new(StringComparer.OrdinalIgnoreCase);
+		RegionOfInterest? region = Area == SubServiceArea.Roi ? RoiInUse() : null;
 
 		foreach (string text in texts)
 		{
@@ -1010,10 +1084,13 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <summary>
-	/// How the run already includes the whole airport, the way the library decides it: its
-	/// responsible ARTCC is ticked under Facilities, or it is inside the region of interest while
-	/// that box is ticked. <see langword="null"/> when nothing does.
+	/// How the area already includes the whole airport, the way the library decides it: its
+	/// responsible ARTCC is a facility ticked, or it is inside the ROI. <see langword="null"/> when
+	/// the area doesn't.
 	/// </summary>
+	/// <param name="faaId">The airport's FAA ID.</param>
+	/// <param name="facilities">The facilities ticked, while the area is the facilities; otherwise none.</param>
+	/// <param name="region">The ROI, while the area is the ROI; otherwise <see langword="null"/>.</param>
 	private string? IncludedBy(string faaId, HashSet<string> facilities, RegionOfInterest? region)
 	{
 		if (!_nasrAirportsByFaaId.TryGetValue(faaId, out AptCsvDataModel.AptBase? row))
@@ -1025,11 +1102,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		if (artcc.Length > 0 && facilities.Contains(artcc))
 		{
-			return $"by {artcc.ToUpperInvariant()} under Facilities";
+			return $"by {artcc.ToUpperInvariant()}, a facility ticked on the Area card";
 		}
 
 		return region is not null && RoiFilter.Contains(region, row.BaseLatDecimal, row.BaseLongDecimal)
-			? "by the region of interest"
+			? $"by {RoiName}"
 			: null;
 	}
 
@@ -1234,11 +1311,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		OnPropertyChanged(nameof(PairEditorHint));
 	}
 
-	private void RaiseOwnSettingProperties()
-	{
-		OnPropertyChanged(nameof(IncludeRoiAirports));
-		OnPropertyChanged(nameof(PrimaryFacilityCaption));
-	}
+	private void RaiseOwnSettingProperties() => OnPropertyChanged(nameof(PrimaryFacilityCaption));
 
 	private IEnumerable<string> SelectedFacilityIds() =>
 		Facilities.Count > 0

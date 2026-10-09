@@ -1,4 +1,5 @@
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Geo.Models;
 
 namespace FeBuddy.Core.Application.Airac.Procedures.Models;
@@ -50,8 +51,15 @@ public sealed record ProcedureSettings
 	public OutputFileNames FileNames { get; init; } = OutputFileNames.None;
 
 	/// <summary>
-	/// Every included airport's every procedure is included whenever its
-	/// <c>ResponsibleArtcc</c> is one of these, trimmed and upper-cased. Default: none.
+	/// Which airports are included as a whole: those in <see cref="Facilities"/>
+	/// (<see cref="SubServiceArea.Artccs"/>), those inside <see cref="Roi"/>, every airport, or none
+	/// (only the airports and procedures listed). Default <see cref="SubServiceArea.None"/>.
+	/// </summary>
+	public SubServiceArea Area { get; init; } = SubServiceArea.None;
+
+	/// <summary>
+	/// With <see cref="Area"/> <see cref="SubServiceArea.Artccs"/>, every airport whose
+	/// <c>ResponsibleArtcc</c> is one of these, trimmed and upper-cased, is included. Otherwise none.
 	/// </summary>
 	public IReadOnlyCollection<string> Facilities { get; init; } = [];
 
@@ -62,32 +70,29 @@ public sealed record ProcedureSettings
 	public string? PrimaryFacility { get; init; }
 
 	/// <summary>
-	/// When <see langword="true"/>, every airport whose NASR coordinates fall inside <see cref="Roi"/>
-	/// is included, the same as a <see cref="Facilities"/> match. Default <see langword="false"/>.
-	/// </summary>
-	public bool IncludeRoiAirports { get; init; }
-
-	/// <summary>
-	/// The Region of Interest airports are tested against when <see cref="IncludeRoiAirports"/> is
-	/// <see langword="true"/> (the same shared ROI every sub-service reads); otherwise unused.
+	/// With <see cref="Area"/> <see cref="SubServiceArea.Roi"/>, every airport whose NASR coordinates
+	/// fall inside it is included. Otherwise <see langword="null"/>.
 	/// </summary>
 	public RegionOfInterest? Roi { get; init; }
 
 	/// <summary>
-	/// Airports (whole) to include regardless of <see cref="Facilities"/> or <see cref="Roi"/>,
-	/// matched against the metafile's FAA or ICAO identifier, ignoring case. Default: none.
+	/// Airports (whole) to include whatever <see cref="Area"/> leaves out, matched against the
+	/// metafile's FAA or ICAO identifier, ignoring case. None with <see cref="SubServiceArea.Everything"/>,
+	/// which already has every airport. Default: none.
 	/// </summary>
 	public IReadOnlyCollection<string> Airports { get; init; } = [];
 
 	/// <summary>
 	/// Procedure base chart names to include at every airport that has one, regardless of
-	/// <see cref="ChartTypes"/> or whether the airport itself is otherwise included. Default: none.
+	/// <see cref="ChartTypes"/> or whether the airport itself is otherwise included. None with
+	/// <see cref="SubServiceArea.Everything"/>. Default: none.
 	/// </summary>
 	public IReadOnlyCollection<string> Procedures { get; init; } = [];
 
 	/// <summary>
 	/// Specific airport + procedure pairs to include, regardless of <see cref="ChartTypes"/> or
-	/// whether the airport itself is otherwise included. Default: none.
+	/// whether the airport itself is otherwise included. None with <see cref="SubServiceArea.Everything"/>.
+	/// Default: none.
 	/// </summary>
 	public IReadOnlyList<ProcedureAirportPick> AirportProcedures { get; init; } = [];
 

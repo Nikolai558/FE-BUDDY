@@ -143,9 +143,8 @@ FeBuddy.Wpf/
 │                        (ServiceValidation, ServiceAreas), the card interfaces (IOutputSettings, …)
 └── Views/               ShellWindow, TabbedServiceView (AIRAC Service), FileConversionsView, one view
     │                    per tab or conversion page, MapWorkspace (every map), the dialog windows
-    └── Cards/           the shared cards (Attention, What You'll Get, Outputs, What Files Do You
-                         Want?, FE-Buddy Properties, Region of Interest, CRC ERAM Defaults, Source
-                         Files, Run);
+    └── Cards/           the shared cards (Attention, What You'll Get, Outputs, Area, What Files Do
+                         You Want?, FE-Buddy Properties, CRC ERAM Defaults, Source Files, Run);
                          CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
                          Defaults; and OutputStatusRow, an output's On/Off line
 ```
@@ -164,8 +163,10 @@ FeBuddy.Wpf/
   `ConversionChoice`s built in `FileConversionsViewModel` - and Continue opens that conversion's page
   in its place, with its last run's results under its Run card.
 - **A sub-service tab** derives from `GeojsonSubServiceViewModel`, which brings the shared cards'
-  logic: outputs, file choices, `feb.*` properties, ROI override, and which files get CRC defaults.
-  A tab without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry). Which outputs
+  logic: outputs, file choices, `feb.*` properties, the area (`Area`, its ROI and validation; the
+  tab lists the areas it offers in `Areas` and its ARTCCs in `AreaArtccIds`), and which files get
+  CRC defaults. A tab without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry,
+  no `Areas`). Which outputs
   are on comes from the sub-service's row on the General tab (`SubServiceRow`, read through
   `ISubServiceOutputs`), so the tab's own save and undo never change them. A sub-service left out
   keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Concatenate Aliases is the exception:

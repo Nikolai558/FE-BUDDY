@@ -21,14 +21,27 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ### AIRAC Service
 - Bug #333 - The What You'll Get card, now **What You'll Get with the Current Settings**, no longer
   indents its first line. Each file's tag heads its lines, and each line after the first starts with
-  a chip in place of AND, OR and PLUS, so the lines read as one sentence: "Every STAR **for**
+  a chip in place of AND, OR and PLUS, so the lines read as one sentence: "Every arrival **for**
   airports in ZOB **and only** those amended this cycle". **for** and **in** say where, **but only**
   and **and only** narrow, and **along with** adds. What narrows one file further is listed under
   **Outputs include**. A line about the ROI says which one: "the default ROI", or "the ROI specific
   to the Airports sub-service" when the tab has its own.
 - Bug #334 - What You'll Get lists ARTCCs and facilities with "and", not "or": the list is
-  inclusive. On Procedures, the airports listed and the region add to the facilities, and the alias
-  line names only the documents that are on. Lists use the Oxford comma.
+  inclusive. On Procedures, the airports listed add to the area, and the alias line names only the
+  documents that are on. Lists use the Oxford comma.
+- Feature #335 - Each tab has an **Area** card near the top: one choice of what it covers, and only
+  that one applies. **ARTCCs**, **ROI** or **Everything** on ARTCC Boundaries, Departures and
+  Arrivals; **ROI** or **Everything** on Airports, Airways, NAVAIDs, Fixes and Wx Stations;
+  **Facilities**, **ROI**, **Everything** or **None** on Procedures. Telephony has none.
+  - For the ROI, pick **The default ROI** or **An ROI specific to** the tab, with its corners or
+    **Pick on map…**. It replaces the Region of Interest card, and the ARTCC lists move into it.
+  - Procedures' Airports, Procedures at Any Airport and Airport + Procedure cards add to the area,
+    even outside it. With **Everything** they grey out, keeping their lists. The Airports card's
+    "Also every airport inside the region" is gone: pick **ROI**.
+  - The tab flags **ARTCCs** with none ticked, and **ROI** with no ROI set.
+  - Your settings carry over: a tab gets the area it used. One that used its ARTCCs and an ROI
+    together starts on its ARTCCs (Procedures: its facilities); the ROI is kept for when you pick it.
+- Arrivals: the tab says "arrivals" rather than "STARs".
 - Procedures: the STAR chart type shows as **STARs (STAR)**, and What You'll Get says STAR. It's
   still sent as the d-TPP's `STR`.
 

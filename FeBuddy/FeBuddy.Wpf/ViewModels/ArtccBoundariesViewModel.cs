@@ -9,14 +9,16 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>ARTCC Boundaries</b> sub-service tab inside the AIRAC Service screen: how the boundary
-/// GeoJSON is laid out, which ARTCCs to include, whether lines are split at the antimeridian, the
-/// optional region of interest, which FE-Buddy properties and the CRC ERAM defaults.
+/// GeoJSON is laid out, the area (the ARTCCs ticked, an ROI the boundaries are cut off at, or every
+/// ARTCC), whether lines are split at the antimeridian, which FE-Buddy properties and the CRC ERAM
+/// defaults.
 /// </summary>
 /// <remarks>
 /// Unlike every other AIRAC sub-service, ARTCC Boundaries writes GeoJSON Lines only: there is no
@@ -61,8 +63,10 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"every boundary is drawn in full";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.ArtccOrRoiAreas;
+
+	/// <inheritdoc />
+	protected override IEnumerable<string> AreaArtccIds() => SelectedLocationIds();
 
 	/// <inheritdoc />
 	/// <remarks>ARTCC Boundaries has no file choices: it always writes Lines only.</remarks>
@@ -101,15 +105,15 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	// ================= ARTCCs =================
 
 	/// <summary>
-	/// One toggle per ARTCC in the selected cycle's <c>ARB_SEG</c>. The selected set is the
-	/// filter; none selected means every ARTCC. Empty until the cycle's data is loaded.
+	/// One toggle per ARTCC in the selected cycle's <c>ARB_SEG</c>: the ARTCCs area's boundaries.
+	/// Empty until the cycle's data is loaded.
 	/// </summary>
 	public ObservableCollection<ArtccToggle> Locations { get; } = [];
 
 	/// <summary>Whether the ARTCC list has been built from the selected cycle yet.</summary>
 	public bool HasLocations => Locations.Count > 0;
 
-	/// <summary>Deselects every ARTCC, which means every ARTCC is included.</summary>
+	/// <summary>Deselects every ARTCC.</summary>
 	public ICommand ClearLocationsCommand { get; }
 
 	// ================= parent hooks =================
@@ -184,9 +188,14 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 		Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputBy"] = _outputBy.ToString(),
-			["LocationFilter"] = string.Join(',', SelectedLocationIds()),
 			["SplitAtAntimeridian"] = YesNo(SplitAtAntimeridian),
 		};
+
+		// The ARTCCs only while the area is the ARTCCs, so the parser sees exactly what the run will do.
+		if (Area == SubServiceArea.Artccs)
+		{
+			s["LocationFilter"] = string.Join(',', SelectedLocationIds());
+		}
 
 		AddSharedSettings(s);
 		return s;
@@ -200,7 +209,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -212,8 +221,12 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	{
 		string[] artccs = [.. SelectedLocationIds()];
 
+		string boundaries = Area != SubServiceArea.Artccs ? "Every ARTCC boundary"
+			: artccs.Length > 0 ? $"The boundaries of {SummaryLines.Join(artccs, "and")}"
+			: "No boundaries yet: tick an ARTCC on the Area card";
+
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, artccs.Length == 0 ? "Every ARTCC boundary" : $"The boundaries of {SummaryLines.Join(artccs, "and")}")
+			.Add(SummaryJoin.First, boundaries)
 			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"the parts inside {roi}"))
 			.ToList());
 	}

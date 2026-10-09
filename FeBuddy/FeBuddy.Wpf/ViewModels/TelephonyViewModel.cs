@@ -106,9 +106,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect => "nothing changes: Telephony is not limited to a region";
-
-	/// <inheritdoc />
 	/// <remarks>Telephony writes no GeoJSON at all.</remarks>
 	protected override (string? Lines, string? Symbols, string? Text) EmitKeys => (null, null, null);
 

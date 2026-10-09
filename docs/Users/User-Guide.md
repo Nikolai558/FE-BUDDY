@@ -88,9 +88,12 @@ their own.
 - **FE-Buddy Properties** - optional `feb.*` fields that tell you what each object is in a GeoJSON
   viewer. CRC ignores them. One that differs from point to point, such as an ID, keeps each symbol a
   feature of its own.
-- **Region of Interest** - Settings' **Default Region of Interest**, unless you tick **Give *tab* its
-  own region** and type the corners or **Pick on map…**. With no region (the card says so in amber),
-  nothing is left out.
+- **Area** - near the top: which part of the cycle the tab covers. Pick one; only it applies.
+  **ARTCCs** (ARTCC Boundaries, Departures and Arrivals: the ones you tick), **ROI**, or
+  **Everything**. For **ROI**, pick **The default ROI** (Settings or the Map page) or **An ROI
+  specific to *tab*** and type its corners or **Pick on map…**. A tab you've never saved starts on
+  its ARTCCs if any are ticked, otherwise the ROI if a default ROI is set, otherwise Everything.
+  Procedures has an Area card of its own.
 - **CRC ERAM Defaults** - how CRC draws a file, written as a hidden feature at its top. At the top of
   the card, choose which GeoJSON files get them: **No CRC-ERAM defaults** (to start), **Every GeoJSON
   file from this tab**, or **Only the files I tick**. Then fill in every box shown; the lists offer
@@ -102,22 +105,22 @@ their own.
 
 Each ARTCC's boundary as lines. No Symbols, Text or alias file.
 
-- **ARTCCs** - tick the ones you want; none means all.
+- **Area** - the ARTCCs you tick, drawn in full; every boundary inside the ROI, clipped at its
+  edge; or every boundary.
 - **File Layout** - **High and Low** (the default; an UNLIMITED boundary goes in both), **High, Low
   and Unlimited**, or **One file per ARTCC and altitude** (`ARTCC-Boundary_ZOB-HIGH_Lines`, …), to
   style your own ARTCC apart from its neighbours.
 - **Split GeoJSON at the Antimeridian** - leave it on: ZAK, ZAN, ZAP and ZOA cross ±180°.
 - ZAK, ZAP and ZWY have two overlapping oceanic rings at one altitude; the `feb.type` property tells
   them apart.
-- **Region** - a boundary is clipped at the region's edge.
 
 ### Airports tab
 
-- **Files** - Runways (lines), Airports symbols, and Airports text (FAA ID and name). An airport is
-  included when its reference point is in the region.
+- **Files** - Runways (lines), Airports symbols, and Airports text (FAA ID and name). With **ROI**
+  as the area, an airport is included when its reference point is inside it.
 - **`Airports.txt`** - an `.apt` command for each FAA ID, and the ICAO ID if it's different, showing
   the airport's card in CRC: name, tower type, ARTCC, longest runway, elevation, CTAF, weather, hours
-  and airspace class. It covers every open airport; the region only limits the GeoJSON.
+  and airspace class. It covers every open airport; the area only limits the GeoJSON.
 
 ### Airways tab
 
@@ -125,13 +128,13 @@ Each ARTCC's boundary as lines. No Symbols, Text or alias file.
   `Airways_V`, …). For High and Low, the **High and Low Files** card puts each airway type in High,
   Low or Both, by type rather than altitude: J and Q start in High, V and T in Low, and any other type
   must be chosen. For no Airways GeoJSON, untick its **GeoJSON** box on the General tab.
-- **`Airways.txt`** - a command per airway that shows its fixes, e.g. `.J3F`: **Every airway** or
-  **Only airways that cross the region**.
+- **`Airways.txt`** - a command per airway that shows its fixes, e.g. `.J3F`: **Every airway** or,
+  with **ROI** as the area, **Only airways that cross the ROI**.
 - **Airway Types to Include** - untick one to leave it out of the GeoJSON and the alias file.
 - **Buffer Airway Waypoints** (off to start) - stops lines short of each waypoint so they don't run
   through the symbols: 2.5 NM around fixes and 5 NM around NAVAIDs to start.
 - **Split GeoJSON at the Antimeridian** - leave it on.
-- **Region** - an airway is included when its line crosses the region, and is clipped to it.
+- **Area** - with **ROI**, an airway is included when its line crosses the ROI, and is clipped to it.
 
 ### Departures and Arrivals tabs
 
@@ -147,12 +150,12 @@ covers STARs. Otherwise the two tabs work the same.
   procedure has no assignments), plus every transition. When the data assigns bodies to some
   airports but not others, a departure's left-out airport gets only the transitions, and a STAR's
   gets every body.
-- **ARTCCs** - tick the ones you want; none means all. A STAR serving airports in two ARTCCs goes
-  with each airport's own.
+- **Area** - the ARTCCs you tick (an arrival serving airports in two ARTCCs goes with each airport's
+  own), the ROI, or everything. With **ROI**, **Which Departures (or Arrivals) the ROI Keeps**: every
+  procedure for an airport inside it, or any procedure with a fix inside it. The area limits the
+  alias file too.
 - **Amendment Date** - every procedure, or only those amended in the last *N* cycles (counting the
   selected one), the last *N* days, or since a date.
-- **Which Departures (or STARs) the Region Keeps** - every procedure for an airport in the region,
-  or any procedure with a fix in it. The region limits the alias file too.
 - **Names** - the FAA computer code without its version (`DOTSS2.DOTSS` is `DOTSS`; a STAR's runs the
   other way, so `AALAN.BLAID2` is `BLAID`), or the name without punctuation when there's no code
   (`O'HARE` is `OHARE`).
@@ -170,7 +173,7 @@ covers STARs. Otherwise the two tabs work the same.
   NAVAID type** (you choose the fan markers' symbol), or **The same symbol for every NAVAID**.
 - **`Navaids.txt`** - a `.nav` command for each identifier and each name, showing the name, type,
   frequency and ARTCCs. NAVAIDs that share an identifier (`ABQ` is a VORTAC and a VOT) share one
-  command. It covers every NAVAID of the ticked types; the region only limits the GeoJSON.
+  command. It covers every NAVAID of the ticked types; the area only limits the GeoJSON.
 
 ### Fixes tab
 
@@ -180,7 +183,7 @@ A symbol and a label (its identifier) for every NASR fix. No Lines or alias file
   fix use (`Fix_WYPNT_Symbols`), per chart (`Fix_ENROUTE-LOW_Symbols`; a fix on several charts goes
   in each, one on none in `Fix_NO-CHART_Symbols`), or per chart + fix use pair you add under
   **Combinations** (`Fix_ENROUTE-LOW-WYPNT_Symbols`). Untick any fix uses or charts you don't want.
-- **Region** - a fix is included when it's inside the region.
+- **Area** - with **ROI**, a fix is included when it's inside the ROI.
 
 ### Procedures tab
 
@@ -194,16 +197,17 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
   ones you pick).
 - **d-TPP Data** - the cycle's metafile, and whether a deleted chart can be linked to its last copy
   (that needs the previous cycle's metafile).
-- **What the documents cover** - these add up: every airport of the ticked **Facilities**; the
-  **Airports** you list (FAA or ICAO ID), plus every airport in the region if ticked; **Procedures at
-  Any Airport**, by name; and **Airport + Procedure** pairs. **Chart Types** sets which kinds of chart
-  a whole airport adds; a procedure picked by name is always included.
-- **Airports** takes a list: type or paste up to 100 IDs, separated by spaces, commas or new lines,
+- **Area** - what the documents cover: **Facilities** (every airport of the ones you tick), **ROI**
+  (every airport inside it), **Everything** (every airport in the metafile), or **None**. Nothing is
+  clipped.
+- **What the cards add** - even outside the area: the **Airports** you list (FAA or ICAO ID),
+  **Procedures at Any Airport**, by name, and **Airport + Procedure** pairs. With **Everything** they
+  aren't used, and keep their lists. **Chart Types** sets which kinds of chart a whole airport adds;
+  a procedure picked by name is always included.
+- **Airports** takes a list: type or paste up to 100 IDs, separated by spaces, commas, or new lines,
   and press Enter or **Add**. Any it can't add stay in the box, with why underneath: not an airport
-  this cycle, already listed, or already included by a ticked facility or the region.
+  this cycle, already listed, or already included by the area.
 - **Procedures.json Fields** - the optional fields the JSON carries.
-- **Region of Interest** - only decides which airports *Also every airport inside the region* adds.
-  Nothing is clipped.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
 then "Other". Each lists the airports that changed, Class B first. A changed chart links to the FAA's
@@ -233,7 +237,7 @@ doesn't know yet is named on the Review tab - please report it.
 
 Writes `Telephony.txt` for every operator in the FAA's list: an `.id` command for its 3LD and one
 for its telephony (`.idAVA`, `.idAVIANCA`; just one when they're the same, `.idNASA`), each showing
-the operator's card. Operators that share a command show a card each. The region doesn't apply.
+the operator's card. Operators that share a command show a card each. Telephony has no area.
 
 - **Virtual Airlines** - add your facility's own (3LD, telephony and virtual organization). Each gets
   the same two commands and a card marked `--VA--`, after any real operator sharing the command.
@@ -254,7 +258,7 @@ file.
 - **What Files Do You Want?** - Symbols, and Text: the ICAO ID, then the IATA ID and site name
   (`KDTW` / `DTW_Detroit/Metro Wayne Cnty`).
 - **Station Data** - aviationweather.gov's station list, not NASR, downloaded every run.
-- **Region** - a station is included when it's inside the region.
+- **Area** - with **ROI**, a station is included when it's inside the ROI.
 
 ### Concatenate Aliases tab
 
@@ -445,8 +449,8 @@ in place of its settings - and shows what will change first.
 - **Facility Profile** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first
   in reports), and the **Default Output Directory** (the Desktop to start, with a `FE-Buddy_Output`
   folder inside unless you untick it).
-- **Default Region of Interest** - **Set ROI…** opens the map. Every tab uses it unless it overrides
-  it.
+- **Default Region of Interest** - **Set ROI…** opens the map. A tab whose area is **ROI** uses it,
+  unless you pick **An ROI specific to *tab*** there.
 - **GeoJSON Files** - **Maximum Coordinate Precision**: 5, 6 (the default) or 7 decimal places, or
   **Do not round**. **File Layout**: single line, or pretty print to read in a text editor.
 - **Credentials** - tokens and passwords for protected downloads, such as a private GitHub alias

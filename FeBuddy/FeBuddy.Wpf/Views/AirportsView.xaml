@@ -29,6 +29,16 @@
             <cards:OutputsCard GeojsonDescription="Map files of airports and their runways. Pick which files below."
                                AliasDescription="Writes an .apt command for every open airport that shows its details in CRC: name, tower, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF, weather, hours and airspace.&#xA;Type .apt and the FAA or ICAO ID, Ex: .aptDTW or .aptKDTW" />
 
+            <!-- ============ area: an ROI, or everything ============ -->
+            <cards:AreaCard Outputs="{Binding AreaOutputs}"
+                            Intro="Choose which airports the GeoJSON includes."
+                            RoiDescription="only airports with their reference point inside an ROI"
+                            EverythingDescription="every open airport">
+                <cards:AreaCard.Footer>
+                    <ctl:OutputLine Kind="Alias" Text="Every open airport, whichever you pick above." Margin="0,14,0,0" />
+                </cards:AreaCard.Footer>
+            </cards:AreaCard>
+
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard LinesLabel="Runways — Lines"
                                     LinesDescription="Each airport's runways, drawn as lines."
@@ -39,16 +49,6 @@
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard />
-
-            <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard Outputs="Geojson">
-                <cards:RoiOverrideCard.AdditionalContent>
-                    <StackPanel Margin="0,10,0,0">
-                        <ctl:OutputLine Kind="Geojson" Text="Only airports with their reference point inside the region." />
-                        <ctl:OutputLine Kind="Alias" Text="Every airport. The region doesn't apply." />
-                    </StackPanel>
-                </cards:RoiOverrideCard.AdditionalContent>
-            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard LinesTitle="Runways — Lines" SymbolsTitle="Airports — Symbols" TextTitle="Airports — Text">

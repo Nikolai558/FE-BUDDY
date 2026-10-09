@@ -70,12 +70,24 @@
                     <StackPanel>
                         <RadioButton GroupName="AliasScope" Content="Every airway"
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
-                        <RadioButton GroupName="AliasScope" Content="Only airways that cross the region" Margin="0,3,0,0"
+                        <RadioButton GroupName="AliasScope" Content="Only airways that cross the ROI" Margin="0,3,0,0"
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}"
-                                     ToolTip="The same airways the GeoJSON draws. Each command still has all of the airway's fixes." />
+                                     ToolTip="With ROI picked on the Area card, the same airways the GeoJSON draws. Each command still has all of the airway's fixes." />
                     </StackPanel>
                 </cards:OutputsCard.AliasOptions>
             </cards:OutputsCard>
+
+            <!-- ============ area: an ROI, or everything ============
+                 It narrows the alias file only with "Only airways that cross the ROI" on the Outputs
+                 card, so the card tags the alias file only then (AreaOutputs). -->
+            <cards:AreaCard Outputs="{Binding AreaOutputs}"
+                            Intro="Choose which airways to include. The airway types below still apply."
+                            RoiDescription="only airways that cross an ROI, cut off at its edge"
+                            EverythingDescription="every airway">
+                <cards:AreaCard.Footer>
+                    <ctl:OutputLine Kind="Alias" Text="{Binding AreaAliasNote}" Margin="0,14,0,0" />
+                </cards:AreaCard.Footer>
+            </cards:AreaCard>
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard LinesDescription="Each airway as a line through its fixes in order. An airway with a gap is drawn in pieces."
@@ -188,18 +200,6 @@
                     <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ region of interest ============ -->
-            <!-- It narrows the alias file only with "ROI airways only" on the Outputs card, so the
-                 card tags the alias file only then (RoiOutputs). -->
-            <cards:RoiOverrideCard Outputs="{Binding RoiOutputs}">
-                <cards:RoiOverrideCard.AdditionalContent>
-                    <StackPanel Margin="0,10,0,0">
-                        <ctl:OutputLine Kind="Geojson" Text="Only airways that cross the region, cut off at its edge." />
-                        <ctl:OutputLine Kind="Alias" Text="{Binding RoiAliasEffect}" />
-                    </StackPanel>
-                </cards:RoiOverrideCard.AdditionalContent>
-            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard>

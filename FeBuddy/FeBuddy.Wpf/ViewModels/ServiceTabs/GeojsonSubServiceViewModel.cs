@@ -8,24 +8,26 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
 /// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures, Arrivals, NAVAIDs,
 /// ARTCC Boundaries, Fixes, Wx Stations): everything those tabs share - the alias file, which GeoJSON files are
-/// written, the FE-Buddy properties, the Region of Interest override, and which files carry CRC
-/// ERAM defaults and their values - with its config, settings-block and validation plumbing.
+/// written, the FE-Buddy properties, the area (its ARTCCs, an ROI, or everything), and which files
+/// carry CRC ERAM defaults and their values - with its config, settings-block and validation plumbing.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Also the base for Procedures and Telephony, which write no GeoJSON at all: they still want the
-/// shared alias file and outputs plumbing (and Procedures the Region of Interest override), so
-/// they derive from this class too, with <see cref="EmitKeys"/>
-/// <c>(null, null, null)</c> and <see cref="OutputFiles"/> listing only the alias file - they never
-/// show the What Files Do You Want?, FE-Buddy Properties or CRC ERAM Defaults cards.
+/// shared alias file and outputs plumbing (and Procedures the area), so they derive from this class
+/// too, with <see cref="EmitKeys"/> <c>(null, null, null)</c> and <see cref="OutputFiles"/> listing
+/// only the alias file - they never show the What Files Do You Want?, FE-Buddy Properties or CRC
+/// ERAM Defaults cards.
 /// </para>
 /// <para>
 /// A derived tab builds <see cref="FebProperties"/> and the three CRC defaults lists in its
@@ -36,8 +38,10 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// from <see cref="ServiceTabViewModel.Validate"/>.
 /// </para>
 /// <para>
-/// The ROI rule is the same for every sub-service: this tab's override wins, otherwise the
-/// shared default ROI (<see cref="DefaultRoiStore"/>), otherwise no geographic limit.
+/// The area is one choice (<see cref="Area"/>, from <see cref="Areas"/>): only that filter applies.
+/// Its ROI is this tab's own when <see cref="OverrideRoi"/> is on, otherwise the shared default ROI
+/// (<see cref="DefaultRoiStore"/>). A tab that has never saved an area starts on the one its other
+/// settings meant (<see cref="UserConfigAreas.DefaultFor"/>).
 /// </para>
 /// <para>
 /// The CRC-ERAM file choices are kept as a set of file keys, including files the current settings
@@ -47,7 +51,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// </para>
 /// </remarks>
 public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
-	IOutputSettings, IGeojsonFileChoices, IFebPropertySettings, ICrcDefaultsChoice, ICrcDefaultsSettings, IRoiOverrideSettings
+	IOutputSettings, IGeojsonFileChoices, IFebPropertySettings, ICrcDefaultsChoice, ICrcDefaultsSettings, IAreaSettings
 {
 	private const string CrcDefaultsIncompleteMessage =
 		"Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or take CRC-ERAM defaults off those files at the top of the CRC ERAM Defaults card.";
@@ -72,6 +76,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private bool _includeFebCustomProperties;
 	private CrcDefaultsScope _crcDefaultsScope = CrcDefaultsScope.None;
 	private string? _filesSignature;
+	private SubServiceArea _area = SubServiceArea.Everything;
 	private bool _overrideRoi;
 	private string _swLat = string.Empty;
 	private string _swLon = string.Empty;
@@ -83,7 +88,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	protected GeojsonSubServiceViewModel()
 	{
 		PickRoiOnMapCommand = new RelayCommand(PickRoiOnMap);
-		DefaultRoiStore.Changed += (_, _) => RaiseRoiFallback();
+		DefaultRoiStore.Changed += (_, _) => RaiseRoiChanged();
 	}
 
 	/// <summary>Raised whenever the files the tab's settings write may have changed, so the screen can follow them.</summary>
@@ -209,7 +214,51 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <inheritdoc />
 	public IReadOnlyList<EramClassDefault> TextDefaultsInUse => [.. TextDefaults.Where(IsCrcRowInUse)];
 
-	// ================= region of interest =================
+	// ================= area =================
+
+	/// <summary>
+	/// Which area filter the run uses - one of <see cref="Areas"/>. Setting one the tab doesn't offer
+	/// does nothing.
+	/// </summary>
+	public SubServiceArea Area
+	{
+		get => _area;
+		set
+		{
+			if (Areas.Contains(value) && SetProperty(ref _area, value))
+			{
+				RaiseAreaChoices();
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <inheritdoc />
+	public bool OffersArtccs => Areas.Contains(SubServiceArea.Artccs);
+
+	/// <inheritdoc />
+	public bool OffersNone => Areas.Contains(SubServiceArea.None);
+
+	/// <inheritdoc />
+	public bool AreaArtccs { get => _area == SubServiceArea.Artccs; set { if (value) Area = SubServiceArea.Artccs; } }
+
+	/// <inheritdoc />
+	public bool AreaRoi { get => _area == SubServiceArea.Roi; set { if (value) Area = SubServiceArea.Roi; } }
+
+	/// <inheritdoc />
+	public bool AreaEverything { get => _area == SubServiceArea.Everything; set { if (value) Area = SubServiceArea.Everything; } }
+
+	/// <inheritdoc />
+	public bool AreaNone { get => _area == SubServiceArea.None; set { if (value) Area = SubServiceArea.None; } }
+
+	/// <summary>
+	/// The outputs the area narrows on this tab, for the Area card's tags: the GeoJSON unless the tab
+	/// says otherwise. While they are all off the card greys out and the area isn't checked.
+	/// </summary>
+	public virtual SubServiceOutputKinds AreaOutputs => SubServiceOutputKinds.Geojson;
+
+	/// <inheritdoc />
+	public bool UseDefaultRoi { get => !_overrideRoi; set { if (value) OverrideRoi = false; } }
 
 	/// <inheritdoc />
 	public bool OverrideRoi
@@ -219,8 +268,9 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		{
 			if (SetProperty(ref _overrideRoi, value))
 			{
+				OnPropertyChanged(nameof(UseDefaultRoi));
 				MarkDirty();
-				RaiseRoiFallback();
+				RaiseRoiChanged();
 			}
 		}
 	}
@@ -238,18 +288,15 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	public string NeLon { get => _neLon; set { if (SetProperty(ref _neLon, value)) MarkDirty(); } }
 
 	/// <inheritdoc />
-	/// <remarks>
-	/// The shared default ROI's corners if one is set, otherwise that none is, what that means for
-	/// this tab (<see cref="NoRoiEffect"/>), and how to set one.
-	/// </remarks>
-	public string RoiFallbackHint => DefaultRoiStore.Load() is { } roi
-		? $"Using your default region: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
-		: $"No default region is set, so {NoRoiEffect}.\n" +
-		  $"Set one in Settings or on the Map page, or tick the box above to give {Title} its own.";
+	public string DefaultRoiSummary => DefaultRoiStore.Load() is { } roi
+		? $"{Corners(roi)}. Change it in Settings or on the Map page."
+		: $"No default ROI is set. Set one in Settings or on the Map page, or pick \"An ROI specific to {Title}\" below.";
 
 	/// <inheritdoc />
-	/// <remarks>With neither, the run covers everything.</remarks>
-	public bool HasRoi => OverrideRoi || DefaultRoiStore.Load() is not null;
+	public bool HasDefaultRoi => DefaultRoiStore.Load() is not null;
+
+	/// <summary>Whether the run uses an ROI: the area is the ROI. Which one is <see cref="RoiName"/>.</summary>
+	public bool HasRoi => _area == SubServiceArea.Roi;
 
 	/// <summary>
 	/// Which ROI the run uses, for a "What You'll Get" line: <c>the default ROI</c>, or this
@@ -259,7 +306,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	/// <summary>
 	/// A "What You'll Get" line about the ROI - what it keeps, naming which ROI it is - or
-	/// <see langword="null"/> while there is none, so nothing is left out.
+	/// <see langword="null"/> while the area isn't the ROI, so it leaves nothing out.
 	/// </summary>
 	/// <param name="keeps">What the ROI keeps, given its name, e.g. <c>roi => $"those inside {roi}"</c>.</param>
 	/// <returns>e.g. <c>those inside the default ROI</c>.</returns>
@@ -284,10 +331,32 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	// ================= for the derived tab =================
 
 	/// <summary>
-	/// What the run covers when no ROI is set, for <see cref="RoiFallbackHint"/>: a clause that
-	/// follows "so", e.g. <c>every airway is included</c>.
+	/// The areas the tab offers on its Area card: <see cref="SubServiceSettingsReader.ArtccOrRoiAreas"/>,
+	/// <see cref="SubServiceSettingsReader.RoiAreas"/>, or Procedures' four. None (the default) for a
+	/// tab with no area, which then neither saves nor sends one, nor an ROI.
 	/// </summary>
-	protected abstract string NoRoiEffect { get; }
+	protected virtual IReadOnlyList<SubServiceArea> Areas => [];
+
+	/// <summary>
+	/// The ARTCCs ticked for the ARTCCs area (Procedures: the facilities), or - before the cycle's
+	/// list is built - the saved ones. The base has none.
+	/// </summary>
+	/// <returns>Their IDs.</returns>
+	protected virtual IEnumerable<string> AreaArtccIds() => [];
+
+	/// <summary>What the ARTCCs area ticks, for its messages: <c>ARTCC</c>, or <c>facility</c> on Procedures.</summary>
+	protected virtual string AreaArtccNoun => "ARTCC";
+
+	/// <summary>
+	/// Whether the area matters right now: while any output it narrows (<see cref="AreaOutputs"/>) is
+	/// on. Only then is it checked.
+	/// </summary>
+	protected virtual bool IsAreaInUse => (AreaOutputs & OutputsOn) != SubServiceOutputKinds.None;
+
+	/// <summary>After the area changes, for a tab with more that follows from it. The base does nothing.</summary>
+	protected virtual void OnAreaChanged()
+	{
+	}
 
 	/// <summary>
 	/// The keys the three GeoJSON file choices are saved and sent under. The same key serves the
@@ -477,23 +546,28 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			CrcDefaultsRowIo.Load(row, CrcConfigPrefix(row), Get);
 		}
 
-		_overrideRoi = GetBool(OverrideRoiKey, false);
-		_swLat = Get($"{OverrideCornersNode}.SwLat") ?? string.Empty;
-		_swLon = Get($"{OverrideCornersNode}.SwLon") ?? string.Empty;
-		_neLat = Get($"{OverrideCornersNode}.NeLat") ?? string.Empty;
-		_neLon = Get($"{OverrideCornersNode}.NeLon") ?? string.Empty;
+		if (Areas.Count > 0)
+		{
+			_area = SavedArea();
+			_overrideRoi = GetBool(OverrideRoiKey, false);
+			_swLat = Get($"{OverrideCornersNode}.SwLat") ?? string.Empty;
+			_swLon = Get($"{OverrideCornersNode}.SwLon") ?? string.Empty;
+			_neLat = Get($"{OverrideCornersNode}.NeLat") ?? string.Empty;
+			_neLon = Get($"{OverrideCornersNode}.NeLon") ?? string.Empty;
+		}
 
 		foreach (string name in new[]
 		{
 			nameof(EmitLines), nameof(EmitSymbols), nameof(EmitText),
 			nameof(IncludeFebCustomProperties), nameof(CrcDefaultsScope), nameof(IsCrcDefaultsSpecific),
-			nameof(OverrideRoi), nameof(SwLat), nameof(SwLon), nameof(NeLat), nameof(NeLon),
+			nameof(OverrideRoi), nameof(UseDefaultRoi), nameof(SwLat), nameof(SwLon), nameof(NeLat), nameof(NeLon),
 		})
 		{
 			OnPropertyChanged(name);
 		}
 
-		RaiseRoiFallback();
+		RaiseAreaChoices();
+		RaiseRoiChanged();
 	}
 
 	/// <summary>Writes the shared settings. Call from <see cref="SubServiceSettingsViewModel.WriteToConfig"/>.</summary>
@@ -520,18 +594,23 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			CrcDefaultsRowIo.Save(row, CrcConfigPrefix(row), Set);
 		}
 
-		Set(OverrideRoiKey, YesNo(OverrideRoi));
-		Set($"{OverrideCornersNode}.SwLat", SwLat);
-		Set($"{OverrideCornersNode}.SwLon", SwLon);
-		Set($"{OverrideCornersNode}.NeLat", NeLat);
-		Set($"{OverrideCornersNode}.NeLon", NeLon);
+		// The ARTCCs and the ROI are kept whichever area is picked, so picking it again gets them back.
+		if (Areas.Count > 0)
+		{
+			Set(UserConfigAreas.AreaKey, Area.ToString());
+			Set(OverrideRoiKey, YesNo(OverrideRoi));
+			Set($"{OverrideCornersNode}.SwLat", SwLat);
+			Set($"{OverrideCornersNode}.SwLon", SwLon);
+			Set($"{OverrideCornersNode}.NeLat", NeLat);
+			Set($"{OverrideCornersNode}.NeLon", NeLon);
+		}
 	}
 
 	/// <summary>
 	/// Adds the settings every GeoJSON sub-service's parser reads the same way: coordinate
 	/// precision, alias file, file choices, FE-Buddy properties, the files that get CRC-ERAM defaults
-	/// and the values they need, and the region of interest. The AIRAC Service adds the output folder
-	/// itself.
+	/// and the values they need, and the area with its ROI. The tab adds its ARTCCs itself. The AIRAC
+	/// Service adds the output folder.
 	/// </summary>
 	/// <param name="settings">The settings block being built.</param>
 	protected void AddSharedSettings(Dictionary<string, string> settings)
@@ -564,8 +643,21 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			CrcDefaultsRowIo.AddToSettingsBlock(row, settings);
 		}
 
-		RegionOfInterest? defaultRoi = OverrideRoi ? null : DefaultRoiStore.Load();
-		settings["FilterByRoi"] = YesNo(OverrideRoi || defaultRoi is not null);
+		if (Areas.Count == 0)
+		{
+			return;
+		}
+
+		settings[SubServiceSettingsReader.AreaKey] = Area.ToString();
+
+		// The ROI only while the area is the ROI, so the parser sees exactly what the run will do.
+		RegionOfInterest? defaultRoi = Area == SubServiceArea.Roi && !OverrideRoi ? DefaultRoiStore.Load() : null;
+		settings["FilterByRoi"] = YesNo(Area == SubServiceArea.Roi && (OverrideRoi || defaultRoi is not null));
+
+		if (Area != SubServiceArea.Roi)
+		{
+			return;
+		}
 
 		if (OverrideRoi)
 		{
@@ -585,7 +677,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	/// <summary>
 	/// Validates the shared settings: the FE-Buddy properties, the CRC-ERAM choice, the CRC
-	/// defaults actually in use, and the ROI override. Call from <see cref="ServiceTabViewModel.Validate"/>.
+	/// defaults actually in use, and the area. Call from <see cref="ServiceTabViewModel.Validate"/>.
 	/// </summary>
 	/// <param name="validation">The collector to add failures to.</param>
 	protected void ValidateSharedSettings(ServiceValidation validation)
@@ -612,9 +704,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			validation.AddArea(ServiceAreas.CrcDefaults, CrcDefaultsIncompleteMessage);
 		}
 
-		ValidateRoiOverride(validation);
+		ValidateArea(validation);
 	}
-
 
 	/// <summary>The files that get CRC-ERAM defaults, for the Preview Settings tab.</summary>
 	/// <returns>e.g. <c>Airways_High_Lines</c>, or <c>None</c>.</returns>
@@ -628,23 +719,27 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		return IncludeFebCustomProperties && selected.Length > 0 ? string.Join(", ", selected) : "No";
 	}
 
-	/// <summary>The region in use, stated plainly for the Preview Settings tab.</summary>
-	/// <returns>The override's or the default ROI's corners, or that there is no geographic limit.</returns>
-	protected string DescribeRoi()
+	/// <summary>The area in use, stated plainly for the Preview Settings tab's Area row.</summary>
+	/// <returns>e.g. <c>ARTCCs: ZOB, ZNY</c>, <c>The default ROI: SW … / NE …</c> or <c>Everything</c>.</returns>
+	protected string DescribeArea()
 	{
-		if (OverrideRoi)
-		{
-			return $"This tab's own: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}";
-		}
+		string[] artccs = [.. AreaArtccIds()];
+		string artccsLabel = OffersNone ? "Facilities" : "ARTCCs";
 
-		return DefaultRoiStore.Load() is { } roi
-			? $"Your default: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
-			: "None set, so no limit";
+		return Area switch
+		{
+			SubServiceArea.Artccs => artccs.Length > 0 ? $"{artccsLabel}: {string.Join(", ", artccs)}" : $"{artccsLabel}: none ticked",
+			SubServiceArea.Roi when OverrideRoi => $"The ROI specific to {Title}: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}",
+			SubServiceArea.Roi => DefaultRoiStore.Load() is { } roi ? $"The default ROI: {Corners(roi)}" : "The default ROI, which isn't set",
+			SubServiceArea.None => "None: only what you list",
+			_ => "Everything",
+		};
 	}
 
 	/// <summary>
-	/// The region the run uses: the override's corners (<see langword="null"/> while they don't all
-	/// parse), otherwise the default ROI, otherwise <see langword="null"/>.
+	/// The ROI the area uses, whether or not the area is the ROI: the tab's own corners
+	/// (<see langword="null"/> while they don't all parse), otherwise the default ROI, otherwise
+	/// <see langword="null"/>.
 	/// </summary>
 	protected RegionOfInterest? RoiInUse() => OverrideRoi ? TryReadOverrideCorners() : DefaultRoiStore.Load();
 
@@ -694,20 +789,42 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private string SelectedFebPropertyNames() =>
 		string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name));
 
-	private void ValidateRoiOverride(ServiceValidation validation)
+	/// <summary>
+	/// Checks the area while it matters (<see cref="IsAreaInUse"/>): the ARTCCs area needs one ticked,
+	/// and the ROI area an ROI - the default one set, or the tab's own with four valid corners.
+	/// </summary>
+	private void ValidateArea(ServiceValidation validation)
 	{
-		if (!OverrideRoi)
+		if (Areas.Count == 0 || !IsAreaInUse)
 		{
 			return;
 		}
 
+		if (Area == SubServiceArea.Artccs && !AreaArtccIds().Any())
+		{
+			validation.AddArea(ServiceAreas.Area, $"Tick at least one {AreaArtccNoun} on the Area card, or pick another area.");
+		}
+		else if (Area == SubServiceArea.Roi && !OverrideRoi && DefaultRoiStore.Load() is null)
+		{
+			validation.AddArea(
+				ServiceAreas.Area,
+				$"No default ROI is set. Set one in Settings or on the Map page, or pick \"An ROI specific to {Title}\" on the Area card.");
+		}
+		else if (Area == SubServiceArea.Roi && OverrideRoi)
+		{
+			ValidateOwnRoi(validation);
+		}
+	}
+
+	private void ValidateOwnRoi(ServiceValidation validation)
+	{
 		// Each corner is reported against its own box so the empty one highlights. The two
 		// library checks below look at the set as a whole, so they belong to the card - and they
 		// only make sense once all four boxes actually have something in them.
-		bool hasAllCorners = validation.RequireValue("SwLat", SwLat, "Enter the southwest latitude of this tab's own region.");
-		hasAllCorners &= validation.RequireValue("SwLon", SwLon, "Enter the southwest longitude of this tab's own region.");
-		hasAllCorners &= validation.RequireValue("NeLat", NeLat, "Enter the northeast latitude of this tab's own region.");
-		hasAllCorners &= validation.RequireValue("NeLon", NeLon, "Enter the northeast longitude of this tab's own region.");
+		bool hasAllCorners = validation.RequireValue("SwLat", SwLat, $"Enter the southwest latitude of the ROI specific to {Title}.");
+		hasAllCorners &= validation.RequireValue("SwLon", SwLon, $"Enter the southwest longitude of the ROI specific to {Title}.");
+		hasAllCorners &= validation.RequireValue("NeLat", NeLat, $"Enter the northeast latitude of the ROI specific to {Title}.");
+		hasAllCorners &= validation.RequireValue("NeLon", NeLon, $"Enter the northeast longitude of the ROI specific to {Title}.");
 
 		if (!hasAllCorners)
 		{
@@ -716,16 +833,42 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		if (!RoiFilter.IsCoordinateValidFormat(SwLat, SwLon, NeLat, NeLon, out string? formatError))
 		{
-			validation.AddArea(ServiceAreas.Roi, $"This tab's own region: {formatError}");
+			validation.AddArea(ServiceAreas.Area, $"The ROI specific to {Title}: {formatError}");
 			return;
 		}
 
 		if (TryReadOverrideCorners() is { } corners
 			&& !RoiFilter.IsCoordinatesRelativePositionValid(corners.SwLat, corners.SwLon, corners.NeLat, corners.NeLon, out string? positionError))
 		{
-			validation.AddArea(ServiceAreas.Roi, $"This tab's own region: {positionError}");
+			validation.AddArea(ServiceAreas.Area, $"The ROI specific to {Title}: {positionError}");
 		}
 	}
+
+	/// <summary>
+	/// The saved area, or - when none is saved, or it isn't one the tab offers - the one the tab's
+	/// other settings mean (<see cref="UserConfigAreas.DefaultFor"/>).
+	/// </summary>
+	private SubServiceArea SavedArea()
+	{
+		string tab = NodePath[(NodePath.LastIndexOf('.') + 1)..];
+
+		foreach (string? saved in new[] { Get(UserConfigAreas.AreaKey), UserConfigAreas.DefaultFor(tab, UserConfigFile.GetValue) })
+		{
+			foreach (SubServiceArea area in Areas)
+			{
+				if (area.ToString().Equals(saved?.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return area;
+				}
+			}
+		}
+
+		return Areas[0];
+	}
+
+	/// <summary>An ROI's corners as the card and the Preview Settings tab show them.</summary>
+	private static string Corners(RegionOfInterest roi) =>
+		$"SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}";
 
 	private RegionOfInterest? TryReadOverrideCorners() =>
 		double.TryParse(SwLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
@@ -738,7 +881,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private void PickRoiOnMap()
 	{
 		RegionOfInterest? picked = Views.RoiPickerWindow.Pick(
-			System.Windows.Application.Current?.MainWindow, TryReadOverrideCorners(), $"{Title}: Own Region", DefaultRoiStore.Load());
+			System.Windows.Application.Current?.MainWindow, TryReadOverrideCorners(), $"{Title}: Its Own ROI", DefaultRoiStore.Load());
 
 		if (picked is { } roi)
 		{
@@ -750,11 +893,24 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		}
 	}
 
-	private void RaiseRoiFallback()
+	private void RaiseRoiChanged()
 	{
-		OnPropertyChanged(nameof(RoiFallbackHint));
-		OnPropertyChanged(nameof(HasRoi));
+		OnPropertyChanged(nameof(DefaultRoiSummary));
+		OnPropertyChanged(nameof(HasDefaultRoi));
 		RaiseWhatYoullGetChanged();
+	}
+
+	private void RaiseAreaChoices()
+	{
+		foreach (string name in new[]
+		{
+			nameof(Area), nameof(AreaArtccs), nameof(AreaRoi), nameof(AreaEverything), nameof(AreaNone), nameof(HasRoi),
+		})
+		{
+			OnPropertyChanged(name);
+		}
+
+		OnAreaChanged();
 	}
 
 	private void OnOutputsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnOutputsChanged();

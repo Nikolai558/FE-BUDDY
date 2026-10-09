@@ -9,6 +9,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Fixes;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Fixes;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -20,7 +21,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <summary>
 /// The <b>Fixes</b> sub-service tab inside the AIRAC Service screen: how the GeoJSON is laid out
 /// (one merged file set, one per fix use, one per chart, or one per chart + fix use combination the
-/// user lists), which fix uses/charts/combinations to include, the optional region of interest,
+/// user lists), which fix uses/charts/combinations to include, the area (an ROI, or everything),
 /// which FE-Buddy properties and the CRC ERAM defaults.
 /// </summary>
 /// <remarks>
@@ -76,8 +77,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"the GeoJSON has every fix";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.RoiAreas;
 
 	/// <inheritdoc />
 	/// <remarks>Fixes has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -349,7 +349,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		if (HasRoi)
 		{
-			summary += $", {fixes.GeojsonFixCount:N0} in the region";
+			summary += $", {fixes.GeojsonFixCount:N0} inside the ROI";
 		}
 
 		summary += $", {fixes.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
@@ -380,7 +380,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		[
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 

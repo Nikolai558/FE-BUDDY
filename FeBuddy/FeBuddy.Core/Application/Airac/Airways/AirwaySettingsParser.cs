@@ -146,7 +146,9 @@ public static class AirwaySettingsParser
 			GenerateAliasFile = generateAliasFile,
 			SplitAtAntimeridian = SettingsValueReader.YesNo(airwaySettings, "SplitAtAntimeridian", defaultValue: true),
 			CrcDefaultsFiles = crcFiles,
-			Roi = SubServiceSettingsReader.ReadRoi(airwaySettings),
+			// Only the area chosen applies: the ROI, or everything.
+			Roi = SubServiceSettingsReader.ReadAreaRoi(
+				airwaySettings, SubServiceSettingsReader.ReadArea(airwaySettings, SubServiceSettingsReader.RoiAreas, artccListKey: null)),
 			ExcludedDesignations = SettingsValueReader.StringList(airwaySettings, "ExcludedDesignations")
 				.Select(designation => designation.ToUpperInvariant())
 				.ToHashSet(StringComparer.OrdinalIgnoreCase),

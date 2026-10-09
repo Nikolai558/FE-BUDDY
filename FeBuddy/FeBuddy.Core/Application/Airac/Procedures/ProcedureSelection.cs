@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -7,14 +8,14 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 namespace FeBuddy.Core.Application.Airac.Procedures;
 
 /// <summary>
-/// Applies the user's additive selection - whole facilities, ROI airports, specific airports,
-/// specific procedures, specific airport + procedure pairs - to every built
-/// <see cref="ProcedureAirport"/>.
+/// Applies the user's selection - the area (facilities, ROI airports, every airport, or none), then
+/// specific airports, specific procedures and specific airport + procedure pairs added to it - to
+/// every built <see cref="ProcedureAirport"/>.
 /// </summary>
 /// <remarks>
-/// Inclusion is decided per (airport, procedure): a whole-airport match (facility, ROI, or an
-/// explicit <c>Airports</c> pick) includes every procedure of that airport whose chart type is one
-/// of <see cref="ProcedureSettings.ChartTypes"/>; a <c>Procedures</c> or <c>AirportProcedures</c>
+/// Inclusion is decided per (airport, procedure): a whole-airport match (the area, or an explicit
+/// <c>Airports</c> pick) includes every procedure of that airport whose chart type is one of
+/// <see cref="ProcedureSettings.ChartTypes"/>; a <c>Procedures</c> or <c>AirportProcedures</c>
 /// pick includes that one procedure regardless of chart type or whole-airport inclusion. An airport
 /// left with no included procedure is dropped.
 /// </remarks>
@@ -57,13 +58,15 @@ public static class ProcedureSelection
 
 		foreach (ProcedureAirport airport in airports)
 		{
-			bool wholeAirport = airport.ResponsibleArtcc is { Length: > 0 } artcc && facilities.Contains(artcc);
-
-			if (!wholeAirport && settings.IncludeRoiAirports && settings.Roi is { } roi
-				&& airport.Latitude is { } latitude && airport.Longitude is { } longitude)
+			bool wholeAirport = settings.Area switch
 			{
-				wholeAirport = RoiFilter.Contains(roi, latitude, longitude);
-			}
+				SubServiceArea.Everything => true,
+				SubServiceArea.Artccs => airport.ResponsibleArtcc is { Length: > 0 } artcc && facilities.Contains(artcc),
+				SubServiceArea.Roi => settings.Roi is { } roi
+					&& airport.Latitude is { } latitude && airport.Longitude is { } longitude
+					&& RoiFilter.Contains(roi, latitude, longitude),
+				_ => false,
+			};
 
 			// Checked for every airport, whole-airport match or not, so a pick that also names an
 			// already-included airport is still marked matched (no false "not found" warning).

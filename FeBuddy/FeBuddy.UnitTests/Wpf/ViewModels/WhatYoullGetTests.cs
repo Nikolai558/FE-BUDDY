@@ -5,6 +5,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac.Telephony;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -89,8 +90,9 @@ public sealed class WhatYoullGetTests : IDisposable
 		Assert.Empty(block.Includes);
 	}
 
+	/// <summary>Issue #335: only the area picked narrows - the ARTCCs, or the ROI - and the card is told of each change.</summary>
 	[Fact]
-	public void departures_narrows_by_artcc_amendment_and_region_and_the_card_is_told_of_each_change()
+	public void departures_narrows_by_the_area_then_the_amendment_and_the_card_is_told_of_each_change()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Departures.ArtccFilter", "ZOB,ZNY");
 		UserConfigFile.TrySetValue("Services.AiracService.Departures.Amendment.Filter", "Cycles");
@@ -104,13 +106,35 @@ public sealed class WhatYoullGetTests : IDisposable
 		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGet), changed);
 		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGetOutputs), changed);
 		Assert.Equal(
+			["Every SID (no obstacle departures)", "in ZNY and ZOB", "and only those amended in the last 4 cycles"],
+			Lines(Assert.Single(tab.WhatYoullGet)));
+
+		changed.Clear();
+		tab.Area = SubServiceArea.Roi;
+
+		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGet), changed);
+		Assert.Equal(
 			[
 				"Every SID (no obstacle departures)",
-				"in ZNY and ZOB",
+				"but only those from an airport inside the ROI specific to the Departures sub-service",
 				"and only those amended in the last 4 cycles",
-				"and only those from an airport inside the ROI specific to the Departures sub-service",
 			],
 			Lines(Assert.Single(tab.WhatYoullGet)));
+
+		tab.Area = SubServiceArea.Everything;
+
+		Assert.Equal(
+			["Every SID (no obstacle departures)", "but only those amended in the last 4 cycles"],
+			Lines(Assert.Single(tab.WhatYoullGet)));
+	}
+
+	[Fact]
+	public void departures_with_the_artccs_area_and_none_ticked_says_what_to_tick()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Departures.ArtccFilter", string.Empty);
+		DeparturesViewModel tab = new() { Area = SubServiceArea.Artccs };
+
+		Assert.Equal(["No departures yet: tick an ARTCC on the Area card"], Lines(Assert.Single(tab.WhatYoullGet)));
 	}
 
 	/// <summary>With no ARTCC picked, the first narrowing sits right below the first line, so it reads "but only".</summary>
@@ -129,23 +153,37 @@ public sealed class WhatYoullGetTests : IDisposable
 
 	/// <summary>
 	/// Issue #334: ARTCCs are listed with "and" - the list is inclusive - and the Oxford comma; the
-	/// block reads as one sentence: every STAR for airports in them, and only those amended this cycle.
+	/// block reads as one sentence: every arrival for airports in them, and only those amended this
+	/// cycle. Issue #335: with ARTCCs saved, a tab never given an area starts on them, the default ROI
+	/// set but unused.
 	/// </summary>
 	[Fact]
-	public void arrivals_lists_its_artccs_as_inclusive_with_the_amendment_and_a_waypoint_region()
+	public void arrivals_lists_its_artccs_as_inclusive_with_the_amendment()
 	{
 		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
 		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.ArtccFilter", "ZLA,ZOA,ZAB");
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.Filter", "Cycles");
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.WithinCycles", "1");
+
+		Assert.Equal(
+			["Every arrival", "for airports in ZAB, ZLA, and ZOA", "and only those amended this cycle"],
+			Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
+	}
+
+	[Fact]
+	public void arrivals_in_the_roi_by_waypoint_keeps_those_with_a_fix_inside_it_then_the_amendment()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Area", "Roi");
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.ArtccFilter", "ZLA");
 		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.Filter", "Cycles");
 		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.WithinCycles", "1");
 		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Roi.Mode", "Waypoint");
 
 		Assert.Equal(
 			[
-				"Every STAR",
-				"for airports in ZAB, ZLA, and ZOA",
+				"Every arrival",
+				"but only those with at least one fix inside the default ROI",
 				"and only those amended this cycle",
-				"and only those with at least one fix inside the default ROI",
 			],
 			Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
 	}
@@ -161,16 +199,17 @@ public sealed class WhatYoullGetTests : IDisposable
 		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.Filter", filter);
 		UserConfigFile.TrySetValue($"Services.AiracService.Arrivals.Amendment.{key}", value);
 
-		Assert.Equal(["Every STAR", expected], Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
+		Assert.Equal(["Every arrival", expected], Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
 	}
 
+	/// <summary>Issue #335: with no ARTCCs and the default ROI set, a tab never given an area starts on the ROI.</summary>
 	[Fact]
 	public void arrivals_with_a_region_by_airport_keeps_those_for_an_airport_inside_it()
 	{
 		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
 
 		Assert.Equal(
-			["Every STAR", "but only those for an airport inside the default ROI"],
+			["Every arrival", "but only those for an airport inside the default ROI"],
 			Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
 	}
 
@@ -195,16 +234,18 @@ public sealed class WhatYoullGetTests : IDisposable
 
 	// ---- Airports ----
 
-	/// <summary>With no region both outputs get the same, so the card has one block; the default ROI splits them.</summary>
+	/// <summary>With everything both outputs get the same, so the card has one block; the ROI area splits them.</summary>
 	[Fact]
-	public void airports_splits_into_a_block_per_output_once_a_region_narrows_the_geojson()
+	public void airports_splits_into_a_block_per_output_once_the_roi_narrows_the_geojson()
 	{
 		AirportsViewModel tab = new();
+		Assert.Equal(SubServiceArea.Everything, tab.Area);
 		Assert.Equal(["Every open airport"], Lines(Assert.Single(tab.WhatYoullGet)));
 		Assert.Equal(Alias | Geojson, tab.WhatYoullGetOutputs);
 		List<string?> changed = Changed(tab);
 
 		DefaultRoiStore.Set(new RegionOfInterest(39.5, -85.25, 43.75, -78.5));
+		tab.Area = SubServiceArea.Roi;
 
 		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGet), changed);
 		Assert.Equal([Geojson, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
@@ -220,7 +261,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	[Fact]
 	public void airports_names_its_own_roi_when_it_has_one()
 	{
-		AirportsViewModel tab = new() { OverrideRoi = true };
+		AirportsViewModel tab = new() { Area = SubServiceArea.Roi, OverrideRoi = true };
 
 		Assert.Equal(
 			["Every open airport", "but only those with their reference point inside the ROI specific to the Airports sub-service"],
@@ -263,6 +304,7 @@ public sealed class WhatYoullGetTests : IDisposable
 
 		Assert.Equal(["Every airway except the Y airways"], Lines(Assert.Single(tab.WhatYoullGet)));
 
+		tab.Area = SubServiceArea.Roi;
 		tab.OverrideRoi = true;
 
 		Assert.Equal(["Every airway except the Y airways", "but only those that cross the ROI specific to the Airways sub-service, cut off at its edge"], Lines(tab.WhatYoullGet[0]));
@@ -293,6 +335,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	public void airways_with_no_type_ticked_says_so_and_leaves_the_region_out()
 	{
 		AirwaysViewModel tab = AirwaysTab("J", "V");
+		tab.Area = SubServiceArea.Roi;
 		tab.OverrideRoi = true;
 
 		foreach (DesignationToggle type in tab.Designations)
@@ -315,16 +358,19 @@ public sealed class WhatYoullGetTests : IDisposable
 	// ---- ARTCC Boundaries ----
 
 	[Fact]
-	public void artcc_boundaries_names_its_artccs_and_keeps_the_parts_inside_the_region()
+	public void artcc_boundaries_names_its_artccs_or_keeps_the_parts_inside_the_roi()
 	{
 		Assert.Equal(["Every ARTCC boundary"], Lines(Assert.Single(new ArtccBoundariesViewModel().WhatYoullGet)));
 
 		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
 		UserConfigFile.TrySetValue("Services.AiracService.ArtccBoundaries.LocationFilter", "ZLA,ZOA");
+		ArtccBoundariesViewModel tab = new();
 
-		Assert.Equal(
-			["The boundaries of ZLA and ZOA", "but only the parts inside the default ROI"],
-			Lines(Assert.Single(new ArtccBoundariesViewModel().WhatYoullGet)));
+		Assert.Equal(["The boundaries of ZLA and ZOA"], Lines(Assert.Single(tab.WhatYoullGet)));
+
+		tab.Area = SubServiceArea.Roi;
+
+		Assert.Equal(["Every ARTCC boundary", "but only the parts inside the default ROI"], Lines(Assert.Single(tab.WhatYoullGet)));
 	}
 
 	// ---- Fixes ----
@@ -400,26 +446,24 @@ public sealed class WhatYoullGetTests : IDisposable
 	}
 
 	/// <summary>
-	/// Issues #333 and #334: each way an airport comes in adds to the first, never "or"; under
-	/// "Outputs include", what Procedure_Changes.md keeps, then the chart types, which never narrow a
+	/// Issues #333 and #334: what the cards list adds to the area, never "or"; under "Outputs
+	/// include", what Procedure_Changes.md keeps, then the chart types, which never narrow a
 	/// procedure picked by name.
 	/// </summary>
 	[Fact]
-	public void procedures_adds_each_way_an_airport_comes_in_then_says_what_the_outputs_include()
+	public void procedures_adds_what_is_listed_to_the_area_then_says_what_the_outputs_include()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", "ZOB");
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW");
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.IncludeRoiAirports", "Y");
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE");
 		ProceduresViewModel tab = ProceduresTab(Alias | Changes | Json);
-		tab.OverrideRoi = true;
 
+		Assert.Equal(SubServiceArea.Artccs, tab.Area);
 		Assert.Equal([Changes | Json, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
 		Assert.Equal(
 			[
 				"Charts for airports within ZOB",
 				"along with CLE and DTW",
-				"along with airports within the ROI specific to the Procedures sub-service",
 				"along with BRWNZ FIVE, wherever it's published",
 			],
 			Lines(tab.WhatYoullGet[0]));
@@ -476,21 +520,40 @@ public sealed class WhatYoullGetTests : IDisposable
 	[Fact]
 	public void procedures_with_nothing_picked_says_what_to_pick()
 	{
-		SummaryBlock block = Assert.Single(ProceduresTab(Changes | Json).WhatYoullGet);
+		ProceduresViewModel tab = ProceduresTab(Changes | Json);
+		Assert.Equal(SubServiceArea.None, tab.Area);
 
-		Assert.Equal(["Nothing yet: pick a facility, an airport, or a procedure"], Lines(block));
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
+
+		Assert.Equal(["Nothing yet: pick an area, or list an airport or a procedure"], Lines(block));
 		Assert.Empty(block.Includes);
 	}
 
 	[Fact]
-	public void procedures_with_only_the_region_starts_with_its_airports()
+	public void procedures_in_the_roi_starts_with_its_airports_and_adds_what_is_listed()
 	{
-		DefaultRoiStore.Set(new RegionOfInterest(39.5, -85.25, 43.75, -78.5));
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.IncludeRoiAirports", "Y");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Area", "Roi");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", "ZOB");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW");
+		ProceduresViewModel tab = ProceduresTab(Json);
+		tab.OverrideRoi = true;
 
 		Assert.Equal(
-			["Charts for airports within the default ROI"],
-			Lines(Assert.Single(ProceduresTab(Json).WhatYoullGet)));
+			["Charts for airports within the ROI specific to the Procedures sub-service", "along with CLE and DTW"],
+			Lines(Assert.Single(tab.WhatYoullGet)));
+	}
+
+	/// <summary>Everything already has every airport: what the cards list isn't used, and the chart types still narrow.</summary>
+	[Fact]
+	public void procedures_with_everything_leaves_out_what_is_listed()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Area", "Everything");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE");
+		SummaryBlock block = Assert.Single(ProceduresTab(Json).WhatYoullGet);
+
+		Assert.Equal(["Charts for every airport in the d-TPP metafile"], Lines(block));
+		Assert.Equal(["with only these types: IAP, STAR, DP, ODP, DAU, and APD"], Includes(block));
 	}
 
 	/// <summary>A procedure picked by name or with its airport, and nothing else, gets no chart types line.</summary>

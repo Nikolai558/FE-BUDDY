@@ -78,9 +78,9 @@ public static class DepartureSettingsParser
 
 		bool includeObstacleDepartures = SettingsValueReader.YesNo(departureSettings, "IncludeObstacleDepartures", defaultValue: true);
 
-		IReadOnlyCollection<string> artccFilter = [.. SettingsValueReader.StringList(departureSettings, "ArtccFilter")
-			.Select(artcc => artcc.ToUpperInvariant())
-			.Distinct(StringComparer.OrdinalIgnoreCase)];
+		// Only the area chosen applies: the ARTCCs listed, or the ROI, or neither.
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(departureSettings, SubServiceSettingsReader.ArtccOrRoiAreas, artccListKey: "ArtccFilter");
+		IReadOnlyCollection<string> artccFilter = SubServiceSettingsReader.ReadAreaArtccs(departureSettings, area, "ArtccFilter");
 
 		// Only the value the chosen mode uses is read (and required); the others are ignored.
 		DepartureAmendmentFilter amendmentFilter = SettingsValueReader.OptionalEnum(
@@ -100,7 +100,7 @@ public static class DepartureSettingsParser
 			? ParseAmendedOnOrAfter(departureSettings)
 			: null;
 
-		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(departureSettings);
+		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(departureSettings, area);
 		DepartureRoiMode roiMode = SettingsValueReader.OptionalEnum(
 			departureSettings, "RoiMode", DepartureRoiMode.Airport,
 			hint: "Use \"Airport\" (every departure of an airport inside the ROI) " +

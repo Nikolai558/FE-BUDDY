@@ -12,6 +12,7 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -19,8 +20,9 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>Departures</b> sub-service tab inside the AIRAC Service screen: which outputs are on (set
-/// on the General tab), which GeoJSON files, which procedures and ARTCCs, the optional region of
-/// interest, which FE-Buddy properties and the CRC ERAM defaults.
+/// on the General tab), which GeoJSON files, the area (the ARTCCs ticked, an ROI, or every
+/// departure), obstacle departures and the amendment date, which FE-Buddy properties and the CRC
+/// ERAM defaults.
 /// </summary>
 /// <remarks>
 /// Save, Undo and navigation come from the tab host's action bar; the run is launched by
@@ -67,8 +69,14 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"every departure is included";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.ArtccOrRoiAreas;
+
+	/// <inheritdoc />
+	protected override IEnumerable<string> AreaArtccIds() => SelectedArtccs();
+
+	/// <inheritdoc />
+	/// <remarks>The area narrows the alias file and the GeoJSON alike.</remarks>
+	public override SubServiceOutputKinds AreaOutputs => SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson;
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -130,15 +138,15 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <summary>
-	/// One toggle per ARTCC in the selected cycle's <c>DP_BASE</c>. The selected set is the
-	/// filter; none selected means every ARTCC. Empty until the cycle's data is loaded.
+	/// One toggle per ARTCC in the selected cycle's <c>DP_BASE</c>: the ARTCCs area's ARTCCs.
+	/// Empty until the cycle's data is loaded.
 	/// </summary>
 	public ObservableCollection<ArtccToggle> Artccs { get; } = [];
 
 	/// <summary>Whether the ARTCC list has been built from the selected cycle yet.</summary>
 	public bool HasArtccs => Artccs.Count > 0;
 
-	/// <summary>Deselects every ARTCC, which means every ARTCC is included.</summary>
+	/// <summary>Deselects every ARTCC.</summary>
 	public ICommand ClearArtccsCommand { get; }
 
 	/// <summary>Whether procedures are kept whatever their amendment date.</summary>
@@ -182,7 +190,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		set { if (SetProperty(ref _amendedOnOrAfter, value?.Date)) MarkDirty(); }
 	}
 
-	// ================= region of interest =================
+	// ================= area =================
 
 	/// <summary>Whether the ROI selects every departure of an airport inside it.</summary>
 	public bool RoiModeAirport
@@ -254,10 +262,18 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			["GenerateGeojson"] = YesNo(GenerateGeojson),
 			["IncludeObstacleDepartures"] = YesNo(IncludeObstacleDepartures),
-			["ArtccFilter"] = string.Join(',', SelectedArtccs()),
 			["AmendmentFilter"] = _amendmentFilter.ToString(),
-			["RoiMode"] = _roiMode.ToString(),
 		};
+
+		// Only what the area uses, so the parser sees exactly what the run will do.
+		if (Area == SubServiceArea.Artccs)
+		{
+			s["ArtccFilter"] = string.Join(',', SelectedArtccs());
+		}
+		else if (Area == SubServiceArea.Roi)
+		{
+			s["RoiMode"] = _roiMode.ToString();
+		}
 
 		// Only the active mode's value; the parser reads that key alone and ignores the others.
 		switch (_amendmentFilter)
@@ -294,7 +310,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
 			new ServicePreviewRow("GeoJSON files", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -302,19 +318,27 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <inheritdoc />
-	/// <remarks>The filters narrow the alias file and the GeoJSON alike, so there is one block.</remarks>
+	/// <remarks>
+	/// The filters narrow the alias file and the GeoJSON alike, so there is one block: the area
+	/// first, then the amendment date.
+	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
 		// Before a cycle is parsed the toggle list is empty; SelectedArtccs falls back to what is saved.
-		string[] artccs = [.. SelectedArtccs()];
+		string[] artccs = Area == SubServiceArea.Artccs ? [.. SelectedArtccs()] : [];
+		bool noArtccs = Area == SubServiceArea.Artccs && artccs.Length == 0;
+
+		string departures = noArtccs ? "No departures yet: tick an ARTCC on the Area card"
+			: IncludeObstacleDepartures ? "Every SID and obstacle departure"
+			: "Every SID (no obstacle departures)";
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, IncludeObstacleDepartures ? "Every SID and obstacle departure" : "Every SID (no obstacle departures)")
+			.Add(SummaryJoin.First, departures)
 			.Add(SummaryJoin.In, artccs.Length == 0 ? null : SummaryLines.Join(artccs, "and"))
-			.Add(SummaryJoin.AndOnly, DescribeAmendmentFilter())
 			.Add(SummaryJoin.AndOnly, RoiLine(roi => _roiMode == DepartureRoiMode.Waypoint
 				? $"those with at least one fix inside {roi}"
 				: $"those from an airport inside {roi}"))
+			.Add(SummaryJoin.AndOnly, noArtccs ? null : DescribeAmendmentFilter())
 			.ToList());
 	}
 

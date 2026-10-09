@@ -21,6 +21,15 @@ public static partial class SubServiceSettingsReader
 	/// <summary>The GeoJSON files that get CRC-ERAM defaults, by file key (see <see cref="CrcDefaultsFiles"/>).</summary>
 	public const string CrcDefaultsForKey = "CrcDefaultsFor";
 
+	/// <summary>Which area filter the run uses (see <see cref="SubServiceArea"/>).</summary>
+	public const string AreaKey = "Area";
+
+	/// <summary>The areas ARTCC Boundaries, Arrivals and Departures offer.</summary>
+	public static readonly IReadOnlyList<SubServiceArea> ArtccOrRoiAreas = [SubServiceArea.Artccs, SubServiceArea.Roi, SubServiceArea.Everything];
+
+	/// <summary>The areas Airports, Airways, NAVAIDs, Fixes and Wx Stations offer.</summary>
+	public static readonly IReadOnlyList<SubServiceArea> RoiAreas = [SubServiceArea.Roi, SubServiceArea.Everything];
+
 	/// <summary>
 	/// The keys every sub-service understands. A parser adds its own keys to these when looking
 	/// for unrecognized settings.
@@ -32,8 +41,89 @@ public static partial class SubServiceSettingsReader
 		"OutputDirectory", "CoordinatePrecision",
 		"IncludeFebCustomProperties", "FebProperties",
 		CrcDefaultsForKey,
-		"FilterByRoi", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
+		AreaKey, "FilterByRoi", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 	};
+
+	/// <summary>
+	/// Reads <c>Area</c>: which of the sub-service's area filters the run uses. A block without it
+	/// (the harness, or one written before there was a choice) gets the area its filters meant:
+	/// <see cref="SubServiceArea.Artccs"/> when <paramref name="artccListKey"/> lists any,
+	/// otherwise <see cref="SubServiceArea.Roi"/> when <c>FilterByRoi</c> is <c>Y</c>, otherwise
+	/// <paramref name="withNoFilter"/>.
+	/// </summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="offered">The areas the sub-service offers.</param>
+	/// <param name="artccListKey">The key of its ARTCC list, e.g. <c>ArtccFilter</c>; <see langword="null"/> when it has none.</param>
+	/// <param name="withNoFilter">The area a block with no filter at all means.</param>
+	/// <returns>The area.</returns>
+	/// <exception cref="ArgumentException">Thrown when <c>Area</c> is not one of <paramref name="offered"/>.</exception>
+	public static SubServiceArea ReadArea(
+		IReadOnlyDictionary<string, string> settings,
+		IReadOnlyList<SubServiceArea> offered,
+		string? artccListKey,
+		SubServiceArea withNoFilter = SubServiceArea.Everything)
+	{
+		string? text = SettingsValueReader.OptionalString(settings, AreaKey);
+
+		if (text is null)
+		{
+			return artccListKey is not null && SettingsValueReader.StringList(settings, artccListKey).Count > 0 ? SubServiceArea.Artccs
+				: SettingsValueReader.YesNo(settings, "FilterByRoi", defaultValue: false) ? SubServiceArea.Roi
+				: withNoFilter;
+		}
+
+		foreach (SubServiceArea area in offered)
+		{
+			if (area.ToString().Equals(text, StringComparison.OrdinalIgnoreCase))
+			{
+				return area;
+			}
+		}
+
+		throw new ArgumentException(
+			$"'{AreaKey}' is \"{text}\", which this sub-service doesn't offer. Use {string.Join(", ", offered.Select(area => $"\"{area}\""))}.");
+	}
+
+	/// <summary>
+	/// The Region of Interest the area needs: read (and required) when the area is
+	/// <see cref="SubServiceArea.Roi"/>; otherwise <see langword="null"/>, whatever the ROI keys say.
+	/// </summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="area">The area the run uses.</param>
+	/// <returns>The ROI, or <see langword="null"/>.</returns>
+	/// <exception cref="ArgumentException">Thrown when the area is the ROI but none is set, or it is not valid.</exception>
+	public static RegionOfInterest? ReadAreaRoi(IReadOnlyDictionary<string, string> settings, SubServiceArea area) =>
+		area != SubServiceArea.Roi
+			? null
+			: ReadRoi(settings) ?? throw new ArgumentException(
+				$"'{AreaKey}' is \"Roi\" but no Region of Interest is set. Set 'FilterByRoi' to \"Y\" and its four corner keys " +
+				"('RoiSwLat', 'RoiSwLon', 'RoiNeLat', 'RoiNeLon').");
+
+	/// <summary>
+	/// The ARTCCs the area needs: the list, upper-cased and without repeats, when the area is
+	/// <see cref="SubServiceArea.Artccs"/> (and then at least one is required); otherwise none.
+	/// </summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="area">The area the run uses.</param>
+	/// <param name="artccListKey">The key of the list, e.g. <c>ArtccFilter</c>.</param>
+	/// <returns>The ARTCCs, or none.</returns>
+	/// <exception cref="ArgumentException">Thrown when the area is the ARTCCs but the list is empty.</exception>
+	public static IReadOnlyCollection<string> ReadAreaArtccs(IReadOnlyDictionary<string, string> settings, SubServiceArea area, string artccListKey)
+	{
+		if (area != SubServiceArea.Artccs)
+		{
+			return [];
+		}
+
+		string[] artccs = [.. SettingsValueReader.StringList(settings, artccListKey)
+			.Select(artcc => artcc.ToUpperInvariant())
+			.Distinct(StringComparer.OrdinalIgnoreCase)];
+
+		return artccs.Length > 0
+			? artccs
+			: throw new ArgumentException(
+				$"'{AreaKey}' is \"Artccs\" but '{artccListKey}' lists none. List at least one, e.g. \"ZOB,ZNY\", or choose another area.");
+	}
 
 	/// <summary>
 	/// Reads <c>CoordinatePrecision</c>: decimal places kept per coordinate, 1-15, or

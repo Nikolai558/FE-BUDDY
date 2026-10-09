@@ -9,6 +9,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Navaids;
@@ -19,7 +20,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <summary>
 /// The <b>NAVAIDs</b> sub-service tab inside the AIRAC Service screen: which outputs are on (set on
 /// the General tab), how the GeoJSON is laid out (one merged file set or one per NAVAID type), which
-/// NAVAID types to include, the symbol style choice, the optional region of interest, which FE-Buddy
+/// NAVAID types to include, the symbol style choice, the area (an ROI, or everything), which FE-Buddy
 /// properties and the CRC ERAM defaults.
 /// </summary>
 /// <remarks>
@@ -60,8 +61,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"the GeoJSON has every NAVAID";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.RoiAreas;
 
 	/// <inheritdoc />
 	/// <remarks>NAVAIDs has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -190,7 +190,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		if (HasRoi)
 		{
-			summary += $", {navaids.GeojsonNavaidCount:N0} in the region";
+			summary += $", {navaids.GeojsonNavaidCount:N0} inside the ROI";
 		}
 
 		summary += $", {navaids.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
@@ -242,7 +242,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 		];
 
 		if (ShowSymbolStyleChoice)
@@ -257,8 +257,8 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// The types narrow both files; the region narrows the GeoJSON only. With no region the two
-	/// blocks are the same, and merge.
+	/// The types narrow both files; the ROI area narrows the GeoJSON only. With any other area the
+	/// two blocks are the same, and merge.
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{

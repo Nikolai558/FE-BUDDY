@@ -18,8 +18,8 @@ public static class ServiceAreas
 	/// <summary>The CRC ERAM Defaults card (CrcDefaultsCard).</summary>
 	public const string CrcDefaults = "CrcDefaults";
 
-	/// <summary>The Region of Interest card (RoiOverrideCard).</summary>
-	public const string Roi = "Roi";
+	/// <summary>The Area card (AreaCard): the area, its ARTCCs and its ROI.</summary>
+	public const string Area = "Area";
 
 	/// <summary>The High and Low Files card (Airways tab).</summary>
 	public const string HighAndLowFiles = "HighAndLowFiles";
@@ -37,7 +37,7 @@ public static class ServiceAreas
 	public const string NavaidTypes = "NavaidTypes";
 
 	/// <summary>
-	/// The cards that pick what the Procedures documents cover: Facilities, Airports, Procedures at
+	/// The cards that add to the area what the Procedures documents cover: Airports, Procedures at
 	/// Any Airport and Airport + Procedure (Procedures tab).
 	/// </summary>
 	public const string DocumentSelection = "DocumentSelection";

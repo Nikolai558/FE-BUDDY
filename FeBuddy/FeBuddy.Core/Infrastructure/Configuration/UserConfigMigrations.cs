@@ -27,7 +27,10 @@ public static class UserConfigMigrations
 	/// Every step, oldest first: the step with <see cref="UserConfigMigration.ToVersion"/> N turns a
 	/// layout N - 1 file into layout N. There is one for each layout after <see cref="UserConfigVersion.Oldest"/>.
 	/// </summary>
-	public static IReadOnlyList<UserConfigMigration> All { get; } = [];
+	public static IReadOnlyList<UserConfigMigration> All { get; } =
+	[
+		new(2, "Each AIRAC sub-service tab's Area saved; Procedures' IncludeRoiAirports and Telephony's ROI dropped", UserConfigAreas.SaveForEveryTab),
+	];
 
 	private static int _currentVersion = UserConfigVersion.Current;
 	private static IReadOnlyList<UserConfigMigration> _steps = All;

@@ -180,11 +180,20 @@ none of them.
 | `IncludeFebCustomProperties` | | `Y` / `N` | `N` |
 | `FebProperties` | | list of the sub-service's `feb.*` names; **required** when the above is `Y` | none |
 | `CrcDefaultsFor` | `CrcDefaultsScope` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `CrcDefaultsFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
-| `FilterByRoi` | `Roi.OverrideDefaultRoi` | `Y` / `N` | `N` |
+| `Area` | `Area` | which one area filter the run uses (`SubServiceArea`): `Artccs` (ARTCC Boundaries, Departures, Arrivals; Procedures' facilities), `Roi`, `Everything`, or Procedures' `None`. Only that filter is read | see below |
+| `FilterByRoi` | `Roi.OverrideDefaultRoi` (the tab's own ROI rather than the default) | `Y` / `N`; **required** `Y` with `Area = Roi` | `N` |
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCorners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees; **required** with `FilterByRoi = Y` | none |
 | `Crc.<Class>.<Kind>.<field>` | `CrcEramPropertyDefaults.<row>.<field>` | see [CRC defaults](#crc-defaults) | none |
 
-- The app sends the override box when a tab overrides the ROI, otherwise the default ROI.
+- The app sends `Area`, and only the filter it names: the tab's ARTCCs with `Artccs`; with `Roi`,
+  `FilterByRoi = Y` and the tab's own corners, or the default ROI's. The ARTCCs and the ROI are saved
+  whichever area is picked.
+- A tab that has never saved an area starts on what its other settings mean
+  (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Facility Profile ARTCC) if it has
+  any, otherwise the ROI if it has its own or the default ROI is on, otherwise `Everything`
+  (Procedures: the ROI only with the old `IncludeRoiAirports`, otherwise `None`).
+- A block without `Area` (the harness) means the same: its ARTCC list if it has one, otherwise the
+  ROI with `FilterByRoi = Y`, otherwise everything (`SubServiceSettingsReader.ReadArea`).
 - `CrcDefaultsFiles` keeps every choice, even for files the current settings don't write, so a file
   switched off and on keeps its choice. A run sends only the files written.
 - A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedures' two documents) are
@@ -327,12 +336,12 @@ unknown-key warning).
 | `GenerateAliasFile` | `Outputs.<Departures/Arrivals>.Alias` (General tab) | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | | `Y` / `N` | `Y` |
 | `IncludeObstacleDepartures` | | `Y` / `N` - Departures only | `Y` |
-| `ArtccFilter` | | list of ARTCC IDs; empty means all | saved: the Facility Profile ARTCC, until first saved |
+| `ArtccFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
 | `AmendmentFilter` | `Amendment.Filter` | `None`, `Cycles`, `Days`, `Date` | `None` |
 | `AmendedWithinCycles` | `Amendment.WithinCycles` | 1-1000 (1 = the selected cycle); **required** with `Cycles` | saved: `1` |
 | `AmendedWithinDays` | `Amendment.WithinDays` | 1-36500, back from today; **required** with `Days` | saved: `30` |
 | `AmendedOnOrAfter` | `Amendment.OnOrAfter` | `yyyy-MM-dd`; **required** with `Date` | none |
-| `RoiMode` | `Roi.Mode` | `Airport` (every procedure of an airport in the ROI), `Waypoint` (any procedure with a point in it) | `Airport` |
+| `RoiMode` | `Roi.Mode` | `Airport` (every procedure of an airport in the ROI), `Waypoint` (any procedure with a point in it); used with `Area = Roi` | `Airport` |
 
 - **`FebProperties`:** Departures `dpName`, Arrivals `arrivalName`; both `pointId`, `arptId`, `artcc`,
   `amendmentNo`, `amendEffDate`, `waypoints`.
@@ -363,7 +372,7 @@ unknown-key warning).
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
 | `OutputBy` | | `HighLow`, `HighLowUnlimited`, `ArtccAltitude` | `HighLow` |
-| `LocationFilter` | | list of ARTCC IDs; empty means every one with boundary data | saved: the Facility Profile ARTCC, until first saved |
+| `LocationFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
 | `SplitAtAntimeridian` | | `Y` / `N` | `Y` |
 
 - No `GenerateGeojson`, `GenerateAliasFile` or `Emit…`: it always writes Lines only.
@@ -397,17 +406,16 @@ No other keys of its own, and no `FebProperties`: `IncludeFebCustomProperties = 
 ## Procedures
 
 Procedures writes no GeoJSON, so it has no `Emit…`, `FebProperties`, `CrcDefaultsFor` or `Crc.*` keys
-(`IncludeFebCustomProperties = Y` warns, pointing at `JsonFields`). `IncludeRoiAirports` uses the
-tab's ROI override if it has one, otherwise the default ROI.
+(`IncludeFebCustomProperties = Y` warns, pointing at `JsonFields`). Its `Area` is `Artccs` (the
+facilities), `Roi` (every airport inside it), `Everything` (every airport in the metafile) or `None`.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
 | `GenerateChangesDocument` | `Outputs.Procedures.ProcedureChanges` (General tab) | `Y` / `N` - `Procedure_Changes.md` | `Y` |
 | `GenerateProceduresJson` | `Outputs.Procedures.ProceduresJson` (General tab) | `Y` / `N` - `Procedures.json` | `Y` |
 | `GenerateAliasFile` | `Outputs.Procedures.Alias` (General tab) | `Y` / `N` - `Faa_Chart_Recall.txt` | `Y` |
-| `Facilities` | | list of ARTCC IDs whose airports are included | saved: the Facility Profile ARTCC, until first saved |
+| `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
 | `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
-| `IncludeRoiAirports` | | `Y` / `N` - include every airport inside the ROI; needs a ROI | `N` |
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
 | `Procedures` | | list of procedure names, included wherever charted | none |
 | `AirportProcedures` | | list of `<airport>\|<procedure>`, e.g. `PIT\|ILS OR LOC RWY 28C` | none |
@@ -415,9 +423,12 @@ tab's ROI override if it has one, otherwise the default ROI.
 | `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`) | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
 
 - The three `Generate…` keys can't all be `N`.
-- At least one of `Facilities`, `IncludeRoiAirports`, `Airports`, `Procedures` or
-  `AirportProcedures` is required, but only when a document is on. They add up. The alias file
-  ignores them all: it covers every chart at every airport in the d-TPP Metafile.
+- `Airports`, `Procedures` and `AirportProcedures` add to the area, even outside it; with
+  `Everything` they aren't read. With `None`, at least one of them is required. The area's own
+  checks (a facility, a ROI) and that one apply only when a document is on. The alias file ignores
+  them all: it covers every chart at every airport in the d-TPP Metafile.
+- A block without `Area` takes `Facilities` as the area when it lists any, otherwise the ROI with
+  the old `IncludeRoiAirports = Y`, otherwise `None`. `FilterByRoi` alone never meant the ROI here.
 - An unknown `ChartTypes` code warns but is still used; an unknown `JsonFields` name warns and is
   ignored.
 - `JsonFields`: `icaoId`, `airportName`, `city`, `state`, `responsibleArtcc`, `airspaceClass`,
@@ -437,8 +448,8 @@ tab's ROI override if it has one, otherwise the default ROI.
 | `VirtualAirlines.<n>.Organization` | | its virtual organization | none |
 | `IncludeVatsimRadarVirtualAirlines` | | `Y` / `N` - also write the virtual airline list (GNG + VATSIM-Radar; the key keeps its old name) | `N` |
 
-- No `FebProperties`, `CrcDefaultsFor` or `Crc.*`, and no region: the ROI keys are accepted and
-  ignored, and `IncludeFebCustomProperties = Y` warns.
+- No `FebProperties`, `CrcDefaultsFor` or `Crc.*`, and no area: the app saves and sends no `Area`
+  or ROI keys (any sent are accepted and ignored), and `IncludeFebCustomProperties = Y` warns.
 - Virtual airlines are read in number order. Each needs a three-letter `Designator`, a `Telephony`
   with a letter or digit, and an `Organization` (`TelephonySettingsParser.VirtualAirlineProblem`, which
   the tab uses too); otherwise the run throws, naming the number. A number with no fields is
@@ -595,3 +606,10 @@ the settings file while every setting keeps its dotted path needs only step 3, a
 a setting in any layout's sample is no longer saved with the same value. It also fails if a
 released sample changes. A setting saved outside the tabs (Settings, the default ROI, the map) is
 checked by its key constant, listed in the test's `OtherSettings`.
+
+The layouts so far:
+
+| Layout | First saved by | Change |
+|---|---|---|
+| 1 | 3.0.0-beta.2 | (no stamp) |
+| 2 | 3.0.0-beta.6 | Each AIRAC tab with settings gets its `Area`, from what its settings meant (`UserConfigAreas.SaveForEveryTab`); Procedures' `IncludeRoiAirports` and Telephony's `Roi` node are dropped |

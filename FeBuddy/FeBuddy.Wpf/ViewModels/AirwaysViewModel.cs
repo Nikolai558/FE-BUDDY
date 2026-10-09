@@ -10,6 +10,7 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airways;
 using FeBuddy.Core.Domain.Airways.Models;
 using FeBuddy.Core.Domain.Crc.Models;
@@ -137,24 +138,22 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			if (SetProperty(ref _aliasRoiAirwaysOnly, value))
 			{
-				OnPropertyChanged(nameof(RoiOutputs));
-				OnPropertyChanged(nameof(RoiAliasEffect));
+				OnPropertyChanged(nameof(AreaOutputs));
+				OnPropertyChanged(nameof(AreaAliasNote));
 				MarkDirty();
 			}
 		}
 	}
 
-	/// <summary>
-	/// The outputs the region of interest narrows, for its card's tags: the GeoJSON always, and the
-	/// alias file only with <see cref="AliasRoiAirwaysOnly"/>.
-	/// </summary>
-	public SubServiceOutputKinds RoiOutputs =>
+	/// <inheritdoc />
+	/// <remarks>The GeoJSON always, and the alias file only with <see cref="AliasRoiAirwaysOnly"/>.</remarks>
+	public override SubServiceOutputKinds AreaOutputs =>
 		SubServiceOutputKinds.Geojson | (AliasRoiAirwaysOnly ? SubServiceOutputKinds.Alias : SubServiceOutputKinds.None);
 
-	/// <summary>What the region of interest does to the alias file, for its card.</summary>
-	public string RoiAliasEffect => AliasRoiAirwaysOnly
-		? "Only airways that cross the region, each with all of its fixes."
-		: "Every airway. To limit it to the region, choose Only airways that cross the region on the Outputs card.";
+	/// <summary>What the area does to the alias file, for the Area card.</summary>
+	public string AreaAliasNote => AliasRoiAirwaysOnly
+		? "With ROI picked, only airways that cross the ROI, each with all of its fixes, as you picked \"Only airways that cross the ROI\" on the Outputs card."
+		: "Every airway, inside the ROI or not, unless you pick \"Only airways that cross the ROI\" on the Outputs card.";
 
 	/// <summary>Whether a line that crosses 180 degrees longitude is split in two there.</summary>
 	public bool SplitAtAntimeridian { get => _splitAtAntimeridian; set { if (SetProperty(ref _splitAtAntimeridian, value)) MarkDirty(); } }
@@ -163,8 +162,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public ObservableCollection<DesignationToggle> Designations { get; } = [];
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"every airway is included";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.RoiAreas;
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -336,7 +334,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			nameof(OutputBy), nameof(OutputModeHint), nameof(ShowsStrata),
 			nameof(BufferAirwayWaypoints), nameof(FixBufferNm), nameof(NavaidBufferNm),
-			nameof(AliasRoiAirwaysOnly), nameof(RoiOutputs), nameof(RoiAliasEffect), nameof(SplitAtAntimeridian),
+			nameof(AliasRoiAirwaysOnly), nameof(AreaOutputs), nameof(AreaAliasNote), nameof(SplitAtAntimeridian),
 		})
 		{
 			OnPropertyChanged(name);
@@ -430,7 +428,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 				? $"{FixBufferNm.Trim()} NM around fixes, {NavaidBufferNm.Trim()} NM around NAVAIDs"
 				: "No"),
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -444,8 +442,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// The designations narrow both files; the region narrows the GeoJSON, and the alias file only
-	/// with ROI airways only. With no region the two blocks are the same, and merge.
+	/// The designations narrow both files; the ROI area narrows the GeoJSON, and the alias file only
+	/// with "Only airways that cross the ROI". With any other area the two blocks are the same, and merge.
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{

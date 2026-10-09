@@ -9,6 +9,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Fixes;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Fixes;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -20,7 +21,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <summary>
 /// The <b>Fixes</b> sub-service tab inside the AIRAC Service screen: how the GeoJSON is laid out
 /// (one merged file set, one per fix use, one per chart, or one per chart + fix use combination the
-/// user lists), which fix uses/charts/combinations to include, the optional region of interest,
+/// user lists), which fix uses/charts/combinations to include, the area (an ROI, or everything),
 /// which FE-Buddy properties and the CRC ERAM defaults.
 /// </summary>
 /// <remarks>
@@ -76,8 +77,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"the GeoJSON has every fix";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.RoiAreas;
 
 	/// <inheritdoc />
 	/// <remarks>Fixes has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -349,7 +349,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		if (HasRoi)
 		{
-			summary += $", {fixes.GeojsonFixCount:N0} in the region";
+			summary += $", {fixes.GeojsonFixCount:N0} inside the ROI";
 		}
 
 		summary += $", {fixes.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
@@ -380,7 +380,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		[
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -388,23 +388,36 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	}
 
 	/// <inheritdoc />
-	/// <remarks>The fix uses and charts ticked count only in their own file layout.</remarks>
+	/// <remarks>
+	/// The fix uses and charts ticked count only in their own file layout, named as their boxes are
+	/// (<c>ENROUTE LOW</c>, not its token). With no fixes, the region has nothing to narrow.
+	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
-		string fixes = _outputBy switch
+		// Before a cycle is parsed there are no fix use boxes: the tokens stand in, the same as the names.
+		string[] fixUses = FixUses.Count > 0 ? [.. FixUses.Where(t => t.IsSelected).Select(t => t.Label)] : [.. IncludedFixUseTokens()];
+		string[] charts = [.. Charts.Where(t => t.IsSelected).Select(t => t.Token == FixCharts.NoChart ? "no chart" : t.Label)];
+
+		string? fixes = _outputBy switch
 		{
-			FixOutputBy.FixUse when ExcludedFixUseTokens().Any() => $"fixes used as {SummaryLines.Join([.. IncludedFixUseTokens()], "or")}",
-			FixOutputBy.Chart when Charts.Count == 0 => "fixes on the charts you ticked, once the cycle's chart list is loaded",
-			FixOutputBy.Chart when ExcludedChartTokens().Any() => $"fixes on {SummaryLines.Join([.. IncludedChartTokens()], "or")}",
-			FixOutputBy.ChartAndFixUse => Combinations.Count > 0
-				? $"fixes in {SummaryLines.Join([.. Combinations.Select(c => c.Label)], "or")}"
-				: "no fixes until you add a chart + fix use combination",
-			_ => "every fix",
+			FixOutputBy.FixUse when fixUses.Length == 0 => null,
+			FixOutputBy.FixUse when ExcludedFixUseTokens().Any() => $"Fixes used as {SummaryLines.Join(fixUses, "or")}",
+			FixOutputBy.Chart when Charts.Count == 0 => "Fixes on the charts you ticked, once the cycle's chart list is loaded",
+			FixOutputBy.Chart when charts.Length == 0 => null,
+			FixOutputBy.Chart when ExcludedChartTokens().Any() => $"Fixes on {SummaryLines.Join(charts, "or")}",
+			FixOutputBy.ChartAndFixUse when Combinations.Count == 0 => null,
+			FixOutputBy.ChartAndFixUse => $"Fixes in these chart + fix use combinations: {SummaryLines.Join([.. Combinations.Select(c => c.Label)], "and")}",
+			_ => "Every fix",
 		};
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, fixes)
-			.Add(SummaryJoin.And, RegionLine("inside the region"))
+			.Add(SummaryJoin.First, fixes ?? _outputBy switch
+			{
+				FixOutputBy.FixUse => "No fixes: tick a fix use",
+				FixOutputBy.Chart => "No fixes: tick a chart",
+				_ => "No fixes until you add a chart + fix use combination",
+			})
+			.Add(SummaryJoin.AndOnly, fixes is null ? null : RoiLine(roi => $"those inside {roi}"))
 			.ToList());
 	}
 

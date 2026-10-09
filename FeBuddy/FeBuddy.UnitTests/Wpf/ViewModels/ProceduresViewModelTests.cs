@@ -1,5 +1,6 @@
 using FeBuddy.Wpf.ViewModels;
 
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -59,12 +60,13 @@ public sealed class ProceduresViewModelTests : IDisposable
 	{
 		ProceduresViewModel procedures = Loaded();
 		procedures.Airports.Add("PIT");
+		procedures.Area = SubServiceArea.Artccs;
 		procedures.Facilities.Single(f => f.Artcc == "ZOB").IsSelected = true;
 
 		procedures.NewAirportText = "KPIT KXYZ ORD CLE KORD CAK";
 
 		Assert.Equal(
-			"Not an airport in this cycle: KXYZ\nAlready in the list: KPIT\nAlready included by ZOB under Facilities: CLE, CAK",
+			"Not an airport in this cycle: KXYZ\nAlready in the list: KPIT\nAlready included by ZOB, a facility ticked on the Area card: CLE, CAK",
 			procedures.NewAirportHint);
 
 		procedures.AddAirportCommand.Execute(null);
@@ -74,10 +76,10 @@ public sealed class ProceduresViewModelTests : IDisposable
 	}
 
 	[Fact]
-	public void an_airport_inside_the_region_it_includes_is_already_included()
+	public void an_airport_inside_the_roi_area_is_already_included()
 	{
 		ProceduresViewModel procedures = Loaded();
-		procedures.IncludeRoiAirports = true;
+		procedures.Area = SubServiceArea.Roi;
 		procedures.OverrideRoi = true;
 		procedures.SwLat = "40";
 		procedures.SwLon = "-83";
@@ -86,7 +88,20 @@ public sealed class ProceduresViewModelTests : IDisposable
 
 		procedures.NewAirportText = "CAK ORD";
 
-		Assert.Equal("Already included by the region of interest: CAK", procedures.NewAirportHint);
+		Assert.Equal("Already included by the ROI specific to the Procedures sub-service: CAK", procedures.NewAirportHint);
+	}
+
+	/// <summary>Only the area chosen counts: a facility ticked while the area is the ROI includes nothing.</summary>
+	[Fact]
+	public void a_facility_ticked_includes_nothing_while_the_area_is_something_else()
+	{
+		ProceduresViewModel procedures = Loaded();
+		procedures.Area = SubServiceArea.None;
+		procedures.Facilities.Single(f => f.Artcc == "ZOB").IsSelected = true;
+
+		procedures.NewAirportText = "CLE";
+
+		Assert.Equal(string.Empty, procedures.NewAirportHint);
 	}
 
 	[Fact]

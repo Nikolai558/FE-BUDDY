@@ -38,6 +38,7 @@ public sealed class UserConfigLayoutTests : IDisposable
 	private static readonly Dictionary<int, string> SampleFingerprints = new()
 	{
 		[1] = "DBFE66FA9DAECE3CB37C161017294B8738C55FA2012E375C1CFC8D3A7BCD47D7",
+		[2] = "4FF1F465DCE3FC23E03C96F9562F3267FC781B6E5396D3509FEC9ABCD667A33E",
 	};
 
 	private static readonly string SamplesFolder = Path.Combine(AppContext.BaseDirectory, "Fixtures", "UserConfig");

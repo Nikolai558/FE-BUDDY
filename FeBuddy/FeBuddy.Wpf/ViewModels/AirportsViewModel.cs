@@ -4,6 +4,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -40,8 +41,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	public override string Title => "Airports";
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"the GeoJSON has every airport";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.RoiAreas;
 
 	/// <inheritdoc />
 	/// <remarks>The files are named for what they hold: <c>Runways_Lines</c>, <c>Airports_Symbols</c>, <c>Airports_Text</c>.</remarks>
@@ -134,7 +134,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		[
 			new ServicePreviewRow("GeoJSON", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -142,16 +142,16 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	}
 
 	/// <inheritdoc />
-	/// <remarks>The region narrows the GeoJSON only; with no region the two blocks are the same, and merge.</remarks>
+	/// <remarks>The ROI narrows the GeoJSON only; with any other area the two blocks are the same, and merge.</remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, "every open airport")
-			.Add(SummaryJoin.And, RegionLine("with its reference point inside the region"))
+			.Add(SummaryJoin.First, "Every open airport")
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"those with their reference point inside {roi}"))
 			.ToList());
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, HasRoi ? "every open airport, in the region or not" : "every open airport")
+			.Add(SummaryJoin.First, RoiLine(roi => $"Every open airport, inside {roi} or not") ?? "Every open airport")
 			.ToList());
 	}
 

@@ -39,6 +39,7 @@ public static class ProcedureSettingsParser
 	];
 
 	/// <summary>The keys only Procedures reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
+	/// <remarks><c>IncludeRoiAirports</c> is read only for a block without <c>Area</c> (see <see cref="ReadArea"/>).</remarks>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"GenerateChangesDocument", "GenerateProceduresJson", "GenerateAliasFile",
@@ -47,6 +48,10 @@ public static class ProcedureSettingsParser
 		"Airports", "Procedures", "AirportProcedures",
 		"ChartTypes", "JsonFields",
 	};
+
+	/// <summary>The areas Procedures offers: the facilities, the ROI, every airport, or none.</summary>
+	private static readonly IReadOnlyList<SubServiceArea> Areas =
+		[SubServiceArea.Artccs, SubServiceArea.Roi, SubServiceArea.Everything, SubServiceArea.None];
 
 	/// <summary>Procedures writes no GeoJSON, so it draws from no CRC-ERAM defaults class at all.</summary>
 	private static readonly IReadOnlyDictionary<string, CrcFeatureKind[]> CrcKindsByClass =
@@ -94,32 +99,24 @@ public static class ProcedureSettingsParser
 				"(see 'JsonFields' for Procedures.json's optional fields instead), so it was ignored."));
 		}
 
-		IReadOnlyCollection<string> facilities = [.. SettingsValueReader.StringList(procedureSettings, "Facilities")
-			.Select(f => f.Trim().ToUpperInvariant())
-			.Distinct(StringComparer.OrdinalIgnoreCase)];
-
+		SubServiceArea area = ReadArea(procedureSettings);
 		string? primaryFacility = SettingsValueReader.OptionalString(procedureSettings, "PrimaryFacility")?.ToUpperInvariant();
 
-		bool includeRoiAirports = SettingsValueReader.YesNo(procedureSettings, "IncludeRoiAirports", defaultValue: false);
-		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(procedureSettings);
+		// The selection picks what the two documents cover, so with neither written it isn't checked.
+		IReadOnlyCollection<string> facilities = generatesDocument ? SubServiceSettingsReader.ReadAreaArtccs(procedureSettings, area, "Facilities") : [];
+		RegionOfInterest? roi = generatesDocument ? SubServiceSettingsReader.ReadAreaRoi(procedureSettings, area) : null;
 
-		if (generatesDocument && includeRoiAirports && roi is null)
+		// Everything already has every airport, so the lists that add to the area aren't used.
+		bool lists = area != SubServiceArea.Everything;
+		IReadOnlyCollection<string> airports = lists ? [.. SettingsValueReader.StringList(procedureSettings, "Airports")] : [];
+		IReadOnlyCollection<string> procedures = lists ? [.. SettingsValueReader.StringList(procedureSettings, "Procedures")] : [];
+		IReadOnlyList<ProcedureAirportPick> airportProcedures = lists ? ParseAirportProcedures(procedureSettings) : [];
+
+		if (generatesDocument && area == SubServiceArea.None && airports.Count == 0 && procedures.Count == 0 && airportProcedures.Count == 0)
 		{
 			throw new ArgumentException(
-				"'IncludeRoiAirports' is \"Y\" but no Region of Interest is set. Set 'FilterByRoi' to \"Y\" and its four " +
-				"corner keys ('RoiSwLat', 'RoiSwLon', 'RoiNeLat', 'RoiNeLon').");
-		}
-
-		IReadOnlyCollection<string> airports = [.. SettingsValueReader.StringList(procedureSettings, "Airports")];
-		IReadOnlyCollection<string> procedures = [.. SettingsValueReader.StringList(procedureSettings, "Procedures")];
-		IReadOnlyList<ProcedureAirportPick> airportProcedures = ParseAirportProcedures(procedureSettings);
-
-		if (generatesDocument
-			&& facilities.Count == 0 && !includeRoiAirports && airports.Count == 0 && procedures.Count == 0 && airportProcedures.Count == 0)
-		{
-			throw new ArgumentException(
-				"Procedures has no inclusion source: set 'Facilities', turn on 'IncludeRoiAirports' (with a Region of " +
-				"Interest), or list at least one 'Airports', 'Procedures' or 'AirportProcedures' entry.");
+				"'Area' is \"None\" and no 'Airports', 'Procedures' or 'AirportProcedures' entry is listed, so the documents " +
+				"would cover nothing. List at least one, or choose another area (\"Artccs\" with 'Facilities', \"Roi\" or \"Everything\").");
 		}
 
 		(IReadOnlyCollection<string> chartTypes, IReadOnlyList<ServiceMessage> chartTypeMessages) = ParseChartTypes(procedureSettings);
@@ -138,9 +135,9 @@ public static class ProcedureSettingsParser
 			GenerateChangesDocument = generateChangesDocument,
 			GenerateProceduresJson = generateProceduresJson,
 			GenerateAliasFile = generateAliasFile,
+			Area = area,
 			Facilities = facilities,
 			PrimaryFacility = primaryFacility,
-			IncludeRoiAirports = includeRoiAirports,
 			Roi = roi,
 			Airports = airports,
 			Procedures = procedures,
@@ -151,6 +148,19 @@ public static class ProcedureSettingsParser
 
 		return new ProcedureSettingsParseResult(settings, messages);
 	}
+
+	/// <summary>
+	/// Reads <c>Area</c>. A block without it (the harness, or one written before there was a choice)
+	/// gets the area its settings meant: the facilities when <c>Facilities</c> lists any, otherwise the
+	/// ROI when <c>IncludeRoiAirports</c> is <c>Y</c>, otherwise none. <c>FilterByRoi</c> alone never
+	/// meant the ROI here: it was sent whenever a default ROI was set.
+	/// </summary>
+	private static SubServiceArea ReadArea(IReadOnlyDictionary<string, string> procedureSettings) =>
+		SettingsValueReader.OptionalString(procedureSettings, SubServiceSettingsReader.AreaKey) is not null
+			? SubServiceSettingsReader.ReadArea(procedureSettings, Areas, artccListKey: null)
+			: SettingsValueReader.StringList(procedureSettings, "Facilities").Count > 0 ? SubServiceArea.Artccs
+			: SettingsValueReader.YesNo(procedureSettings, "IncludeRoiAirports", defaultValue: false) ? SubServiceArea.Roi
+			: SubServiceArea.None;
 
 	/// <summary>Parses <c>AirportProcedures</c>: comma-separated <c>APT|PROCEDURE NAME</c> entries.</summary>
 	private static IReadOnlyList<ProcedureAirportPick> ParseAirportProcedures(IReadOnlyDictionary<string, string> procedureSettings)

@@ -7,7 +7,9 @@ namespace FeBuddy.UnitTests.Application.Settings;
 
 /// <summary>
 /// Covers <see cref="SubServiceSettingsReader.ReadCrcDefaultsFiles"/>: the list defaults to empty,
-/// and only a sub-service's own GeoJSON files are accepted.
+/// and only a sub-service's own GeoJSON files are accepted. And the area
+/// (<see cref="SubServiceSettingsReader.ReadArea"/>): only an area the sub-service offers, what a
+/// block without one means, and that only its own filter - the ARTCCs or the ROI - is read.
 /// </summary>
 public sealed class SubServiceSettingsReaderTests
 {
@@ -63,5 +65,72 @@ public sealed class SubServiceSettingsReaderTests
 			labelSource: "each thing is labelled with its own ID");
 
 		Assert.Empty(warnings);
+	}
+
+	// ---- the area (issue #335) ----
+
+	private static readonly (string Key, string Value)[] Roi =
+		[("FilterByRoi", "Y"), ("RoiSwLat", "32.5"), ("RoiSwLon", "-120"), ("RoiNeLat", "37"), ("RoiNeLon", "-114")];
+
+	[Theory]
+	[InlineData("Artccs", SubServiceArea.Artccs)]
+	[InlineData("roi", SubServiceArea.Roi)]
+	[InlineData(" EVERYTHING ", SubServiceArea.Everything)]
+	public void the_area_is_read_by_name_ignoring_case(string text, SubServiceArea expected)
+	{
+		Assert.Equal(expected, SubServiceSettingsReader.ReadArea(Settings(("Area", text)), SubServiceSettingsReader.ArtccOrRoiAreas, "ArtccFilter"));
+	}
+
+	/// <summary>Only an area the sub-service offers is accepted, by name: not a number, not another tab's.</summary>
+	[Theory]
+	[InlineData("None")]
+	[InlineData("1")]
+	[InlineData("Region")]
+	public void an_area_the_sub_service_doesnt_offer_is_rejected_naming_those_it_does(string text)
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
+			SubServiceSettingsReader.ReadArea(Settings(("Area", text)), SubServiceSettingsReader.ArtccOrRoiAreas, "ArtccFilter"));
+
+		Assert.Contains($"\"{text}\"", ex.Message, StringComparison.Ordinal);
+		Assert.Contains("\"Artccs\", \"Roi\", \"Everything\"", ex.Message, StringComparison.Ordinal);
+	}
+
+	/// <summary>A block without <c>Area</c> gets what its filters meant: its ARTCCs first, then the ROI, then no filter.</summary>
+	[Fact]
+	public void a_block_without_an_area_gets_the_area_its_filters_meant()
+	{
+		IReadOnlyList<SubServiceArea> offered = SubServiceSettingsReader.ArtccOrRoiAreas;
+
+		Assert.Equal(SubServiceArea.Artccs, SubServiceSettingsReader.ReadArea(Settings([("ArtccFilter", "ZOB"), .. Roi]), offered, "ArtccFilter"));
+		Assert.Equal(SubServiceArea.Roi, SubServiceSettingsReader.ReadArea(Settings([("ArtccFilter", " "), .. Roi]), offered, "ArtccFilter"));
+		Assert.Equal(SubServiceArea.Everything, SubServiceSettingsReader.ReadArea(Settings(("ArtccFilter", "")), offered, "ArtccFilter"));
+		Assert.Equal(SubServiceArea.Roi, SubServiceSettingsReader.ReadArea(Settings(Roi), SubServiceSettingsReader.RoiAreas, artccListKey: null));
+		Assert.Equal(SubServiceArea.None, SubServiceSettingsReader.ReadArea(Settings(), offered, "ArtccFilter", withNoFilter: SubServiceArea.None));
+	}
+
+	[Fact]
+	public void the_roi_is_read_only_for_the_roi_area_and_then_required()
+	{
+		Dictionary<string, string> withRoi = Settings(Roi);
+
+		Assert.Equal(32.5, SubServiceSettingsReader.ReadAreaRoi(withRoi, SubServiceArea.Roi)!.SwLat);
+		Assert.Null(SubServiceSettingsReader.ReadAreaRoi(withRoi, SubServiceArea.Artccs));
+		Assert.Null(SubServiceSettingsReader.ReadAreaRoi(withRoi, SubServiceArea.Everything));
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => SubServiceSettingsReader.ReadAreaRoi(Settings(), SubServiceArea.Roi));
+		Assert.Contains("'FilterByRoi'", ex.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void the_artccs_are_read_only_for_the_artccs_area_upper_cased_once_each_and_then_required()
+	{
+		Dictionary<string, string> listed = Settings(("ArtccFilter", "zob, ZNY, Zob"));
+
+		Assert.Equal(["ZOB", "ZNY"], SubServiceSettingsReader.ReadAreaArtccs(listed, SubServiceArea.Artccs, "ArtccFilter"));
+		Assert.Empty(SubServiceSettingsReader.ReadAreaArtccs(listed, SubServiceArea.Roi, "ArtccFilter"));
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
+			SubServiceSettingsReader.ReadAreaArtccs(Settings(("ArtccFilter", " ")), SubServiceArea.Artccs, "ArtccFilter"));
+		Assert.Contains("'ArtccFilter' lists none", ex.Message, StringComparison.Ordinal);
 	}
 }

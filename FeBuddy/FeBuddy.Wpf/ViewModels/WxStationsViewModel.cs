@@ -6,6 +6,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.WxStations;
 
@@ -13,7 +14,7 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>Wx Stations</b> sub-service tab inside the AIRAC Service screen: which GeoJSON files to
-/// write, the optional region of interest, and the CRC ERAM defaults for the merged Symbols and
+/// write, the area (an ROI, or everything), and the CRC ERAM defaults for the merged Symbols and
 /// Text files.
 /// </summary>
 /// <remarks>
@@ -51,8 +52,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override string NoRoiEffect =>
-		"the GeoJSON has every station";
+	protected override IReadOnlyList<SubServiceArea> Areas => SubServiceSettingsReader.RoiAreas;
 
 	/// <inheritdoc />
 	/// <remarks>Wx Stations has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -108,7 +108,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		if (HasRoi)
 		{
-			summary += $", {wxStations.GeojsonStationCount:N0} in the region";
+			summary += $", {wxStations.GeojsonStationCount:N0} inside the ROI";
 		}
 
 		summary += $", {wxStations.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
@@ -132,7 +132,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 		[
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
 			new ServicePreviewRow("Station data", StationDataStatus),
-			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Area", DescribeArea()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -143,8 +143,8 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, "every US and US-territory station that reports METARs")
-			.Add(SummaryJoin.And, RegionLine("inside the region"))
+			.Add(SummaryJoin.First, "Every US and US-territory station that reports METARs")
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"those inside {roi}"))
 			.ToList());
 	}
 

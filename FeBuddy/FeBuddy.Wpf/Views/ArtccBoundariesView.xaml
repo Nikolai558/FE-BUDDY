@@ -27,6 +27,38 @@
             <!-- ============ what the outputs get, every filter in one place ============ -->
             <cards:SummaryCard />
 
+            <!-- ============ area: the ARTCCs, an ROI, or everything ============ -->
+            <cards:AreaCard Outputs="{Binding AreaOutputs}"
+                            Intro="Choose which boundaries to draw."
+                            ArtccsDescription="the boundaries of the ARTCCs you tick, in full"
+                            RoiDescription="every boundary inside an ROI, cut off at its edge"
+                            EverythingDescription="every ARTCC boundary, in full">
+                <cards:AreaCard.ArtccsContent>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                                   Text="ARTCCs appear once the selected cycle's data is loaded."
+                                   Visibility="{Binding HasLocations, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                        <ItemsControl ItemsSource="{Binding Locations}" IsEnabled="{Binding IsCycleReady}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type m:ArtccToggle}">
+                                    <CheckBox Content="{Binding Artcc}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                                Margin="0,4,0,0" Command="{Binding ClearLocationsCommand}"
+                                Visibility="{Binding HasLocations, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                                   Text="Your facility from Settings ▸ Facility Profile starts ticked." />
+                    </StackPanel>
+                </cards:AreaCard.ArtccsContent>
+            </cards:AreaCard>
+
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">
                 <StackPanel>
@@ -48,31 +80,6 @@
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard />
 
-            <!-- ============ ARTCCs ============ -->
-            <ctl:Card Header="ARTCCs" Outputs="Geojson">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Only the boundaries of the ARTCCs you tick. Tick none for every ARTCC. Your facility from Settings ▸ Facility Profile starts ticked." />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="ARTCCs appear once the selected cycle's data is loaded."
-                               Visibility="{Binding HasLocations, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-                    <ItemsControl ItemsSource="{Binding Locations}" IsEnabled="{Binding IsCycleReady}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type m:ArtccToggle}">
-                                <CheckBox Content="{Binding Artcc}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
-                            Margin="0,6,0,0" Command="{Binding ClearLocationsCommand}"
-                            Visibility="{Binding HasLocations, Converter={StaticResource BoolToVis}}" />
-                </StackPanel>
-            </ctl:Card>
-
             <!-- ============ antimeridian ============ -->
             <ctl:Card Header="Split GeoJSON at the Antimeridian" Outputs="Geojson">
                 <StackPanel>
@@ -81,14 +88,6 @@
                     <CheckBox Content="Split boundary lines at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard Outputs="Geojson">
-                <cards:RoiOverrideCard.AdditionalContent>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
-                               Text="The region cuts the boundary lines off at its edge." />
-                </cards:RoiOverrideCard.AdditionalContent>
-            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard LinesTitle="ARTCC Boundaries — Lines">

@@ -1,6 +1,7 @@
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.Models;
 
@@ -9,7 +10,7 @@ using FeBuddy.UnitTests.Application.Airac.Procedures.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 
 /// <summary>
-/// Covers <see cref="ProcedureSelection.Select"/>: whole-airport inclusion by facility and ROI,
+/// Covers <see cref="ProcedureSelection.Select"/>: whole-airport inclusion by the area (facility, ROI or everything),
 /// explicit airport/procedure/pair picks, the chart-type filter applying only to whole-airport
 /// inclusion, the union of every source, dropping airports left with nothing included, and the
 /// unmatched-pick warnings.
@@ -19,7 +20,7 @@ public sealed class ProcedureSelectionTests
 	private static ProcedureSettings Settings(
 		IReadOnlyCollection<string>? facilities = null,
 		string? primaryFacility = null,
-		bool includeRoiAirports = false,
+		SubServiceArea? area = null,
 		RegionOfInterest? roi = null,
 		IReadOnlyCollection<string>? airports = null,
 		IReadOnlyCollection<string>? procedures = null,
@@ -30,7 +31,8 @@ public sealed class ProcedureSelectionTests
 			OutputDirectory = @"C:\unused",
 			Facilities = facilities ?? [],
 			PrimaryFacility = primaryFacility,
-			IncludeRoiAirports = includeRoiAirports,
+			// The facilities count only as the area, as the parser sees to; without either, none.
+			Area = area ?? (facilities is { Count: > 0 } ? SubServiceArea.Artccs : SubServiceArea.None),
 			Roi = roi,
 			Airports = airports ?? [],
 			Procedures = procedures ?? [],
@@ -100,44 +102,44 @@ public sealed class ProcedureSelectionTests
 	// ---- ROI ----
 
 	[Fact]
-	public void roi_airports_are_included_only_when_include_roi_airports_is_set()
+	public void roi_airports_are_included_only_when_the_area_is_the_roi()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport(
 			"AAA", latitude: 40.0, longitude: -80.0, procedures: [ProcedureTestData.BuiltProcedure("ONE")]);
 
 		IReadOnlyList<ProcedureAirport> notIncluded = ProcedureSelection.Select(
-			[airport], Settings(includeRoiAirports: false, roi: roi), []);
+			[airport], Settings(area: SubServiceArea.None, roi: roi), []);
 		Assert.Empty(notIncluded);
 
 		IReadOnlyList<ProcedureAirport> included = ProcedureSelection.Select(
-			[airport], Settings(includeRoiAirports: true, roi: roi), []);
+			[airport], Settings(area: SubServiceArea.Roi, roi: roi), []);
 		Assert.Single(included);
 	}
 
 	[Fact]
-	public void an_airport_without_coordinates_is_skipped_by_the_roi_even_when_include_roi_airports_is_set()
+	public void an_airport_without_coordinates_is_skipped_by_the_roi_even_when_the_area_is_the_roi()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport(
 			"AAA", latitude: null, longitude: null, procedures: [ProcedureTestData.BuiltProcedure("ONE")]);
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[airport], Settings(includeRoiAirports: true, roi: roi), []);
+			[airport], Settings(area: SubServiceArea.Roi, roi: roi), []);
 
 		Assert.Empty(result);
 	}
 
 	[Fact]
-	public void include_roi_airports_with_no_region_of_interest_set_includes_nothing_by_roi()
+	public void the_roi_area_with_no_region_of_interest_set_includes_nothing_by_roi()
 	{
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport(
 			"AAA", latitude: 40.0, longitude: -80.0, procedures: [ProcedureTestData.BuiltProcedure("ONE")]);
 
 		// Select() itself does not validate the combination (the settings parser does) - passing
-		// IncludeRoiAirports=true with no Roi must simply skip the ROI check rather than throw.
+		// the ROI area with no Roi must simply skip the ROI check rather than throw.
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[airport], Settings(includeRoiAirports: true, roi: null), []);
+			[airport], Settings(area: SubServiceArea.Roi, roi: null), []);
 
 		Assert.Empty(result);
 	}
@@ -150,7 +152,7 @@ public sealed class ProcedureSelectionTests
 			"AAA", latitude: 40.0, longitude: null, procedures: [ProcedureTestData.BuiltProcedure("ONE")]);
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[airport], Settings(includeRoiAirports: true, roi: roi), []);
+			[airport], Settings(area: SubServiceArea.Roi, roi: roi), []);
 
 		Assert.Empty(result);
 	}
@@ -163,9 +165,40 @@ public sealed class ProcedureSelectionTests
 			"AAA", latitude: 10.0, longitude: 10.0, procedures: [ProcedureTestData.BuiltProcedure("ONE")]);
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[airport], Settings(includeRoiAirports: true, roi: roi), []);
+			[airport], Settings(area: SubServiceArea.Roi, roi: roi), []);
 
 		Assert.Empty(result);
+	}
+
+	/// <summary>Only the area chosen applies: with the ROI, a facility listed brings nothing in.</summary>
+	[Fact]
+	public void with_the_roi_area_the_facilities_are_not_used()
+	{
+		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
+		ProcedureAirport outside = ProcedureTestData.BuiltAirport(
+			"AAA", responsibleArtcc: "ZOB", latitude: 30.0, longitude: -90.0, procedures: [ProcedureTestData.BuiltProcedure("ONE")]);
+
+		Assert.Empty(ProcedureSelection.Select([outside], Settings(facilities: ["ZOB"], area: SubServiceArea.Roi, roi: roi), []));
+	}
+
+	// ---- everything ----
+
+	[Fact]
+	public void everything_includes_every_airport_with_or_without_coordinates_and_still_narrows_by_chart_type()
+	{
+		ProcedureAirport located = ProcedureTestData.BuiltAirport("AAA", latitude: 40.0, longitude: -80.0, procedures:
+		[
+			ProcedureTestData.BuiltProcedure("ONE", chartCode: "IAP"),
+			ProcedureTestData.BuiltProcedure("TWO", chartCode: "MIN"),
+		]);
+		ProcedureAirport unlocated = ProcedureTestData.BuiltAirport(
+			"BBB", latitude: null, longitude: null, procedures: [ProcedureTestData.BuiltProcedure("THREE", chartCode: "IAP")]);
+
+		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
+			[located, unlocated], Settings(area: SubServiceArea.Everything, chartTypes: ["IAP"]), []);
+
+		Assert.Equal(["AAA", "BBB"], result.Select(airport => airport.AptIdent));
+		Assert.Equal(["ONE"], result[0].Procedures.Select(p => p.Name));
 	}
 
 	// ---- explicit airports ----

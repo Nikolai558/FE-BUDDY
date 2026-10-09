@@ -13,6 +13,25 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-09
+<!--
+PostId: 2026-10-09.1
+-->
+
+**Version 3.0.0-beta.6 Compiled!**
+
+Clearer filters on the AIRAC Service tabs
+
+- **New Area card** on each tab: pick **ARTCCs**, **ROI**, or **Everything** (Procedures adds **None**). Only the one you pick applies
+- For the ROI, use **the default ROI** or give the tab **its own**
+- **What You'll Get with the Current Settings** now reads like a sentence: "Every arrival · **for** airports in ZOB · **and only** those amended this cycle"
+- **Procedures**: the airports and procedures you list are added even outside the area you pick
+- Your settings carry over. A tab that used its ARTCCs and an ROI together starts on its ARTCCs
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.6)!!!
+
+---
+
 ## 2026-10-08
 <!--
 PostId: 2026-10-08.1

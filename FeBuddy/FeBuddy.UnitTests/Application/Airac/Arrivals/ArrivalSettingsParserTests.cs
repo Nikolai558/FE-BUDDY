@@ -173,6 +173,79 @@ public sealed class ArrivalSettingsParserTests
 		Assert.Equal(["ZLA", "ZOA"], parsed.ArtccFilter);
 	}
 
+	// ---- the area: only the filter it names applies (issue #335) ----
+
+	[Fact]
+	public void the_artccs_area_uses_the_artccs_and_not_the_roi()
+	{
+		Dictionary<string, string> settings = WithRoi("32.5", "-120", "37", "-114");
+		settings["Area"] = "Artccs";
+		settings["ArtccFilter"] = "ZLA";
+
+		ArrivalSettings parsed = ArrivalSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(["ZLA"], parsed.ArtccFilter);
+		Assert.Null(parsed.Roi);
+	}
+
+	[Fact]
+	public void the_roi_area_uses_the_roi_and_not_the_artccs()
+	{
+		Dictionary<string, string> settings = WithRoi("32.5", "-120", "37", "-114");
+		settings["Area"] = "Roi";
+		settings["ArtccFilter"] = "ZLA";
+
+		ArrivalSettings parsed = ArrivalSettingsParser.Parse(settings).Settings;
+
+		Assert.Empty(parsed.ArtccFilter);
+		Assert.Equal(32.5, parsed.Roi!.SwLat);
+	}
+
+	[Fact]
+	public void everything_uses_neither()
+	{
+		Dictionary<string, string> settings = WithRoi("32.5", "-120", "37", "-114");
+		settings["Area"] = "everything";
+		settings["ArtccFilter"] = "ZLA";
+
+		ArrivalSettings parsed = ArrivalSettingsParser.Parse(settings).Settings;
+
+		Assert.Empty(parsed.ArtccFilter);
+		Assert.Null(parsed.Roi);
+	}
+
+	/// <summary>A block without <c>Area</c> that sets both, as one could before there was a choice, uses its ARTCCs.</summary>
+	[Fact]
+	public void a_block_without_an_area_that_sets_both_uses_its_artccs()
+	{
+		Dictionary<string, string> settings = WithRoi("32.5", "-120", "37", "-114");
+		settings["ArtccFilter"] = "ZLA";
+
+		ArrivalSettings parsed = ArrivalSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(["ZLA"], parsed.ArtccFilter);
+		Assert.Null(parsed.Roi);
+	}
+
+	[Fact]
+	public void the_artccs_area_with_none_listed_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Artccs";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ArrivalSettingsParser.Parse(settings));
+		Assert.Contains("'ArtccFilter' lists none", ex.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void the_area_is_a_setting_arrivals_understands()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Everything";
+
+		Assert.Empty(ArrivalSettingsParser.Parse(settings).Messages);
+	}
+
 	[Theory]
 	[InlineData("waypoint", ArrivalRoiMode.Waypoint)]
 	[InlineData("Waypoint", ArrivalRoiMode.Waypoint)]

@@ -171,7 +171,8 @@ public sealed class UserConfigProfilesTests : IDisposable
 	[Fact]
 	public void an_older_fe_buddys_settings_file_is_moved_in_as_the_default_profile()
 	{
-		WriteRoot("UserConfig.json", """{ "ConfigVersion": 1, "General": { "UpdateChannel": "Beta", "PrettyPrintGeojson": "Y" } }""");
+		// Today's layout, so the file is only moved, not brought forward too (which drops the undo snapshot).
+		WriteRoot("UserConfig.json", $$"""{ "ConfigVersion": {{UserConfigVersion.Current}}, "General": { "UpdateChannel": "Beta", "PrettyPrintGeojson": "Y" } }""");
 		WriteRoot("UserConfig.previous.json", "{}");
 		WriteRoot("UserConfig.before-import.json", "{}");
 		WriteRoot("UserConfig.v1.json", "{}");

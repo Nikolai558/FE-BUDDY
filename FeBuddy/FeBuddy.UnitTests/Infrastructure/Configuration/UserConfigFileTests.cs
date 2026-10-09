@@ -380,9 +380,12 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Null(Stamp(UserConfigFile.PreviousFilePath));
 	}
 
-	/// <summary>beta.2 and beta.3 wrote no stamp: their file is the oldest layout, read as it is and left alone.</summary>
+	/// <summary>
+	/// beta.2 and beta.3 wrote no stamp: their file is the oldest layout, brought forward at launch and
+	/// written back stamped, the file as it was kept beside it.
+	/// </summary>
 	[Fact]
-	public void a_file_with_no_stamp_is_the_oldest_layout_and_is_read_as_it_is()
+	public void a_file_with_no_stamp_is_the_oldest_layout_and_is_brought_forward()
 	{
 		const string Beta3File = """{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""";
 		WriteFile(Beta3File);
@@ -390,8 +393,8 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
 
 		Assert.Equal("ZOB", UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
-		Assert.Equal(Beta3File, File.ReadAllText(UserConfigFile.ConfigFilePath));
-		Assert.False(File.Exists(UserConfigFile.BroughtForwardFilePath(1)));
+		Assert.Equal(UserConfigVersion.Current, Stamp(UserConfigFile.ConfigFilePath));
+		Assert.Equal(Beta3File, File.ReadAllText(UserConfigFile.BroughtForwardFilePath(UserConfigVersion.Oldest)));
 	}
 
 	/// <summary>

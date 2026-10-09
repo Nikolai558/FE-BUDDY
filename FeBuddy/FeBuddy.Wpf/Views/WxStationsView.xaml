@@ -25,6 +25,12 @@
             <!-- ============ what the outputs get, every filter in one place ============ -->
             <cards:SummaryCard />
 
+            <!-- ============ area: an ROI, or everything ============ -->
+            <cards:AreaCard Outputs="{Binding AreaOutputs}"
+                            Intro="Choose which weather stations to include, in both files."
+                            RoiDescription="only stations inside an ROI"
+                            EverythingDescription="every station on the list" />
+
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
                                     SymbolsDescription="A symbol at each weather station."
@@ -44,14 +50,6 @@
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard Outputs="Geojson">
-                <cards:RoiOverrideCard.AdditionalContent>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
-                               Text="Only stations inside the region are written, in both files." />
-                </cards:RoiOverrideCard.AdditionalContent>
-            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard SymbolsTitle="Wx Stations — Symbols" TextTitle="Wx Stations — Text">

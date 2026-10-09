@@ -53,9 +53,9 @@ public static class ArtccBoundarySettingsParser
 		string outputDirectory = SettingsValueReader.RequiredString(artccBoundarySettings, "OutputDirectory");
 		ArtccBoundaryOutputBy outputBy = SettingsValueReader.OptionalEnum(artccBoundarySettings, "OutputBy", ArtccBoundaryOutputBy.HighLow);
 
-		HashSet<string> locationFilter = SettingsValueReader.StringList(artccBoundarySettings, "LocationFilter")
-			.Select(locationId => locationId.ToUpperInvariant())
-			.ToHashSet(StringComparer.OrdinalIgnoreCase);
+		// Only the area chosen applies: the ARTCCs listed, or the ROI, or neither.
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(artccBoundarySettings, SubServiceSettingsReader.ArtccOrRoiAreas, artccListKey: "LocationFilter");
+		IReadOnlyCollection<string> locationFilter = SubServiceSettingsReader.ReadAreaArtccs(artccBoundarySettings, area, "LocationFilter");
 
 		bool splitAtAntimeridian = SettingsValueReader.YesNo(artccBoundarySettings, "SplitAtAntimeridian", defaultValue: true);
 
@@ -63,7 +63,7 @@ public static class ArtccBoundarySettingsParser
 			SubServiceSettingsReader.ReadFebProperties<ArtccBoundaryFebProperty>(
 				artccBoundarySettings, example: "locationId,locationName,altitude,type");
 
-		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(artccBoundarySettings);
+		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(artccBoundarySettings, area);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(artccBoundarySettings);
 
 		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(

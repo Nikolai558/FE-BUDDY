@@ -65,6 +65,7 @@ internal static class HarnessSettings
 			// Every GeoJSON file goes in Geojson; only those in CrcDefaultsFor get the CRC ERAM
 			// defaults Feature, using the Crc.* values added by AddCrcDefaults below.
 			{ "CrcDefaultsFor", AirwayHighLowFiles },
+			{ "Area", "Everything" },      // or "Roi", limited to the box below
 			{ "FilterByRoi", "N" },
 
 			// Phase 3.3-3.7 settings. Defaults shown; omit any of these and the parser uses
@@ -136,8 +137,9 @@ internal static class HarnessSettings
 			{ "CrcDefaultsFor", "Runways_Lines,Airports_Symbols,Airports_Text" },
 
 			// ROI filtering applies to the GeoJSON output only; the alias file always covers
-			// every airport. The four corner keys are read only when FilterByRoi is "Y" - set
+			// every airport. The four corner keys are read only with Area "Roi" and FilterByRoi "Y" - set
 			// all four before flipping it, or the parser rejects the run naming the blank key.
+			{ "Area", "Everything" },      // or "Roi", limited to the box below
 			{ "FilterByRoi", "N" },
 			{ "RoiSwLat", "" },              // e.g. "38.0"
 			{ "RoiSwLon", "" },              // e.g. "-85.0"
@@ -179,16 +181,17 @@ internal static class HarnessSettings
 
 			// Filters - every one applies to GeoJSON AND the alias file.
 			{ "IncludeObstacleDepartures", "Y" }, // N -> SIDs only
-			{ "ArtccFilter", "ZOB" },                // e.g. "ZLA,ZOA"; empty = every ARTCC
+			{ "ArtccFilter", "ZOB" },                // e.g. "ZLA,ZOA"; read only with Area "Artccs"
 			// AmendmentFilter "None" keeps every procedure. Each other mode reads only its own key:
 			// "Cycles" + AmendedWithinCycles (1 = amended this cycle; 4 = this cycle or the 3 before),
 			// "Days" + AmendedWithinDays (e.g. "90", counted back from today),
 			// "Date" + AmendedOnOrAfter (yyyy-MM-dd, e.g. "2026-01-01").
 			{ "AmendmentFilter", "None" },
 
-			// ROI. The four corner keys are read only when FilterByRoi is "Y". RoiMode "Airport"
+			// ROI. The four corner keys are read only with Area "Roi" and FilterByRoi "Y". RoiMode "Airport"
 			// keeps every departure of an airport inside the box; "Waypoint" keeps any departure
 			// with a point inside it.
+			{ "Area", "Artccs" },          // only one area applies: "Artccs" (ArtccFilter), "Roi" (the box below) or "Everything"
 			{ "FilterByRoi", "N" },
 			{ "RoiMode", "Airport" },
 			{ "RoiSwLat", "" },                   // e.g. "32.5"
@@ -241,16 +244,17 @@ internal static class HarnessSettings
 			// Filters - every one applies to GeoJSON AND the alias file. STAR_BASE.ARTCC can list
 			// several centres space-separated (e.g. "ZDC ZNY") when a STAR is shared between them;
 			// each airport's copy of the procedure is still filtered by its own ARTCC.
-			{ "ArtccFilter", "ZOB" },                // e.g. "ZLA,ZOA"; empty = every ARTCC
+			{ "ArtccFilter", "ZOB" },                // e.g. "ZLA,ZOA"; read only with Area "Artccs"
 			// AmendmentFilter "None" keeps every procedure. Each other mode reads only its own key:
 			// "Cycles" + AmendedWithinCycles (1 = amended this cycle; 4 = this cycle or the 3 before),
 			// "Days" + AmendedWithinDays (e.g. "90", counted back from today),
 			// "Date" + AmendedOnOrAfter (yyyy-MM-dd, e.g. "2026-01-01").
 			{ "AmendmentFilter", "None" },
 
-			// ROI. The four corner keys are read only when FilterByRoi is "Y". RoiMode "Airport"
+			// ROI. The four corner keys are read only with Area "Roi" and FilterByRoi "Y". RoiMode "Airport"
 			// keeps every arrival of an airport inside the box; "Waypoint" keeps any arrival
 			// with a point inside it.
+			{ "Area", "Artccs" },          // only one area applies: "Artccs" (ArtccFilter), "Roi" (the box below) or "Everything"
 			{ "FilterByRoi", "N" },
 			{ "RoiMode", "Airport" },
 			{ "RoiSwLat", "" },                   // e.g. "32.5"
@@ -319,6 +323,7 @@ internal static class HarnessSettings
 
 			// ROI filtering applies to the GeoJSON output only; the alias file always covers
 			// every NAVAID.
+			{ "Area", "Everything" },      // or "Roi", limited to the box below
 			{ "FilterByRoi", "N" },
 			{ "RoiSwLat", "" },              // e.g. "38.0"
 			{ "RoiSwLon", "" },              // e.g. "-85.0"
@@ -351,7 +356,7 @@ internal static class HarnessSettings
 			// file; "ArtccAltitude" writes one file per LocationId and altitude present, e.g.
 			// ARTCC-Boundary_ZOB-HIGH_Lines.
 			{ "OutputBy", "HighLow" },   // or "HighLowUnlimited", "ArtccAltitude"
-			{ "LocationFilter", "" },    // e.g. "ZOB,ZNY"; empty = every ARTCC
+			{ "LocationFilter", "" },    // e.g. "ZOB,ZNY"; read only with Area "Artccs"
 
 			{ "SplitAtAntimeridian", "Y" },
 
@@ -364,6 +369,7 @@ internal static class HarnessSettings
 			// below.
 			{ "CrcDefaultsFor", "ARTCC-Boundary_High_Lines,ARTCC-Boundary_Low_Lines" },
 
+			{ "Area", "Everything" },      // or "Artccs" (LocationFilter) or "Roi" (the box below); only one applies
 			{ "FilterByRoi", "N" },
 			{ "RoiSwLat", "" },              // e.g. "38.0"
 			{ "RoiSwLon", "" },              // e.g. "-85.0"
@@ -411,6 +417,7 @@ internal static class HarnessSettings
 			{ "CrcDefaultsFor", "Fix_ENROUTE-LOW-WYPNT_Symbols,Fix_ENROUTE-LOW-WYPNT_Text" },
 
 			// ROI filtering applies to the GeoJSON output only.
+			{ "Area", "Everything" },      // or "Roi", limited to the box below
 			{ "FilterByRoi", "N" },
 			{ "RoiSwLat", "" },              // e.g. "38.0"
 			{ "RoiSwLon", "" },              // e.g. "-85.0"
@@ -448,6 +455,7 @@ internal static class HarnessSettings
 			{ "CrcDefaultsFor", WxStationOutputFiles.Symbols },
 
 			// ROI filtering applies to the GeoJSON output only.
+			{ "Area", "Everything" },      // or "Roi", limited to the box below
 			{ "FilterByRoi", "N" },
 			{ "RoiSwLat", "" },              // e.g. "38.0"
 			{ "RoiSwLon", "" },              // e.g. "-85.0"
@@ -482,14 +490,13 @@ internal static class HarnessSettings
 			{ "GenerateProceduresJson", "Y" },
 			{ "GenerateAliasFile", "Y" },
 
-			// Additive inclusion: every ZOB airport (by RESP_ARTCC_ID), plus GRR and CID from
-			// elsewhere - exercises both the whole-facility path and the explicit-airport path in
-			// one run.
+			// The area, every ZOB airport (by RESP_ARTCC_ID), plus GRR and CID from elsewhere -
+			// exercises both the whole-facility path and the explicit-airport path in one run.
 			{ "Facilities", "ZOB" },
 			{ "PrimaryFacility", "ZOB" },
 
-			// IncludeRoiAirports reuses the shared ROI keys below via SubServiceSettingsReader.ReadRoi.
-			{ "IncludeRoiAirports", "N" },
+			// Only one area applies. "Roi" reads the shared ROI keys below.
+			{ "Area", "Artccs" },          // "Artccs" (Facilities), "Roi" (the box below), "Everything" (every airport) or "None" (only the lists below)
 			{ "FilterByRoi", "N" },
 			{ "RoiSwLat", "" },              // e.g. "38.0"
 			{ "RoiSwLon", "" },              // e.g. "-85.0"

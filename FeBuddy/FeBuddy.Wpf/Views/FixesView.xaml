@@ -27,6 +27,12 @@
             <!-- ============ what the outputs get, every filter in one place ============ -->
             <cards:SummaryCard />
 
+            <!-- ============ area: an ROI, or everything ============ -->
+            <cards:AreaCard Outputs="{Binding AreaOutputs}"
+                            Intro="Choose which fixes to include, in every file. The fix uses and charts below still apply."
+                            RoiDescription="only fixes inside an ROI"
+                            EverythingDescription="every fix" />
+
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
                                     SymbolsDescription="A symbol at each fix."
@@ -170,14 +176,6 @@
                             Visibility="{Binding IsEditingCombination, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard Outputs="Geojson">
-                <cards:RoiOverrideCard.AdditionalContent>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
-                               Text="Only fixes inside the region are written, in every file." />
-                </cards:RoiOverrideCard.AdditionalContent>
-            </cards:RoiOverrideCard>
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard SymbolsTitle="Fixes — Symbols" TextTitle="Fixes — Text">

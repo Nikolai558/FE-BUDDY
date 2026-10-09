@@ -108,7 +108,9 @@ public static class FixSettingsParser
 		(bool includeFebProperties, IReadOnlyList<FixFebProperty> febProperties) =
 			SubServiceSettingsReader.ReadFebProperties<FixFebProperty>(fixSettings, example: "fixId,fixUseCode,charts");
 
-		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(fixSettings);
+		// Only the area chosen applies: the ROI, or everything.
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(fixSettings, SubServiceSettingsReader.RoiAreas, artccListKey: null);
+		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(fixSettings, area);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(fixSettings);
 
 		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(

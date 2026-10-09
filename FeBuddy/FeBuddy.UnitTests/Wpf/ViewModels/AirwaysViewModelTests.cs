@@ -239,23 +239,23 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Contains(nameof(AirwaysViewModel.OutputsOn), changed);
 	}
 
-	/// <summary>The region narrows the alias file only with ROI airways only, so its card tags the alias file only then.</summary>
+	/// <summary>The area narrows the alias file only with "Only airways that cross the ROI", so its card tags the alias file only then.</summary>
 	[Fact]
-	public void the_region_card_tags_the_alias_file_only_with_roi_airways_only()
+	public void the_area_card_tags_the_alias_file_only_with_only_airways_that_cross_the_roi()
 	{
 		AirwaysViewModel tab = NewTab("J");
 		List<string?> changed = [];
 		tab.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
-		Assert.Equal(SubServiceOutputKinds.Geojson, tab.RoiOutputs);
-		Assert.StartsWith("Every airway.", tab.RoiAliasEffect, StringComparison.Ordinal);
+		Assert.Equal(SubServiceOutputKinds.Geojson, tab.AreaOutputs);
+		Assert.StartsWith("Every airway, inside the ROI or not", tab.AreaAliasNote, StringComparison.Ordinal);
 
 		tab.AliasRoiAirwaysOnly = true;
 
-		Assert.Equal(SubServiceOutputKinds.Geojson | SubServiceOutputKinds.Alias, tab.RoiOutputs);
-		Assert.Equal("Only airways that cross the region, each with all of its fixes.", tab.RoiAliasEffect);
-		Assert.Contains(nameof(AirwaysViewModel.RoiOutputs), changed);
-		Assert.Contains(nameof(AirwaysViewModel.RoiAliasEffect), changed);
+		Assert.Equal(SubServiceOutputKinds.Geojson | SubServiceOutputKinds.Alias, tab.AreaOutputs);
+		Assert.StartsWith("With ROI picked, only airways that cross the ROI", tab.AreaAliasNote, StringComparison.Ordinal);
+		Assert.Contains(nameof(AirwaysViewModel.AreaOutputs), changed);
+		Assert.Contains(nameof(AirwaysViewModel.AreaAliasNote), changed);
 	}
 
 	/// <summary>An unknown saved split (a typo, or a number) falls back to High and Low files.</summary>

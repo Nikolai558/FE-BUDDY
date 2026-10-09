@@ -41,7 +41,8 @@ Open **Settings**:
 2. **Default Output Directory** - where your files go: `Desktop\FE-Buddy_Output` to start, with a
    folder per cycle such as `AIRAC_2610`.
 3. **Default Region of Interest** - press **Set ROI…**, drag a box a little bigger than your ARTCC,
-   and press **Use this ROI**. Skip it and nothing is left out.
+   and press **Use this ROI**. The tabs then start on it, except those that pick ARTCCs, which start
+   on yours. Skip it and they start on **Everything**; each tab's **Area** card changes it.
 4. Press **Save**.
 
 ## 4. Your first run

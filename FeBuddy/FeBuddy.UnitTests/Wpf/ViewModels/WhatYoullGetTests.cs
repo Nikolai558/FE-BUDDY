@@ -696,7 +696,10 @@ public sealed class WhatYoullGetTests : IDisposable
 
 		Assert.Equal(
 			[
-				"Every operator in the FAA's telephony pages, except expired U.S. special call signs",
+				"Every operator with a 3LD and telephony in FAA JO 7340.2's "
+					+ "[ICAO register](https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/chap3_section_1.html) (Chapter 3, Section 1) and "
+					+ "[U.S. special call signs](https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/chap3_section_4.html) (Section 4), "
+					+ "except expired special call signs",
 				$"along with the {VatsimRadarVirtualAirlines.ListName}",
 			],
 			Lines(Assert.Single(new TelephonyViewModel().WhatYoullGet)));

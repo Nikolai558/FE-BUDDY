@@ -100,6 +100,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private bool _hasDtppData;
 	private string _dtppStatus = string.Empty;
 	private string _dtppPreviousStatus = string.Empty;
+	private bool _previousDtppAvailable = true;
 
 	private string _newAirportText = string.Empty;
 	private string _newProcedureText = string.Empty;
@@ -117,6 +118,15 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		Airports.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAirports));
 		ProcedureNames.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasProcedureNames));
 		AirportProcedures.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAirportProcedures));
+
+		// The cards that add to the area name which ROI it is.
+		PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName == nameof(OverrideRoi))
+			{
+				RaiseCardIntros();
+			}
+		};
 
 		ChartTypeToggles = [.. ChartTypeOptions
 			.Select(o => new ProcedureOptionToggle(o.Code, $"{o.Label} ({ShownCode(o.Code)})", isSelected: false, OnListToggleChanged))];
@@ -166,6 +176,8 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		OnPropertyChanged(nameof(GenerateChangesDocument));
 		OnPropertyChanged(nameof(GenerateProceduresJson));
 		OnPropertyChanged(nameof(GeneratesDocument));
+		OnPropertyChanged(nameof(DtppWarning));
+		RaiseCardIntros();
 	}
 
 	/// <inheritdoc />
@@ -186,14 +198,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <remarks>The cards that add to the area say what they add to, and are used only while it isn't everything.</remarks>
 	protected override void OnAreaChanged()
 	{
-		foreach (string name in new[]
-		{
-			nameof(AreListsUsed), nameof(AirportsIntro), nameof(ProcedureNamesIntro), nameof(AirportProceduresIntro),
-			nameof(ChartTypesIntro), nameof(NewAirportHint),
-		})
-		{
-			OnPropertyChanged(name);
-		}
+		OnPropertyChanged(nameof(AreListsUsed));
+		OnPropertyChanged(nameof(NewAirportHint));
+		RaiseCardIntros();
 	}
 
 	// ================= what the cards that add to the area say =================
@@ -208,37 +215,82 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	public const string ListsUnusedNote =
 		"\"Everything\" already includes every airport, so this card isn't used. Its list is kept in case you pick another area.";
 
-	/// <summary>The Airports card's first line: that its airports are added, even outside the area.</summary>
-	public string AirportsIntro => AddedEvenIfOutside("the airports you list here will be included.");
-
-	/// <summary>The Procedures at Any Airport card's first line.</summary>
-	public string ProcedureNamesIntro =>
-		AddedEvenIfOutside("the procedures you list here will be included at every airport they serve, such as an arrival shared by several airports.");
-
-	/// <summary>The Airport + Procedure card's first line.</summary>
-	public string AirportProceduresIntro => AddedEvenIfOutside("the airport and procedure pairs you add here will be included.");
-
-	/// <summary>The Chart Types card's line: which charts the types narrow, for the area picked.</summary>
-	public string ChartTypesIntro => Area switch
-	{
-		SubServiceArea.Everything => "Only charts of the types you tick are included.",
-		SubServiceArea.None => "Only charts of the types you tick are included from the airports you list. "
-			+ "The procedures you list in Procedures at Any Airport and Airport + Procedure are always included.",
-		_ => $"Only charts of the types you tick are included from {OutsideOf()} and the airports you list. "
-			+ "The procedures you list in Procedures at Any Airport and Airport + Procedure are always included.",
-	};
+	/// <summary>
+	/// The note at the foot of each card whose options don't reach the chart recall alias file, shown
+	/// while that file is on.
+	/// </summary>
+	public const string ChartRecallNote = "The options in this card don't apply to `Faa_Chart_Recall.txt`.";
 
 	/// <summary>
-	/// A card's line about what it adds: <c>Even if outside the ROI, …</c>, or with no area to be
-	/// outside of, just what it adds, capitalised.
+	/// The Area card's note while the cards below can add to it: <c>... outside the facilities you
+	/// have chosen.</c>; <see langword="null"/> with Everything (they aren't used) or None (they are
+	/// all there is).
 	/// </summary>
-	private string AddedEvenIfOutside(string adds) =>
-		Area is SubServiceArea.Artccs or SubServiceArea.Roi
-			? $"Even if outside {OutsideOf()}, {adds}"
-			: char.ToUpperInvariant(adds[0]) + adds[1..];
+	public string? AreaNote => Area switch
+	{
+		SubServiceArea.Artccs => "The options available to you after this card will allow you to get data for procedures outside the facilities you have chosen.",
+		SubServiceArea.Roi => $"The options available to you after this card will allow you to get data for procedures outside {RoiShortName} you have set.",
+		_ => null,
+	};
 
-	/// <summary>The area the cards add to, as their lines name it: <c>the facilities you tick</c> or <c>the ROI</c>.</summary>
-	private string OutsideOf() => Area == SubServiceArea.Roi ? "the ROI" : "the facilities you tick";
+	/// <summary>The Airports card's first line: that its airports are added, even outside the area, and to which documents.</summary>
+	public string AirportsIntro => AddedEvenIfOutside("airports");
+
+	/// <summary>The Procedures at Any Airport card's first line.</summary>
+	public string ProcedureNamesIntro => AddedEvenIfOutside("procedures");
+
+	/// <summary>The Airport + Procedure card's first line.</summary>
+	public string AirportProceduresIntro => AddedEvenIfOutside("Airport + Procedure pairs");
+
+	/// <summary>
+	/// The Chart Types card's text: which documents the types narrow, then - while the cards that add
+	/// to the area are used - that the procedures listed by name are always included.
+	/// </summary>
+	public string ChartTypesIntro =>
+		$"Select the following chart types to be included in {DocumentsNamed("file", "files")}."
+		+ (AreListsUsed
+			? "\nNote: The procedures you list in Procedures at Any Airport and Airport + Procedure are always included, whatever their type."
+			: string.Empty);
+
+	/// <summary>
+	/// A card's line about what it adds: <c>Even if outside the facilities you selected, the airports
+	/// you list here will be included in the `Procedures.json` output.</c>, or with no area to be
+	/// outside of, just what it adds, capitalized.
+	/// </summary>
+	private string AddedEvenIfOutside(string what)
+	{
+		string adds = $"the {what} you list here will be included in {DocumentsNamed("output", "output")}.";
+
+		return Area is SubServiceArea.Artccs or SubServiceArea.Roi
+			? $"Even if outside {(Area == SubServiceArea.Roi ? RoiShortName : "the facilities")} you selected, {adds}"
+			: char.ToUpperInvariant(adds[0]) + adds[1..];
+	}
+
+	/// <summary>The documents that are on, as the cards name them: <c>the `Procedures.json` file</c>.</summary>
+	/// <param name="one">The word after one document, e.g. <c>file</c>.</param>
+	/// <param name="both">The word after both, e.g. <c>files</c>.</param>
+	private string DocumentsNamed(string one, string both) => (GenerateChangesDocument, GenerateProceduresJson) switch
+	{
+		(true, true) => $"the `Procedure_Changes.md` and `Procedures.json` {both}",
+		(true, false) => $"the `Procedure_Changes.md` {one}",
+		(false, true) => $"the `Procedures.json` {one}",
+		_ => "the documents",
+	};
+
+	/// <summary>Which ROI the area is, as the cards name it: <c>the default ROI</c> or <c>the ROI specific to Procedures</c>.</summary>
+	private string RoiShortName => OverrideRoi ? $"the ROI specific to {Title}" : "the default ROI";
+
+	/// <summary>Announces what the cards that add to the area say, after the area, the ROI, or the documents that are on change.</summary>
+	private void RaiseCardIntros()
+	{
+		foreach (string name in new[]
+		{
+			nameof(AreaNote), nameof(AirportsIntro), nameof(ProcedureNamesIntro), nameof(AirportProceduresIntro), nameof(ChartTypesIntro),
+		})
+		{
+			OnPropertyChanged(name);
+		}
+	}
 
 	/// <inheritdoc />
 	/// <remarks>Procedures writes no GeoJSON at all.</remarks>
@@ -260,11 +312,41 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <summary>Whether the selected cycle has a downloaded, parsed d-TPP Metafile. Only meaningful once <see cref="IsDtppKnown"/> is true.</summary>
 	public bool HasDtppData => _hasDtppData;
 
-	/// <summary>What the d-TPP Data card and the Preview Settings tab say about the metafile's availability.</summary>
+	/// <summary>What the Preview Settings tab says about the metafile's availability.</summary>
 	public string DtppStatus => _dtppKnown ? _dtppStatus : "Chart data appears once the selected cycle's data is loaded.";
 
-	/// <summary>The second d-TPP Data card line, about whether the previous cycle's metafile is available for deleted-procedure links.</summary>
+	/// <summary>Whether the previous cycle's metafile is available for deleted-procedure links.</summary>
 	public string DtppPreviousStatus => _dtppKnown ? _dtppPreviousStatus : string.Empty;
+
+	/// <summary>
+	/// What the amber card at the top of the tab says while the metafiles fall short: the selected
+	/// cycle's is missing (Procedures writes nothing), or the previous cycle's is (with
+	/// <c>Procedure_Changes.md</c> on, deleted procedures go unlinked); <see langword="null"/> while
+	/// all is well or before the metafile is known.
+	/// </summary>
+	public string? DtppWarning
+	{
+		get
+		{
+			if (!_dtppKnown)
+			{
+				return null;
+			}
+
+			List<string> lines = [];
+
+			if (!_hasDtppData)
+			{
+				lines.Add(_dtppStatus);
+			}
+			else if (!_previousDtppAvailable && GenerateChangesDocument)
+			{
+				lines.Add(_dtppPreviousStatus);
+			}
+
+			return lines.Count > 0 ? string.Join("\n", lines) : null;
+		}
+	}
 
 	/// <summary>
 	/// Called by the AIRAC Service screen whenever the selected cycle's d-TPP Metafile has been
@@ -336,6 +418,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			? $"Cycle {cycleId}: {airportCount:N0} airports, {procedureCount:N0} procedures, downloaded {downloadedLocal:d MMM yyyy}."
 			: $"Cycle {cycleId}'s metafile isn't out yet, or couldn't be downloaded. FE-Buddy checks again at each launch. Until then, Procedures writes none of its files.";
 
+		_previousDtppAvailable = previousAvailable;
 		_dtppPreviousStatus = previousAvailable
 			? $"Deleted procedures link to cycle {previousCycleId}'s charts."
 			: $"Cycle {previousCycleId}'s metafile isn't available, so deleted procedures are listed without a link.";
@@ -352,19 +435,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <summary>Whether the facility list has been built from the selected cycle yet.</summary>
 	public bool HasFacilities => Facilities.Count > 0;
-
-	/// <summary>What the Facilities card says about which facility is listed first in the documents.</summary>
-	public string PrimaryFacilityCaption
-	{
-		get
-		{
-			string? primary = NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey));
-
-			return primary is null
-				? "No facility is set in Settings ▸ Facility Profile, so facilities are listed alphabetically."
-				: $"{primary} is listed first in the documents, as your facility in Settings ▸ Facility Profile.";
-		}
-	}
 
 	// ================= airports =================
 
@@ -651,7 +721,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			}
 		}
 
-		OnPropertyChanged(nameof(PrimaryFacilityCaption));
 		OnPropertyChanged(nameof(NewAirportHint));
 
 		// The list was empty when this tab snapshotted itself at construction; re-take the
@@ -876,7 +945,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			_suppressListChanges = false;
 		}
 
-		RaiseOwnSettingProperties();
+		RaiseCardIntros();
 		ClearDirty();
 	}
 
@@ -1308,14 +1377,13 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		OnPropertyChanged(nameof(HasDtppData));
 		OnPropertyChanged(nameof(DtppStatus));
 		OnPropertyChanged(nameof(DtppPreviousStatus));
+		OnPropertyChanged(nameof(DtppWarning));
 		OnPropertyChanged(nameof(ProcedureNameOptions));
 		OnPropertyChanged(nameof(NewAirportHint));
 		OnPropertyChanged(nameof(NewProcedureHint));
 		OnPropertyChanged(nameof(PairAirportName));
 		OnPropertyChanged(nameof(PairEditorHint));
 	}
-
-	private void RaiseOwnSettingProperties() => OnPropertyChanged(nameof(PrimaryFacilityCaption));
 
 	private IEnumerable<string> SelectedFacilityIds() =>
 		Facilities.Count > 0

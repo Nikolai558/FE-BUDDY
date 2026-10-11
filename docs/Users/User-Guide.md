@@ -203,19 +203,20 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
 - **Outputs** (on or off on the General tab) - `Procedure_Changes.md` (what changed this cycle) and
   `Procedures.json` (every current chart) for the airports you pick, and `Faa_Chart_Recall.txt`
   ([chart recall commands](#faa-chart-recall-commands) for every chart at every airport, not just the
-  ones you pick).
-- **d-TPP Data** - the cycle's metafile, and whether a deleted chart can be linked to its last copy
-  (that needs the previous cycle's metafile).
-- **Area** - what the documents cover: **Facilities** (every airport of the ones you tick), **ROI**
-  (every airport inside it), **Everything** (every airport in the metafile), or **None**. Nothing is
-  clipped.
+  ones you pick). While `Faa_Chart_Recall.txt` is on, the cards below say they don't apply to it.
+- An amber box at the top says when the cycle's metafile is missing, or, with
+  `Procedure_Changes.md` on, when the previous cycle's is (deleted charts then go unlinked).
+- **Area** - which airports the documents cover: **Facilities** (every airport of the ones you
+  tick), **ROI** (every airport inside it), **Everything** (every airport in the metafile), or
+  **None**. Nothing is clipped.
 - **What the cards add** - even outside the area: the **Airports** you list (FAA or ICAO ID),
   **Procedures at Any Airport**, by name, and **Airport + Procedure** pairs. With **Everything** they
   aren't used, and keep their lists. **Chart Types** sets which kinds of chart a whole airport adds;
   a procedure picked by name is always included.
 - **Airports** takes a list: type or paste up to 100 IDs, separated by spaces, commas, or new lines,
   and press Enter or **Add**. Any it can't add stay in the box, with why underneath: not an airport
-  this cycle, already listed, or already included by the area.
+  this cycle, already listed, or already included by the area. **Procedures at Any Airport** takes
+  Enter or **Add** too.
 - **Procedures.json Fields** - the optional fields the JSON carries.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
@@ -256,8 +257,9 @@ the operator's card. Operators that share a command show a card each. Telephony 
     yours: the list VATSIM-Radar shows, built from GNG's fictional airlines and VATSIM-Radar's own
     additions. Runs download each part at most once a day; **Download the latest list** fetches both
     now. A part that can't be downloaded is named in amber, and its last copy is used.
-- **Telephony Data** - FAA Order JO 7340.2, Chapter 3, downloaded every run. Entries with no
-  three-letter designator or no telephony, and expired special call signs, are left out.
+- The operators come from FAA Order JO 7340.2, Chapter 3 (Sections 1 and 4, linked from What You'll
+  Get), downloaded every run. Entries with no three-letter designator or no telephony, and expired
+  special call signs, are left out.
 
 ### Wx Stations tab
 

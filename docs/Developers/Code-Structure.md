@@ -140,13 +140,14 @@ FeBuddy.Wpf/
 │                        SubServiceSettingsViewModel, GeojsonSubServiceViewModel,
 │                        ConversionTabViewModel and FileConversionTabViewModel, the Preview
 │                        Settings and Review tabs, the General tab's SubServiceRow, validation
-│                        (ServiceValidation, ServiceAreas), the card interfaces (IOutputSettings, …)
+│                        (ServiceValidation, ServiceAreas), the card interfaces (IAreaSettings, …)
 └── Views/               ShellWindow, TabbedServiceView (AIRAC Service), FileConversionsView, one view
     │                    per tab or conversion page, MapWorkspace (every map), the dialog windows
-    └── Cards/           the shared cards (Attention, What You'll Get, Outputs, Area, What Files Do
+    └── Cards/           the shared cards (Attention, What You'll Get, Area, What Files Do
                          You Want?, FE-Buddy Properties, CRC ERAM Defaults, Source Files, Run);
                          CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
-                         Defaults; and OutputStatusRow, an output's On/Off line
+                         Defaults; and OutputStatusRow, an output's On/Off line (the Outputs
+                         cards of Procedures and Telephony)
 ```
 
 ### How the screens are built

@@ -115,7 +115,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 
 	// ================= telephony data =================
 
-	/// <summary>What the Telephony Data card and the Preview Settings tab say about FE-Buddy's kept copies of the FAA pages.</summary>
+	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copies of the FAA pages.</summary>
 	public string TelephonyDataStatus => _telephonyDataStatus;
 
 	/// <summary>
@@ -551,13 +551,15 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	}
 
 	/// <inheritdoc />
-	/// <remarks>Nothing narrows Telephony; the virtual airlines are added on top.</remarks>
+	/// <remarks>Nothing narrows Telephony; the virtual airlines are added on top. The first line links the FAA pages it reads.</remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
 		int count = VirtualAirlines.Count;
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, "Every operator in the FAA's telephony pages, except expired U.S. special call signs")
+			.Add(SummaryJoin.First,
+				$"Every operator with a 3LD and telephony in FAA JO 7340.2's [ICAO register]({TelephonyFiles.RegisterUrl}) (Chapter 3, Section 1) and "
+				+ $"[U.S. special call signs]({TelephonyFiles.SpecialCallSignsUrl}) (Section 4), except expired special call signs")
 			.Add(SummaryJoin.AlongWith, count == 0 ? null : count == 1 ? "your virtual airline" : $"your {count} virtual airlines")
 			.Add(SummaryJoin.AlongWith, IncludeVatsimRadarList ? $"the {VatsimRadarVirtualAirlines.ListName}" : null)
 			.ToList());

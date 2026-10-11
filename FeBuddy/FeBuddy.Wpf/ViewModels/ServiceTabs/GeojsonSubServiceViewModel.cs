@@ -52,7 +52,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// </para>
 /// </remarks>
 public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
-	IOutputSettings, IGeojsonFileChoices, IFebPropertySettings, ICrcDefaultsChoice, ICrcDefaultsSettings, IAreaSettings
+	IGeojsonFileChoices, IFebPropertySettings, ICrcDefaultsChoice, ICrcDefaultsSettings, IAreaSettings
 {
 	private const string CrcDefaultsIncompleteMessage =
 		"Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or take CRC-ERAM defaults off those files at the top of the CRC ERAM Defaults card.";
@@ -103,11 +103,11 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	public ISubServiceOutputs Outputs => _outputs;
 
-	/// <inheritdoc />
+	/// <summary>Whether the sub-service's alias file is written.</summary>
 	/// <remarks>Turned on and off on the General tab.</remarks>
 	public bool GenerateAliasFile => HasAliasFile && _outputs.Alias;
 
-	/// <inheritdoc />
+	/// <summary>Whether the sub-service's GeoJSON files are written.</summary>
 	/// <remarks>Turned on and off on the General tab. Always off for a sub-service with no GeoJSON choice.</remarks>
 	public virtual bool GenerateGeojson => _outputs.Geojson;
 

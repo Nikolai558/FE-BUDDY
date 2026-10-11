@@ -33,6 +33,12 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - NAVAIDs: `Navaids.txt` now has every NAVAID type. The **NAVAID Types** card narrows the GeoJSON only.
 - Clearer wording on the Departures and Arrivals tabs. Their Outputs cards are gone: their details are
   in What You'll Get.
+- Clearer wording on the Procedures and Telephony tabs. Their d-TPP Data and Telephony Data cards
+  are gone: a missing d-TPP Metafile now shows in an amber box at the top of Procedures, and
+  Telephony's What You'll Get links the FAA pages it reads.
+- Procedures: the cards that add to the area name the documents they add to, and while
+  `Faa_Chart_Recall.txt` is on, say they don't apply to it. **Procedures at Any Airport** takes ENTER
+  as well as **Add**.
 - Departures and Arrivals: **Amendment Date** now asks first whether to keep only recently amended
   procedures. It names the selected cycle, and What You'll Get names the oldest cycle kept ("in the
   last 3 cycles (since cycle 2608)").

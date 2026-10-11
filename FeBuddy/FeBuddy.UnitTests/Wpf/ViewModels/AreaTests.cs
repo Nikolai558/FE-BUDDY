@@ -5,6 +5,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
@@ -358,24 +359,81 @@ public sealed class AreaTests : IDisposable
 
 		tab.Area = SubServiceArea.Artccs;
 
+		const string Both = "the `Procedure_Changes.md` and `Procedures.json` output";
 		Assert.Contains(nameof(ProceduresViewModel.AirportsIntro), changed);
-		Assert.Equal("Even if outside the facilities you tick, the airports you list here will be included.", tab.AirportsIntro);
-		Assert.Equal(
-			"Even if outside the facilities you tick, the procedures you list here will be included at every airport they serve, such as an arrival shared by several airports.",
-			tab.ProcedureNamesIntro);
-		Assert.Equal("Even if outside the facilities you tick, the airport and procedure pairs you add here will be included.", tab.AirportProceduresIntro);
-		Assert.StartsWith("Only charts of the types you tick are included from the facilities you tick and the airports you list.", tab.ChartTypesIntro, StringComparison.Ordinal);
+		Assert.Contains(nameof(ProceduresViewModel.AreaNote), changed);
+		Assert.Equal($"Even if outside the facilities you selected, the airports you list here will be included in {Both}.", tab.AirportsIntro);
+		Assert.Equal($"Even if outside the facilities you selected, the procedures you list here will be included in {Both}.", tab.ProcedureNamesIntro);
+		Assert.Equal($"Even if outside the facilities you selected, the Airport + Procedure pairs you list here will be included in {Both}.", tab.AirportProceduresIntro);
+		Assert.StartsWith("Select the following chart types to be included in the `Procedure_Changes.md` and `Procedures.json` files.\nNote:", tab.ChartTypesIntro, StringComparison.Ordinal);
+		Assert.EndsWith("outside the facilities you have chosen.", tab.AreaNote, StringComparison.Ordinal);
 
 		tab.Area = SubServiceArea.Roi;
 
-		Assert.Equal("Even if outside the ROI, the airports you list here will be included.", tab.AirportsIntro);
-		Assert.StartsWith("Only charts of the types you tick are included from the ROI and the airports you list.", tab.ChartTypesIntro, StringComparison.Ordinal);
+		Assert.Equal($"Even if outside the default ROI you selected, the airports you list here will be included in {Both}.", tab.AirportsIntro);
+		Assert.EndsWith("outside the default ROI you have set.", tab.AreaNote, StringComparison.Ordinal);
+
+		changed.Clear();
+		tab.OverrideRoi = true;
+
+		Assert.Contains(nameof(ProceduresViewModel.AirportsIntro), changed);
+		Assert.StartsWith("Even if outside the ROI specific to Procedures you selected,", tab.AirportsIntro, StringComparison.Ordinal);
+		Assert.EndsWith("outside the ROI specific to Procedures you have set.", tab.AreaNote, StringComparison.Ordinal);
 
 		tab.Area = SubServiceArea.None;
 
-		Assert.Equal("The airports you list here will be included.", tab.AirportsIntro);
-		Assert.StartsWith("Only charts of the types you tick are included from the airports you list.", tab.ChartTypesIntro, StringComparison.Ordinal);
+		Assert.Equal($"The airports you list here will be included in {Both}.", tab.AirportsIntro);
+		Assert.Null(tab.AreaNote);
 		Assert.True(tab.AreListsUsed);
+	}
+
+	/// <summary>
+	/// The amber card at the top speaks only while a metafile falls short: the selected cycle's is
+	/// missing, or - with <c>Procedure_Changes.md</c> on - the previous cycle's is.
+	/// </summary>
+	[Fact]
+	public void procedures_warn_while_a_metafile_falls_short()
+	{
+		ProceduresViewModel tab = Procedures();
+		Assert.Null(tab.DtppWarning);
+
+		tab.SetDtppData("2611", null, "2610", previousAvailable: true, downloadedLocal: null);
+
+		Assert.StartsWith("Cycle 2611's metafile isn't out yet", tab.DtppWarning, StringComparison.Ordinal);
+
+		tab.SetDtppData("2611", new DtppMetafileDataCollection(), "2610", previousAvailable: false, downloadedLocal: DateTime.Now);
+
+		Assert.Equal("Cycle 2610's metafile isn't available, so deleted procedures are listed without a link.", tab.DtppWarning);
+
+		Attach(tab, AiracSubServices.ProceduresKey, Json);
+
+		Assert.Null(tab.DtppWarning);
+
+		tab.SetDtppData("2611", new DtppMetafileDataCollection(), "2610", previousAvailable: true, downloadedLocal: DateTime.Now);
+
+		Assert.Null(tab.DtppWarning);
+	}
+
+	/// <summary>The cards name only the documents that are on, and the chart recall note is for the alias file.</summary>
+	[Fact]
+	public void procedures_cards_name_the_documents_that_are_on()
+	{
+		ProceduresViewModel tab = Procedures(Json);
+		tab.Area = SubServiceArea.None;
+
+		Assert.Equal("The airports you list here will be included in the `Procedures.json` output.", tab.AirportsIntro);
+		Assert.StartsWith("Select the following chart types to be included in the `Procedures.json` file.", tab.ChartTypesIntro, StringComparison.Ordinal);
+
+		tab = Procedures(Changes | SubServiceOutputKinds.Alias);
+		tab.Area = SubServiceArea.None;
+
+		Assert.Equal("The airports you list here will be included in the `Procedure_Changes.md` output.", tab.AirportsIntro);
+		Assert.Contains("`Faa_Chart_Recall.txt`", ProceduresViewModel.ChartRecallNote, StringComparison.Ordinal);
+
+		tab = Procedures(SubServiceOutputKinds.Alias);
+		tab.Area = SubServiceArea.None;
+
+		Assert.Equal("The airports you list here will be included in the documents.", tab.AirportsIntro);
 	}
 
 	/// <summary>Everything already has every airport: the cards aren't used, keep their lists, and aren't sent.</summary>
@@ -388,7 +446,8 @@ public sealed class AreaTests : IDisposable
 		tab.Area = SubServiceArea.Everything;
 
 		Assert.False(tab.AreListsUsed);
-		Assert.Equal("Only charts of the types you tick are included.", tab.ChartTypesIntro);
+		Assert.Equal("Select the following chart types to be included in the `Procedure_Changes.md` and `Procedures.json` files.", tab.ChartTypesIntro);
+		Assert.Null(tab.AreaNote);
 		Assert.Equal(["CLE"], tab.Airports);
 		Assert.DoesNotContain("Airports", tab.BuildSettingsBlock().Keys);
 		Assert.DoesNotContain("Facilities", tab.BuildSettingsBlock().Keys);

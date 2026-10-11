@@ -51,7 +51,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// Its data comes from two places besides the selected cycle's NASR data: the FAA d-TPP Metafile
 /// (see <see cref="SetDtppData"/>), which may not be published yet, and the facility saved in
-/// Settings ▸ Facility Profile (<see cref="SettingsViewModel.ArtccKey"/>), read fresh whenever it
+/// Settings ▸ Facility (<see cref="SettingsViewModel.ArtccKey"/>), read fresh whenever it
 /// is needed rather than copied into this tab's own config.
 /// </para>
 /// <para>
@@ -1415,11 +1415,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		}
 	}
 
-	/// <summary>Which facility the documents list first: the user's own, from Settings ▸ Facility Profile.</summary>
+	/// <summary>Which facility the documents list first: the user's own, from Settings ▸ Facility.</summary>
 	private static string DescribePrimaryFacility() =>
 		NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey)) is { } primary
-			? $"{primary} (Settings ▸ Facility Profile), then the rest alphabetically"
-			: "Alphabetically (no facility set in Settings ▸ Facility Profile)";
+			? $"{primary} (Settings ▸ Facility), then the rest alphabetically"
+			: "Alphabetically (no facility set in Settings ▸ Facility)";
 
 	/// <summary>What Add does with one entry in the Airports card's Add box.</summary>
 	private enum AirportEntryOutcome

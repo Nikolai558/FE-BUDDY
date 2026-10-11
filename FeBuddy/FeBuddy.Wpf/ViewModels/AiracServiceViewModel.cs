@@ -460,7 +460,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			SelectedCycle = cycle,
 			OutputDirectory = OutputPreferences.Directory,
 			AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder,
-			// Settings ▸ Facility Profile: listed first in the duplicate alias report.
+			// Settings ▸ Facility: listed first in the duplicate alias report.
 			PrimaryFacility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
 				? facility.ToUpperInvariant()
 				: null,

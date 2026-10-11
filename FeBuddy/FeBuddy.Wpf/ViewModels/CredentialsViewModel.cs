@@ -48,12 +48,6 @@ public sealed class CredentialsViewModel : ObservableObject
 		Refresh();
 	}
 
-	/// <summary>Explains the card under its heading.</summary>
-	public const string Description =
-		"Sign-ins FE-Buddy uses to download from protected websites, such as a private GitHub repository. They are " +
-		"kept in Windows Credential Manager, encrypted with your Windows sign-in - never in a settings profile or a " +
-		"settings export - and a saved password or token is never shown again. Changes here are saved straight away.";
-
 	/// <summary>The saved credentials, by name.</summary>
 	public ObservableCollection<CredentialRow> Rows { get; } = [];
 

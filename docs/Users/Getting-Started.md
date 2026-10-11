@@ -37,7 +37,7 @@ doing. Later launches reuse the download and are much quicker.
 
 Open **Settings**:
 
-1. **Facility Profile** - choose your ARTCC. The tabs that pick ARTCCs start with it ticked.
+1. **Facility** - choose your ARTCC. The tabs that pick ARTCCs start with it ticked.
 2. **Default Output Directory** - where your files go: `Desktop\FE-Buddy_Output` to start, with a
    folder per cycle such as `AIRAC_2610`.
 3. **Default Region of Interest** - press **Set ROI…**, drag a box a little bigger than your ARTCC,

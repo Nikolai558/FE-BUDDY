@@ -33,7 +33,7 @@ public sealed record AiracServiceSettings
 	public ExistingOutputAction ExistingOutput { get; init; } = ExistingOutputAction.Overwrite;
 
 	/// <summary>
-	/// The user's own ARTCC (Settings ▸ Facility Profile), listed first in
+	/// The user's own ARTCC (Settings ▸ Facility), listed first in
 	/// <c>Duplicate_Alias_Commands.txt</c>; <see langword="null"/> lists every ARTCC alphabetically.
 	/// </summary>
 	public string? PrimaryFacility { get; init; }

@@ -453,29 +453,32 @@ you've read). An import asks where the settings go - a new profile, added to the
 in place of its settings - and shows what will change first.
 
 - **Settings Profile** - a profile is a whole set of settings: keep one for each facility, or one
-  for testing. Choose one in the list to switch to it; **New…** makes one (a copy of the profile in
-  use, or every default), **Rename…** and **Delete…** act on the one in use. The update channel,
-  which News you've read and FE-Buddy's GitHub token are the same in every profile.
-- **Facility Profile** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first
-  in reports), and the **Default Output Directory** (the Desktop to start, with a `FE-Buddy_Output`
+  for each kind of run (say, GeoJSON every few cycles and aliases every cycle). Choose one in the
+  list to switch to it; **New…** makes one (a copy of the profile in use, or every default),
+  **Rename…** and **Delete…** act on the one in use. The update channel, which News you've read,
+  FE-Buddy's GitHub token and your saved credentials are the same in every profile.
+- **Facility** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first in
+  reports), and the **Default Output Directory** (the Desktop to start, with a `FE-Buddy_Output`
   folder inside unless you untick it).
 - **Default Region of Interest** - **Set ROI…** opens the map. A tab whose area is **ROI** uses it,
   unless you pick **An ROI specific to *tab*** there.
 - **GeoJSON Files** - **Maximum Coordinate Precision**: 5, 6 (the default) or 7 decimal places, or
-  **Do not round**. **File Layout**: single line, or pretty print to read in a text editor.
+  **Do not round**. **File Layout**: single line (much smaller files), or pretty-print to read in a
+  text editor.
 - **Credentials** - tokens and passwords for protected downloads, such as a private GitHub alias
   file. Kept in Windows Credential Manager and removed when FE-Buddy is uninstalled. See the
   [GitHub token guide](GitHub-Token-Guide.md).
 - **FE-Buddy's GitHub Requests** - advanced: a GitHub token for FE-Buddy's own update and News
   checks, to get past GitHub's limit of 60 requests an hour. Most people never need it.
-- **Updates** - the update channel (Stable suits almost everyone). It's set when FE-Buddy first
-  starts and only changes here - updating never changes it. **Check for updates now** and **Open the
-  Releases Page**.
-- **Reset FE-Buddy…** - start over as if newly installed. Downloaded data, logs and settings backups
-  always go; you choose whether to keep your settings and credentials. Your output folder is never
-  touched.
-- **Uninstall FE-Buddy…** (installed copies only) - the same as uninstalling it from Windows
-  Settings, with the option to save a copy of your settings first.
+- **Updates / Update Channel** - the update channel (Stable suits almost everyone; Beta and Alpha
+  are for development, not early access). It's set when FE-Buddy first starts and only changes
+  here - updating never changes it. **Check for updates now** and **Open the Releases Page**.
+- **Reset / Uninstall**:
+  - **Reset FE-Buddy…** - start over as if newly installed. Downloaded data, logs and settings
+    backups always go; you choose whether to keep your settings and credentials. Your output folder
+    is never touched.
+  - **Uninstall FE-Buddy…** (installed copies only) - the same as uninstalling it from Windows
+    Settings, with the option to save a copy of your settings first.
 
 ## Info
 

@@ -100,7 +100,7 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and 
 | `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
 | `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
-| `UserArtccId` | the Settings ▸ Facility Profile ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedures until each is first saved | none |
+| `UserArtccId` | the Settings ▸ Facility ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedures until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
 | `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
 | `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
@@ -189,7 +189,7 @@ none of them.
   `FilterByRoi = Y` and the tab's own corners, or the default ROI's. The ARTCCs and the ROI are saved
   whichever area is picked.
 - A tab that has never saved an area starts on what its other settings mean
-  (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Facility Profile ARTCC) if it has
+  (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Settings ▸ Facility ARTCC) if it has
   any, otherwise the ROI if it has its own or the default ROI is on, otherwise `Everything`
   (Procedures: the ROI only with the old `IncludeRoiAirports`, otherwise `None`).
 - A block without `Area` (the harness) means the same: its ARTCC list if it has one, otherwise the
@@ -336,7 +336,7 @@ unknown-key warning).
 | `GenerateAliasFile` | `Outputs.<Departures/Arrivals>.Alias` (General tab) | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | | `Y` / `N` | `Y` |
 | `IncludeObstacleDepartures` | | `Y` / `N` - Departures only | `Y` |
-| `ArtccFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
+| `ArtccFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `AmendmentFilter` | `Amendment.Filter` | `None`, `Cycles`, `Days`, `Date` | `None` |
 | `AmendedWithinCycles` | `Amendment.WithinCycles` | 1-1000 (1 = the selected cycle); **required** with `Cycles` | saved: `1` |
 | `AmendedWithinDays` | `Amendment.WithinDays` | 1-36500, back from today; **required** with `Days` | saved: `30` |
@@ -372,7 +372,7 @@ unknown-key warning).
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
 | `OutputBy` | | `HighLow`, `HighLowUnlimited`, `ArtccAltitude` | `HighLow` |
-| `LocationFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
+| `LocationFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `SplitAtAntimeridian` | | `Y` / `N` | `Y` |
 
 - No `GenerateGeojson`, `GenerateAliasFile` or `Emit…`: it always writes Lines only.
@@ -414,7 +414,7 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `GenerateChangesDocument` | `Outputs.Procedures.ProcedureChanges` (General tab) | `Y` / `N` - `Procedure_Changes.md` | `Y` |
 | `GenerateProceduresJson` | `Outputs.Procedures.ProceduresJson` (General tab) | `Y` / `N` - `Procedures.json` | `Y` |
 | `GenerateAliasFile` | `Outputs.Procedures.Alias` (General tab) | `Y` / `N` - `Faa_Chart_Recall.txt` | `Y` |
-| `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
+| `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
 | `Procedures` | | list of procedure names, included wherever charted | none |

@@ -37,9 +37,9 @@ using FeBuddy.Versioning.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// SYSTEM ▸ Settings. Section order: Settings Profile, Facility Profile, Default Region of Interest,
-/// GeoJSON Files, Credentials, FE-Buddy's GitHub Requests, Updates, Reset FE-Buddy (with Uninstall
-/// FE-Buddy… across from its button). Every value persists to the settings profile in use
+/// SYSTEM ▸ Settings. Section order: Settings Profile, Facility, Default Region of Interest,
+/// GeoJSON Files, Credentials, FE-Buddy's GitHub Requests, Updates / Update Channel, Reset /
+/// Uninstall. Every value persists to the settings profile in use
 /// (<see cref="UserConfigFile"/>), except credentials, which live in Windows Credential Manager and
 /// are saved at once (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the
 /// chosen token's id. The Settings Profile card switches, makes, renames and deletes profiles at
@@ -361,12 +361,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// </summary>
 	public ICommand SetPrecisionCommand { get; }
 
-	/// <summary>Explains the file-layout choice under its heading.</summary>
-	public const string FileLayoutDescription =
-		"How every GeoJSON file FE-Buddy writes is laid out. Single line keeps files small; pretty print " +
-		"puts each property on its own line so a file is easy to read in a text editor. Applies to all " +
-		"GeoJSON output, whichever service writes it.";
-
 	/// <summary>
 	/// <see langword="true"/> to write GeoJSON pretty printed; <see langword="false"/> (the default)
 	/// for single line. Takes effect for the rest of the session as soon as Settings is saved.
@@ -501,12 +495,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	// ================= 6. UPDATES =================
 
-	/// <summary>Explains the channels under the Updates heading: each one includes every channel above it.</summary>
-	public const string UpdatesDescription =
-		"Choose the earliest stage of release you want to be offered. You are also offered every release that is further " +
-		"along, so each channel includes the ones listed above it: Release Candidate offers release candidates and stable " +
-		"releases, and Alpha offers every release.";
-
 	/// <summary>What choosing Stable offers.</summary>
 	public const string StableOffers = "Stable releases only";
 
@@ -523,7 +511,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		"becomes the next stable release.";
 
 	/// <summary>What choosing Beta offers.</summary>
-	public const string BetaOffers = "Betas, release candidates and stable releases";
+	public const string BetaOffers = "Betas, release candidates, and stable releases";
 
 	/// <summary>What a beta is, for the Beta tooltip.</summary>
 	public const string BetaDescription =
@@ -531,7 +519,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		"fixed yet.";
 
 	/// <summary>What choosing Alpha offers.</summary>
-	public const string AlphaOffers = "Every release: alphas, betas, release candidates and stable releases";
+	public const string AlphaOffers = "Every release: alphas, betas, release candidates, and stable releases";
 
 	/// <summary>What an alpha is, for the Alpha tooltip.</summary>
 	public const string AlphaDescription =
@@ -606,12 +594,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	public ICommand ImportCommand { get; }
 
 	// ================= reset =================
-
-	/// <summary>Explains Reset FE-Buddy, on its card.</summary>
-	public const string ResetDescription =
-		"Start over as if FE-Buddy had just been installed. It deletes the AIRAC, Telephony and Wx Station " +
-		"data it has downloaded and its logs, and - if you choose - your settings and saved credentials, " +
-		"then restarts and downloads the AIRAC data again. Files in your output folder are not touched.";
 
 	/// <summary>Opens the Reset FE-Buddy window, and resets and restarts FE-Buddy once confirmed.</summary>
 	public ICommand ResetCommand { get; }

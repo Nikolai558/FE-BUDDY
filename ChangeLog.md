@@ -62,6 +62,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - FE-Buddy now warns when a GitHub token is within 57 days of expiring: in the run, in Settings ▸
   Credentials ▸ **Check**, and under **Systems**, which also flags a token GitHub rejects. Saved GitHub
   tokens are checked in the background at startup.
+- Clearer wording on the Settings Profile, GeoJSON Files, Credentials, and Updates cards. Facility
+  Profile is now **Facility**, Updates is **Updates / Update Channel**, and Reset FE-Buddy is
+  **Reset / Uninstall**, with its two buttons one above the other.
 
 ---
 

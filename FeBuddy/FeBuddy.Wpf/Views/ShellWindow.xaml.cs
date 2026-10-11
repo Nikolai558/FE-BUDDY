@@ -4,6 +4,7 @@ using System.Windows.Threading;
 
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Wpf.Behaviors;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels;
@@ -12,8 +13,9 @@ namespace FeBuddy.Wpf.Views;
 
 /// <summary>
 /// The main window. See ShellWindow.xaml. Its code-behind is limited to window concerns: the
-/// custom caption buttons, keeping the maximised window inside the work area, and the brand
-/// mark's clicks. Everything else is data-bound to <see cref="ShellViewModel"/>.
+/// custom caption buttons, keeping the maximised window inside the work area, the brand mark's
+/// clicks, and building File Conversions ahead of its first open. Everything else is data-bound to
+/// <see cref="ShellViewModel"/>.
 /// </summary>
 public partial class ShellWindow : Window
 {
@@ -33,6 +35,37 @@ public partial class ShellWindow : Window
 		DataContext = new ShellViewModel();
 		MaximizeToWorkArea.Attach(this);
 		StateChanged += OnStateChanged;
+		ContentRendered += (_, _) => Dispatcher.InvokeAsync(PrepareFileConversions, DispatcherPriority.ApplicationIdle);
+	}
+
+	/// <summary>
+	/// Builds the File Conversions screen, then its first page, off screen, while FE-Buddy is idle after
+	/// it opens. The first time WPF shows a screen, it loads and compiles every control on it, which
+	/// made File Conversions pause on its first open; built here first, it opens at once.
+	/// </summary>
+	private void PrepareFileConversions()
+	{
+		if (DataContext is not ShellViewModel { FileConversionsNav.ViewModel: FileConversionsViewModel conversions })
+		{
+			return;
+		}
+
+		Prepare(new FileConversionsView { DataContext = conversions });
+		Dispatcher.InvokeAsync(() => Prepare(new DatToGeojsonView { DataContext = conversions.Conversions[0] }), DispatcherPriority.ApplicationIdle);
+
+		void Prepare(FrameworkElement view)
+		{
+			try
+			{
+				view.Measure(new Size(Math.Max(ActualWidth, 800), Math.Max(ActualHeight, 600)));
+				view.Arrange(new Rect(view.DesiredSize));
+			}
+			catch (Exception ex)
+			{
+				// Only a head start: the screen is built again when it is opened.
+				AppLog.Warning("Shell", $"Could not build {view.GetType().Name} ahead of its first open: {ex.Message}");
+			}
+		}
 	}
 
 	private void OnMinimize(object sender, RoutedEventArgs e)

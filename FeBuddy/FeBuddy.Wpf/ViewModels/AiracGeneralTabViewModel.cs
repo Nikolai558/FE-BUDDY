@@ -188,9 +188,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("Cycle", SelectedCycleLabel),
-			new ServicePreviewRow("Sub-services", included.Length == 0 ? "none" : string.Join(", ", included)),
+			new ServicePreviewRow("Sub-services", included.Length == 0 ? "None" : string.Join("\n", included)),
 			new ServicePreviewRow("Output folder",
-				OutputPreferences.CycleDirectory(AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId)),
+				$"`{OutputPreferences.CycleDirectory(AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId)}`"),
 		];
 
 		return [new ServicePreviewSection("General", rows)];

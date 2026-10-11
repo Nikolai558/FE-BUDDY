@@ -239,7 +239,8 @@ Say, Preferred Routes:
    joined by a `SummaryJoin` chip so the block reads as one sentence (`SummaryLines` words a
    narrowing "but only" or "and only" by where it falls), with any `Includes` lines under "Outputs
    include", then the `Files` it writes (`SummaryFile`: a name and what goes in it) and any `Notes`,
-   also used by its `BuildPreviewSummary()`); and, in `AiracServiceViewModel`, a tab accessor
+   also used by its `BuildPreviewSummary()`, with `PreviewRows(…)` under it for the settings What
+   You'll Get leaves out); and, in `AiracServiceViewModel`, a tab accessor
    (`TabFor<PreferredRoutesViewModel>(…)`) and the line that puts its `BuildSettingsBlock()` into the
    run's settings. Card text can put a file name between backticks to show it as code, and a
    `[text](https://…)` link: `bhv:InlineCode`, which `ctl:Option` descriptions use too.

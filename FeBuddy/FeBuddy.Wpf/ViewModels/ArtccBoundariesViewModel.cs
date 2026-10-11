@@ -202,19 +202,13 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
-	{
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
-			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
-			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		return [new ServicePreviewSection("ARTCC Boundaries", rows) { WhatYoullGet = WhatYoullGet }];
-	}
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
+	[
+		new ServicePreviewSection("ARTCC Boundaries", PreviewRows(new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No")))
+		{
+			WhatYoullGet = WhatYoullGet,
+		},
+	];
 
 	/// <inheritdoc />
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
@@ -375,15 +369,6 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 		"HIGH" => 0,
 		"LOW" => 1,
 		_ => 2,
-	};
-
-	/// <summary>The "GeoJSON files" preview row: what the current file layout produces.</summary>
-	private string DescribeGeojsonFiles() => _outputBy switch
-	{
-		ArtccBoundaryOutputBy.HighLow => "High and Low (UNLIMITED boundaries in both)",
-		ArtccBoundaryOutputBy.HighLowUnlimited => "High, Low, and Unlimited",
-		ArtccBoundaryOutputBy.ArtccAltitude => "One file per ARTCC and altitude",
-		_ => string.Empty,
 	};
 
 	/// <summary>

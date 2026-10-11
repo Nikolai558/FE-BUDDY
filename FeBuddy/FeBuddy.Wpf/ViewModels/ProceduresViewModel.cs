@@ -789,13 +789,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("Documents", DescribeDocuments()),
-			new ServicePreviewRow("Facilities listed first", DescribePrimaryFacility()),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("d-TPP data", DtppStatus),
-		];
+		List<ServicePreviewRow> rows = PreviewRows();
+		rows.Add(new ServicePreviewRow("Facilities listed first", DescribePrimaryFacility()));
+		rows.Add(new ServicePreviewRow("d-TPP data", DtppStatus));
 
 		return [new ServicePreviewSection("Procedures", rows) { WhatYoullGet = WhatYoullGet }];
 	}
@@ -1417,15 +1413,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 			yield return new ProcedureAirportPickItem(airport, procedure, $"{airport} — {procedure}");
 		}
-	}
-
-	private string DescribeDocuments()
-	{
-		List<string> docs = [];
-		if (GenerateChangesDocument) docs.Add("Procedure_Changes.md");
-		if (GenerateProceduresJson) docs.Add("Procedures.json");
-
-		return docs.Count > 0 ? string.Join(", ", docs) : "None";
 	}
 
 	/// <summary>Which facility the documents list first: the user's own, from Settings ▸ Facility Profile.</summary>

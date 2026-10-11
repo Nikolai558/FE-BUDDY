@@ -126,18 +126,8 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
-	{
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
-			new ServicePreviewRow("Station data", StationDataStatus),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		return [new ServicePreviewSection("Wx Stations", rows) { WhatYoullGet = WhatYoullGet }];
-	}
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
+		[new ServicePreviewSection("Wx Stations", [new ServicePreviewRow("Station data", StationDataStatus), .. PreviewRows()]) { WhatYoullGet = WhatYoullGet }];
 
 	/// <inheritdoc />
 	/// <remarks>Names where the stations come from, since it isn't the cycle's NASR data.</remarks>
@@ -206,16 +196,5 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 			yield return new OutputFileOption(WxStationOutputFiles.Text, "Every station", "Text",
 				"the Wx Stations Text file", IsGeojson: true, [(WxStationOutputFiles.AllClass, EramFieldKind.Text)]);
 		}
-	}
-
-	// ================= helpers =================
-
-	private string DescribeGeojsonFiles()
-	{
-		List<string> kinds = [];
-		if (EmitSymbols) kinds.Add("Symbols");
-		if (EmitText) kinds.Add("Text");
-
-		return kinds.Count > 0 ? string.Join(", ", kinds) : "None";
 	}
 }

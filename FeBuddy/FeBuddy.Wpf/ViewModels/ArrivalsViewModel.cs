@@ -321,28 +321,8 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
-	{
-		List<string> outputs = [];
-		if (GenerateGeojson) outputs.Add("GeoJSON");
-		if (GenerateAliasFile) outputs.Add("Alias file (Arrivals.txt)");
-
-		List<string> geojsonFiles = [];
-		if (EmitLines) geojsonFiles.Add("Lines");
-		if (EmitSymbols) geojsonFiles.Add("Symbols");
-		if (EmitText) geojsonFiles.Add("Text");
-
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
-			new ServicePreviewRow("GeoJSON files", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
-			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		return [new ServicePreviewSection("Arrivals", rows) { WhatYoullGet = WhatYoullGet }];
-	}
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
+		[new ServicePreviewSection("Arrivals", PreviewRows()) { WhatYoullGet = WhatYoullGet }];
 
 	/// <inheritdoc />
 	/// <remarks>

@@ -775,34 +775,47 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		ValidateArea(validation);
 	}
 
-	/// <summary>The files that get CRC-ERAM defaults, for the Preview Settings tab.</summary>
-	/// <returns>e.g. <c>Airways_High_Lines</c>, or <c>None</c>.</returns>
-	protected string DescribeCrcDefaults() => DescribeFiles(CrcFiles());
+	/// <summary>
+	/// The Preview Settings rows under a tab's What You'll Get: what that summary leaves out. The
+	/// ROI's corners while the area is the ROI, then - while the tab writes GeoJSON - the tab's own
+	/// <paramref name="geojsonRows"/>, its FE-Buddy properties and its CRC ERAM defaults. The area
+	/// itself and the files are in What You'll Get already.
+	/// </summary>
+	/// <param name="geojsonRows">The tab's own GeoJSON settings, e.g. Airways' waypoint buffers.</param>
+	/// <returns>The rows, in display order.</returns>
+	protected List<ServicePreviewRow> PreviewRows(params ServicePreviewRow[] geojsonRows)
+	{
+		List<ServicePreviewRow> rows = [];
+
+		if (Area == SubServiceArea.Roi)
+		{
+			rows.Add(new ServicePreviewRow("ROI corners", DescribeRoiCorners()));
+		}
+
+		if (HasGeojsonFiles)
+		{
+			rows.AddRange(geojsonRows);
+			rows.Add(new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()));
+			rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeFiles(CrcFiles())));
+		}
+
+		return rows;
+	}
 
 	/// <summary>The selected FE-Buddy properties, for the Preview Settings tab.</summary>
 	/// <returns>e.g. <c>faaId, name</c>, or <c>No</c> when they are off or none is selected.</returns>
-	protected string DescribeFebProperties()
+	private string DescribeFebProperties()
 	{
 		string[] selected = [.. FebProperties.Where(p => p.IsSelected).Select(p => p.Name)];
 		return IncludeFebCustomProperties && selected.Length > 0 ? string.Join(", ", selected) : "No";
 	}
 
-	/// <summary>The area in use, stated plainly for the Preview Settings tab's Area row.</summary>
-	/// <returns>e.g. <c>ARTCCs: ZOB, ZNY</c>, <c>The default ROI: SW … / NE …</c> or <c>Everything</c>.</returns>
-	protected string DescribeArea()
-	{
-		string[] artccs = [.. AreaArtccIds()];
-		string artccsLabel = OffersNone ? "Facilities" : "ARTCCs";
-
-		return Area switch
-		{
-			SubServiceArea.Artccs => artccs.Length > 0 ? $"{artccsLabel}: {string.Join(", ", artccs)}" : $"{artccsLabel}: none ticked",
-			SubServiceArea.Roi when OverrideRoi => $"The ROI specific to {Title}: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}",
-			SubServiceArea.Roi => DefaultRoiStore.Load() is { } roi ? $"The default ROI: {Corners(roi)}" : "The default ROI, which isn't set",
-			SubServiceArea.None => "None: only what you list",
-			_ => "Everything",
-		};
-	}
+	/// <summary>The corners of the ROI the area uses: the tab's own, as typed, or the default ROI's.</summary>
+	/// <returns>e.g. <c>SW 40, -80 / NE 41, -79</c>, or that no default ROI is set.</returns>
+	private string DescribeRoiCorners() =>
+		OverrideRoi ? $"SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}"
+		: DefaultRoiStore.Load() is { } roi ? Corners(roi)
+		: "No default ROI is set";
 
 	/// <summary>
 	/// The ROI the area uses, whether or not the area is the ROI: the tab's own corners

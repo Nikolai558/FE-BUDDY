@@ -374,18 +374,8 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
-	{
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
-			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		return [new ServicePreviewSection("Fixes", rows) { WhatYoullGet = WhatYoullGet }];
-	}
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
+		[new ServicePreviewSection("Fixes", PreviewRows()) { WhatYoullGet = WhatYoullGet }];
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -1014,26 +1004,6 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		}
 
 		return result;
-	}
-
-	private string DescribeGeojsonFiles()
-	{
-		List<string> kinds = [];
-		if (EmitSymbols) kinds.Add("Symbols");
-		if (EmitText) kinds.Add("Text");
-
-		string files = kinds.Count > 0 ? string.Join(", ", kinds) : "none";
-
-		string layout = _outputBy switch
-		{
-			FixOutputBy.All => "one file each",
-			FixOutputBy.FixUse => "one pair per fix use",
-			FixOutputBy.Chart => "one pair per chart",
-			FixOutputBy.ChartAndFixUse => "one pair per combination",
-			_ => string.Empty,
-		};
-
-		return $"{files} - {layout}";
 	}
 
 	private void RaiseOwnSettingProperties()

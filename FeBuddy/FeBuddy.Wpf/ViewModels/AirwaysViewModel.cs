@@ -403,38 +403,26 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= preview =================
 
 	/// <summary>
-	/// This tab's contribution to the Preview Settings tab: one section spelling out, in plain
-	/// words, what the current settings will actually produce, so the user can check the run
-	/// without walking back through every control.
+	/// This tab's part of the Preview Settings tab: its What You'll Get, then what that leaves out -
+	/// with High and Low files, which airway types go in which, and the waypoint buffers and the
+	/// antimeridian split.
 	/// </summary>
 	/// <returns>A single <b>Airways</b> section, its rows in display order.</returns>
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
-		List<string> fileKinds = [];
-		if (EmitLines) fileKinds.Add("Lines");
-		if (EmitSymbols) fileKinds.Add("Symbols");
-		if (EmitText) fileKinds.Add("Text");
+		List<ServicePreviewRow> geojsonRows = [];
 
-		List<ServicePreviewRow> rows =
-		[
-			new ServicePreviewRow("GeoJSON split into", !GenerateGeojson ? "No GeoJSON"
-				: OutputBy == AirwayGeojsonOutputBy.HighLow ? "High and Low" : "Airway types"),
-			new ServicePreviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
-			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Buffer waypoints", BufferAirwayWaypoints
-				? $"{FixBufferNm.Trim()} NM around fixes, {NavaidBufferNm.Trim()} NM around NAVAIDs"
-				: "No"),
-			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		if (GenerateGeojson && OutputBy == AirwayGeojsonOutputBy.HighLow)
+		if (OutputBy == AirwayGeojsonOutputBy.HighLow)
 		{
-			rows.Insert(1, new ServicePreviewRow("High and Low files", DescribeStrata()));
+			geojsonRows.Add(new ServicePreviewRow("High and Low files", DescribeStrata()));
 		}
 
-		return [new ServicePreviewSection("Airways", rows) { WhatYoullGet = WhatYoullGet }];
+		geojsonRows.Add(new ServicePreviewRow("Buffer waypoints", BufferAirwayWaypoints
+			? $"{FixBufferNm.Trim()} NM around fixes, {NavaidBufferNm.Trim()} NM around NAVAIDs"
+			: "No"));
+		geojsonRows.Add(new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"));
+
+		return [new ServicePreviewSection("Airways", PreviewRows([.. geojsonRows])) { WhatYoullGet = WhatYoullGet }];
 	}
 
 	/// <inheritdoc />

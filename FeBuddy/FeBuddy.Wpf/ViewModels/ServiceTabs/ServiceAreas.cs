@@ -51,6 +51,6 @@ public static class ServiceAreas
 	/// <summary>The Combine Alias Files card (Add Custom Aliases tab).</summary>
 	public const string CustomAliasFiles = "CustomAliasFiles";
 
-	/// <summary>The Output Files card (File Names tab).</summary>
+	/// <summary>The Rename Files card (File Names tab), which lists the files under Yes.</summary>
 	public const string OutputFiles = "OutputFiles";
 }

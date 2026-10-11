@@ -36,7 +36,7 @@ Where you make files, every one ready for vNAS. The tabs run down the left:
 |---|---|
 | **General** | The cycle, which sub-services run, and the files each makes. |
 | One per sub-service | Its settings. Greyed out while it's left out on General. |
-| **File Names** | Every file the run will write, and new names for most of them. |
+| **File Names** | New names for any of the files the run will write. |
 | **Preview Settings** | What the run will do, and the **Run AIRAC Service** button. |
 | **Review** | Appears when you run: progress, then what the run did. |
 
@@ -294,20 +294,21 @@ the order buttons - until you click it open for its address and credential:
 
 ### File Names tab
 
-Every file the run will write, by folder, following the other tabs' settings.
+Choose **Yes** to rename files: every file the run will write is listed under it, by folder,
+following the other tabs' settings.
 
-- To rename some, choose **Yes - rename some files**. Every file starts ticked: untick the ones that
-  keep FE-Buddy's name (**Rename none** unticks them all) and type a new name, without the extension,
-  for the rest - `ZOB High` becomes `ZOB High.geojson`. A ticked file with no name, such as one a
-  later setting adds, turns the tab red.
+- Every file starts ticked: untick the ones that keep FE-Buddy's name (**Rename none** unticks them
+  all) and type a new name, without the extension, for the rest - `ZOB High` becomes
+  `ZOB High.geojson`. A ticked file with no name, such as one a later setting adds, turns the tab red.
 - A name can't be empty, contain `\ / : * ? " < > |`, end in a dot or an extension, be a name Windows
   reserves (`CON`, `NUL`, …), be over 100 characters, or match another file's.
 - Departures and Arrivals GeoJSON files can't be renamed: there's one per procedure.
 
 ### Preview Settings tab
 
-What the run will do, tab by tab, each starting with its What You'll Get lines. A red tab blocks
-the run; unsaved changes are saved first (you're asked). **Run AIRAC Service** starts it. If the
+What the run will do, tab by tab: each tab's What You'll Get, then the settings it leaves out, such
+as the ROI's corners, FE-Buddy properties and CRC ERAM defaults. A red tab blocks the run; unsaved
+changes are saved first (you're asked). **Run AIRAC Service** starts it. If the
 cycle's folder already has files, choose **Overwrite files** (other old files stay), **Delete all
 files** (emptied first, not to the Recycle Bin) or **Cancel**.
 
@@ -328,8 +329,8 @@ says when one no longer matches a duplicate.
 ### Review tab
 
 Progress, then **Errors**, **Advisories** (output you might expect but won't find, and why),
-**Results** for each sub-service (each group of messages has a copy button), and **Output**: how
-many files were written, with **Open output folder**.
+**Results** for each sub-service (each group of messages has a copy button), and **Output**: the
+folder and how many files were written, with **Open output folder**.
 
 ## File Conversions
 

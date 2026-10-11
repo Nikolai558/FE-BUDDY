@@ -207,7 +207,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		string subServices = general.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Sub-services").Value;
 
-		Assert.Equal("Airports (Alias, GeoJSON), Procedures (Procedure Changes, Procedures JSON)", subServices);
+		Assert.Equal("Airports (Alias, GeoJSON)\nProcedures (Procedure Changes, Procedures JSON)", subServices);
 	}
 
 	/// <summary>A tab reads its outputs from its row and follows it, without being marked unsaved.</summary>

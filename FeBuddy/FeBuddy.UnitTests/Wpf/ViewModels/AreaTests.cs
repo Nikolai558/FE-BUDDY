@@ -308,31 +308,49 @@ public sealed class AreaTests : IDisposable
 
 	// ---- the Preview Settings tab ----
 
+	/// <summary>
+	/// What You'll Get names the area, so the preview adds only the ROI's corners, while the area is
+	/// the ROI.
+	/// </summary>
 	[Fact]
-	public void the_area_row_says_which_area_and_what_it_has()
+	public void the_preview_adds_the_roi_corners_only_while_the_area_is_the_roi()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.ArtccBoundaries.LocationFilter", "ZOB,ZNY");
 		ArtccBoundariesViewModel tab = new() { Area = SubServiceArea.Artccs };
 
-		string AreaRow() => tab.BuildPreviewSummary().Single().Rows.Single(row => row.Label == "Area").Value;
+		string? CornersRow() => tab.BuildPreviewSummary().Single().Rows.SingleOrDefault(row => row.Label == "ROI corners")?.Value;
 
-		Assert.Equal("ARTCCs: ZNY, ZOB", AreaRow());
+		Assert.Null(CornersRow());
+		Assert.DoesNotContain(tab.BuildPreviewSummary().Single().Rows, row => row.Label == "Area");
 
 		tab.Area = SubServiceArea.Roi;
-		Assert.Equal("The default ROI, which isn't set", AreaRow());
+		Assert.Equal("No default ROI is set", CornersRow());
 
 		DefaultRoiStore.Set(DefaultRoi);
-		Assert.Equal("The default ROI: SW 32.5, -120 / NE 37, -114", AreaRow());
+		Assert.Equal("SW 32.5, -120 / NE 37, -114", CornersRow());
 
 		tab.OverrideRoi = true;
 		tab.SwLat = "40";
 		tab.SwLon = "-80";
 		tab.NeLat = "41";
 		tab.NeLon = "-79";
-		Assert.Equal("The ROI specific to ARTCC Boundaries: SW 40, -80 / NE 41, -79", AreaRow());
+		Assert.Equal("SW 40, -80 / NE 41, -79", CornersRow());
 
 		tab.Area = SubServiceArea.Everything;
-		Assert.Equal("Everything", AreaRow());
+		Assert.Null(CornersRow());
+	}
+
+	/// <summary>The preview's GeoJSON rows show only while the tab writes GeoJSON.</summary>
+	[Fact]
+	public void the_preview_leaves_out_the_geojson_rows_while_no_geojson_is_written()
+	{
+		AirportsViewModel tab = new();
+
+		Assert.Equal(["FE-Buddy properties", "CRC ERAM defaults"], tab.BuildPreviewSummary().Single().Rows.Select(row => row.Label));
+
+		Attach(tab, AiracSubServices.AirportsKey, Alias);
+
+		Assert.Empty(tab.BuildPreviewSummary().Single().Rows);
 	}
 
 	// ---- Procedures: the cards that add to the area ----
@@ -484,7 +502,6 @@ public sealed class AreaTests : IDisposable
 
 		Assert.Empty(tab.ValidationErrors);
 		Assert.Equal("ZOB", tab.BuildSettingsBlock()["Facilities"]);
-		Assert.Equal("Facilities: ZOB", tab.BuildPreviewSummary().Single().Rows.Single(row => row.Label == "Area").Value);
 	}
 
 	/// <summary>With only the alias file on, the area picks nothing, so it isn't checked.</summary>

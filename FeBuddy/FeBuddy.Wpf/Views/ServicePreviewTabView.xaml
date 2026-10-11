@@ -1,7 +1,7 @@
 <!--
-    ServicePreviewTabView  -  the Preview Settings tab of a tabbed service: a plain rundown
-    of every other tab's settings, and the button that runs the service. What happens
-    during the run is shown on the Review tab (ServiceRunReviewTabView).
+    ServicePreviewTabView  -  the Preview Settings tab of a tabbed service: each tab's What You'll
+    Get, with the settings it leaves out under it, and the button that runs the service. What
+    happens during the run is shown on the Review tab (ServiceRunReviewTabView).
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ServicePreviewTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -9,6 +9,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
              xmlns:tabm="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs.Models"
@@ -17,7 +18,7 @@
              d:DesignWidth="820" d:DesignHeight="700">
 
     <UserControl.Resources>
-        <!-- one label / value line -->
+        <!-- one label / value line; file names, and anything between backticks, show as code -->
         <DataTemplate x:Key="ReviewRow" DataType="{x:Type tabm:ServicePreviewRow}">
             <Grid Margin="0,3">
                 <Grid.ColumnDefinitions>
@@ -25,7 +26,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Body}" VerticalAlignment="Top" />
-                <TextBlock Grid.Column="1" Text="{Binding Value}" Style="{StaticResource Text.Body.Strong}"
+                <TextBlock Grid.Column="1" bhv:InlineCode.Text="{Binding Value, Converter={StaticResource FileNamesAsCode}}" Style="{StaticResource Text.Body.Strong}"
                            TextWrapping="Wrap"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
             </Grid>
@@ -38,8 +39,9 @@
                     <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Prose}"
                                Margin="0,0,0,6"
                                Visibility="{Binding Note, Converter={StaticResource StringToVis}}" />
-                    <!-- the tab's What You'll Get summary, the same lines as on the tab -->
-                    <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,0,0,4" />
+                    <!-- the tab's What You'll Get summary, the same lines as on the tab, then the
+                         settings it leaves out -->
+                    <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,0,0,8" />
                     <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource ReviewRow}" />
                 </StackPanel>
             </ctl:Card>

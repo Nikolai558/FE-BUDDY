@@ -74,11 +74,13 @@ public sealed class ShellViewModel : ObservableObject
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
+		FileConversionsNav = Nav("File Conversions", GlyphFileConversions, () => new FileConversionsViewModel());
+
 		PrimaryNav =
 		[
 			Nav("Dashboard",      GlyphDashboard,     () => new DashboardViewModel()),
 			Nav("AIRAC Service",  GlyphAiracService,  () => new AiracServiceViewModel()),
-			Nav("File Conversions", GlyphFileConversions, () => new FileConversionsViewModel()),
+			FileConversionsNav,
 			Nav("Map",            GlyphMap,           () => new MapViewModel()),
 		];
 
@@ -127,6 +129,9 @@ public sealed class ShellViewModel : ObservableObject
 
 	/// <summary>The SYSTEM nav group: Settings, Info.</summary>
 	public ObservableCollection<NavItem> SystemNav { get; }
+
+	/// <summary>The File Conversions row, so the window can build that screen before its first open.</summary>
+	public NavItem FileConversionsNav { get; }
 
 	/// <summary>The rows of the systems-health popover.</summary>
 	public ObservableCollection<HealthRow> SystemHealth { get; }

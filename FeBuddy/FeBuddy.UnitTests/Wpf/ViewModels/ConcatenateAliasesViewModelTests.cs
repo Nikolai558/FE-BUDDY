@@ -71,7 +71,7 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 		Assert.Equal("Y", block["AddCustomAliasFiles"]);
 		Assert.Equal("https://example.com/ZOB-Alias.txt", block["Sources.1.Url"]);
 		Assert.Equal(
-			[@"Added to Aliases\Combined_Alias.txt, after every FE-Buddy alias file this run writes", "https://example.com/ZOB-Alias.txt, with no credential"],
+			[@"Added to `Aliases\Combined_Alias.txt`, after every FE-Buddy alias file this run writes", "https://example.com/ZOB-Alias.txt, with no credential"],
 			Assert.Single(tab.BuildPreviewSummary()).Rows.Select(row => row.Value));
 	}
 
@@ -88,7 +88,7 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 		Assert.Null(tab.Sources[0].Error);
 		Assert.Equal(new Dictionary<string, string> { ["AddCustomAliasFiles"] = "N" }, tab.BuildSettingsBlock());
 		Assert.Equal(
-			@"Not added: Aliases\Combined_Alias.txt holds only FE-Buddy's alias files",
+			@"Not added: `Aliases\Combined_Alias.txt` holds only FE-Buddy's alias files",
 			Assert.Single(Assert.Single(tab.BuildPreviewSummary()).Rows).Value);
 
 		AiracServiceResult result = new()

@@ -233,26 +233,9 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
-		List<string> outputs = [];
-		if (GenerateGeojson) outputs.Add("GeoJSON");
-		if (GenerateAliasFile) outputs.Add("Alias file (Navaids.txt)");
+		ServicePreviewRow[] geojsonRows = ShowSymbolStyleChoice ? [new ServicePreviewRow("Symbol style", DescribeSymbolStyle())] : [];
 
-		List<ServicePreviewRow> rows =
-		[
-			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
-			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
-			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Area", DescribeArea()),
-		];
-
-		if (ShowSymbolStyleChoice)
-		{
-			rows.Add(new ServicePreviewRow("Symbol style", DescribeSymbolStyle()));
-		}
-
-		rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()));
-
-		return [new ServicePreviewSection("NAVAIDs", rows) { WhatYoullGet = WhatYoullGet }];
+		return [new ServicePreviewSection("NAVAIDs", PreviewRows(geojsonRows)) { WhatYoullGet = WhatYoullGet }];
 	}
 
 	/// <inheritdoc />
@@ -585,25 +568,6 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			OnPropertyChanged(name);
 		}
-	}
-
-	/// <summary>The "GeoJSON files" preview row: what is written and how it is grouped.</summary>
-	private string DescribeGeojsonFiles()
-	{
-		if (!GenerateGeojson)
-		{
-			return "No";
-		}
-
-		List<string> kinds = [];
-		if (EmitSymbols) kinds.Add("Symbols");
-		if (EmitText) kinds.Add("Text");
-
-		string files = kinds.Count > 0 ? string.Join(", ", kinds) : "none";
-
-		return _outputBy == NavaidOutputBy.All
-			? $"{files} - one file each"
-			: $"{files} - one pair per NAVAID type";
 	}
 
 	/// <summary>The "Symbol style" preview row, shown only while <see cref="ShowSymbolStyleChoice"/> is true.</summary>

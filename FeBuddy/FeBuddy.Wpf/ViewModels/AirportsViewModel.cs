@@ -123,23 +123,8 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
-	{
-		List<string> geojsonFiles = [];
-		if (EmitLines) geojsonFiles.Add("Runway lines");
-		if (EmitSymbols) geojsonFiles.Add("Symbols");
-		if (EmitText) geojsonFiles.Add("Text");
-
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("GeoJSON", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
-			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		return [new ServicePreviewSection("Airports", rows) { WhatYoullGet = WhatYoullGet }];
-	}
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
+		[new ServicePreviewSection("Airports", PreviewRows()) { WhatYoullGet = WhatYoullGet }];
 
 	/// <inheritdoc />
 	/// <remarks>

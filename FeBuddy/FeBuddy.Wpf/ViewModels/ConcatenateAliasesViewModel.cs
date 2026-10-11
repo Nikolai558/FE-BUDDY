@@ -239,12 +239,12 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	{
 		if (!AddCustomAliasFiles)
 		{
-			return [new ServicePreviewSection(Title, [new ServicePreviewRow("Custom alias files", $"Not added: {OutputFile} holds only FE-Buddy's alias files")])];
+			return [new ServicePreviewSection(Title, [new ServicePreviewRow("Custom alias files", $"Not added: `{OutputFile}` holds only FE-Buddy's alias files")])];
 		}
 
 		List<ServicePreviewRow> rows =
 		[
-			new ServicePreviewRow("Custom alias files", $"Added to {OutputFile}, after every FE-Buddy alias file this run writes"),
+			new ServicePreviewRow("Custom alias files", $"Added to `{OutputFile}`, after every FE-Buddy alias file this run writes"),
 		];
 
 		if (Sources.Count == 0)

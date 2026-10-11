@@ -60,11 +60,11 @@ public sealed class FileConversionsViewModel : ObservableObject, IOpensAtStart
 
 		Sources =
 		[
-			new("FAA Radar Video Map .dat files", "FAA RADAR Video Maps (RVMs), one map per .dat file.")
+			new("FAA Radar Video Map .dat files", "FAA RADAR Video Maps (RVMs), one map per `.dat` file.")
 			{
-				Outputs = [new(GeojsonOutput, "One .geojson file per map, named after it.") { Conversion = dat }],
+				Outputs = [new(GeojsonOutput, "One `.geojson` file per map, named after it.") { Conversion = dat }],
 			},
-			new("Legacy Sector File (.sct2)", "VRC sector files, .sct2 or .sct.")
+			new("Legacy Sector File (.sct2)", "VRC sector files, `.sct2` or `.sct`.")
 			{
 				Outputs =
 				[
@@ -78,11 +78,11 @@ public sealed class FileConversionsViewModel : ObservableObject, IOpensAtStart
 			{
 				Files =
 				[
-					new("Geomaps.xml", "The export's video maps. With ConsoleCommandControl.xml beside it, its brightness and filter menus too.")
+					new("Geomaps.xml", "The export's video maps. With `ConsoleCommandControl.xml` beside it, its brightness and filter menus too.")
 					{
 						Outputs =
 						[
-							new(GeojsonOutput, "Each map, in the layout you pick, and ConsoleCommandControl.txt listing the menus.")
+							new(GeojsonOutput, "Each map, in the layout you pick, and `ConsoleCommandControl.txt` listing the menus.")
 							{
 								Conversion = eram,
 							},

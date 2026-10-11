@@ -49,6 +49,14 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Concatenate Aliases is now **Add Custom Aliases**: one card that asks whether to add your own alias
   files to `Combined_Alias.txt`. Its buttons are now **Add local file** and **Add remote file**, and
   the FE-Buddy Alias Files card is gone. Your choice and files are kept.
+- File Names is one **Rename Files** card now: the files are listed under **Yes**.
+- Preview Settings shows each tab's What You'll Get, then only the settings it leaves out, such as the
+  ROI's corners. The sub-services are listed one per line.
+- Review: file names in the run's messages show as code, and **Output** names the folder.
+
+### File Conversions
+- File Conversions no longer pauses the first time you open it.
+- Clearer wording on the ERAM to GeoJSON, DAT to GeoJSON, and SCT2 to GeoJSON pages.
 
 ### Settings
 - FE-Buddy now warns when a GitHub token is within 57 days of expiring: in the run, in Settings ▸

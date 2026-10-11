@@ -11,6 +11,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SctToGeojsonViewModel}"
              d:DesignWidth="900" d:DesignHeight="900">
@@ -19,7 +20,7 @@
     <StackPanel>
 
         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
-                   Text="Converts VRC sector files (.sct2 / .sct) into CRC-ready GeoJSON: a folder per sector file, named after it, holding its ARTCC boundaries, airways, GEO, labels and regions, and a file per SID and STAR diagram." />
+                   bhv:InlineCode.Text="Converts VRC sector files (`.sct2` or `.sct`) into CRC-ready GeoJSON.&#xA;&#xA;Each sector file gets a folder, named after it, in the `SCT2 to GeoJSON` folder of your output directory. It holds the file's ARTCC boundaries, airways, GEO, labels, and regions, and a file for each SID and STAR diagram." />
 
         <cards:AttentionCard />
 

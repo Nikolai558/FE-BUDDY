@@ -90,7 +90,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <summary>The included sub-services, in rail order.</summary>
 	public IEnumerable<SubServiceRow> IncludedSubServices => SubServices.Where(s => s.IsIncluded);
 
-	/// <summary>A sub-service's row, or <see langword="null"/> for one that isn't in the table (Concatenate Aliases).</summary>
+	/// <summary>A sub-service's row, or <see langword="null"/> for one that isn't in the table (Add Custom Aliases).</summary>
 	/// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
 	/// <returns>The row.</returns>
 	public SubServiceRow? RowFor(string key) =>
@@ -188,9 +188,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("Cycle", SelectedCycleLabel),
-			new ServicePreviewRow("Sub-services", included.Length == 0 ? "none" : string.Join(", ", included)),
+			new ServicePreviewRow("Sub-services", included.Length == 0 ? "None" : string.Join("\n", included)),
 			new ServicePreviewRow("Output folder",
-				OutputPreferences.CycleDirectory(AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId)),
+				$"`{OutputPreferences.CycleDirectory(AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId)}`"),
 		];
 
 		return [new ServicePreviewSection("General", rows)];

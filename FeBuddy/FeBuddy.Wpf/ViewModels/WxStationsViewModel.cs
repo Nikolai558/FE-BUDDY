@@ -64,7 +64,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	// ================= station data =================
 
-	/// <summary>What the Station Data card and the Preview Settings tab say about FE-Buddy's kept copy of the station list.</summary>
+	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the station list.</summary>
 	public string StationDataStatus => _stationDataStatus;
 
 	/// <summary>
@@ -126,26 +126,34 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
-	{
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
-			new ServicePreviewRow("Station data", StationDataStatus),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		return [new ServicePreviewSection("Wx Stations", rows) { WhatYoullGet = WhatYoullGet }];
-	}
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
+		[new ServicePreviewSection("Wx Stations", [new ServicePreviewRow("Station data", StationDataStatus), .. PreviewRows()]) { WhatYoullGet = WhatYoullGet }];
 
 	/// <inheritdoc />
+	/// <remarks>Names where the stations come from, since it isn't the cycle's NASR data.</remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
+		List<SummaryFile> files = [];
+
+		if (EmitSymbols)
+		{
+			files.Add(new($"{WxStationOutputFiles.Symbols}.geojson", "A symbol at each station."));
+		}
+
+		if (EmitText)
+		{
+			files.Add(new($"{WxStationOutputFiles.Text}.geojson",
+				"Each station's ICAO ID, then its IATA ID and name on a second line. Example: KDTW, then DTW_Detroit/Metro Wayne Cnty"));
+		}
+
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, "Every US and US-territory station that reports METARs")
+			.Add(SummaryJoin.First, "Every US and US-territory station with an ICAO ID that reports METARs")
 			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"those inside {roi}"))
-			.ToList());
+			.ToList())
+		{
+			Files = files,
+			Notes = ["The stations come from [aviationweather.gov](https://aviationweather.gov/), not the cycle's FAA data. Every run downloads the latest list."],
+		};
 	}
 
 	// ================= save contract =================
@@ -188,16 +196,5 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 			yield return new OutputFileOption(WxStationOutputFiles.Text, "Every station", "Text",
 				"the Wx Stations Text file", IsGeojson: true, [(WxStationOutputFiles.AllClass, EramFieldKind.Text)]);
 		}
-	}
-
-	// ================= helpers =================
-
-	private string DescribeGeojsonFiles()
-	{
-		List<string> kinds = [];
-		if (EmitSymbols) kinds.Add("Symbols");
-		if (EmitText) kinds.Add("Text");
-
-		return kinds.Count > 0 ? string.Join(", ", kinds) : "None";
 	}
 }

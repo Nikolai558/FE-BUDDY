@@ -9,7 +9,8 @@ namespace FeBuddy.Wpf.Controls;
 /// A sub-service's "What You'll Get" summary (<see cref="SummaryBlock"/>): each block headed by its
 /// outputs' tags, then the filters that pick what they get, one per line, each after the first
 /// starting with a chip (<c>for</c>, <c>and only</c>, <c>along with</c>, ...) so the block reads as
-/// one sentence, then any "Outputs include" lines.
+/// one sentence, then any "Outputs include" lines, then the files it writes under an "outputs" chip,
+/// each with what goes in it, and any notes after a "note" chip.
 /// Shown by the What You'll Get card at the top of each sub-service tab and by that tab's section
 /// on the Preview Settings tab; its look is in Theme/Controls.Surfaces.xaml.
 /// <code>
@@ -43,7 +44,11 @@ public sealed class OutputSummary : Control
 	private void Refresh()
 	{
 		List<OutputSummaryItem> items = [.. (Blocks ?? []).Select(block =>
-			new OutputSummaryItem(OutputTag.For(block.Outputs, block.Outputs), block.Lines, block.Includes))];
+			new OutputSummaryItem(OutputTag.For(block.Outputs, block.Outputs), block.Lines, block.Includes)
+			{
+				Files = block.Files,
+				Notes = block.Notes,
+			})];
 
 		SetValue(ItemsKey, items);
 	}
@@ -55,6 +60,21 @@ public sealed class OutputSummary : Control
 /// <param name="Includes">Its "Outputs include" lines; none for most blocks.</param>
 public sealed record OutputSummaryItem(IReadOnlyList<OutputTag> Tags, IReadOnlyList<SummaryLine> Lines, IReadOnlyList<SummaryLine> Includes)
 {
+	/// <summary>The files the block writes, each with what goes in it; none for a block that doesn't list them.</summary>
+	public IReadOnlyList<SummaryFile> Files { get; init; } = [];
+
+	/// <summary>Notes on the files; none for most blocks.</summary>
+	public IReadOnlyList<string> Notes { get; init; } = [];
+
 	/// <summary>Whether the block has "Outputs include" lines.</summary>
 	public bool HasIncludes => Includes.Count > 0;
+
+	/// <summary>Whether the block lists its files or has notes on them.</summary>
+	public bool HasFiles => Files.Count > 0 || Notes.Count > 0;
+
+	/// <summary>
+	/// Whether the files sit under an "outputs" chip: below lines they would otherwise run on from.
+	/// A block with no lines lists them straight under its tags.
+	/// </summary>
+	public bool ShowsOutputsChip => HasFiles && Lines.Count > 0;
 }

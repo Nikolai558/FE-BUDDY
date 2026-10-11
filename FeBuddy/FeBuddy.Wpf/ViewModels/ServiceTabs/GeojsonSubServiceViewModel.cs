@@ -9,6 +9,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -51,7 +52,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// </para>
 /// </remarks>
 public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
-	IOutputSettings, IGeojsonFileChoices, IFebPropertySettings, ICrcDefaultsChoice, ICrcDefaultsSettings, IAreaSettings
+	IGeojsonFileChoices, IFebPropertySettings, ICrcDefaultsChoice, ICrcDefaultsSettings, IAreaSettings
 {
 	private const string CrcDefaultsIncompleteMessage =
 		"Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or take CRC-ERAM defaults off those files at the top of the CRC ERAM Defaults card.";
@@ -102,11 +103,11 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	public ISubServiceOutputs Outputs => _outputs;
 
-	/// <inheritdoc />
+	/// <summary>Whether the sub-service's alias file is written.</summary>
 	/// <remarks>Turned on and off on the General tab.</remarks>
 	public bool GenerateAliasFile => HasAliasFile && _outputs.Alias;
 
-	/// <inheritdoc />
+	/// <summary>Whether the sub-service's GeoJSON files are written.</summary>
 	/// <remarks>Turned on and off on the General tab. Always off for a sub-service with no GeoJSON choice.</remarks>
 	public virtual bool GenerateGeojson => _outputs.Geojson;
 
@@ -140,6 +141,45 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	/// <summary>Whether the tab's current settings write its alias file.</summary>
 	public bool WritesAliasFile => HasAliasFile && GenerateAliasFile;
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// Names GeoJSON, and Alias too for a sub-service with an alias file. Procedures and Telephony,
+	/// whose outputs are not these, override it.
+	/// </remarks>
+	public override string? WhatYoullGetFooter =>
+		$"Turn {(HasAliasFile ? "GeoJSON and Alias" : "GeoJSON")} output on or off on the General tab, to the left.";
+
+	/// <summary>The most files What You'll Get lists one by one; a layout that writes more lists one group's as an example.</summary>
+	protected const int MaxSummaryFiles = 6;
+
+	/// <summary>
+	/// What You'll Get's files for a layout with a set of files per group - an airway type, a NAVAID
+	/// type, a fix use: every file while there are only a few (<see cref="MaxSummaryFiles"/>),
+	/// otherwise the first group's, with a note that there is a set for each.
+	/// </summary>
+	/// <param name="files">The GeoJSON files the settings write, in order (<see cref="OutputFiles"/>).</param>
+	/// <param name="describe">What goes in a file.</param>
+	/// <param name="eachGroup">What there is a set for, e.g. <c>airway type selected below</c>.</param>
+	/// <returns>The files to list, and the note when only some are.</returns>
+	protected static (IReadOnlyList<SummaryFile> Files, IReadOnlyList<string> Notes) GroupedSummaryFiles(
+		IReadOnlyList<OutputFileOption> files, Func<OutputFileOption, string> describe, string eachGroup)
+	{
+		ArgumentNullException.ThrowIfNull(files);
+		ArgumentNullException.ThrowIfNull(describe);
+
+		string[] groups = [.. files.Select(file => file.Group).Distinct(StringComparer.OrdinalIgnoreCase)];
+
+		if (files.Count <= MaxSummaryFiles || groups.Length <= 1)
+		{
+			return ([.. files.Select(file => new SummaryFile($"{file.Key}.geojson", describe(file)))], []);
+		}
+
+		return (
+			[.. files.Where(file => file.Group.Equals(groups[0], StringComparison.OrdinalIgnoreCase))
+				.Select(file => new SummaryFile($"{file.Key}.geojson", describe(file)))],
+			[$"One set of files like these for each {eachGroup}: {groups.Length} in all."]);
+	}
 
 	/// <summary>
 	/// Every file the tab's current settings write, for the File Names tab: its key, the folder it
@@ -316,6 +356,34 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	public ICommand PickRoiOnMapCommand { get; }
 
 	// ================= readiness =================
+
+	/// <summary>
+	/// The cycle picked on the General tab, for text that names it (<c>since cycle 2605</c>), or
+	/// <see langword="null"/> until the screen says (a tab built on its own).
+	/// </summary>
+	public AiracCycleInfo? SelectedCycle { get; private set; }
+
+	/// <summary>Follows the cycle picked on the General tab: what names it is told again.</summary>
+	/// <param name="cycle">The selected cycle.</param>
+	public void SetSelectedCycle(AiracCycleInfo cycle)
+	{
+		ArgumentNullException.ThrowIfNull(cycle);
+
+		if (cycle == SelectedCycle)
+		{
+			return;
+		}
+
+		SelectedCycle = cycle;
+		OnPropertyChanged(nameof(SelectedCycle));
+		OnSelectedCycleChanged();
+		RaiseWhatYoullGetChanged();
+	}
+
+	/// <summary>After the selected cycle changes: a tab with text that names it announces that text. The base does nothing.</summary>
+	protected virtual void OnSelectedCycleChanged()
+	{
+	}
 
 	/// <summary>Whether the AIRAC data is ready; lists built from the cycle stay disabled until it is.</summary>
 	public bool IsCycleReady
@@ -707,34 +775,47 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		ValidateArea(validation);
 	}
 
-	/// <summary>The files that get CRC-ERAM defaults, for the Preview Settings tab.</summary>
-	/// <returns>e.g. <c>Airways_High_Lines</c>, or <c>None</c>.</returns>
-	protected string DescribeCrcDefaults() => DescribeFiles(CrcFiles());
+	/// <summary>
+	/// The Preview Settings rows under a tab's What You'll Get: what that summary leaves out. The
+	/// ROI's corners while the area is the ROI, then - while the tab writes GeoJSON - the tab's own
+	/// <paramref name="geojsonRows"/>, its FE-Buddy properties and its CRC ERAM defaults. The area
+	/// itself and the files are in What You'll Get already.
+	/// </summary>
+	/// <param name="geojsonRows">The tab's own GeoJSON settings, e.g. Airways' waypoint buffers.</param>
+	/// <returns>The rows, in display order.</returns>
+	protected List<ServicePreviewRow> PreviewRows(params ServicePreviewRow[] geojsonRows)
+	{
+		List<ServicePreviewRow> rows = [];
+
+		if (Area == SubServiceArea.Roi)
+		{
+			rows.Add(new ServicePreviewRow("ROI corners", DescribeRoiCorners()));
+		}
+
+		if (HasGeojsonFiles)
+		{
+			rows.AddRange(geojsonRows);
+			rows.Add(new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()));
+			rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeFiles(CrcFiles())));
+		}
+
+		return rows;
+	}
 
 	/// <summary>The selected FE-Buddy properties, for the Preview Settings tab.</summary>
 	/// <returns>e.g. <c>faaId, name</c>, or <c>No</c> when they are off or none is selected.</returns>
-	protected string DescribeFebProperties()
+	private string DescribeFebProperties()
 	{
 		string[] selected = [.. FebProperties.Where(p => p.IsSelected).Select(p => p.Name)];
 		return IncludeFebCustomProperties && selected.Length > 0 ? string.Join(", ", selected) : "No";
 	}
 
-	/// <summary>The area in use, stated plainly for the Preview Settings tab's Area row.</summary>
-	/// <returns>e.g. <c>ARTCCs: ZOB, ZNY</c>, <c>The default ROI: SW … / NE …</c> or <c>Everything</c>.</returns>
-	protected string DescribeArea()
-	{
-		string[] artccs = [.. AreaArtccIds()];
-		string artccsLabel = OffersNone ? "Facilities" : "ARTCCs";
-
-		return Area switch
-		{
-			SubServiceArea.Artccs => artccs.Length > 0 ? $"{artccsLabel}: {string.Join(", ", artccs)}" : $"{artccsLabel}: none ticked",
-			SubServiceArea.Roi when OverrideRoi => $"The ROI specific to {Title}: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}",
-			SubServiceArea.Roi => DefaultRoiStore.Load() is { } roi ? $"The default ROI: {Corners(roi)}" : "The default ROI, which isn't set",
-			SubServiceArea.None => "None: only what you list",
-			_ => "Everything",
-		};
-	}
+	/// <summary>The corners of the ROI the area uses: the tab's own, as typed, or the default ROI's.</summary>
+	/// <returns>e.g. <c>SW 40, -80 / NE 41, -79</c>, or that no default ROI is set.</returns>
+	private string DescribeRoiCorners() =>
+		OverrideRoi ? $"SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}"
+		: DefaultRoiStore.Load() is { } roi ? Corners(roi)
+		: "No default ROI is set";
 
 	/// <summary>
 	/// The ROI the area uses, whether or not the area is the ROI: the tab's own corners

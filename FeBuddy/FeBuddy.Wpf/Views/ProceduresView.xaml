@@ -6,7 +6,9 @@
     Unlike the GeoJSON sub-service tabs, this one writes no GeoJSON and has no FE-Buddy
     properties or CRC cards - see ProceduresViewModel's class remarks. Its Outputs card shows its
     three outputs' state (they are turned on and off on the General tab). The selection cards
-    pick what the two documents cover, so they grey out while neither document is on.
+    pick what the two documents cover, so they grey out while neither document is on, and say
+    they don't reach the chart recall alias file while it's on. An amber card at the top says
+    when a d-TPP Metafile falls short.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ProceduresView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -29,6 +31,12 @@
 
             <cards:AttentionCard />
 
+            <!-- ============ the d-TPP Metafiles, only while one falls short ============ -->
+            <ctl:Card Style="{StaticResource Card.Warn}"
+                      Visibility="{Binding DtppWarning, Converter={StaticResource StringToVis}}">
+                <TextBlock Text="{Binding DtppWarning}" Style="{StaticResource Text.Prose}" />
+            </ctl:Card>
+
             <!-- ============ what the outputs get, every filter in one place ============ -->
             <cards:SummaryCard />
 
@@ -36,50 +44,21 @@
             <ctl:Card Header="Outputs">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
-                               Text="Turn these on or off on the General tab." />
+                               Text="Turn these on or off on the General tab, to the left." />
                     <cards:OutputStatusRow Kind="ProcedureChanges" Label="Procedure_Changes.md" IsOn="{Binding GenerateChangesDocument}"
-                                           Description="A briefing of every chart added, changed or deleted this cycle at the airports you pick. Grouped by facility, busiest airspace first, with links to the FAA's comparison PDFs and charts." />
+                                           Description="A Discord-post-ready Markdown document of the procedures added, changed, or deleted this cycle at the selected airports. Grouped by facility and airspace class, with links to the FAA's comparison PDFs for most." />
                     <cards:OutputStatusRow Margin="0,12,0,0" Kind="ProceduresJson" Label="Procedures.json" IsOn="{Binding GenerateProceduresJson}"
-                                           Description="A list of every current chart at the airports you pick, with the fields you choose below, for other tools to read." />
-                    <cards:OutputStatusRow Margin="0,12,0,10" Kind="Alias" Label="Faa_Chart_Recall.txt" IsOn="{Binding GenerateAliasFile}"
-                                           Description="Writes a command for each page of every chart in the d-TPP metafile that opens it from the FAA.&#xA;Ex: .dtwI22Lc opens ILS OR LOC RWY 22L at DTW&#xA;The cards below only pick what the two documents cover. The alias file always has every chart." />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               bhv:InlineCode.Text="The documents are written to `Publication_Docs\` in the cycle's folder, and the alias file to `Aliases\`. The Concatenate Aliases tab also adds the alias file to `Aliases\Combined_Alias.txt`." />
-                </StackPanel>
-            </ctl:Card>
-
-            <!-- ============ d-TPP data ============ -->
-            <ctl:Card Header="d-TPP Data" Outputs="Alias, ProcedureChanges, ProceduresJson">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Charts come from the FAA's d-TPP metafile for the selected cycle. The FAA posts it 15 to 18 days before the cycle starts, and FE-Buddy downloads it at launch." />
-                    <TextBlock Text="{Binding DtppStatus}" TextWrapping="Wrap" Margin="0,0,0,4"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
-                                <Style.Triggers>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding IsDtppKnown}" Value="True" />
-                                            <Condition Binding="{Binding HasDtppData}" Value="False" />
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
-                                    </MultiDataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                    <TextBlock Text="{Binding DtppPreviousStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Visibility="{Binding DtppPreviousStatus, Converter={StaticResource StringToVis}}" />
+                                           Description="Ready for your scripts to read, this JSON contains every current chart at the selected airports, with the fields you choose below." />
+                    <cards:OutputStatusRow Margin="0,12,0,0" Kind="Alias" Label="Faa_Chart_Recall.txt" IsOn="{Binding GenerateAliasFile}"
+                                           Description="Writes an `.openurl` command for most charts in the d-TPP Metafile.&#xA;For example:" />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="66,2,0,0"
+                               bhv:InlineCode.Text="`.dtwI22Lc` opens the &quot;ILS OR LOC RWY 22L&quot; approach chart for DTW airport." />
                 </StackPanel>
             </ctl:Card>
 
             <!-- ============ area: the facilities, an ROI, everything, or none ============ -->
             <cards:AreaCard Outputs="{Binding AreaOutputs}"
-                            Intro="Choose which charts the documents include. The Airports, Procedures at Any Airport, and Airport + Procedure cards below can add more, even outside your choice."
+                            Intro="Choose which airports the documents cover."
                             ArtccsLabel="Facilities"
                             ArtccsDescription="charts for airports within the facilities you tick"
                             RoiDescription="charts for airports within an ROI"
@@ -101,10 +80,17 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <TextBlock Text="{Binding PrimaryFacilityCaption}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
-                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
                     </StackPanel>
                 </cards:AreaCard.ArtccsContent>
+                <cards:AreaCard.Footer>
+                    <StackPanel>
+                        <TextBlock Text="{Binding AreaNote}" Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
+                                   Visibility="{Binding AreaNote, Converter={StaticResource StringToVis}}" />
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
+                                   bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
+                                   Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </cards:AreaCard.Footer>
             </cards:AreaCard>
 
             <!-- ============ airports ============
@@ -120,9 +106,11 @@
                                    Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
                     </DockPanel>
                     <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding AirportsIntro}" />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,8"
-                                   Text="{Binding Source={x:Static vm:ProceduresViewModel.MaxAirports}, StringFormat='Type or paste up to {0} FAA/ICAO IDs, separated by spaces, commas, or new lines, and press ENTER or ADD.'}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" bhv:InlineCode.Text="{Binding AirportsIntro}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
+                                   Text="{Binding Source={x:Static vm:ProceduresViewModel.MaxAirports}, StringFormat='Type or paste up to {0} FAA/ICAO IDs and press ENTER or ADD.'}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
+                                   Text="You will then get data for that airport and all of its relevant procedures." />
                     </StackPanel>
 
                     <ItemsControl ItemsSource="{Binding Airports}" Margin="0,0,0,8">
@@ -165,6 +153,9 @@
                                TextWrapping="Wrap" MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Foreground="{StaticResource Brush.Danger}"
                                Visibility="{Binding NewAirportHint, Converter={StaticResource StringToVis}}" />
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
+                               bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
+                               Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
             </ctl:Card>
 
@@ -179,8 +170,10 @@
                                    Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
                     </DockPanel>
                     <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding ProcedureNamesIntro}" />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,8" Text="Type or pick a procedure, and press ADD." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" bhv:InlineCode.Text="{Binding ProcedureNamesIntro}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0" Text="Type or pick a procedure, and press ENTER or ADD." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
+                                   Text="You will then get data for that procedure, whatever airports it serves." />
                     </StackPanel>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
@@ -212,6 +205,9 @@
                                   VirtualizingPanel.IsVirtualizing="True"
                                   VirtualizingPanel.VirtualizationMode="Recycling"
                                   ScrollViewer.CanContentScroll="True">
+                            <ComboBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding AddProcedureCommand}" />
+                            </ComboBox.InputBindings>
                             <ComboBox.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <VirtualizingStackPanel />
@@ -226,6 +222,9 @@
                     <TextBlock Text="{Binding NewProcedureHint}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
                                Foreground="{StaticResource Brush.Danger}"
                                Visibility="{Binding NewProcedureHint, Converter={StaticResource StringToVis}}" />
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
+                               bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
+                               Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
             </ctl:Card>
 
@@ -240,9 +239,11 @@
                                    Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
                     </DockPanel>
                     <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding AirportProceduresIntro}" />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,8"
-                                   Text="Press ADD PROCEDURE, type the airport, pick one of its procedures, and press ADD." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" bhv:InlineCode.Text="{Binding AirportProceduresIntro}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
+                                   Text="Press ADD PROCEDURE, type an airport first, then pick a procedure for that airport, and press ADD." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
+                                   Text="You will then get data for that airport-specific procedure." />
                     </StackPanel>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
@@ -303,6 +304,9 @@
                     <Button Content="Add procedure" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                             Margin="0,10,0,0" Command="{Binding AddPairCommand}"
                             Visibility="{Binding IsEditingPair, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
+                               bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
+                               Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
             </ctl:Card>
 
@@ -311,7 +315,7 @@
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="{Binding ChartTypesIntro}" />
+                               bhv:InlineCode.Text="{Binding ChartTypesIntro}" />
                     <ItemsControl ItemsSource="{Binding ChartTypeToggles}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -322,6 +326,9 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
+                               bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
+                               Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
             </ctl:Card>
 
@@ -329,7 +336,7 @@
             <ctl:Card Header="Procedures.json Fields" Outputs="ProceduresJson" Visibility="{Binding GenerateProceduresJson, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="The airport ID and procedure name are always included." />
+                               bhv:InlineCode.Text="Select the following fields to be included in the `Procedures.json` file.&#xA;&#xA;Note: The FAA airport IDs and procedure names are always included." />
                     <ItemsControl ItemsSource="{Binding JsonFieldToggles}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>

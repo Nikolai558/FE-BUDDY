@@ -11,7 +11,7 @@ namespace FeBuddy.Core.Application.Airac.Models;
 /// The data <c>AiracService.RunAsync</c> needs beyond the selected cycle's parsed NASR CSVs: the
 /// Wx Stations list and the FAA telephony pages (not published per cycle - every run downloads the
 /// latest), the FAA d-TPP Metafile for the selected cycle and the cycle before it, and the user's
-/// custom alias files for Concatenate Aliases.
+/// custom alias files for Add Custom Aliases.
 /// </summary>
 public sealed record AiracSupplementalData
 {

@@ -1,7 +1,7 @@
 <!--
-    SettingsView  -  Settings Profile / Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub
-    Requests / Updates / Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to the
-    settings profile in use but the credentials, which go to Windows Credential Manager.
+    SettingsView  -  Settings Profile / Facility / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub
+    Requests / Updates / Update Channel / Reset / Uninstall (Reset FE-Buddy… with Uninstall FE-Buddy… under it).
+    Everything persists to the settings profile in use but the credentials, which go to Windows Credential Manager.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -58,8 +58,16 @@
                 <!-- Takes effect at once: not part of this page's Save. Choosing another profile switches to it. -->
                 <ctl:Card Header="Settings Profile" DataContext="{Binding SettingsProfile}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
-                                   Text="{Binding Source={x:Static vm:SettingsProfilesViewModel.Description}}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                                   Text="A &quot;Profile&quot; is a set of FE-Buddy settings:" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="16,2,0,0"
+                                   Text="Facility&#xA;Output folder&#xA;Every service's choices and preferences&#xA;File Conversions&#xA;Map settings&#xA;etc." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
+                                   Text="It is suggested that you keep a profile for each facility you work on and/or a profile for each type of AIRAC cycle data you wish to run.&#xA;For example, some facilities will want Airways, Fixes, and NAVAIDs GeoJSON files only once every couple of months, while they will want the alias commands every AIRAC cycle. This facility would create two different profiles." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
+                                   Text="Shared across profiles:" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="16,2,0,12"
+                                   Text="Update channel&#xA;News posts you have read&#xA;FE-Buddy's GitHub token&#xA;Your saved credentials" />
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                 <Button Style="{StaticResource Button.Ghost}" Content="New…" Margin="8,0,0,0"
@@ -81,8 +89,8 @@
                     </StackPanel>
                 </ctl:Card>
 
-                <!-- ================= 1. FACILITY PROFILE ================= -->
-                <ctl:Card Header="Facility Profile">
+                <!-- ================= 1. FACILITY ================= -->
+                <ctl:Card Header="Facility">
                     <StackPanel>
 
                         <TextBlock Style="{StaticResource Text.Prose}"
@@ -112,7 +120,7 @@
                             <TextBox Text="{Binding OutputDirectory, UpdateSourceTrigger=PropertyChanged}" />
                         </DockPanel>
                         <CheckBox IsChecked="{Binding AddFeBuddyOutputFolder}" Margin="0,8,0,0">
-                            <TextBlock bhv:InlineCode.Text="Add a `FE-Buddy_Output` folder inside that directory" />
+                            <TextBlock bhv:InlineCode.Text="Add a `FE-Buddy_Output` folder inside this selected directory" />
                         </CheckBox>
                         <TextBlock bhv:InlineCode.Text="{Binding OutputFolderExample}" Style="{StaticResource Text.Caption}"
                                    TextWrapping="Wrap" Margin="0,6,0,0" />
@@ -178,16 +186,16 @@
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
                         <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="File Layout" />
-                        <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FileLayoutDescription}}"
-                                   Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
-                        <StackPanel Orientation="Horizontal">
-                            <RadioButton GroupName="FileLayout" Content="Single line" Margin="0,0,16,0"
-                                         ToolTip="Smallest files. The default."
+                        <ctl:Option Margin="0,6,0,0" Description="Significantly smaller file sizes&#xA;Preferred if a human is not expected to read it">
+                            <RadioButton GroupName="FileLayout" Content="Single line"
                                          IsChecked="{Binding PrettyPrintGeojson, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
-                            <RadioButton GroupName="FileLayout" Content="Pretty print"
-                                         ToolTip="Larger files, easy to read in a text editor."
+                        </ctl:Option>
+                        <ctl:Option Margin="0,8,0,0" Description="Significantly larger file sizes&#xA;Preferred if a human is expected to read it">
+                            <RadioButton GroupName="FileLayout" Content="Pretty-print"
                                          IsChecked="{Binding PrettyPrintGeojson, Mode=TwoWay}" />
-                        </StackPanel>
+                        </ctl:Option>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
+                                   Text="This setting applies to all GeoJSON files output by FE-Buddy." />
                         <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
                                    Foreground="{StaticResource Brush.Warn}"
                                    Text="Developer mode is on, so GeoJSON is pretty printed whatever is chosen here."
@@ -199,8 +207,18 @@
                 <!-- Saved at once, in Windows Credential Manager: not part of this page's Save. -->
                 <ctl:Card Header="Credentials" DataContext="{Binding Credentials}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                                   Text="{Binding Source={x:Static vm:CredentialsViewModel.Description}}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                                   Text="You may provide sign-in credentials that FE-Buddy may use to download files from protected websites, such as private GitHub repositories.&#xA;This is helpful for retrieving your custom alias files to merge with FE-Buddy's aliases, in preparation for upload to vNAS Admin." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0">
+                            <Run Text="FE-Buddy does " /><Run Text="NOT" FontWeight="SemiBold" /><Run Text=" keep these passwords or credentials, but rather passes them to your Windows Credential Manager (WCM), encrypted with your Windows sign-in." />
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0">
+                            <Run Text="This data is " /><Run Text="NEVER" FontWeight="SemiBold" /><Run Text=":" />
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="16,2,0,0"
+                                   Text="Saved in a settings profile&#xA;Exported in a file&#xA;Sent anywhere but the websites you allow for it" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,8"
+                                   Text="A saved password or token is never shown again after you paste it here. Changes here are saved straight away." />
 
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                    Foreground="{StaticResource Brush.Danger}" Text="{Binding LoadError}"
@@ -285,51 +303,41 @@
 
                 <!-- ================= 6. UPDATES ================= -->
                 <!-- Most finished channel first; each one also offers every channel above it. -->
-                <ctl:Card Header="Updates">
+                <ctl:Card Header="Updates / Update Channel">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                                   Text="{Binding Source={x:Static vm:SettingsViewModel.UpdatesDescription}}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                                   Text="Choose the earliest stage of releases you want to participate in." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10">
+                            <Run Text="Note:" /><LineBreak />
+                            <Run Text="&quot;Beta&quot; and &quot;Alpha&quot; releases should " /><Run Text="NOT" FontWeight="SemiBold" /><Run Text=" be considered methods to gain &quot;Early Access&quot; to features." /><LineBreak />
+                            <Run Text="These releases will almost certainly have unknown issues and are meant for development purposes only." />
+                        </TextBlock>
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,8"
                                    Foreground="{StaticResource Brush.Warn}"
                                    Text="{Binding ChannelWarning}"
                                    Visibility="{Binding IsPreReleaseChannel, Converter={StaticResource BoolToVis}}" />
+                        <!-- each channel offers the ones above it too; hover one for what its releases are -->
                         <StackPanel>
-                            <RadioButton GroupName="Channel" Margin="0,3" Foreground="{StaticResource Brush.Text.Primary}"
-                                         ToolTip="{Binding Source={x:Static vm:SettingsViewModel.StableDescription}}"
-                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Stable}">
-                                <StackPanel>
-                                    <TextBlock Text="Stable" />
-                                    <TextBlock Style="{StaticResource Text.Caption}"
-                                               Text="{Binding Source={x:Static vm:SettingsViewModel.StableOffers}}" />
-                                </StackPanel>
-                            </RadioButton>
-                            <RadioButton GroupName="Channel" Margin="0,3" Foreground="{StaticResource Brush.Text.Primary}"
-                                         ToolTip="{Binding Source={x:Static vm:SettingsViewModel.ReleaseCandidateDescription}}"
-                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=ReleaseCandidate}">
-                                <StackPanel>
-                                    <TextBlock Text="Release Candidate" />
-                                    <TextBlock Style="{StaticResource Text.Caption}"
-                                               Text="{Binding Source={x:Static vm:SettingsViewModel.ReleaseCandidateOffers}}" />
-                                </StackPanel>
-                            </RadioButton>
-                            <RadioButton GroupName="Channel" Margin="0,3" Foreground="{StaticResource Brush.Text.Primary}"
-                                         ToolTip="{Binding Source={x:Static vm:SettingsViewModel.BetaDescription}}"
-                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Beta}">
-                                <StackPanel>
-                                    <TextBlock Text="Beta" />
-                                    <TextBlock Style="{StaticResource Text.Caption}"
-                                               Text="{Binding Source={x:Static vm:SettingsViewModel.BetaOffers}}" />
-                                </StackPanel>
-                            </RadioButton>
-                            <RadioButton GroupName="Channel" Margin="0,3" Foreground="{StaticResource Brush.Text.Primary}"
-                                         ToolTip="{Binding Source={x:Static vm:SettingsViewModel.AlphaDescription}}"
-                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Alpha}">
-                                <StackPanel>
-                                    <TextBlock Text="Alpha" />
-                                    <TextBlock Style="{StaticResource Text.Caption}"
-                                               Text="{Binding Source={x:Static vm:SettingsViewModel.AlphaOffers}}" />
-                                </StackPanel>
-                            </RadioButton>
+                            <ctl:Option Margin="0,3" Description="{Binding Source={x:Static vm:SettingsViewModel.StableOffers}}">
+                                <RadioButton GroupName="Channel" Content="Stable"
+                                             ToolTip="{Binding Source={x:Static vm:SettingsViewModel.StableDescription}}"
+                                             IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Stable}" />
+                            </ctl:Option>
+                            <ctl:Option Margin="0,3" Description="{Binding Source={x:Static vm:SettingsViewModel.ReleaseCandidateOffers}}">
+                                <RadioButton GroupName="Channel" Content="Release Candidate"
+                                             ToolTip="{Binding Source={x:Static vm:SettingsViewModel.ReleaseCandidateDescription}}"
+                                             IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=ReleaseCandidate}" />
+                            </ctl:Option>
+                            <ctl:Option Margin="0,3" Description="{Binding Source={x:Static vm:SettingsViewModel.BetaOffers}}">
+                                <RadioButton GroupName="Channel" Content="Beta"
+                                             ToolTip="{Binding Source={x:Static vm:SettingsViewModel.BetaDescription}}"
+                                             IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Beta}" />
+                            </ctl:Option>
+                            <ctl:Option Margin="0,3" Description="{Binding Source={x:Static vm:SettingsViewModel.AlphaOffers}}">
+                                <RadioButton GroupName="Channel" Content="Alpha"
+                                             ToolTip="{Binding Source={x:Static vm:SettingsViewModel.AlphaDescription}}"
+                                             IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Alpha}" />
+                            </ctl:Option>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                             <Button Command="{Binding CheckNowCommand}">
@@ -350,20 +358,24 @@
                     </StackPanel>
                 </ctl:Card>
 
-                <!-- ================= 7. RESET FE-BUDDY ================= -->
-                <!-- Last, away from everyday settings. The window it opens says what goes and asks what to keep. -->
-                <ctl:Card Header="Reset FE-Buddy">
+                <!-- ================= 7. RESET / UNINSTALL ================= -->
+                <!-- Last, away from everyday settings. Each window says what goes and asks what to keep.
+                     Uninstall works only in the installed copy. -->
+                <ctl:Card Header="Reset / Uninstall">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
-                                   Text="{Binding Source={x:Static vm:SettingsViewModel.ResetDescription}}" />
-                        <!-- Uninstall sits across from Reset, only in the installed copy; the window it opens says what goes. -->
-                        <Grid>
-                            <Button Style="{StaticResource Button.Ghost}" Content="Reset FE-Buddy…" HorizontalAlignment="Left"
-                                    VerticalAlignment="Center" Command="{Binding ResetCommand}" />
-                            <Button Style="{StaticResource Button.Ghost.Danger}" Content="Uninstall FE-Buddy…" HorizontalAlignment="Right"
-                                    VerticalAlignment="Center" Command="{Binding UninstallCommand}"
-                                    Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}}" />
-                        </Grid>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                                   Text="Want to set FE-Buddy up as &quot;New&quot;? Select &quot;Reset FE-Buddy&quot;." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0">
+                            <Run Text="Got promoted out of the FE department, or " /><Run Text="somehow" FontWeight="SemiBold" /><Run Text=" found a better resource than FE-Buddy? Select &quot;Uninstall FE-Buddy&quot;." />
+                        </TextBlock>
+                        <Button Style="{StaticResource Button.Ghost}" Content="Reset FE-Buddy…" HorizontalAlignment="Left"
+                                Margin="0,12,0,0" Command="{Binding ResetCommand}" />
+                        <!-- Greyed out (UninstallCommand) in a copy the installer didn't install, which says why. -->
+                        <Button Style="{StaticResource Button.Ghost.Danger}" Content="Uninstall FE-Buddy…" HorizontalAlignment="Left"
+                                Margin="0,8,0,0" Command="{Binding UninstallCommand}" />
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                   Text="This copy of FE-Buddy wasn't installed with its installer, so it can't uninstall itself."
+                                   Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     </StackPanel>
                 </ctl:Card>
             </StackPanel>

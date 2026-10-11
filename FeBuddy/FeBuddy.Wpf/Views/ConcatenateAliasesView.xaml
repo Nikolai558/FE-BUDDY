@@ -1,8 +1,8 @@
 <!--
-    ConcatenateAliasesView  -  the Concatenate Aliases sub-service tab inside the AIRAC Service screen:
-    whether to combine every alias file the run writes into Aliases\Combined_Alias.txt, which
-    FE-Buddy alias files go in, and the facility's own custom alias files, added after them so
-    theirs win. The custom files grey out while combining is off.
+    ConcatenateAliasesView  -  the Add Custom Aliases sub-service tab inside the AIRAC Service screen:
+    every run that writes an alias file writes Aliases\Combined_Alias.txt, and this tab asks whether
+    to add the facility's own custom alias files to it, after FE-Buddy's so theirs win, and which.
+    The custom files show only for "Yes".
     Save / Undo / Previous / Next / Preview settings come from the tab host's shared action bar, and
     the tab host owns the page's single scroller.
 
@@ -53,209 +53,167 @@
 
         <cards:AttentionCard />
 
-        <!-- ============ combine ============ -->
-        <ctl:Card Header="Combine Alias Files" Outputs="Alias">
+        <!-- ============ combine: the combined file, and whether your own alias files go in ============
+             Every run that writes an alias file writes Combined_Alias.txt; the question decides only
+             whether the custom alias files are added. The list and its buttons show for "Yes". -->
+        <ctl:Card Header="Combine Alias Files" Outputs="Alias" bhv:FieldState.Error="{Binding FieldErrors[CustomAliasFiles]}">
             <StackPanel>
-                <CheckBox Margin="0,4,0,0" IsChecked="{Binding CombineAliasFiles}" Content="Combine the alias files into one file for vNAS" />
-                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,4,0,0"
+                <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,0"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           bhv:InlineCode.Text="vNAS takes one alias file per facility. With this on, every run writes `Aliases\Combined_Alias.txt`: FE-Buddy's alias files first, then your custom alias files, in order. Upload that file to vNAS.&#xA;If a command is in both, CRC uses the last one, so yours wins.&#xA;If a custom file is last cycle's combined file, its old FE-Buddy aliases are skipped, not added twice.&#xA;With this off, each alias file is written on its own and your custom alias files aren't used." />
-            </StackPanel>
-        </ctl:Card>
+                           bhv:InlineCode.Text="To prepare a single file to upload to the vNAS Admin site, FE-Buddy will combine your custom alias file (holding your facility-specific aliases) with the alias commands you selected to be created by FE-Buddy, into a single file.&#xA;&#xA;The single concatenated file will be output as `Combined_Alias.txt`.&#xA;&#xA;FE-Buddy will write your custom alias files at the bottom of the combined file so that, in case of a duplicate conflict between your custom commands and FE-Buddy's, your custom command is what CRC will recognize over FE-Buddy's.&#xA;This is because CRC reads the alias file TOP-DOWN and uses &quot;Last-One-Wins&quot; logic." />
 
-        <!-- ============ FE-Buddy's alias files: what the other tabs put in ============ -->
-        <ctl:Card Header="FE-Buddy Alias Files" Outputs="Alias">
-            <StackPanel>
-                <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
-                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="FE-Buddy's alias files, which go in first. A file goes in when its sub-service and its Alias box are ticked on the General tab." />
+                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
+                           Text="Do you want to combine your custom alias file with the FE-Buddy alias files?" />
+                <RadioButton GroupName="AddCustomAliasFiles" Margin="0,6,0,0" Content="No"
+                             IsChecked="{Binding AddCustomAliasFiles, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="42,2,0,0"
+                           bhv:InlineCode.Text="`Combined_Alias.txt` will hold only FE-Buddy's alias files."
+                           Visibility="{Binding AddCustomAliasFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                <RadioButton GroupName="AddCustomAliasFiles" Margin="0,3,0,0" Content="Yes"
+                             IsChecked="{Binding AddCustomAliasFiles, Mode=TwoWay}" />
 
-                <ItemsControl ItemsSource="{Binding FeBuddyAliasFiles}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type m:FeBuddyAliasFileRow}">
-                            <StackPanel>
-                                <DockPanel Margin="0,6">
-                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Open tab" Margin="8,0,0,0"
-                                            VerticalAlignment="Center" ToolTip="Go to this sub-service's tab."
-                                            Command="{Binding OpenTabCommand}"
-                                            Visibility="{Binding CanOpenTab, Converter={StaticResource BoolToVis}}" />
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Style="{StaticResource Text.Body.Strong}">
-                                            <Run Text="{Binding SubService, Mode=OneWay}" />
-                                            <Run Text=" · " />
-                                            <Run Text="{Binding FileName, Mode=OneWay}" />
-                                        </TextBlock>
-                                        <TextBlock Text="{Binding Status}" TextWrapping="Wrap">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsAdded}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource Brush.Positive}" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </DockPanel>
-                                <Border Style="{StaticResource Divider}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <!-- "Yes": how to add them, then the list. Indented under the radio (the indent rule). -->
+                <StackPanel Margin="26,10,0,0" Visibility="{Binding AddCustomAliasFiles, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Add local file" />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="16,2,0,0" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Use this to point FE-Buddy to your locally stored file on your computer." />
+                    <TextBlock Style="{StaticResource Text.Body.Strong}" Margin="0,10,0,0" Text="Add remote file" />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="16,2,0,0" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Use this to have FE-Buddy reach out and download your file from the internet, such as from Dropbox or GitHub.&#xA;If your remote file is hidden, such as in a GitHub repository that is set up as &quot;Private&quot;, you can set up a token to be passed in so that FE-Buddy may download it." />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               bhv:InlineCode.Text="Note: You can add more than one local or remote file, along with a combination of the two. If one is last cycle's `Combined_Alias.txt`, its old FE-Buddy aliases are skipped, not added twice." />
 
-                <TextBlock Text="{Binding FeBuddyAliasSummary}" TextWrapping="Wrap" Margin="0,10,0,0"
-                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasNoFeBuddyAliasFiles}" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </StackPanel>
-        </ctl:Card>
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{StaticResource Brush.Warn}"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               bhv:InlineCode.Text="No custom alias files yet, so `Combined_Alias.txt` will have only FE-Buddy's aliases. Uploading it would remove your facility's own aliases from vNAS. Add your facility's alias file here first."
+                               Visibility="{Binding HasSources, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
-        <!-- ============ custom alias files ============ -->
-        <ctl:Card Header="Custom Alias Files" Outputs="Alias" bhv:FieldState.Error="{Binding FieldErrors[CustomAliasFiles]}" IsEnabled="{Binding CombineAliasFiles}">
-            <StackPanel>
-                <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
-                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="Add your facility's own alias files. They go in after FE-Buddy's, in the order below. Every run reads each file fresh, so a file on GitHub is always its latest version. If a file can't be read, it's left out and the Review tab warns you. Check there before you upload." />
-                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
-                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="Choose Add file… for a file on this PC, or Add web address for one online. On GitHub, paste the file's address or its Raw link. For a private repository, choose a GitHub token under Credential or add a new one. Credentials are kept in Settings ▸ Credentials. Check reads the file now, the way the run will." />
+                    <ItemsControl ItemsSource="{Binding Sources}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:AliasSourceRow}">
+                                <!-- One line - the file's name and its status, Check, and the order / remove
+                                     buttons - until opened with the chevron (issue #326). -->
+                                <Border Style="{StaticResource Panel.Inset}" Margin="0,0,0,6" Padding="6,5,8,5">
+                                    <StackPanel>
 
-                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8" TextWrapping="Wrap" Foreground="{StaticResource Brush.Warn}"
-                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="No custom alias files yet, so Combined_Alias.txt will have only FE-Buddy's aliases. Uploading it would remove your facility's own aliases from vNAS. Add your facility's alias file here first."
-                           Visibility="{Binding HasSources, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-
-                <ItemsControl ItemsSource="{Binding Sources}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type m:AliasSourceRow}">
-                            <!-- One line - the file's name and its status, Check, and the order / remove
-                                 buttons - until opened with the chevron (issue #326). -->
-                            <Border Style="{StaticResource Panel.Inset}" Margin="0,0,0,6" Padding="6,5,8,5">
-                                <StackPanel>
-
-                                    <DockPanel>
-                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Button Style="{StaticResource Button.Ghost}" Content="{Binding CheckLabel}" Padding="12,4" Margin="8,0,6,0"
-                                                    ToolTip="Read the file now, the way the run will."
-                                                    Command="{Binding CheckCommand}" />
-                                            <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Chevron.Up}"
-                                                    ToolTip="Move this file up one place" Command="{Binding MoveUpCommand}" />
-                                            <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Chevron.Down}"
-                                                    ToolTip="Move this file down one place" Command="{Binding MoveDownCommand}" />
-                                            <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Close}"
-                                                    ToolTip="Remove this file from the list" Command="{Binding RemoveCommand}" />
-                                        </StackPanel>
-                                        <ToggleButton Style="{StaticResource Toggle.Row}" IsChecked="{Binding IsExpanded}"
-                                                      ToolTip="{Binding Location}">
-                                            <DockPanel>
-                                                <TextBlock x:Name="Chevron" DockPanel.Dock="Left" Text="{StaticResource Icon.Chevron.Right}"
-                                                           FontFamily="{StaticResource Font.Icon}" FontSize="10" Width="14"
-                                                           Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center" />
-                                                <StackPanel Margin="6,0,0,0">
-                                                    <TextBlock Text="{Binding Header}" Style="{StaticResource Text.Body.Strong}" TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock x:Name="Status" Text="{Binding Status}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
-                                                </StackPanel>
-                                            </DockPanel>
-                                        </ToggleButton>
-                                    </DockPanel>
-
-                                    <!-- opened: where it is, its credential, and any troubleshooting -->
-                                    <StackPanel Margin="24,4,0,4" Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}">
-
-                                        <!-- where it is -->
-                                        <DockPanel Margin="0,4,0,0">
-                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…" Margin="8,0,0,0"
-                                                    Command="{Binding BrowseCommand}"
-                                                    Visibility="{Binding IsFile, Converter={StaticResource BoolToVis}}" />
-                                            <TextBox Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}"
-                                                     LostFocus="OnLocationLostFocus" />
+                                        <DockPanel>
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource Button.Ghost}" Content="{Binding CheckLabel}" Padding="12,4" Margin="8,0,6,0"
+                                                        ToolTip="Read the file now, the way the run will."
+                                                        Command="{Binding CheckCommand}" />
+                                                <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Chevron.Up}"
+                                                        ToolTip="Move this file up one place" Command="{Binding MoveUpCommand}" />
+                                                <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Chevron.Down}"
+                                                        ToolTip="Move this file down one place" Command="{Binding MoveDownCommand}" />
+                                                <Button Style="{StaticResource Button.Icon.Small}" Content="{StaticResource Icon.Close}"
+                                                        ToolTip="Remove this file from the list" Command="{Binding RemoveCommand}" />
+                                            </StackPanel>
+                                            <ToggleButton Style="{StaticResource Toggle.Row}" IsChecked="{Binding IsExpanded}"
+                                                          ToolTip="{Binding Location}">
+                                                <DockPanel>
+                                                    <TextBlock x:Name="Chevron" DockPanel.Dock="Left" Text="{StaticResource Icon.Chevron.Right}"
+                                                               FontFamily="{StaticResource Font.Icon}" FontSize="10" Width="14"
+                                                               Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center" />
+                                                    <StackPanel Margin="6,0,0,0">
+                                                        <TextBlock Text="{Binding Header}" Style="{StaticResource Text.Body.Strong}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock x:Name="Status" Text="{Binding Status}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </ToggleButton>
                                         </DockPanel>
 
-                                        <!-- the credential to download it with (web addresses only) -->
-                                        <StackPanel Margin="0,8,0,0" Visibility="{Binding IsUrl, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Text="Credential" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
-                                            <DockPanel>
-                                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="New credential…" Margin="8,0,0,0"
-                                                        ToolTip="Add a GitHub token for a private repository, and use it for this file."
-                                                        Command="{Binding NewCredentialCommand}" />
-                                                <ComboBox Style="{StaticResource Themed.ComboBox}"
-                                                          ItemsSource="{Binding DataContext.Credentials, ElementName=Root}"
-                                                          SelectedValuePath="Id" SelectedValue="{Binding CredentialId}">
-                                                    <ComboBox.ItemTemplate>
-                                                        <DataTemplate DataType="{x:Type m:CredentialChoice}">
-                                                            <TextBlock Text="{Binding Label}" />
-                                                        </DataTemplate>
-                                                    </ComboBox.ItemTemplate>
-                                                </ComboBox>
-                                            </DockPanel>
-                                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                    Content="{Binding SuggestionLabel}" Command="{Binding UseSuggestionCommand}"
-                                                    ToolTip="Download this file with the same credential as an earlier one on the same website."
-                                                    Visibility="{Binding HasSuggestion, Converter={StaticResource BoolToVis}}" />
-                                        </StackPanel>
+                                        <!-- opened: where it is, its credential, and any troubleshooting -->
+                                        <StackPanel Margin="24,4,0,4" Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}">
 
-                                        <!-- after GitHub refused or hid the file: a question, then the help that fits -->
-                                        <!-- (what is wrong with it, and what a check found, is the status line above) -->
-                                        <StackPanel Margin="0,10,0,0" Visibility="{Binding AsksIfPrivate, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
-                                                       Text="Is the repository private - do you have to sign in to GitHub to see this file?" />
-                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                                <Button Style="{StaticResource Button.Ghost}" Content="Yes, it's private" Margin="0,0,8,0"
-                                                        Command="{Binding AnswerPrivateCommand}" />
-                                                <Button Style="{StaticResource Button.Ghost}" Content="No, it's public"
-                                                        Command="{Binding AnswerPublicCommand}" />
+                                            <!-- where it is -->
+                                            <DockPanel Margin="0,4,0,0">
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…" Margin="8,0,0,0"
+                                                        Command="{Binding BrowseCommand}"
+                                                        Visibility="{Binding IsFile, Converter={StaticResource BoolToVis}}" />
+                                                <TextBox Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}"
+                                                         LostFocus="OnLocationLostFocus" />
+                                            </DockPanel>
+
+                                            <!-- the credential to download it with (web addresses only) -->
+                                            <StackPanel Margin="0,8,0,0" Visibility="{Binding IsUrl, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="Credential" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                                <DockPanel>
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="New credential…" Margin="8,0,0,0"
+                                                            ToolTip="Add a GitHub token for a private repository, and use it for this file."
+                                                            Command="{Binding NewCredentialCommand}" />
+                                                    <ComboBox Style="{StaticResource Themed.ComboBox}"
+                                                              ItemsSource="{Binding DataContext.Credentials, ElementName=Root}"
+                                                              SelectedValuePath="Id" SelectedValue="{Binding CredentialId}">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate DataType="{x:Type m:CredentialChoice}">
+                                                                <TextBlock Text="{Binding Label}" />
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                </DockPanel>
+                                                <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                        Content="{Binding SuggestionLabel}" Command="{Binding UseSuggestionCommand}"
+                                                        ToolTip="Download this file with the same credential as an earlier one on the same website."
+                                                        Visibility="{Binding HasSuggestion, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+
+                                            <!-- after GitHub refused or hid the file: a question, then the help that fits -->
+                                            <!-- (what is wrong with it, and what a check found, is the status line above) -->
+                                            <StackPanel Margin="0,10,0,0" Visibility="{Binding AsksIfPrivate, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                                                           Text="Is the repository private - do you have to sign in to GitHub to see this file?" />
+                                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                    <Button Style="{StaticResource Button.Ghost}" Content="Yes, it's private" Margin="0,0,8,0"
+                                                            Command="{Binding AnswerPrivateCommand}" />
+                                                    <Button Style="{StaticResource Button.Ghost}" Content="No, it's public"
+                                                            Command="{Binding AnswerPublicCommand}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsPrivateHelp, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                                           Text="A private repository needs a GitHub token that can read it. The guide shows how to make one. Then choose it under Credential above, or add it with New credential…" />
+                                                <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                        Content="Open the GitHub token guide" Command="{Binding OpenTokenGuideCommand}" />
+                                            </StackPanel>
+                                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                                       Text="Then the address is probably wrong. Open the file on GitHub and copy its address again, or its Raw link. To check the repository is public, open the address while signed out of GitHub. You'll only see the file if it is."
+                                                       Visibility="{Binding ShowsPublicHelp, Converter={StaticResource BoolToVis}}" />
+                                            <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsCredentialHelp, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                                           Text="Check the credential. The GitHub token needs this repository with Contents: Read-only, and it may have expired. The guide's troubleshooting section explains each message and how to fix it." />
+                                                <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                        Content="Open the guide's troubleshooting" Command="{Binding OpenTokenTroubleshootingCommand}" />
                                             </StackPanel>
                                         </StackPanel>
-                                        <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsPrivateHelp, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                                       Text="A private repository needs a GitHub token that can read it. The guide shows how to make one. Then choose it under Credential above, or add it with New credential…" />
-                                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                    Content="Open the GitHub token guide" Command="{Binding OpenTokenGuideCommand}" />
-                                        </StackPanel>
-                                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                                                   Text="Then the address is probably wrong. Open the file on GitHub and copy its address again, or its Raw link. To check the repository is public, open the address while signed out of GitHub. You'll only see the file if it is."
-                                                   Visibility="{Binding ShowsPublicHelp, Converter={StaticResource BoolToVis}}" />
-                                        <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsCredentialHelp, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                                       Text="Check the credential. The GitHub token needs this repository with Contents: Read-only, and it may have expired. The guide's troubleshooting section explains each message and how to fix it." />
-                                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                    Content="Open the guide's troubleshooting" Command="{Binding OpenTokenTroubleshootingCommand}" />
-                                        </StackPanel>
                                     </StackPanel>
-                                </StackPanel>
-                            </Border>
-                            <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                    <Setter TargetName="Chevron" Property="Text" Value="{StaticResource Icon.Chevron.Down}" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding StatusTone}" Value="Positive">
-                                    <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Positive}" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding StatusTone}" Value="Warn">
-                                    <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Warn}" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding StatusTone}" Value="Danger">
-                                    <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Danger}" />
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                        <Setter TargetName="Chevron" Property="Text" Value="{StaticResource Icon.Chevron.Down}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding StatusTone}" Value="Positive">
+                                        <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Positive}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding StatusTone}" Value="Warn">
+                                        <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding StatusTone}" Value="Danger">
+                                        <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                    <Button Style="{StaticResource Button.Ghost}" Content="Add file…" Margin="0,0,8,0"
-                            ToolTip="Add an alias file on this PC." Command="{Binding AddFileCommand}" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Add web address"
-                            ToolTip="Add an alias file on the web, such as on GitHub." Command="{Binding AddUrlCommand}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Button Style="{StaticResource Button.Ghost}" Content="Add local file" Margin="0,0,8,0"
+                                ToolTip="Add an alias file on this PC." Command="{Binding AddFileCommand}" />
+                        <Button Style="{StaticResource Button.Ghost}" Content="Add remote file"
+                                ToolTip="Add an alias file on the web, such as on GitHub." Command="{Binding AddUrlCommand}" />
+                    </StackPanel>
                 </StackPanel>
             </StackPanel>
         </ctl:Card>

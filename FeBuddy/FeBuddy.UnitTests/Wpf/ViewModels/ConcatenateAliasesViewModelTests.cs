@@ -2,8 +2,8 @@ using System.Net;
 
 using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
-using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Credentials;
@@ -13,11 +13,11 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers the Concatenate Aliases tab (<see cref="ConcatenateAliasesViewModel"/>): combining is on to start
-/// and saved, which FE-Buddy alias files go into <c>Combined_Alias.txt</c>, what the run is sent
-/// while combining is off, a GitHub address shown as its Raw link, the help <b>Check</b> offers when
-/// GitHub refuses a file, and a file on this PC with no alias commands - against a throwaway config,
-/// an empty credential store and canned downloads.
+/// Covers the Add Custom Aliases tab (<see cref="ConcatenateAliasesViewModel"/>): the custom alias
+/// files are added to start, and the choice is saved; what the run is sent while they aren't added; a
+/// GitHub address shown as its Raw link, the help <b>Check</b> offers when GitHub refuses a file, and a
+/// file on this PC with no alias commands - against a throwaway config, an empty credential store and
+/// canned downloads.
 /// </summary>
 [Collection("AppLog")]
 public sealed class ConcatenateAliasesViewModelTests : IDisposable
@@ -59,83 +59,70 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 	}
 
 	[Fact]
-	public void combining_is_on_to_start_and_the_run_gets_the_custom_files()
+	public void the_custom_files_are_added_to_start_and_the_run_gets_them()
 	{
 		ConcatenateAliasesViewModel tab = TabWithCustomFile("https://example.com/ZOB-Alias.txt");
 
-		Assert.True(tab.CombineAliasFiles);
-		Assert.Equal("Concatenate Aliases", tab.Title);
+		Assert.True(tab.AddCustomAliasFiles);
+		Assert.Equal("Add Custom Aliases", tab.Title);
 		Assert.Equal(@"Aliases\Combined_Alias.txt", ConcatenateAliasesViewModel.OutputFile);
 
 		IReadOnlyDictionary<string, string> block = tab.BuildSettingsBlock();
-		Assert.Equal("Y", block["CombineAliasFiles"]);
+		Assert.Equal("Y", block["AddCustomAliasFiles"]);
 		Assert.Equal("https://example.com/ZOB-Alias.txt", block["Sources.1.Url"]);
+		Assert.Equal(
+			[@"Added to `Aliases\Combined_Alias.txt`, after every FE-Buddy alias file this run writes", "https://example.com/ZOB-Alias.txt, with no credential"],
+			Assert.Single(tab.BuildPreviewSummary()).Rows.Select(row => row.Value));
 	}
 
-	/// <summary>Off, the custom files are neither sent nor checked: nothing would read them.</summary>
+	/// <summary>Not added, the custom files are neither sent nor checked: nothing would read them.</summary>
 	[Fact]
-	public void with_combining_off_the_custom_files_are_not_sent_or_checked()
+	public void with_the_custom_files_not_added_they_are_not_sent_or_checked()
 	{
 		ConcatenateAliasesViewModel tab = TabWithCustomFile(string.Empty);
 		Assert.Equal("Custom alias file 1: Enter the file's web address.", tab.ValidationError);
 
-		tab.CombineAliasFiles = false;
+		tab.AddCustomAliasFiles = false;
 
 		Assert.Null(tab.ValidationError);
 		Assert.Null(tab.Sources[0].Error);
-		Assert.Equal(new Dictionary<string, string> { ["CombineAliasFiles"] = "N" }, tab.BuildSettingsBlock());
+		Assert.Equal(new Dictionary<string, string> { ["AddCustomAliasFiles"] = "N" }, tab.BuildSettingsBlock());
 		Assert.Equal(
-			@"No: each alias file stays on its own in Aliases\",
+			@"Not added: `Aliases\Combined_Alias.txt` holds only FE-Buddy's alias files",
 			Assert.Single(Assert.Single(tab.BuildPreviewSummary()).Rows).Value);
 
-		SubServiceRunResult? review = tab.DescribeRunResult(new AiracServiceResult { OutputDirectory = _root, Messages = [], Elapsed = TimeSpan.Zero });
-		Assert.Equal("Combining is off, so Combined_Alias.txt was not written", review?.Summary);
+		AiracServiceResult result = new()
+		{
+			OutputDirectory = _root,
+			Messages = [],
+			Elapsed = TimeSpan.Zero,
+			CombinedAlias = new CombinedAliasResult
+			{
+				FilePath = Path.Combine(_root, "Aliases", "Combined_Alias.txt"),
+				FeBuddyFiles = ["Airports.txt"],
+				FeBuddyCommandCount = 3,
+				Messages = [],
+				Elapsed = TimeSpan.Zero,
+			},
+		};
+
+		Assert.Equal(
+			"Combined_Alias.txt: 3 command(s) from Airports.txt. Your custom alias files weren't added",
+			tab.DescribeRunResult(result)?.Summary);
+		Assert.Null(tab.DescribeRunResult(new AiracServiceResult { OutputDirectory = _root, Messages = [], Elapsed = TimeSpan.Zero }));
 	}
 
+	/// <summary>The choice is saved under its first name, CombineAliasFiles, so an earlier "off" carries over.</summary>
 	[Fact]
 	public void the_choice_is_saved_and_read_back()
 	{
 		ConcatenateAliasesViewModel tab = NewTab();
-		tab.CombineAliasFiles = false;
+		tab.AddCustomAliasFiles = false;
 
 		Assert.True(tab.Save());
 
 		Assert.Equal("N", UserConfigFile.GetValue("Services.AiracService.ConcatenateAliases.CombineAliasFiles"));
-		Assert.False(NewTab().CombineAliasFiles);
-	}
-
-	/// <summary>Each FE-Buddy alias file says whether it goes in, and if not, why not.</summary>
-	[Fact]
-	public void each_fe_buddy_alias_file_says_whether_it_goes_in()
-	{
-		AiracGeneralTabViewModel general = new();
-		AirportsViewModel airports = new();
-		airports.AttachOutputs(general.RowFor(AiracSubServices.AirportsKey)!);
-		ArrivalsViewModel arrivals = new();
-		arrivals.AttachOutputs(general.RowFor(AiracSubServices.ArrivalsKey)!);
-		general.RowFor(AiracSubServices.ArrivalsKey)!.Alias = false;
-
-		ConcatenateAliasesViewModel tab = NewTab();
-		tab.AttachToService(
-			d => d.Key switch
-			{
-				AiracSubServices.AirportsKey => airports,
-				AiracSubServices.ArrivalsKey => arrivals,
-				_ => null,
-			},
-			_ => { });
-
-		Assert.Equal(("Goes into Combined_Alias.txt", true), Status(tab, "Airports.txt"));
-		Assert.Equal(("Alias file turned off on the General tab", false), Status(tab, "Arrivals.txt"));
-		Assert.Equal(("Not included on the General tab", false), Status(tab, "Telephony.txt"));
-		Assert.Equal("1 of 7 FE-Buddy alias files go in, ahead of your custom aliases.", tab.FeBuddyAliasSummary);
-		Assert.False(tab.HasNoFeBuddyAliasFiles);
-
-		tab.CombineAliasFiles = false;
-
-		Assert.Equal(("Written on its own: combining is off", false), Status(tab, "Airports.txt"));
-		Assert.Equal(@"Combining is off, so each alias file stays on its own in Aliases\.", tab.FeBuddyAliasSummary);
-		Assert.False(tab.HasNoFeBuddyAliasFiles);
+		Assert.False(NewTab().AddCustomAliasFiles);
 	}
 
 	/// <summary>Whatever form a GitHub address is pasted in, leaving the box shows the file's Raw link.</summary>
@@ -309,11 +296,5 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 		row.SetCheck(false, "GitHub refused the credential.", AliasTroubleshooting.CredentialRefused);
 		Assert.Equal(AliasSourceTone.Danger, row.StatusTone);
 		Assert.True(row.IsExpanded);
-	}
-
-	private static (string Status, bool IsAdded) Status(ConcatenateAliasesViewModel tab, string fileName)
-	{
-		FeBuddyAliasFileRow row = tab.FeBuddyAliasFiles.Single(file => file.FileName == fileName);
-		return (row.Status, row.IsAdded);
 	}
 }

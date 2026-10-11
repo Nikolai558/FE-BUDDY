@@ -9,7 +9,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
-             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:WxStationsViewModel}"
@@ -33,23 +32,8 @@
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
-                                    SymbolsDescription="A symbol at each weather station."
-                                    TextDescription="A two-line label at each station: its ICAO ID, then its IATA ID and name. Ex: KDTW, then DTW_Detroit/Metro Wayne Cnty"
-                                    Footnote="Files go in `Geojson\` in the cycle's folder." />
-
-            <!-- ============ station data ============ -->
-            <ctl:Card Header="Station Data" Outputs="Geojson">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Weather stations come from aviationweather.gov, not the FAA's AIRAC data. Every run downloads the latest list, for any cycle." />
-                    <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,0,0,8"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Included: stations with an ICAO ID that report METARs, in the US, Puerto Rico, the US Virgin Islands, Guam, the Northern Mariana Islands, American Samoa and the US Minor Outlying Islands." />
-                    <TextBlock Text="{Binding StationDataStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
-                </StackPanel>
-            </ctl:Card>
+                                    SymbolsFile="Wx_Symbols.geojson" SymbolsDescription="Weather station symbols."
+                                    TextFile="Wx_Text.geojson" TextDescription="Each station's ICAO ID, then its IATA ID and name on a second line.&#xA;Example: KDTW, then DTW_Detroit/Metro Wayne Cnty" />
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard SymbolsTitle="Wx Stations — Symbols" TextTitle="Wx Stations — Text">

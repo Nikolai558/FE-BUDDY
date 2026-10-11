@@ -2,11 +2,11 @@ using FeBuddy.Core.Application.Models;
 
 namespace FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 
-/// <summary>The outcome of parsing the raw Concatenate Aliases settings dictionary.</summary>
-/// <param name="Sources">The user's custom alias files, in the order they are merged; none while combining is off.</param>
+/// <summary>The outcome of parsing the raw Add Custom Aliases (Concatenate Aliases) settings dictionary.</summary>
+/// <param name="Sources">The user's custom alias files, in the order they are merged; none while they aren't added.</param>
 /// <param name="Messages">Non-fatal parsing messages (e.g. unrecognized keys that were ignored).</param>
-/// <param name="Combine">Whether to combine the alias files into <c>Combined_Alias.txt</c>.</param>
-public sealed record ConcatenateAliasesSettingsParseResult(IReadOnlyList<AliasSource> Sources, IReadOnlyList<ServiceMessage> Messages, bool Combine = true);
+/// <param name="AddsCustomFiles">Whether to add the custom alias files to <c>Combined_Alias.txt</c>.</param>
+public sealed record ConcatenateAliasesSettingsParseResult(IReadOnlyList<AliasSource> Sources, IReadOnlyList<ServiceMessage> Messages, bool AddsCustomFiles = true);
 
 /// <summary>
 /// What reading one custom alias file produced: its text, or why it could not be read. A problem is
@@ -26,6 +26,12 @@ public sealed record AliasSourceLoad(AliasSource Source, string? Text, string? P
 
 	/// <summary>How many alias commands it holds (lines starting with a dot); 0 when it could not be read.</summary>
 	public int CommandCount => Text is null ? 0 : CombinedAliasFileWriter.CountCommands(Text);
+
+	/// <summary>
+	/// The warning when the GitHub token it was downloaded with expires within
+	/// <see cref="Infrastructure.GitHub.GitHubTokenExpiry.WarningDays"/> days; otherwise <see langword="null"/>.
+	/// </summary>
+	public string? CredentialWarning { get; init; }
 
 	/// <summary>A file that was read.</summary>
 	/// <param name="source">The file.</param>

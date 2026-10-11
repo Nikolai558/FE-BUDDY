@@ -18,7 +18,11 @@ public partial class CrcDefaultsCard : UserControl
 	/// <summary>Identifies the <see cref="Note"/> dependency property.</summary>
 	public static readonly DependencyProperty NoteProperty = Register(
 		nameof(Note),
-		"CRC-ERAM defaults set how CRC draws everything in a file. They're written as a hidden isDefaults feature at the top of the file. Choose which files get them, then fill in every box below.");
+		"CRC-ERAM \"Map Defaults\" tell CRC how a map is to be displayed.\n\n"
+		+ "Map Defaults are usually defined at the beginning of the GeoJSON file with specific properties, which you can "
+		+ "check out [HERE](https://docs.virtualnas.net/data-admin/video-maps/#map-defaults).\n\n"
+		+ "Choose which files get the Map Defaults, if any, and set the values you desire.\n"
+		+ "Note: This should be a one-time setup, as these values are saved to your `UserConfig.json` file.");
 
 	/// <summary>Identifies the <see cref="Choice"/> dependency property.</summary>
 	public static readonly DependencyProperty ChoiceProperty = DependencyProperty.Register(
@@ -40,7 +44,10 @@ public partial class CrcDefaultsCard : UserControl
 	/// <summary>Creates the card.</summary>
 	public CrcDefaultsCard() => InitializeComponent();
 
-	/// <summary>The line under the header saying what the values are for.</summary>
+	/// <summary>
+	/// The text under the header saying what the values are for. A name between backticks shows as
+	/// code, and a <c>[text](https://...)</c> link as a link (<c>bhv:InlineCode</c>).
+	/// </summary>
 	public string Note { get => (string)GetValue(NoteProperty); set => SetValue(NoteProperty, value); }
 
 	/// <summary>

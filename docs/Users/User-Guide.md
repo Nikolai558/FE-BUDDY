@@ -36,7 +36,7 @@ Where you make files, every one ready for vNAS. The tabs run down the left:
 |---|---|
 | **General** | The cycle, which sub-services run, and the files each makes. |
 | One per sub-service | Its settings. Greyed out while it's left out on General. |
-| **File Names** | Every file the run will write, and new names for most of them. |
+| **File Names** | New names for any of the files the run will write. |
 | **Preview Settings** | What the run will do, and the **Run AIRAC Service** button. |
 | **Review** | Appears when you run: progress, then what the run did. |
 
@@ -48,13 +48,15 @@ Each card's title row tags the files its settings change: **Alias**, **GeoJSON**
 columns. A tag is struck through while that file is off, and a card whose files are all off is
 greyed out. Where a card changes two files differently, a line for each says how.
 
-Each sub-service tab but Concatenate Aliases starts with **What You'll Get with the Current
+Each sub-service tab but Add Custom Aliases starts with **What You'll Get with the Current
 Settings**: what its files will hold, under each file's tag, one filter per line. Read top to
 bottom, chips and all, it's one sentence: "Every STAR **for** airports in ZOB **and only** those
 amended this cycle". **for** and **in** say where, **but only** and **and only** narrow the lines
 above, and **along with** adds to them. Where its files get different things, each file has its own
 lines, and **Outputs include** lists what narrows one file further (Procedures:
-`Procedure_Changes.md` keeps only what changed).
+`Procedure_Changes.md` keeps only what changed). Under **outputs** are the files it writes, each with
+what goes in it, then any **note** on them. Its last line says where those outputs are turned on and
+off: the General tab.
 
 ### Saving
 
@@ -65,7 +67,7 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 
 ### General tab
 
-- **Cycle** - Previous, Current or Next, with its effective date and status: *ready*, *partial*
+- **AIRAC Cycle** - Previous, Current or Next, with its effective date and status: *ready*, *partial*
   (the [d-TPP Metafile](#procedures-tab) isn't out yet, so Procedures writes nothing; hover the row
   for when to expect it), *failed*, or *not yet published* (the FAA releases a cycle a few weeks
   early).
@@ -73,18 +75,17 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
   **Alias**, **GeoJSON**, and Procedures' **Procedure Changes** and **Procedures JSON**. All are on
   until you first save. Unticking **Include** unticks its files, and ticking it ticks them all; untick
   its last file and it's left out, tick one and it's back in. One left out is greyed out in the list
-  to the left and keeps its settings. Concatenate Aliases comes in by itself while an alias file is
+  to the left and keeps its settings. Add Custom Aliases comes in by itself while an alias file is
   ticked.
 
 ### The cards most tabs share
 
-The tabs that write GeoJSON share these cards; Procedures, Telephony and Concatenate Aliases have
+The tabs that write GeoJSON share these cards; Procedures, Telephony and Add Custom Aliases have
 their own.
 
-- **Outputs** - which of the tab's files are on; change them on the General tab.
-- **What Files Do You Want?** - which of **Lines**, **Symbols** and **Text** to write. Symbols with
-  exactly the same properties are written as one feature (a MultiPoint), so Symbols files stay
-  small; labels are always one feature each.
+- **What Files Do You Want?** - which of **Lines**, **Symbols**, and **Text** to write, each with the
+  files it makes. Symbols with exactly the same properties are written as one feature (a MultiPoint),
+  so Symbols files stay small; labels are always one feature each.
 - **FE-Buddy Properties** - optional `feb.*` fields that tell you what each object is in a GeoJSON
   viewer. CRC ignores them. One that differs from point to point, such as an ID, keeps each symbol a
   feature of its own.
@@ -94,12 +95,13 @@ their own.
   specific to *tab*** and type its corners or **Pick on map…**. A tab you've never saved starts on
   its ARTCCs if any are ticked, otherwise the ROI if a default ROI is set, otherwise Everything.
   Procedures has an Area card of its own.
-- **CRC ERAM Defaults** - how CRC draws a file, written as a hidden feature at its top. At the top of
-  the card, choose which GeoJSON files get them: **No CRC-ERAM defaults** (to start), **Every GeoJSON
-  file from this tab**, or **Only the files I tick**. Then fill in every box shown; the lists offer
-  only values CRC accepts. Airways, NAVAIDs, ARTCC
-  Boundaries and Fixes can ask for a set per class (High or Low, NAVAID type, altitude, fix group),
-  so their files can look different.
+- **CRC ERAM Defaults** - CRC's "Map Defaults": how CRC draws a file, written as a hidden feature at
+  its top ([vNAS docs](https://docs.virtualnas.net/data-admin/video-maps/#map-defaults)). At the top
+  of the card, choose which GeoJSON files get them: **No CRC-ERAM defaults** (to start), **Every
+  GeoJSON file from this tab**, or **Only the files I tick**. Then fill in every box shown; the lists
+  offer only values CRC accepts. They're saved with your settings, so it's a one-time setup.
+  Airways, NAVAIDs, ARTCC Boundaries, and Fixes can ask for a set per class (High or Low, NAVAID
+  type, altitude, fix group), so their files can look different.
 
 ### ARTCC Boundaries tab
 
@@ -107,34 +109,38 @@ Each ARTCC's boundary as lines. No Symbols, Text or alias file.
 
 - **Area** - the ARTCCs you tick, drawn in full; every boundary inside the ROI, clipped at its
   edge; or every boundary.
-- **File Layout** - **High and Low** (the default; an UNLIMITED boundary goes in both), **High, Low
+- **File Layout** - **High and Low** (the default; an UNLIMITED boundary goes in both), **High, Low,
   and Unlimited**, or **One file per ARTCC and altitude** (`ARTCC-Boundary_ZOB-HIGH_Lines`, …), to
-  style your own ARTCC apart from its neighbours.
-- **Split GeoJSON at the Antimeridian** - leave it on: ZAK, ZAN, ZAP and ZOA cross ±180°.
+  style your own ARTCC apart from its neighbors.
+- **Split GeoJSON at the Antimeridian** - leave it on: ZAK, ZAN, ZAP, and ZOA cross ±180°, and most
+  GeoJSON viewers, CRC included, need the lines split.
 - ZAK, ZAP and ZWY have two overlapping oceanic rings at one altitude; the `feb.type` property tells
   them apart.
 
 ### Airports tab
 
-- **Files** - Runways (lines), Airports symbols, and Airports text (FAA ID and name). With **ROI**
-  as the area, an airport is included when its reference point is inside it.
+- **Files** - `Runways_Lines`, `Airports_Symbols`, and `Airports_Text` (FAA ID and name). With
+  **ROI** as the area, only the airports inside it.
 - **`Airports.txt`** - an `.apt` command for each FAA ID, and the ICAO ID if it's different, showing
-  the airport's card in CRC: name, tower type, ARTCC, longest runway, elevation, CTAF, weather, hours
-  and airspace class. It covers every open airport; the area only limits the GeoJSON.
+  the airport's card in CRC: name, tower type, ARTCC, longest runway, elevation, CTAF, weather, hours,
+  and airspace class. It covers every operational airport; the area only limits the GeoJSON.
 
 ### Airways tab
 
-- **Split into** - **High and Low** (`Airways_High`, `Airways_Low`) or **Airway types** (`Airways_J`,
-  `Airways_V`, …). For High and Low, the **High and Low Files** card puts each airway type in High,
-  Low or Both, by type rather than altitude: J and Q start in High, V and T in Low, and any other type
-  must be chosen. For no Airways GeoJSON, untick its **GeoJSON** box on the General tab.
-- **`Airways.txt`** - a command per airway that shows its fixes, e.g. `.J3F`: **Every airway** or,
-  with **ROI** as the area, **Only airways that cross the ROI**.
+- **File Layout** - **High and Low** (`Airways_High`, `Airways_Low`) or **Airway Types**
+  (`Airways_J`, `Airways_V`, …). For High and Low, the **High and Low Airway Classification** card
+  puts each airway type in High, Low, or Both, by type rather than altitude: J and Q start in High, V
+  and T in Low, and any other type must be chosen. For no Airways GeoJSON, untick its **GeoJSON** box
+  on the General tab.
+- **`Airways.txt`** - a command per airway that draws its waypoints, e.g. `.J3F`.
 - **Airway Types to Include** - untick one to leave it out of the GeoJSON and the alias file.
 - **Buffer Airway Waypoints** (off to start) - stops lines short of each waypoint so they don't run
-  through the symbols: 2.5 NM around fixes and 5 NM around NAVAIDs to start.
+  through the symbols: 2.5 NM around fixes and 5 NM around NAVAIDs to start, up to 10 NM. A leg too
+  short for both gaps isn't drawn.
 - **Split GeoJSON at the Antimeridian** - leave it on.
 - **Area** - with **ROI**, an airway is included when its line crosses the ROI, and is clipped to it.
+  Under ROI, while the alias file is on, choose whether it gets **Every airway** or **Only airways
+  that cross the ROI**. With Everything, it gets every airway.
 
 ### Departures and Arrivals tabs
 
@@ -145,7 +151,8 @@ covers STARs. Otherwise the two tabs work the same.
   per airport: `Geojson\<ARTCC>\<airport>\<airport>_<procedure>_Lines.geojson`. Arrivals add `STAR`
   (`LAS_BLAID_STAR_Lines.geojson`).
 - **Alias file** - `Departures.txt` or `Arrivals.txt`: a command per airport and procedure that draws
-  its fixes. A STAR lists its transitions first, then its bodies.
+  its fixes (`.laxDOTSSf`, `.lasBLAIDf`). A STAR lists its transitions first, then its bodies. The
+  Alias Command Guide, under Info, has more examples and the exceptions.
 - **Routes** - each airport gets the bodies the FAA's data assigns it (all of them when the
   procedure has no assignments), plus every transition. When the data assigns bodies to some
   airports but not others, a departure's left-out airport gets only the transitions, and a STAR's
@@ -154,8 +161,9 @@ covers STARs. Otherwise the two tabs work the same.
   own), the ROI, or everything. With **ROI**, **Which Departures (or Arrivals) the ROI Keeps**: every
   procedure for an airport inside it, or any procedure with a fix inside it. The area limits the
   alias file too.
-- **Amendment Date** - every procedure, or only those amended in the last *N* cycles (counting the
-  selected one), the last *N* days, or since a date.
+- **Amendment Date** - **No** for every procedure, or **Yes** for only those amended in the last *N*
+  cycles (1 is the selected cycle only; What You'll Get names the oldest cycle kept), the last *N*
+  days (counted from today, not the cycle's effective date), or since a date.
 - **Names** - the FAA computer code without its version (`DOTSS2.DOTSS` is `DOTSS`; a STAR's runs the
   other way, so `AALAN.BLAID2` is `BLAID`), or the name without punctuation when there's no code
   (`O'HARE` is `OHARE`).
@@ -163,26 +171,27 @@ covers STARs. Otherwise the two tabs work the same.
 
 ### NAVAIDs tab
 
-- **NAVAID Types** - all on to start; an unticked type is left out of the GeoJSON and the alias
-  file. NAVAIDs marked SHUTDOWN are always left out.
-- **File Layout** - *All in one file* (`NAVAIDs_Symbols`, `NAVAIDs_Text`) or *One file per NAVAID
-  type* (`NAVAIDs_VORTACs_Symbols`, …).
+- **NAVAID Types** - all on to start; an unticked type is left out of the GeoJSON. The alias file
+  always has every type. NAVAIDs marked SHUTDOWN are always left out.
+- **File Layout** - **All-in-One File** (`NAVAIDs_Symbols`, `NAVAIDs_Text`) or **One File per Type**
+  (`NAVAIDs_VORTACs_Symbols`, …).
 - **Files** - Symbols, and Text: the identifier, then the name and type (`CGT` /
   `CHICAGO HEIGHTS VORTAC`).
-- **NAVAID Symbol Style** - with *All in one file* and CRC-ERAM defaults on the Symbols file: **By
+- **NAVAID Symbol Style** - with **All-in-One File** and CRC-ERAM defaults on the Symbols file: **By
   NAVAID type** (you choose the fan markers' symbol), or **The same symbol for every NAVAID**.
 - **`Navaids.txt`** - a `.nav` command for each identifier and each name, showing the name, type,
-  frequency and ARTCCs. NAVAIDs that share an identifier (`ABQ` is a VORTAC and a VOT) share one
-  command. It covers every NAVAID of the ticked types; the area only limits the GeoJSON.
+  frequency, and ARTCCs. NAVAIDs that share an identifier (`ABQ` is a VORTAC and a VOT) share one
+  command. It covers every operational NAVAID; the types and the area only limit the GeoJSON.
 
 ### Fixes tab
 
 A symbol and a label (its identifier) for every NASR fix. No Lines or alias file.
 
-- **File Layout** - all fixes in one file (the default: `Fix_Symbols`, `Fix_Text`), or one file per
-  fix use (`Fix_WYPNT_Symbols`), per chart (`Fix_ENROUTE-LOW_Symbols`; a fix on several charts goes
-  in each, one on none in `Fix_NO-CHART_Symbols`), or per chart + fix use pair you add under
-  **Combinations** (`Fix_ENROUTE-LOW-WYPNT_Symbols`). Untick any fix uses or charts you don't want.
+- **File Layout** - **All-in-One File** (the default: `Fix_Symbols`, `Fix_Text`), or one file per
+  fix use (`Fix_WYPNT_Symbols`), per chart type (`Fix_ENROUTE-LOW_Symbols`; a fix on several charts
+  goes in each, one on none in `Fix_NO-CHART_Symbols`), or per fix use and chart type combination you
+  add under **Combinations** (`Fix_ENROUTE-LOW-WYPNT_Symbols`). Untick any fix uses or charts you
+  don't want.
 - **Area** - with **ROI**, a fix is included when it's inside the ROI.
 
 ### Procedures tab
@@ -194,19 +203,20 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
 - **Outputs** (on or off on the General tab) - `Procedure_Changes.md` (what changed this cycle) and
   `Procedures.json` (every current chart) for the airports you pick, and `Faa_Chart_Recall.txt`
   ([chart recall commands](#faa-chart-recall-commands) for every chart at every airport, not just the
-  ones you pick).
-- **d-TPP Data** - the cycle's metafile, and whether a deleted chart can be linked to its last copy
-  (that needs the previous cycle's metafile).
-- **Area** - what the documents cover: **Facilities** (every airport of the ones you tick), **ROI**
-  (every airport inside it), **Everything** (every airport in the metafile), or **None**. Nothing is
-  clipped.
+  ones you pick). While `Faa_Chart_Recall.txt` is on, the cards below say they don't apply to it.
+- An amber box at the top says when the cycle's metafile is missing, or, with
+  `Procedure_Changes.md` on, when the previous cycle's is (deleted charts then go unlinked).
+- **Area** - which airports the documents cover: **Facilities** (every airport of the ones you
+  tick), **ROI** (every airport inside it), **Everything** (every airport in the metafile), or
+  **None**. Nothing is clipped.
 - **What the cards add** - even outside the area: the **Airports** you list (FAA or ICAO ID),
   **Procedures at Any Airport**, by name, and **Airport + Procedure** pairs. With **Everything** they
   aren't used, and keep their lists. **Chart Types** sets which kinds of chart a whole airport adds;
   a procedure picked by name is always included.
 - **Airports** takes a list: type or paste up to 100 IDs, separated by spaces, commas, or new lines,
   and press Enter or **Add**. Any it can't add stay in the box, with why underneath: not an airport
-  this cycle, already listed, or already included by the area.
+  this cycle, already listed, or already included by the area. **Procedures at Any Airport** takes
+  Enter or **Add** too.
 - **Procedures.json Fields** - the optional fields the JSON carries.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
@@ -247,58 +257,58 @@ the operator's card. Operators that share a command show a card each. Telephony 
     yours: the list VATSIM-Radar shows, built from GNG's fictional airlines and VATSIM-Radar's own
     additions. Runs download each part at most once a day; **Download the latest list** fetches both
     now. A part that can't be downloaded is named in amber, and its last copy is used.
-- **Telephony Data** - FAA Order JO 7340.2, Chapter 3, downloaded every run. Entries with no
-  three-letter designator or no telephony, and expired special call signs, are left out.
+- The operators come from FAA Order JO 7340.2, Chapter 3 (Sections 1 and 4, linked from What You'll
+  Get), downloaded every run. Entries with no three-letter designator or no telephony, and expired
+  special call signs, are left out.
 
 ### Wx Stations tab
 
-A symbol and a label for every US and US-territory station that reports METAR. No Lines or alias
-file.
+A symbol and a label for every US and US-territory station that reports METARs, from
+aviationweather.gov's station list (not NASR), downloaded every run. No Lines or alias file.
 
 - **What Files Do You Want?** - Symbols, and Text: the ICAO ID, then the IATA ID and site name
   (`KDTW` / `DTW_Detroit/Metro Wayne Cnty`).
-- **Station Data** - aviationweather.gov's station list, not NASR, downloaded every run.
 - **Area** - with **ROI**, a station is included when it's inside the ROI.
 
-### Concatenate Aliases tab
+### Add Custom Aliases tab
 
-vNAS takes one alias file per facility, so this tab writes `Aliases\Combined_Alias.txt`: every alias
-file the run makes, then your facility's own, which win because CRC uses the last copy of a command.
-Upload that one file. Untick **Combine the alias files into one file for vNAS** to leave each alias
-file on its own. The tab is greyed out while no sub-service makes an alias file.
+vNAS takes one alias file per facility, so every run that makes an alias file writes
+`Aliases\Combined_Alias.txt`: every alias file the run makes, then - if you answer **Yes** - your
+facility's own, which win because CRC uses the last copy of a command. Upload that one file. The tab
+is greyed out while no sub-service makes an alias file.
 
-- **FE-Buddy Alias Files** - which of FE-Buddy's alias files go in, as the General tab stands.
-- **Custom Alias Files** - your own, merged in the order listed. Each is one line - its name, how it
-  stands, **Check** and the order buttons - until you click it open for its address and credential:
-  - **Add file…** for a file on this PC (it must hold alias commands), or **Add web address**. On
-    GitHub, paste the file's page or its Raw link; FE-Buddy shows it as the Raw link. Never put a
-    password or token in the address: for a private repository, choose a **Credential**
-    ([GitHub token guide](GitHub-Token-Guide.md)).
-  - **Check** reads the file now. If GitHub won't show it, Check asks whether the repository is
-    private and points you to the token guide - or, with a credential chosen, to its
-    [troubleshooting](GitHub-Token-Guide.md#if-something-goes-wrong).
-  - Every run reads them fresh. One that can't be read is left out with a warning: don't upload
-    until it's fixed. With none at all, the Review tab warns that uploading would remove your
-    facility's own aliases from vNAS.
-  - Last cycle's `Combined_Alias.txt` works as a custom file: FE-Buddy's section in it is dropped. A
-    `.FeUseOnly` line moves to the top.
+Your files are added in the order listed. Each is one line - its name, how it stands, **Check** and
+the order buttons - until you click it open for its address and credential:
+
+- **Add local file** needs a file holding alias commands. For **Add remote file** on GitHub, paste
+  the file's page or its Raw link; FE-Buddy shows it as the Raw link. Never put a password or token
+  in the address: for a private repository, choose a **Credential**
+  ([GitHub token guide](GitHub-Token-Guide.md)).
+- **Check** reads the file now. If GitHub won't show it, Check asks whether the repository is private
+  and points you to the token guide - or, with a credential chosen, to its
+  [troubleshooting](GitHub-Token-Guide.md#if-something-goes-wrong).
+- Every run reads them fresh. One that can't be read is left out with a warning: don't upload until
+  it's fixed. With none at all, the Review tab warns that uploading would remove your facility's own
+  aliases from vNAS.
+- A `.FeUseOnly` line in your files moves to the top.
 
 ### File Names tab
 
-Every file the run will write, by folder, following the other tabs' settings.
+Choose **Yes** to rename files: every file the run will write is listed under it, by folder,
+following the other tabs' settings.
 
-- To rename some, choose **Yes - rename some files**. Every file starts ticked: untick the ones that
-  keep FE-Buddy's name (**Rename none** unticks them all) and type a new name, without the extension,
-  for the rest - `ZOB High` becomes `ZOB High.geojson`. A ticked file with no name, such as one a
-  later setting adds, turns the tab red.
+- Every file starts ticked: untick the ones that keep FE-Buddy's name (**Rename none** unticks them
+  all) and type a new name, without the extension, for the rest - `ZOB High` becomes
+  `ZOB High.geojson`. A ticked file with no name, such as one a later setting adds, turns the tab red.
 - A name can't be empty, contain `\ / : * ? " < > |`, end in a dot or an extension, be a name Windows
   reserves (`CON`, `NUL`, …), be over 100 characters, or match another file's.
 - Departures and Arrivals GeoJSON files can't be renamed: there's one per procedure.
 
 ### Preview Settings tab
 
-What the run will do, tab by tab, each starting with its What You'll Get lines. A red tab blocks
-the run; unsaved changes are saved first (you're asked). **Run AIRAC Service** starts it. If the
+What the run will do, tab by tab: each tab's What You'll Get, then the settings it leaves out, such
+as the ROI's corners, FE-Buddy properties and CRC ERAM defaults. A red tab blocks the run; unsaved
+changes are saved first (you're asked). **Run AIRAC Service** starts it. If the
 cycle's folder already has files, choose **Overwrite files** (other old files stay), **Delete all
 files** (emptied first, not to the Recycle Bin) or **Cancel**.
 
@@ -319,8 +329,8 @@ says when one no longer matches a duplicate.
 ### Review tab
 
 Progress, then **Errors**, **Advisories** (output you might expect but won't find, and why),
-**Results** for each sub-service (each group of messages has a copy button), and **Output**: how
-many files were written, with **Open output folder**.
+**Results** for each sub-service (each group of messages has a copy button), and **Output**: the
+folder and how many files were written, with **Open output folder**.
 
 ## File Conversions
 
@@ -409,7 +419,8 @@ run's alias files (CRC runs only one of them), grouped by ARTCC - yours first - 
 ## Map
 
 A map for checking GeoJSON files and setting your Region of Interest. **Set ROI…** in Settings and
-**Pick on map…** on a tab open the same map in a window.
+**Pick on map…** on a tab open the same map in a window. Opening Map collapses the menu on the left
+to give the map room, and leaving Map expands it again, unless you collapse or expand it yourself.
 
 - **Toolbar** - hover a button for what it does. A map opens where the last one was left.
 - **Zoom** - the box beside the zoom buttons shows the zoom as a percentage of your home view
@@ -443,29 +454,32 @@ you've read). An import asks where the settings go - a new profile, added to the
 in place of its settings - and shows what will change first.
 
 - **Settings Profile** - a profile is a whole set of settings: keep one for each facility, or one
-  for testing. Choose one in the list to switch to it; **New…** makes one (a copy of the profile in
-  use, or every default), **Rename…** and **Delete…** act on the one in use. The update channel,
-  which News you've read and FE-Buddy's GitHub token are the same in every profile.
-- **Facility Profile** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first
-  in reports), and the **Default Output Directory** (the Desktop to start, with a `FE-Buddy_Output`
+  for each kind of run (say, GeoJSON every few cycles and aliases every cycle). Choose one in the
+  list to switch to it; **New…** makes one (a copy of the profile in use, or every default),
+  **Rename…** and **Delete…** act on the one in use. The update channel, which News you've read,
+  FE-Buddy's GitHub token and your saved credentials are the same in every profile.
+- **Facility** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first in
+  reports), and the **Default Output Directory** (the Desktop to start, with a `FE-Buddy_Output`
   folder inside unless you untick it).
 - **Default Region of Interest** - **Set ROI…** opens the map. A tab whose area is **ROI** uses it,
   unless you pick **An ROI specific to *tab*** there.
 - **GeoJSON Files** - **Maximum Coordinate Precision**: 5, 6 (the default) or 7 decimal places, or
-  **Do not round**. **File Layout**: single line, or pretty print to read in a text editor.
+  **Do not round**. **File Layout**: single line (much smaller files), or pretty-print to read in a
+  text editor.
 - **Credentials** - tokens and passwords for protected downloads, such as a private GitHub alias
   file. Kept in Windows Credential Manager and removed when FE-Buddy is uninstalled. See the
   [GitHub token guide](GitHub-Token-Guide.md).
 - **FE-Buddy's GitHub Requests** - advanced: a GitHub token for FE-Buddy's own update and News
   checks, to get past GitHub's limit of 60 requests an hour. Most people never need it.
-- **Updates** - the update channel (Stable suits almost everyone). It's set when FE-Buddy first
-  starts and only changes here - updating never changes it. **Check for updates now** and **Open the
-  Releases Page**.
-- **Reset FE-Buddy…** - start over as if newly installed. Downloaded data, logs and settings backups
-  always go; you choose whether to keep your settings and credentials. Your output folder is never
-  touched.
-- **Uninstall FE-Buddy…** (installed copies only) - the same as uninstalling it from Windows
-  Settings, with the option to save a copy of your settings first.
+- **Updates / Update Channel** - the update channel (Stable suits almost everyone; Beta and Alpha
+  are for development, not early access). It's set when FE-Buddy first starts and only changes
+  here - updating never changes it. **Check for updates now** and **Open the Releases Page**.
+- **Reset / Uninstall**:
+  - **Reset FE-Buddy…** - start over as if newly installed. Downloaded data, logs and settings
+    backups always go; you choose whether to keep your settings and credentials. Your output folder
+    is never touched.
+  - **Uninstall FE-Buddy…** (installed copies only) - the same as uninstalling it from Windows
+    Settings, with the option to save a copy of your settings first.
 
 ## Info
 

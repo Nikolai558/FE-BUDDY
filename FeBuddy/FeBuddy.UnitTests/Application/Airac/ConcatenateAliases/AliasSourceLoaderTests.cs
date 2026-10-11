@@ -114,6 +114,37 @@ public sealed class AliasSourceLoaderTests : IDisposable
 		Assert.Equal($"Bearer {Secret}", authorization);
 	}
 
+	/// <summary>A token that expires within 57 days says so; one that doesn't, or no token, says nothing.</summary>
+	[Theory]
+	[InlineData(10, true, true)]
+	[InlineData(200, true, false)]
+	[InlineData(10, false, false)]
+	public async Task a_download_with_a_token_that_expires_soon_warns(int daysLeft, bool withCredential, bool warns)
+	{
+		Guid? id = withCredential ? SaveGitHubToken() : null;
+		string expires = DateTimeOffset.UtcNow.AddDays(daysLeft).ToString("yyyy-MM-dd HH:mm:ss 'UTC'", System.Globalization.CultureInfo.InvariantCulture);
+		using HttpClient client = Client(_ =>
+		{
+			HttpResponseMessage response = Text(AliasText);
+			response.Headers.Add("GitHub-Authentication-Token-Expiration", expires);
+			return response;
+		});
+
+		AliasSourceLoad load = await AliasSourceLoader.LoadAsync(UrlSource("https://github.com/o/r/blob/main/a.txt", id), _store, client);
+
+		Assert.True(load.Succeeded);
+
+		if (warns)
+		{
+			Assert.StartsWith("The GitHub token 'ZOB GitHub' expires in ", load.CredentialWarning, StringComparison.Ordinal);
+			Assert.EndsWith("Make a new token on GitHub and paste it into 'ZOB GitHub' in Settings ▸ Credentials.", load.CredentialWarning, StringComparison.Ordinal);
+		}
+		else
+		{
+			Assert.Null(load.CredentialWarning);
+		}
+	}
+
 	[Fact]
 	public async Task another_website_is_downloaded_as_given()
 	{

@@ -19,7 +19,8 @@ Cleveland Center (ZOB).
 element.
 
 **`Combined_Alias.txt`** - The one alias file a facility uploads to vNAS: every alias file the run
-made, then your facility's own. Written by the Concatenate Aliases tab.
+made, then your facility's own from the Add Custom Aliases tab. Every run that makes an alias file
+writes it.
 
 **CRC** - Consolidated Radar Client, the radar client VATSIM controllers use. It draws GeoJSON video
 maps and runs alias commands.
@@ -69,7 +70,7 @@ FE-Buddy's maps keep only what is inside or crossing it. Make it a little bigger
 **STAR** - Standard Terminal Arrival: a published arrival route.
 
 **Sub-service** - One kind of output the AIRAC Service makes: ARTCC Boundaries, Airports, Airways,
-Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations or Concatenate Aliases. Each
+Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations or Add Custom Aliases. Each
 has its own tab. See the [user guide](User-Guide.md#airac-service).
 
 **Telephony** - An airline or operator's spoken call sign, such as `DELTA`. Also the sub-service

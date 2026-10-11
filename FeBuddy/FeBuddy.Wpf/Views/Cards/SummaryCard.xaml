@@ -1,8 +1,10 @@
 <!--
     SummaryCard  -  "What You'll Get with the Current Settings", the top card of every AIRAC
     sub-service tab: for each output that's on, headed by its tag, the filters that pick what it
-    gets, one per line, each after the first starting with a chip ("for", "and only", ...). Binds
-    to the tab's WhatYoullGet (ServiceTabViewModel); the Preview Settings tab shows the same summary.
+    gets, one per line, each after the first starting with a chip ("for", "and only", ...), then
+    the files it writes. Binds to the tab's WhatYoullGet (ServiceTabViewModel); the Preview Settings
+    tab shows the same summary. WhatYoullGetFooter, when the tab has one, says where the outputs
+    are turned on and off.
 
     Usage:
         <cards:SummaryCard />
@@ -18,6 +20,11 @@
              d:DataContext="{d:DesignInstance tabs:ServiceTabViewModel}"
              d:DesignWidth="820">
     <ctl:Card Header="What You'll Get with the Current Settings" Outputs="{Binding WhatYoullGetOutputs}">
-        <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,4,0,-12" />
+        <StackPanel>
+            <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,4,0,-12" />
+            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,14,0,0"
+                       Text="{Binding WhatYoullGetFooter}"
+                       Visibility="{Binding WhatYoullGetFooter, Converter={StaticResource StringToVis}}" />
+        </StackPanel>
     </ctl:Card>
 </UserControl>

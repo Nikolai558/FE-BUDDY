@@ -1,7 +1,7 @@
 # Creating a GitHub token for FE-Buddy
 
 FE-Buddy needs a GitHub token only to read a file from a **private** GitHub repository - usually
-your facility's custom alias file, on the Concatenate Aliases tab. A public repository needs no token.
+your facility's custom alias file, on the Add Custom Aliases tab. A public repository needs no token.
 
 This guide makes a **fine-grained personal access token** that can do as little as possible: read
 the files of the repositories you pick, for a limited time. FE-Buddy never writes to GitHub.
@@ -18,7 +18,7 @@ the files of the repositories you pick, for a limited time. FE-Buddy never write
 | Repository permissions | **Contents: Read-only**, nothing else |
 | Account permissions | None |
 
-Then paste the token into FE-Buddy (Settings ▸ Credentials, or **New credential…** on the Concatenate
+Then paste the token into FE-Buddy (Settings ▸ Credentials, or **New credential…** on the Add Custom
 Aliases tab) and press **Check**.
 
 ## Step by step
@@ -41,7 +41,7 @@ tokens** ▸ **Fine-grained tokens** ▸ **Generate new token**.
   **organization** (for example `vZOB`). An organization is only listed if it allows fine-grained
   tokens; if yours isn't, ask one of its owners.
 - **Expiration** - **90 days**, or a custom date up to a year. An expiry limits the damage if the
-  token ever leaks. GitHub emails you before it expires; see [When the token expires](#when-the-token-expires).
+  token ever leaks. GitHub and FE-Buddy warn you before it expires; see [When the token expires](#when-the-token-expires).
 
 ![GitHub's new fine-grained token page with the token name, description, resource owner and a 90-day expiration filled in](Media/GitHub-Token/01-name-owner-expiration.png)
 
@@ -85,7 +85,7 @@ starts with `github_pat_` - **once only**, so copy it straight away.
 ### 6. Save it in FE-Buddy
 
 In FE-Buddy's credential editor (Settings ▸ Credentials ▸ **Add credential…**, or **New credential…**
-on the Concatenate Aliases tab):
+on the Add Custom Aliases tab):
 
 ![FE-Buddy's Add Credential window, set to GitHub personal access token](Media/GitHub-Token/05-fe-buddy-credential-editor.png)
 
@@ -99,14 +99,16 @@ on the Concatenate Aliases tab):
 FE-Buddy keeps the token in Windows Credential Manager, encrypted with your Windows sign-in. It's
 never written to FE-Buddy's settings or exports, and never shown again.
 
-Now choose it for your file on the Concatenate Aliases tab and press **Check** there: it should say
+Now choose it for your file on the Add Custom Aliases tab and press **Check** there: it should say
 how many alias commands it read. One token can serve several files - a later GitHub file with no
 credential is offered, for example, **Use ZOB GitHub, like file 1**.
 
 ## When the token expires
 
-GitHub emails you first. Once it has expired, FE-Buddy says *GitHub refused the credential* for the
-files that use it.
+GitHub emails you first. From 57 days before, FE-Buddy warns you too: under **Systems** at the
+bottom of the menu on the left, on the Review tab of a run that uses it, and when you press
+**Check**. Once it has expired, FE-Buddy says *GitHub refused the credential* for the files that use
+it, and **Systems** says GitHub rejected it.
 
 1. On GitHub, open **Settings** ▸ **Developer settings** ▸ **Personal access tokens** ▸
    **Fine-grained tokens**, click the token, and choose **Regenerate token**. It keeps the same

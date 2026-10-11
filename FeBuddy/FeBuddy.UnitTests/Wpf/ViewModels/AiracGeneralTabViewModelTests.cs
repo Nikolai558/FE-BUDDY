@@ -63,9 +63,9 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.False(general.IsDirty);
 	}
 
-	/// <summary>Concatenate Aliases makes nothing of its own, so it is not a row; it comes in by itself.</summary>
+	/// <summary>Add Custom Aliases makes nothing of its own, so it is not a row; it comes in by itself.</summary>
 	[Fact]
-	public void the_table_lists_every_sub_service_but_concatenate_aliases_in_rail_order()
+	public void the_table_lists_every_sub_service_but_add_custom_aliases_in_rail_order()
 	{
 		AiracGeneralTabViewModel general = new();
 
@@ -207,7 +207,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		string subServices = general.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Sub-services").Value;
 
-		Assert.Equal("Airports (Alias, GeoJSON), Procedures (Procedure Changes, Procedures JSON)", subServices);
+		Assert.Equal("Airports (Alias, GeoJSON)\nProcedures (Procedure Changes, Procedures JSON)", subServices);
 	}
 
 	/// <summary>A tab reads its outputs from its row and follows it, without being marked unsaved.</summary>

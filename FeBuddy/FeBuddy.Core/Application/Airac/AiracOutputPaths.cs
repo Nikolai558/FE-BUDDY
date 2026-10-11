@@ -21,9 +21,9 @@ namespace FeBuddy.Core.Application.Airac;
 /// └── Publication_Docs\                 the Procedures sub-service's two documents
 /// </code>
 /// <para>
-/// Every file is ready for vNAS. vNAS takes one alias file per facility, so the Concatenate Aliases
-/// sub-service copies every alias file the run wrote, one after another, into
-/// <c>Combined_Alias.txt</c>, followed by the user's own custom alias files. A folder is created only
+/// Every file is ready for vNAS. vNAS takes one alias file per facility, so every run copies every
+/// alias file it wrote, one after another, into <c>Combined_Alias.txt</c>, followed by the user's own
+/// custom alias files when Add Custom Aliases adds them. A folder is created only
 /// when a file is written into it.
 /// </para>
 /// <para>

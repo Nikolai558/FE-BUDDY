@@ -15,7 +15,10 @@
         Chip.Text       TextBlock - the label inside a chip
         ctl:OutputTag   (implicit DataTemplate) an output tag: Alias, GeoJSON, Changes, JSON
         ctl:OutputLine  (implicit) one output's tag and what a card does to it
+        OutputSummary.Chip / .ChipText  Border / TextBlock - a What You'll Get chip ("for", "outputs", "note", ...)
         OutputSummary.Line (DataTemplate) one What You'll Get line: its chip ("for", "and only", ...), then its text
+        OutputSummary.File (DataTemplate) one file a What You'll Get block writes, with what goes in it below
+        OutputSummary.Note (DataTemplate) a note on a What You'll Get block's files, after a "note" chip
         ctl:OutputSummary (implicit) a tab's What You'll Get summary: blocks headed by their outputs' tags
         Nav.List        ListBox - the side navigation
         Nav.Item        ListBoxItem - one nav row (icon + label + active bar)
@@ -27,7 +30,8 @@
                     xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
                     xmlns:tabm="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs.Models"
                     xmlns:conv="clr-namespace:FeBuddy.Wpf.Converters"
-                    xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors">
+                    xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
     <!-- ========================= SECTION HEADER ====================== -->
     <!-- Every title in the app is a ctl:SectionHeader, so these two styles are the one place
@@ -403,6 +407,25 @@
         </Setter>
     </Style>
 
+    <!-- A What You'll Get chip ("for", "but only", "outputs", "note", ...): the words that join a
+         line to the ones above it. -->
+    <Style x:Key="OutputSummary.Chip" TargetType="Border">
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Chip}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="6,0,6,1" />
+        <Setter Property="Margin" Value="0,2,7,0" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Background" Value="{DynamicResource Brush.Overlay}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
+    </Style>
+
+    <Style x:Key="OutputSummary.ChipText" TargetType="TextBlock" BasedOn="{StaticResource Chip.Text}">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
+    </Style>
+
     <!-- One line of a What You'll Get summary (tabm:SummaryLine): its chip ("for", "but only",
          "along with", ...) when it has one, then its text, file names between backticks shown as
          code. A line that wraps stays clear of its chip. -->
@@ -412,11 +435,8 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Border x:Name="Chip" CornerRadius="{DynamicResource Radius.Chip}" BorderThickness="1" Padding="6,0,6,1"
-                    Margin="0,2,7,0" VerticalAlignment="Top" SnapsToDevicePixels="True"
-                    Background="{DynamicResource Brush.Overlay}" BorderBrush="{DynamicResource Brush.Stroke.Strong}">
-                <TextBlock Text="{Binding JoinWord}" Style="{StaticResource Chip.Text}" FontSize="11"
-                           Foreground="{DynamicResource Brush.Accent.Text}" />
+            <Border x:Name="Chip" Style="{StaticResource OutputSummary.Chip}">
+                <TextBlock Text="{Binding JoinWord}" Style="{StaticResource OutputSummary.ChipText}" />
             </Border>
             <TextBlock Grid.Column="1" bhv:InlineCode.Text="{Binding Text}" Style="{DynamicResource Text.Prose}" />
         </Grid>
@@ -427,9 +447,40 @@
         </DataTemplate.Triggers>
     </DataTemplate>
 
+    <!-- One file a What You'll Get block writes (tabm:SummaryFile): its name as code, then what goes
+         in it on the line below, indented. -->
+    <DataTemplate x:Key="OutputSummary.File" DataType="{x:Type tabm:SummaryFile}">
+        <StackPanel Margin="0,1,0,5">
+            <TextBlock bhv:InlineCode.Text="{Binding Code}" Style="{DynamicResource Text.Prose}" />
+            <TextBlock x:Name="Description" bhv:InlineCode.Text="{Binding Description}" Style="{DynamicResource Text.Prose}"
+                       Margin="16,1,0,0" />
+        </StackPanel>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding HasDescription}" Value="False">
+                <Setter TargetName="Description" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!-- A note on a What You'll Get block's files: a "note" chip, then its text. -->
+    <DataTemplate x:Key="OutputSummary.Note" DataType="{x:Type sys:String}">
+        <Grid Margin="0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource OutputSummary.Chip}">
+                <TextBlock Text="note" Style="{StaticResource OutputSummary.ChipText}" />
+            </Border>
+            <TextBlock Grid.Column="1" bhv:InlineCode.Text="{Binding}" Style="{DynamicResource Text.Prose}" />
+        </Grid>
+    </DataTemplate>
+
     <!-- ctl:OutputSummary: a tab's What You'll Get summary. Each block: its outputs' tags, then its
-         lines indented under them, then any "Outputs include" lines indented once more. Hidden
-         while there is nothing to sum up. -->
+         lines indented under them, then any "Outputs include" lines indented once more, then its
+         files under an "outputs" chip, each with what goes in it, and any notes. A block with no
+         lines lists its files straight under its tags, with no chip. Hidden while there is nothing
+         to sum up. -->
     <Style TargetType="ctl:OutputSummary">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
@@ -459,10 +510,29 @@
                                         <ItemsControl ItemsSource="{Binding Includes}" ItemTemplate="{StaticResource OutputSummary.Line}"
                                                       Focusable="False" Margin="16,2,0,0" />
                                     </StackPanel>
+                                    <StackPanel x:Name="Files" Margin="16,2,0,0">
+                                        <Border x:Name="OutputsChip" Style="{StaticResource OutputSummary.Chip}" Margin="0,2,0,3">
+                                            <TextBlock Text="outputs" Style="{StaticResource OutputSummary.ChipText}" />
+                                        </Border>
+                                        <StackPanel x:Name="FileList" Margin="16,0,0,0">
+                                            <ItemsControl ItemsSource="{Binding Files}" ItemTemplate="{StaticResource OutputSummary.File}"
+                                                          Focusable="False" />
+                                            <ItemsControl ItemsSource="{Binding Notes}" ItemTemplate="{StaticResource OutputSummary.Note}"
+                                                          Focusable="False" />
+                                        </StackPanel>
+                                    </StackPanel>
                                 </StackPanel>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding HasIncludes}" Value="False">
                                         <Setter TargetName="Includes" Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HasFiles}" Value="False">
+                                        <Setter TargetName="Files" Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ShowsOutputsChip}" Value="False">
+                                        <Setter TargetName="OutputsChip" Property="Visibility" Value="Collapsed" />
+                                        <Setter TargetName="Files" Property="Margin" Value="16,0,0,0" />
+                                        <Setter TargetName="FileList" Property="Margin" Value="0" />
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>

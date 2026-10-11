@@ -13,6 +13,7 @@ using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -37,9 +38,16 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	private const int MaxAmendedWithinCycles = 1000;
 	private const int MaxAmendedWithinDays = 36500;
 
+	/// <summary>How each departure's GeoJSON files are named, before the kind of file: <c>LAX_DOTSS</c>.</summary>
+	private const string FileNamePattern = "<Airport ID>_<Departure ID>";
+
+	/// <summary>The folder each airport's GeoJSON files go in, inside the cycle's folder.</summary>
+	private const string FolderPattern = @"Geojson\<ARTCC ID>\<Airport ID>\";
+
 	private bool _includeObstacleDepartures = true;
 	private DepartureRoiMode _roiMode = DepartureRoiMode.Airport;
 	private DepartureAmendmentFilter _amendmentFilter = DepartureAmendmentFilter.None;
+	private DepartureAmendmentFilter _lastAmendmentLimit = DepartureAmendmentFilter.Cycles;
 	private string _amendedWithinCycles = "1";
 	private string _amendedWithinDays = "30";
 	private DateTime? _amendedOnOrAfter;
@@ -149,11 +157,33 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <summary>Deselects every ARTCC.</summary>
 	public ICommand ClearArtccsCommand { get; }
 
-	/// <summary>Whether procedures are kept whatever their amendment date.</summary>
+	/// <summary>
+	/// The amendment date's question, naming the selected cycle: <c>... within a certain time frame
+	/// from the 2610 cycle?</c>
+	/// </summary>
+	public string AmendmentQuestion =>
+		"Do you want to reduce the number of files created by FE-Buddy by having it only export files for procedures "
+		+ $"that were amended by the FAA within a certain time frame from the {SelectedCycle?.AiracCycleId ?? "selected"} cycle?";
+
+	/// <summary>What 1 means for <see cref="AmendedWithinCycles"/>: <c>(1 = only procedures amended in 2610)</c>.</summary>
+	public string AmendmentCyclesCaption =>
+		$"(1 = only procedures amended in {(SelectedCycle is { } cycle ? cycle.AiracCycleId : "the selected cycle")})";
+
+	/// <summary>"No" to the amendment date's question: procedures are kept whatever their amendment date.</summary>
 	public bool AmendmentAny
 	{
 		get => _amendmentFilter == DepartureAmendmentFilter.None;
 		set { if (value) SetAmendmentFilter(DepartureAmendmentFilter.None); }
+	}
+
+	/// <summary>
+	/// "Yes" to the amendment date's question: only procedures amended recently are kept, by the way
+	/// picked under it - the one picked last time, or by cycles to start.
+	/// </summary>
+	public bool AmendmentLimited
+	{
+		get => _amendmentFilter != DepartureAmendmentFilter.None;
+		set { if (value && _amendmentFilter == DepartureAmendmentFilter.None) SetAmendmentFilter(_lastAmendmentLimit); }
 	}
 
 	/// <summary>Whether only procedures amended within the last <see cref="AmendedWithinCycles"/> cycles are kept.</summary>
@@ -294,33 +324,13 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
-	{
-		List<string> outputs = [];
-		if (GenerateGeojson) outputs.Add("GeoJSON");
-		if (GenerateAliasFile) outputs.Add("Alias file (Departures.txt)");
-
-		List<string> geojsonFiles = [];
-		if (EmitLines) geojsonFiles.Add("Lines");
-		if (EmitSymbols) geojsonFiles.Add("Symbols");
-		if (EmitText) geojsonFiles.Add("Text");
-
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
-			new ServicePreviewRow("GeoJSON files", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
-			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		return [new ServicePreviewSection("Departures", rows) { WhatYoullGet = WhatYoullGet }];
-	}
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
+		[new ServicePreviewSection("Departures", PreviewRows()) { WhatYoullGet = WhatYoullGet }];
 
 	/// <inheritdoc />
 	/// <remarks>
 	/// The filters narrow the alias file and the GeoJSON alike, so there is one block: the area
-	/// first, then the amendment date.
+	/// first, then the amendment date, then the files of whichever outputs are on.
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
@@ -332,6 +342,34 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			: IncludeObstacleDepartures ? "Every SID and obstacle departure"
 			: "Every SID (no obstacle departures)";
 
+		List<SummaryFile> files = [];
+
+		if (!noArtccs && GenerateGeojson)
+		{
+			if (EmitLines)
+			{
+				files.Add(new($"{FileNamePattern}_Lines.geojson", "Each departure's routes, drawn as lines."));
+			}
+
+			if (EmitSymbols)
+			{
+				files.Add(new($"{FileNamePattern}_Symbols.geojson", "Each departure's waypoint symbols."));
+			}
+
+			if (EmitText)
+			{
+				files.Add(new($"{FileNamePattern}_Text.geojson", "Each departure's waypoint IDs."));
+			}
+		}
+
+		if (!noArtccs && GenerateAliasFile)
+		{
+			files.Add(new(DepartureOutputFiles.Alias,
+				"A command for each departure at each airport that draws its waypoints on a CRC STARS or ERAM window.\n"
+				+ "Example: `.laxDOTSSf`\n"
+				+ "See the Alias Command Guide, under Info, for more examples and exceptions."));
+		}
+
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, departures)
 			.Add(SummaryJoin.In, artccs.Length == 0 ? null : SummaryLines.Join(artccs, "and"))
@@ -339,7 +377,19 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 				? $"those with at least one fix inside {roi}"
 				: $"those from an airport inside {roi}"))
 			.Add(SummaryJoin.AndOnly, noArtccs ? null : DescribeAmendmentFilter())
-			.ToList());
+			.ToList())
+		{
+			Files = files,
+			Notes = !noArtccs && GenerateGeojson ? [$"Each airport's GeoJSON files go in `{FolderPattern}`."] : [],
+		};
+	}
+
+	/// <inheritdoc />
+	/// <remarks>The amendment date's question and its cycles caption name the cycle.</remarks>
+	protected override void OnSelectedCycleChanged()
+	{
+		OnPropertyChanged(nameof(AmendmentQuestion));
+		OnPropertyChanged(nameof(AmendmentCyclesCaption));
 	}
 
 	// ================= save contract =================
@@ -374,6 +424,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		string? savedFilter = Get("Amendment.Filter")?.Trim();
 		_amendmentFilter = Enum.GetValues<DepartureAmendmentFilter>()
 			.FirstOrDefault(f => f.ToString().Equals(savedFilter, StringComparison.OrdinalIgnoreCase));
+		_lastAmendmentLimit = _amendmentFilter == DepartureAmendmentFilter.None ? DepartureAmendmentFilter.Cycles : _amendmentFilter;
 		_amendedWithinCycles = Get("Amendment.WithinCycles") ?? "1";
 		_amendedWithinDays = Get("Amendment.WithinDays") ?? "30";
 		_amendedOnOrAfter = DateTime.TryParseExact(
@@ -406,7 +457,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
-				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols or Text, "
+				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols, or Text, "
 				+ "or turn GeoJSON off for Departures on the General tab.");
 		}
 
@@ -457,22 +508,44 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		&& value <= max;
 
 	/// <summary>The amendment filter as a What You'll Get line; <see langword="null"/> when there is none.</summary>
-	/// <returns>e.g. <c>those amended in the last 4 cycles</c>.</returns>
+	/// <returns>e.g. <c>those amended in the last 4 cycles (since cycle 2607)</c>.</returns>
 	private string? DescribeAmendmentFilter()
 	{
 		return _amendmentFilter switch
 		{
-			DepartureAmendmentFilter.Cycles => TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out int cycles) && cycles == 1
-								? "those amended this cycle"
-								: $"those amended in the last {AmendedWithinCycles.Trim()} cycles",
+			DepartureAmendmentFilter.Cycles => DescribeCyclesFilter(),
 			DepartureAmendmentFilter.Days => TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out int days) && days == 1
-								? "those amended in the last day"
-								: $"those amended in the last {AmendedWithinDays.Trim()} days",
+								? "those amended in the last day, counting back from today"
+								: $"those amended in the last {AmendedWithinDays.Trim()} days, counting back from today",
 			DepartureAmendmentFilter.Date => AmendedOnOrAfter is { } onOrAfter
 								? $"those amended on or after {onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture)}"
 								: "those amended on or after a date not yet picked",
 			_ => null,
 		};
+	}
+
+	/// <summary>
+	/// The cycles filter as a What You'll Get line, naming the oldest cycle it keeps once the selected
+	/// cycle is known: 1 is the selected cycle only, 3 with 2610 selected is 2608 to 2610.
+	/// </summary>
+	/// <returns>e.g. <c>those amended in cycle 2610</c> or <c>those amended in the last 3 cycles (since cycle 2608)</c>.</returns>
+	private string DescribeCyclesFilter()
+	{
+		if (!TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out int cycles))
+		{
+			return $"those amended in the last {AmendedWithinCycles.Trim()} cycles";
+		}
+
+		if (cycles == 1)
+		{
+			return SelectedCycle is { } cycle ? $"those amended in cycle {cycle.AiracCycleId}" : "those amended in the selected cycle";
+		}
+
+		string since = SelectedCycle is { } selected
+			? $" (since cycle {AiracCycleResolver.GetCycleBefore(selected, cycles - 1).AiracCycleId})"
+			: string.Empty;
+
+		return $"those amended in the last {cycles} cycles{since}";
 	}
 
 	private void SetAmendmentFilter(DepartureAmendmentFilter filter)
@@ -483,7 +556,14 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		}
 
 		_amendmentFilter = filter;
+
+		if (filter != DepartureAmendmentFilter.None)
+		{
+			_lastAmendmentLimit = filter;
+		}
+
 		OnPropertyChanged(nameof(AmendmentAny));
+		OnPropertyChanged(nameof(AmendmentLimited));
 		OnPropertyChanged(nameof(AmendmentByCycles));
 		OnPropertyChanged(nameof(AmendmentByDays));
 		OnPropertyChanged(nameof(AmendmentByDate));
@@ -554,7 +634,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			nameof(IncludeObstacleDepartures),
 			nameof(RoiModeAirport), nameof(RoiModeWaypoint),
-			nameof(AmendmentAny), nameof(AmendmentByCycles), nameof(AmendmentByDays), nameof(AmendmentByDate),
+			nameof(AmendmentAny), nameof(AmendmentLimited), nameof(AmendmentByCycles), nameof(AmendmentByDays), nameof(AmendmentByDate),
 			nameof(AmendedWithinCycles), nameof(AmendedWithinDays), nameof(AmendedOnOrAfter),
 		})
 		{

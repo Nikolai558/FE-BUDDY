@@ -15,8 +15,8 @@ namespace FeBuddy.Core.Application.Airac.Navaids;
 /// <remarks>
 /// Everything is built once, for the whole database, before any filtering: the settings-driven
 /// <c>ExcludedTypes</c> filter (<see cref="NavaidFilter"/>) and the ROI
-/// (<see cref="NavaidGeojsonWriter.FilterToRoi"/>) both apply downstream, so this builder never
-/// sees the parsed settings - the same shape as <c>AirportBuilder</c>.
+/// (<see cref="NavaidGeojsonWriter.FilterToRoi"/>) both apply downstream, to the GeoJSON only, so
+/// this builder never sees the parsed settings - the same shape as <c>AirportBuilder</c>.
 /// </remarks>
 public static class NavaidBuilder
 {

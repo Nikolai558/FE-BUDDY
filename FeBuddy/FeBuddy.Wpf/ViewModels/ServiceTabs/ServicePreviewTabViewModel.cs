@@ -106,13 +106,14 @@ public sealed class ServicePreviewTabViewModel(
 
 		BlockingIssue = invalid.Length == 0
 			? null
-			: $"{Join(invalid)} {(invalid.Length == 1 ? "needs" : "need")} fixing before the run. In the list of tabs on the left, " +
-				$"click {(invalid.Length == 1 ? "the tab" : "each tab")} with a red dot: the red box at its top lists what to fix, " +
-				"and each area to fix is outlined in red.";
+			: $"{Join(invalid)} {(invalid.Length == 1 ? "needs" : "need")} fixing before the run.\n" +
+				$"In the list of tabs on the left, click {(invalid.Length == 1 ? "the tab" : "each tab")} with a red dot. The red box at its top " +
+				"lists what to fix, and each area to fix is outlined in red.";
 
 		UnsavedNotice = dirty.Length == 0
 			? null
-			: $"{Join(dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes (an amber dot in the list on the left). They are saved before the run starts.";
+			: $"{Join(dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes, marked with an amber dot in the list on the left.\n" +
+				"They are saved before the run starts.";
 	}
 
 	/// <inheritdoc />

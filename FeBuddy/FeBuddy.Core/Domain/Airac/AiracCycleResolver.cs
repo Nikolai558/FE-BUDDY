@@ -54,6 +54,22 @@ public static class AiracCycleResolver
 	}
 
 	/// <summary>
+	/// The cycle <paramref name="cycles"/> before <paramref name="cycle"/>, e.g. 2605 for 2610 and 5,
+	/// counting back across the year as the cycles themselves do (2602 and 3 is 2512).
+	/// </summary>
+	/// <param name="cycle">The cycle to count back from.</param>
+	/// <param name="cycles">How many cycles back: 0 for <paramref name="cycle"/> itself.</param>
+	/// <returns>That cycle's ID, effective date, and the date string its NASR CSV download uses.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="cycles"/> is negative.</exception>
+	public static AiracCycleInfo GetCycleBefore(AiracCycleInfo cycle, int cycles)
+	{
+		ArgumentNullException.ThrowIfNull(cycle);
+		ArgumentOutOfRangeException.ThrowIfNegative(cycles);
+
+		return ForEffectiveDate(cycle.EffectiveDateUtc.AddDays(-cycles * DaysPerCycle));
+	}
+
+	/// <summary>
 	/// Whether an AIRAC cycle becomes effective on <paramref name="dateUtc"/>.
 	/// </summary>
 	/// <param name="dateUtc">The date to check, in UTC (see <see cref="GetCycle"/>).</param>

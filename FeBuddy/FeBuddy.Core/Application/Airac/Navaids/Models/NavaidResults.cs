@@ -41,8 +41,9 @@ public sealed record NavaidAliasGenerateResult(
 public sealed record NavaidServiceResult : ServiceResult
 {
 	/// <summary>
-	/// How many NAVAIDs were included (after the NAV_STATUS/blank-ID checks in the builder and
-	/// the <c>ExcludedTypes</c> filter) - before ROI filtering, which applies to GeoJSON only.
+	/// How many NAVAIDs the GeoJSON could include (after the NAV_STATUS/blank-ID checks in the
+	/// builder and the <c>ExcludedTypes</c> filter) - before ROI filtering. Both narrow the GeoJSON
+	/// only; the alias file covers every NAVAID the builder kept.
 	/// </summary>
 	public required int NavaidCount { get; init; }
 

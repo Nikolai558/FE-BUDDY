@@ -49,7 +49,7 @@
 
         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14" TextWrapping="Wrap"
                    MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                   bhv:InlineCode.Text="Converts the Geomaps.xml of an ERAM adaptation export into CRC-ready GeoJSON, in an `ERAM_TO_GEOJSON` folder in your output directory. Pick Geomaps.xml, or the unzipped export's folder - only its Geomaps file is converted. When the export's ConsoleCommandControl.xml is beside it, ConsoleCommandControl.txt lists its brightness (BCG) and filter menus: each button's label, position and groups, and which maps use each menu. One Geomaps file per run: everything already in `ERAM_TO_GEOJSON` is deleted first, after you confirm." />
+                   bhv:InlineCode.Text="Converts the `Geomaps.xml` file, found in the real-world ERAM adaptation data collection.&#xA;&#xA;If the `ConsoleCommandControl.xml` is found in the same directory, a `ConsoleCommandControl.txt` file is created containing a human-readable list of the Filter and BCG menu button names, and the Geomaps that use each menu." />
 
         <cards:AttentionCard />
 
@@ -61,7 +61,7 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8" TextWrapping="Wrap"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           bhv:InlineCode.Text="Each map is named after its GeomapId and button label, e.g. `CENTER_CENTER-MAP`. Hover a layout to see what it writes. ConsoleCommandControl.txt sits beside the maps in every layout." />
+                           bhv:InlineCode.Text="Each map is named after its GeomapId and button label, e.g. `CENTER_CENTER-MAP`.&#xA;`ConsoleCommandControl.txt` sits beside the maps in every layout.&#xA;Hover a layout to see what it writes." />
 
                 <ctl:Option Margin="0,4,0,0"
                             Description="A folder per set of filters, holding one file each for its lines, symbols and text. The fewest files, with short names.">

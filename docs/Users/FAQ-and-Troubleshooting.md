@@ -94,7 +94,7 @@ warning is under **Results** ▸ Airways.
 ### My custom alias file can't be read
 
 The run leaves it out of `Combined_Alias.txt` and the Review tab says why - don't upload until it's
-fixed. **Check** on the Concatenate Aliases tab says what's wrong and, for GitHub, what to do next.
+fixed. **Check** on the Add Custom Aliases tab says what's wrong and, for GitHub, what to do next.
 GitHub's messages are explained in [If something goes wrong](GitHub-Token-Guide.md#if-something-goes-wrong).
 
 ### The installer won't replace what's installed

@@ -11,7 +11,7 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// Before layout 2 a tab could use its ARTCCs and a Region of Interest at once. Where it did, it
 /// starts on its ARTCCs (Procedures: its facilities), the ROI kept but unused. Where it used one or
 /// neither, it gets exactly what it got before. A tab's ARTCC list falls back to the facility in
-/// Settings ▸ Facility Profile while it has never saved one, as the tabs do.
+/// Settings ▸ Facility while it has never saved one, as the tabs do.
 /// </para>
 /// <para>
 /// The values are the names of <c>FeBuddy.Core.Application.Settings.SubServiceArea</c>, which the
@@ -38,7 +38,7 @@ public static class UserConfigAreas
 	/// <summary>Where every AIRAC sub-service tab's settings are.</summary>
 	public const string AiracNode = "Services.AiracService";
 
-	/// <summary>The facility from Settings ▸ Facility Profile.</summary>
+	/// <summary>The facility from Settings ▸ Facility.</summary>
 	public const string FacilityKey = $"{AiracNode}.UserArtccId";
 
 	/// <summary>Whether the default ROI is on.</summary>

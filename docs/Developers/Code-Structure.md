@@ -140,13 +140,14 @@ FeBuddy.Wpf/
 │                        SubServiceSettingsViewModel, GeojsonSubServiceViewModel,
 │                        ConversionTabViewModel and FileConversionTabViewModel, the Preview
 │                        Settings and Review tabs, the General tab's SubServiceRow, validation
-│                        (ServiceValidation, ServiceAreas), the card interfaces (IOutputSettings, …)
+│                        (ServiceValidation, ServiceAreas), the card interfaces (IAreaSettings, …)
 └── Views/               ShellWindow, TabbedServiceView (AIRAC Service), FileConversionsView, one view
     │                    per tab or conversion page, MapWorkspace (every map), the dialog windows
-    └── Cards/           the shared cards (Attention, What You'll Get, Outputs, Area, What Files Do
+    └── Cards/           the shared cards (Attention, What You'll Get, Area, What Files Do
                          You Want?, FE-Buddy Properties, CRC ERAM Defaults, Source Files, Run);
                          CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
-                         Defaults; and OutputStatusRow, an output's On/Off line
+                         Defaults; and OutputStatusRow, an output's On/Off line (the Outputs
+                         cards of Procedures and Telephony)
 ```
 
 ### How the screens are built
@@ -169,7 +170,7 @@ FeBuddy.Wpf/
   no `Areas`). Which outputs
   are on comes from the sub-service's row on the General tab (`SubServiceRow`, read through
   `ISubServiceOutputs`), so the tab's own save and undo never change them. A sub-service left out
-  keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Concatenate Aliases is the exception:
+  keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Add Custom Aliases (`ConcatenateAliasesViewModel`) is the exception:
   it derives from `SubServiceSettingsViewModel`, uses none of the shared cards and has no row.
 - **A conversion page** derives from `FileConversionTabViewModel` (on `ConversionTabViewModel`):
   source files, CRC defaults and its own run button.
@@ -199,8 +200,8 @@ FeBuddy.Wpf/
   long. A file name can be plain `Content`: the theme's versions have no access keys, so an
   underscore shows as written.
 - **A two-way ComboBox in a template** is safest with its items from `x:Static`, as `AirwaysView`'s
-  High and Low Files drop-downs do. Whatever it binds to, test switching to another tab and back:
-  bug #251 lost the Airways choices that way.
+  High and Low Airway Classification drop-downs do. Whatever it binds to, test switching to another
+  tab and back: bug #251 lost the Airways choices that way.
 - **Fonts:** Segoe UI throughout (`Font.Display`, `Font.Body`), Cascadia Mono then Consolas for code
   (`Font.Mono`), and Segoe Fluent Icons for glyphs (`Font.Icon`), set in `Theme/Typography.xaml`.
   Body text is 14.5, captions 12.5; a size outside the `Text.*` styles keeps to the same scale.
@@ -237,8 +238,12 @@ Say, Preferred Routes:
    of filter lines per output, or one for outputs that get the same, each line after the first
    joined by a `SummaryJoin` chip so the block reads as one sentence (`SummaryLines` words a
    narrowing "but only" or "and only" by where it falls), with any `Includes` lines under "Outputs
-   include", also used by its `BuildPreviewSummary()`); and, in `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that
-   puts its `BuildSettingsBlock()` into the run's settings.
+   include", then the `Files` it writes (`SummaryFile`: a name and what goes in it) and any `Notes`,
+   also used by its `BuildPreviewSummary()`, with `PreviewRows(…)` under it for the settings What
+   You'll Get leaves out); and, in `AiracServiceViewModel`, a tab accessor
+   (`TabFor<PreferredRoutesViewModel>(…)`) and the line that puts its `BuildSettingsBlock()` into the
+   run's settings. Card text can put a file name between backticks to show it as code, and a
+   `[text](https://…)` link: `bhv:InlineCode`, which `ctl:Option` descriptions use too.
 
 Copy from `Fixes` for the usual shape, `WxStations` for data that doesn't come from NASR, `Telephony`
 for an alias file and no GeoJSON, or `Procedures` for documents instead of GeoJSON.

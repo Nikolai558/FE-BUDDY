@@ -26,6 +26,32 @@ public sealed class AiracCycleResolverTests
 		Assert.Equal("2610", next.AiracCycleId);
 	}
 
+	/// <summary>Counting back crosses the year as the cycles do, and 0 is the cycle itself.</summary>
+	[Theory]
+	[InlineData(0, "2610")]
+	[InlineData(1, "2609")]
+	[InlineData(5, "2605")]
+	[InlineData(12, "2511")]
+	public void counts_back_whole_cycles(int cycles, string expected)
+	{
+		AiracCycleInfo cycle2610 = AiracCycleResolver.GetCycle(AiracCyclePosition.Current, new DateOnly(2026, 10, 1));
+
+		Assert.Equal(expected, AiracCycleResolver.GetCycleBefore(cycle2610, cycles).AiracCycleId);
+	}
+
+	[Fact]
+	public void counting_back_from_early_in_a_year_lands_in_the_year_before()
+	{
+		AiracCycleInfo cycle2602 = AiracCycleResolver.GetCycle(AiracCyclePosition.Current, new DateOnly(2026, 2, 19));
+
+		AiracCycleInfo before = AiracCycleResolver.GetCycleBefore(cycle2602, 3);
+
+		Assert.Equal("2512", before.AiracCycleId);
+		Assert.Equal(new DateOnly(2025, 11, 27), before.EffectiveDateUtc);
+		Assert.Throws<ArgumentOutOfRangeException>(() => AiracCycleResolver.GetCycleBefore(cycle2602, -1));
+		Assert.Throws<ArgumentNullException>(() => AiracCycleResolver.GetCycleBefore(null!, 1));
+	}
+
 	[Fact]
 	public void a_date_exactly_on_an_effective_date_belongs_to_that_new_cycle()
 	{

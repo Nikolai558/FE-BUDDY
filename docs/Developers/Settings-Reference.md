@@ -19,7 +19,7 @@ says so; a blank there means the same name.
 [New file names](#new-file-names) · [CRC defaults](#crc-defaults) · [Airports](#airports) ·
 [Airways](#airways) · [Departures and Arrivals](#departures-and-arrivals) · [NAVAIDs](#navaids) ·
 [ARTCC Boundaries](#artcc-boundaries) · [Fixes](#fixes) · [Wx Stations](#wx-stations) ·
-[Procedures](#procedures) · [Telephony](#telephony) · [Concatenate Aliases](#concatenate-aliases) ·
+[Procedures](#procedures) · [Telephony](#telephony) · [Add Custom Aliases](#add-custom-aliases) ·
 [File conversions](#file-conversions) · [Settings export and import](#settings-export-and-import) ·
 [Adding a setting](#adding-a-setting) · [Changing the layout](#changing-the-layout)
 
@@ -98,9 +98,9 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and 
 | Key | Values | Default |
 |---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
-| `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Concatenate Aliases isn't in the table: its tab comes in by itself | every sub-service |
+| `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
-| `UserArtccId` | the Settings ▸ Facility Profile ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedures until each is first saved | none |
+| `UserArtccId` | the Settings ▸ Facility ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedures until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
 | `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
 | `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
@@ -163,14 +163,14 @@ Saved by the Map (`MapLayersState`) the moment a choice is made; the Map has no 
 | Wx Stations | `Services.AiracService.WxStations` |
 | Procedures | `Services.AiracService.Procedures` |
 | Telephony | `Services.AiracService.Telephony` |
-| Concatenate Aliases | `Services.AiracService.ConcatenateAliases` |
+| Add Custom Aliases | `Services.AiracService.ConcatenateAliases` |
 | DAT to GeoJSON | `Services.FileConversions.DatToGeojson` |
 | SCT2 to GeoJSON | `Services.FileConversions.SctToGeojson` |
 | ERAM to GeoJSON | `Services.FileConversions.EramToGeojson` |
 
 ## Keys every AIRAC sub-service shares
 
-Read by `SubServiceSettingsReader`; saved by `GeojsonSubServiceViewModel`. Concatenate Aliases reads
+Read by `SubServiceSettingsReader`; saved by `GeojsonSubServiceViewModel`. Add Custom Aliases reads
 none of them.
 
 | Block key | Saved as | Values | Default |
@@ -189,7 +189,7 @@ none of them.
   `FilterByRoi = Y` and the tab's own corners, or the default ROI's. The ARTCCs and the ROI are saved
   whichever area is picked.
 - A tab that has never saved an area starts on what its other settings mean
-  (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Facility Profile ARTCC) if it has
+  (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Settings ▸ Facility ARTCC) if it has
   any, otherwise the ROI if it has its own or the default ROI is on, otherwise `Everything`
   (Procedures: the ROI only with the old `IncludeRoiAirports`, otherwise `None`).
 - A block without `Area` (the harness) means the same: its ARTCC list if it has one, otherwise the
@@ -211,7 +211,7 @@ none of them.
 | File | Goes in |
 |---|---|
 | Alias file | `Aliases\` |
-| `Combined_Alias.txt` | `Aliases\`, when [Concatenate Aliases](#concatenate-aliases) combines the alias files |
+| `Combined_Alias.txt` | `Aliases\`, whenever the run wrote an alias file or [Add Custom Aliases](#add-custom-aliases) is in it |
 | GeoJSON | `Geojson\` (Departures and Arrivals: `Geojson\<ARTCC>\<airport>\`) |
 | Procedures' documents | `Publication_Docs\` |
 | `Duplicate_Alias_Commands.txt` | the cycle folder itself, whenever the run wrote an alias file |
@@ -336,7 +336,7 @@ unknown-key warning).
 | `GenerateAliasFile` | `Outputs.<Departures/Arrivals>.Alias` (General tab) | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | | `Y` / `N` | `Y` |
 | `IncludeObstacleDepartures` | | `Y` / `N` - Departures only | `Y` |
-| `ArtccFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
+| `ArtccFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `AmendmentFilter` | `Amendment.Filter` | `None`, `Cycles`, `Days`, `Date` | `None` |
 | `AmendedWithinCycles` | `Amendment.WithinCycles` | 1-1000 (1 = the selected cycle); **required** with `Cycles` | saved: `1` |
 | `AmendedWithinDays` | `Amendment.WithinDays` | 1-36500, back from today; **required** with `Days` | saved: `30` |
@@ -355,14 +355,14 @@ unknown-key warning).
 | `GenerateAliasFile` | `Outputs.Navaids.Alias` (General tab) | `Y` / `N` | `Y` |
 | `EmitSymbols`, `EmitText` | | `Y` / `N` (there is no Lines file) | `Y` |
 | `OutputBy` | | `All`, `Type` | `All` |
-| `ExcludedTypes` | | list of NASR `NAV_TYPE` names, left out of the GeoJSON and the alias file | none |
+| `ExcludedTypes` | | list of NASR `NAV_TYPE` names, left out of the GeoJSON (the alias file always has every type) | none |
 | `SymbolStyleBy` | | `Type`, `File` - read only with `OutputBy = All` | `Type` |
 | `FanMarkerStyle` | | a CRC symbol style for fan markers, when the merged Symbols file gets CRC defaults styled by type | none |
 
 - **`FebProperties`:** `navId`, `navType`, `name`, `freq`, `lowAltArtccId`, `highAltArtccId`. The Text
   file never carries `navId`, `navType` or `name`; its label already shows them.
 - An unknown name in `ExcludedTypes` warns but is still excluded, so a type NASR adds can be
-  unticked. Excluding every known type throws.
+  unticked. Excluding every known type throws while `GenerateGeojson` is `Y`.
 - A fan marker with no `FanMarkerStyle` gets no style, with a warning; an invalid style throws. The
   app requires one whenever the merged Symbols file gets CRC defaults styled by type and fan markers
   are included.
@@ -372,7 +372,7 @@ unknown-key warning).
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
 | `OutputBy` | | `HighLow`, `HighLowUnlimited`, `ArtccAltitude` | `HighLow` |
-| `LocationFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
+| `LocationFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `SplitAtAntimeridian` | | `Y` / `N` | `Y` |
 
 - No `GenerateGeojson`, `GenerateAliasFile` or `Emit…`: it always writes Lines only.
@@ -414,7 +414,7 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `GenerateChangesDocument` | `Outputs.Procedures.ProcedureChanges` (General tab) | `Y` / `N` - `Procedure_Changes.md` | `Y` |
 | `GenerateProceduresJson` | `Outputs.Procedures.ProceduresJson` (General tab) | `Y` / `N` - `Procedures.json` | `Y` |
 | `GenerateAliasFile` | `Outputs.Procedures.Alias` (General tab) | `Y` / `N` - `Faa_Chart_Recall.txt` | `Y` |
-| `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Facility Profile ARTCC, until first saved |
+| `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
 | `Procedures` | | list of procedure names, included wherever charted | none |
@@ -458,16 +458,17 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 - The AIRAC Service checks `IncludeVatsimRadarVirtualAirlines` before the run
   (`TelephonySettingsParser.IncludesVatsimRadarList`) to know whether to download the list.
 
-## Concatenate Aliases
+## Add Custom Aliases
 
-Whether to combine the run's alias files into `Aliases\Combined_Alias.txt`, then numbered keys, one
-group per custom alias file (`<n>` from 1), merged in number order. Saved the same way; every save
+Whether to add the user's own alias files to `Aliases\Combined_Alias.txt`, then numbered keys, one
+group per custom alias file (`<n>` from 1), added in number order. Saved the same way; every save
 removes the `Sources` subtree first. The block is only in a run while an included sub-service makes
-an alias file; without it, no combined file is written.
+an alias file. Every run that writes an alias file writes `Combined_Alias.txt`, with the block or
+without it.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `CombineAliasFiles` | | `Y` / `N` | `Y` |
+| `AddCustomAliasFiles` | `CombineAliasFiles` | `Y` / `N` | `Y` |
 | `Sources.<n>.FilePath` | | full path of an alias file on this PC | none |
 | `Sources.<n>.Url` | | `http://` or `https://` address, with no sign-in written into it | none |
 | `Sources.<n>.CredentialId` | | a saved credential's id (`"N"` GUID format), never the secret | none |
@@ -478,11 +479,12 @@ an alias file; without it, no combined file is written.
   a `CredentialId` (an empty group is skipped); a relative `FilePath`; a `Url` that isn't http(s) or
   has a sign-in in it (`UrlSecrets` - the message never repeats the address); a `Url` group's
   `CredentialId` that isn't a GUID. A `CredentialId` on a `FilePath` is ignored, with an Info message.
-- With `CombineAliasFiles = N` the `Sources` keys are not read or checked, the app doesn't send them,
-  and no combined file is written; one an earlier run left is deleted when this run rewrites the
-  alias files.
+- With `AddCustomAliasFiles = N` the `Sources` keys are not read or checked, the app doesn't send
+  them, and `Combined_Alias.txt` holds FE-Buddy's aliases only.
 - No sources is allowed: `Combined_Alias.txt` then holds FE-Buddy's aliases only, with an advisory
-  warning. The tab is invalid only while combining and a listed file has a problem.
+  warning. The tab is invalid only while adding custom files and a listed file has a problem.
+- A GitHub token that downloads a custom file and expires within 57 days adds an advisory warning
+  (`GitHubTokenExpiry`).
 
 ## File conversions
 

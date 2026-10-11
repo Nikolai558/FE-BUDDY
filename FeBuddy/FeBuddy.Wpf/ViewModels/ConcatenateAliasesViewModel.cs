@@ -30,15 +30,16 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Concatenate Aliases</b> sub-service tab inside the AIRAC Service screen: whether to combine
-/// every alias file the run writes into <c>Aliases\Combined_Alias.txt</c>, and the facility's own
-/// custom alias files - on this PC, or on the web (GitHub, private or public) - to add after them, so
-/// theirs win.
+/// The <b>Add Custom Aliases</b> sub-service tab inside the AIRAC Service screen (Concatenate Aliases,
+/// as the code still calls it): whether to add the facility's own custom alias files - on this PC, or
+/// on the web (GitHub, private or public) - to <c>Aliases\Combined_Alias.txt</c>, after every alias file
+/// the run writes, so theirs win; and which files.
 /// </summary>
 /// <remarks>
 /// <para>
-/// vNAS takes one alias file, so the facility's own aliases and FE-Buddy's have to be merged before
-/// every upload. Combining is on until the user turns it off. The run reads each custom file (see
+/// vNAS takes one alias file, so every run that writes an alias file writes <c>Combined_Alias.txt</c>
+/// (see <see cref="AiracService"/>); this tab decides only whether the facility's own aliases go in
+/// too. They do until the user says no. The run reads each custom file (see
 /// <see cref="AliasSourceLoader"/>); one that cannot be read is left out with a warning, and the rest
 /// are merged. The tab is greyed out while no included sub-service makes an alias file.
 /// </para>
@@ -61,6 +62,13 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	private const string SourcesKey = "Sources";
 	private const string LogSource = "ConcatenateAliases";
 
+	/// <summary>
+	/// Where <see cref="AddCustomAliasFiles"/> is saved: under its first name, from when it switched the
+	/// whole combined file on and off, so the choice carries over. Off then kept the custom files out,
+	/// as it does now.
+	/// </summary>
+	private const string AddCustomAliasFilesConfigKey = "CombineAliasFiles";
+
 	private const string NoAliasCommandsMessage =
 		"It has no alias commands (lines starting with a dot), so it isn't an alias file. Choose your facility's alias file.";
 
@@ -72,9 +80,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	// its size - so validating as the user types doesn't read every file again.
 	private readonly Dictionary<string, (DateTime Written, long Length, bool HasCommands)> _localFileChecks = new(StringComparer.OrdinalIgnoreCase);
 	private bool _loading;
-	private bool _combineAliasFiles = true;
-	private Func<SubServiceDescriptor, ServiceTabViewModel?>? _openTabFor;
-	private Action<ServiceTabViewModel>? _showTab;
+	private bool _addCustomAliasFiles = true;
 
 	// The saved credentials, read once per change to the store rather than on every keystroke.
 	private Dictionary<Guid, CredentialInfo> _savedCredentials = [];
@@ -121,24 +127,24 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	public override string NodePath => Node;
 
 	/// <inheritdoc />
-	public override string Title => "Concatenate Aliases";
+	public override string Title => "Add Custom Aliases";
 
 	/// <summary>Where the combined file goes, inside the cycle folder.</summary>
 	public static string OutputFile => $@"{AiracOutputPaths.AliasFolder}\{AiracOutputPaths.CombinedAliasFileName}";
 
 	/// <summary>
-	/// Whether to combine the alias files into <c>Combined_Alias.txt</c>. On by default; off, each alias
-	/// file stays on its own and the custom alias files are not used.
+	/// Whether to add the custom alias files to <c>Combined_Alias.txt</c>, after FE-Buddy's: "Yes" to the
+	/// tab's question. On by default; off, the combined file holds only FE-Buddy's alias files and the
+	/// custom alias files are not used.
 	/// </summary>
-	public bool CombineAliasFiles
+	public bool AddCustomAliasFiles
 	{
-		get => _combineAliasFiles;
+		get => _addCustomAliasFiles;
 		set
 		{
-			if (SetProperty(ref _combineAliasFiles, value))
+			if (SetProperty(ref _addCustomAliasFiles, value))
 			{
 				MarkDirty();
-				RefreshFeBuddyAliasFiles();
 			}
 		}
 	}
@@ -152,35 +158,10 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// <summary>"None", then every saved credential, for a web address's drop-down.</summary>
 	public ObservableCollection<CredentialChoice> Credentials { get; } = [];
 
-	/// <summary>
-	/// Every FE-Buddy alias file, and whether it goes into <c>Combined_Alias.txt</c> with the settings
-	/// on the other tabs right now. Refreshed each time this tab is shown.
-	/// </summary>
-	public ObservableCollection<FeBuddyAliasFileRow> FeBuddyAliasFiles { get; } = [];
-
-	/// <summary>One line on how many of FE-Buddy's alias files go in, e.g. <c>3 of 7 FE-Buddy alias files go in.</c></summary>
-	public string FeBuddyAliasSummary
-	{
-		get
-		{
-			int added = FeBuddyAliasFiles.Count(row => row.IsAdded);
-
-			return !CombineAliasFiles
-				? $@"Combining is off, so each alias file stays on its own in {AiracOutputPaths.AliasFolder}\."
-				: added == 0
-					? $"None of FE-Buddy's alias files go into {AiracOutputPaths.CombinedAliasFileName}, so it will hold only your custom aliases. " +
-						"To add one, tick its sub-service and its Alias box on the General tab."
-					: $"{added} of {FeBuddyAliasFiles.Count} FE-Buddy alias files go in, ahead of your custom aliases.";
-		}
-	}
-
-	/// <summary>Whether combining is on but no FE-Buddy alias file goes into <c>Combined_Alias.txt</c>.</summary>
-	public bool HasNoFeBuddyAliasFiles => CombineAliasFiles && FeBuddyAliasFiles.All(row => !row.IsAdded);
-
-	/// <summary>Adds files on this PC, chosen in a file dialog.</summary>
+	/// <summary>Adds files on this PC, chosen in a file dialog: <b>Add local file</b>.</summary>
 	public ICommand AddFileCommand { get; }
 
-	/// <summary>Adds an empty web address row.</summary>
+	/// <summary>Adds an empty web address row: <b>Add remote file</b>.</summary>
 	public ICommand AddUrlCommand { get; }
 
 	private static Window? Owner => Application.Current?.MainWindow;
@@ -190,16 +171,16 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// <inheritdoc />
 	/// <remarks>
 	/// The block goes on <see cref="AiracServiceSettings.ConcatenateAliases"/>. The custom alias files go in
-	/// only while combining: nothing else reads them.
+	/// only while they're added: nothing else reads them.
 	/// </remarks>
 	public IReadOnlyDictionary<string, string> BuildSettingsBlock()
 	{
 		Dictionary<string, string> block = new(StringComparer.OrdinalIgnoreCase)
 		{
-			[ConcatenateAliasesSettingsParser.CombineAliasFilesKey] = YesNo(CombineAliasFiles),
+			[ConcatenateAliasesSettingsParser.AddCustomAliasFilesKey] = YesNo(AddCustomAliasFiles),
 		};
 
-		if (!CombineAliasFiles)
+		if (!AddCustomAliasFiles)
 		{
 			return block;
 		}
@@ -234,9 +215,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 		if (result.CombinedAlias is not { } merged)
 		{
-			return CombineAliasFiles
-				? null
-				: new SubServiceRunResult(Title, $"Combining is off, so {AiracOutputPaths.CombinedAliasFileName} was not written", []);
+			return null;
 		}
 
 		string feBuddy = merged.FeBuddyFiles.Count > 0
@@ -247,8 +226,10 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		// file's own order: FE-Buddy's aliases, then the custom files.
 		string summary = merged.FilePath is null
 			? $"{AiracOutputPaths.CombinedAliasFileName} not written"
-			: $"{Path.GetFileName(merged.FilePath)}: {feBuddy}, then {merged.CustomCommandCount:N0} command(s) from " +
-				$"{merged.CustomFilesMerged} of {merged.CustomFileCount} custom alias file(s)";
+			: !AddCustomAliasFiles
+				? $"{Path.GetFileName(merged.FilePath)}: {feBuddy}. Your custom alias files weren't added"
+				: $"{Path.GetFileName(merged.FilePath)}: {feBuddy}, then {merged.CustomCommandCount:N0} command(s) from " +
+					$"{merged.CustomFilesMerged} of {merged.CustomFileCount} custom alias file(s)";
 
 		return new SubServiceRunResult(Title, summary, merged.Messages);
 	}
@@ -256,31 +237,24 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
-		if (!CombineAliasFiles)
+		if (!AddCustomAliasFiles)
 		{
-			return [new ServicePreviewSection(Title, [new ServicePreviewRow("Combine alias files", $@"No: each alias file stays on its own in {AiracOutputPaths.AliasFolder}\")])];
+			return [new ServicePreviewSection(Title, [new ServicePreviewRow("Custom alias files", $"Not added: `{OutputFile}` holds only FE-Buddy's alias files")])];
 		}
 
 		List<ServicePreviewRow> rows =
 		[
-			new ServicePreviewRow("Combine alias files", $"Yes: {OutputFile}, every FE-Buddy alias file this run writes, then these files"),
+			new ServicePreviewRow("Custom alias files", $"Added to `{OutputFile}`, after every FE-Buddy alias file this run writes"),
 		];
 
 		if (Sources.Count == 0)
 		{
-			rows.Add(new ServicePreviewRow("Custom alias files", "None"));
+			rows.Add(new ServicePreviewRow("Custom alias file", "None yet"));
 		}
 
 		foreach (AliasSourceRow row in Sources)
 		{
 			rows.Add(new ServicePreviewRow($"Custom alias file {row.Number}", Describe(row)));
-		}
-
-		RefreshFeBuddyAliasFiles();
-
-		foreach (FeBuddyAliasFileRow file in FeBuddyAliasFiles)
-		{
-			rows.Add(new ServicePreviewRow(file.FileName, file.Status));
 		}
 
 		return [new ServicePreviewSection(Title, rows)];
@@ -339,8 +313,8 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 			}
 
 			Renumber();
-			_combineAliasFiles = GetBool(ConcatenateAliasesSettingsParser.CombineAliasFilesKey, true);
-			OnPropertyChanged(nameof(CombineAliasFiles));
+			_addCustomAliasFiles = GetBool(AddCustomAliasFilesConfigKey, true);
+			OnPropertyChanged(nameof(AddCustomAliasFiles));
 		}
 		finally
 		{
@@ -354,7 +328,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		Set(ConcatenateAliasesSettingsParser.CombineAliasFilesKey, YesNo(CombineAliasFiles));
+		Set(AddCustomAliasFilesConfigKey, YesNo(AddCustomAliasFiles));
 
 		// The list is written whole: a removed row must not leave its numbered keys behind.
 		RemoveSubtree(SourcesKey);
@@ -371,65 +345,16 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
 	{
-		// The custom alias files are only read while combining, so only then held against the user.
+		// The custom alias files are only read while they're added, so only then held against the user.
 		foreach (AliasSourceRow row in Sources)
 		{
-			row.Error = CombineAliasFiles ? ErrorOf(row) ?? LocalFileErrorOf(row) : null;
+			row.Error = AddCustomAliasFiles ? ErrorOf(row) ?? LocalFileErrorOf(row) : null;
 
 			if (row.Error is { } error)
 			{
 				validation.AddArea(ServiceAreas.CustomAliasFiles, $"Custom alias file {row.Number}: {error}");
 			}
 		}
-	}
-
-	// ================= FE-Buddy's alias files =================
-
-	/// <summary>
-	/// Lets the tab see the AIRAC Service's other tabs, to list which alias files they put into
-	/// <c>Combined_Alias.txt</c>, and open one.
-	/// </summary>
-	/// <param name="openTabFor">The sub-service's tab when it is included on the General tab, otherwise <see langword="null"/>.</param>
-	/// <param name="showTab">Shows a tab.</param>
-	internal void AttachToService(Func<SubServiceDescriptor, ServiceTabViewModel?> openTabFor, Action<ServiceTabViewModel> showTab)
-	{
-		_openTabFor = openTabFor;
-		_showTab = showTab;
-		RefreshFeBuddyAliasFiles();
-	}
-
-	/// <summary>Re-reads, from the other tabs, which of FE-Buddy's alias files go into <c>Combined_Alias.txt</c>.</summary>
-	internal void RefreshFeBuddyAliasFiles()
-	{
-		FeBuddyAliasFiles.Clear();
-
-		foreach (SubServiceDescriptor descriptor in AiracSubServices.All.Where(d => d.AliasFileName is not null))
-		{
-			string fileName = descriptor.AliasFileName!;
-			ServiceTabViewModel? tab = _openTabFor?.Invoke(descriptor);
-
-			(string status, bool added) = tab switch
-			{
-				null => ("Not included on the General tab", false),
-				GeojsonSubServiceViewModel { WritesAliasFile: false } => ("Alias file turned off on the General tab", false),
-				_ when !CombineAliasFiles => ("Written on its own: combining is off", false),
-				_ => ($"Goes into {AiracOutputPaths.CombinedAliasFileName}", true),
-			};
-
-			if (tab is { IsDirty: true })
-			{
-				status += " (that tab has unsaved changes)";
-			}
-
-			ICommand? open = tab is not null && _showTab is { } show ? new RelayCommand(() => show(tab)) : null;
-			FeBuddyAliasFiles.Add(new FeBuddyAliasFileRow(descriptor.DisplayName, fileName, status, added, open));
-		}
-
-		OnPropertyChanged(nameof(FeBuddyAliasSummary));
-		OnPropertyChanged(nameof(HasNoFeBuddyAliasFiles));
-
-		// Whether the tab is valid depends on the other tabs too (see Validate).
-		Revalidate();
 	}
 
 	// ================= rows =================
@@ -485,7 +410,9 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 			{
 				row.SetCheck(
 					load.Succeeded,
-					load.Succeeded ? $"Read {load.CommandCount:N0} alias command(s)." : load.Problem ?? "It could not be read.",
+					load.Succeeded
+						? $"Read {load.CommandCount:N0} alias command(s)." + (load.CredentialWarning is { } warning ? " " + warning : string.Empty)
+						: load.Problem ?? "It could not be read.",
 					TroubleshootingFor(load));
 			}
 		}

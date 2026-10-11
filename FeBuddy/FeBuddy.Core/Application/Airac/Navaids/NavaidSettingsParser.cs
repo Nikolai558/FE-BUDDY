@@ -98,11 +98,12 @@ public static class NavaidSettingsParser
 				$"'ExcludedTypes' entry '{type}' is not a NAVAID type FE-Buddy knows ({string.Join(", ", NavaidTypes.All)}). " +
 				"NAVAIDs of that type are still left out."))];
 
-		if (NavaidTypes.All.All(excludedTypes.Contains))
+		// The types narrow the GeoJSON only, so excluding them all matters only while it is written.
+		if (generateGeojson && NavaidTypes.All.All(excludedTypes.Contains))
 		{
 			throw new ArgumentException(
-				"'ExcludedTypes' excludes every known NAVAID type, so the NAVAIDs sub-service would have nothing to write. " +
-				"Remove at least one type from the list.");
+				"'ExcludedTypes' excludes every known NAVAID type, so the NAVAIDs GeoJSON would be empty. " +
+				"Remove at least one type from the list, or set GenerateGeojson to \"N\".");
 		}
 
 		(bool includeFebProperties, IReadOnlyList<NavaidFebProperty> febProperties) =

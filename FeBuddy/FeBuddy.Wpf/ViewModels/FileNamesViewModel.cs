@@ -14,14 +14,14 @@ using FeBuddy.Core.Infrastructure.Configuration;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>File Names</b> tab inside the AIRAC Service screen, just before Preview Settings: every file
-/// the included sub-services will write, by folder, and - when the user chooses to rename files - a
-/// name of their own for any of them.
+/// The <b>File Names</b> tab inside the AIRAC Service screen, just before Preview Settings: whether to
+/// rename any file, and - when the user says Yes - every file the included sub-services will write,
+/// by folder, with a name of their own for any of them.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The list is read from the other tabs' settings as they are now, each time the tab is shown (see
-/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the Concatenate Aliases tab reads
+/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the Add Custom Aliases tab reads
 /// its alias files. A file's choice - whether to rename it, and its new name - is kept by file key,
 /// including files the current settings do not write, so a file that drops off the list and comes
 /// back keeps its choice.

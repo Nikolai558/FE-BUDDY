@@ -40,7 +40,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// Every sub-service has a tab in the rail from the start, each reading its outputs from its row
 /// on the General tab. A sub-service left out there is greyed out (<see cref="ServiceTabViewModel.IsAvailable"/>)
 /// and skipped by the run, its checks and the Preview Settings tab, but keeps what was typed on it.
-/// Concatenate Aliases isn't in the table: its tab is greyed out while no included sub-service makes
+/// Add Custom Aliases isn't in the table: its tab is greyed out while no included sub-service makes
 /// an alias file.
 /// </para>
 /// </remarks>
@@ -70,6 +70,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		_general.CycleChanged += (_, _) =>
 		{
 			_fileNames.RefreshFiles();
+			PushSelectedCycle();
 			_ = LoadCycleDataAsync();
 		};
 
@@ -88,14 +89,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 		AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 
-		// The Concatenate Aliases tab lists what the other tabs put into Combined_Alias.txt; the File
-		// Names tab lists every file they write, and a new one needs a name. Re-read both whenever the
-		// user moves between tabs, so their lists and their dots in the rail follow edits made elsewhere.
+		// The File Names tab lists every file the other tabs write, and a new one needs a name. Re-read
+		// it whenever the user moves between tabs, so its list and its dot in the rail follow edits
+		// made elsewhere.
 		PropertyChanged += (_, e) =>
 		{
 			if (e.PropertyName == nameof(SelectedTab))
 			{
-				ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
 				_fileNames.RefreshFiles();
 			}
 		};
@@ -164,7 +164,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Telephony tab while it is included, otherwise <see langword="null"/>.</summary>
 	private TelephonyViewModel? TelephonyTab => TabFor<TelephonyViewModel>(AiracSubServices.TelephonyKey);
 
-	/// <summary>The Concatenate Aliases tab while it takes part (an alias file is being made), otherwise <see langword="null"/>.</summary>
+	/// <summary>The Add Custom Aliases tab while it takes part (an alias file is being made), otherwise <see langword="null"/>.</summary>
 	private ConcatenateAliasesViewModel? ConcatenateAliasesTab => TabFor<ConcatenateAliasesViewModel>(AiracSubServices.ConcatenateAliasesKey);
 
 	/// <summary>Every sub-service tab, included or not: for readiness and the cycle's lists, which every tab follows.</summary>
@@ -192,7 +192,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	/// <summary>
 	/// Builds every sub-service's tab, once: each takes its outputs from its row on the General tab,
-	/// and tells the screen when the files it writes change, which can bring Concatenate Aliases in.
+	/// and tells the screen when the files it writes change, which can bring Add Custom Aliases in.
 	/// </summary>
 	private void BuildSubServiceTabs()
 	{
@@ -214,13 +214,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			if (tab is ISubServiceRunTarget target)
 			{
 				target.SetReadiness(IsReady);
-			}
-
-			if (tab is ConcatenateAliasesViewModel concatenate)
-			{
-				concatenate.AttachToService(
-					d => TabFor<ServiceTabViewModel>(d.Key),
-					shown => SelectedTab = shown);
 			}
 		}
 	}
@@ -256,13 +249,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		RebuildTabs(tabs);
 		RefreshDownloadedDataStatus();
 		RefreshProceduresData();
-		ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
 		_fileNames.RefreshFiles();
 	}
 
 	/// <summary>
-	/// Brings Concatenate Aliases in while an included sub-service makes an alias file, and greys it
-	/// out otherwise: it has nothing of FE-Buddy's to combine.
+	/// Brings Add Custom Aliases in while an included sub-service makes an alias file, and greys it
+	/// out otherwise: there is no combined file to add custom aliases to.
 	/// </summary>
 	private void RefreshConcatenateAliasesAvailability()
 	{
@@ -287,9 +279,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	/// <summary>
 	/// Every file the included sub-services' settings write right now, for the File Names tab: each
-	/// tab's own files, then the two the run itself writes whenever an alias file is written -
-	/// <c>Duplicate_Alias_Commands.txt</c>, and <c>Combined_Alias.txt</c> while Concatenate Aliases
-	/// combines them.
+	/// tab's own files, then the two the run itself writes whenever an alias file is written:
+	/// <c>Duplicate_Alias_Commands.txt</c> and <c>Combined_Alias.txt</c>.
 	/// </summary>
 	/// <returns>The files.</returns>
 	private IEnumerable<OutputFileEntry> FilesTheRunWrites()
@@ -304,16 +295,27 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		if (tabs.Any(tab => tab.WritesAliasFile))
 		{
 			yield return OutputFileEntry.Renamable(AiracOutputPaths.DuplicateAliasReportFileName, string.Empty, "AIRAC Service");
+			yield return OutputFileEntry.Renamable(AiracOutputPaths.CombinedAliasFileName, AiracOutputPaths.AliasFolder, "AIRAC Service");
 		}
+	}
 
-		if (ConcatenateAliasesTab is { CombineAliasFiles: true } combine)
+	/// <summary>
+	/// Tells every sub-service tab which cycle the General tab has picked, for text that names it:
+	/// when the screen opens, when the pick changes, and when the date moves the cycles along.
+	/// </summary>
+	private void PushSelectedCycle()
+	{
+		AiracCycleInfo cycle = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition);
+
+		foreach (GeojsonSubServiceViewModel tab in _tabsByKey.Values.OfType<GeojsonSubServiceViewModel>())
 		{
-			yield return OutputFileEntry.Renamable(AiracOutputPaths.CombinedAliasFileName, AiracOutputPaths.AliasFolder, combine.Title);
+			tab.SetSelectedCycle(cycle);
 		}
 	}
 
 	private void RefreshReadiness()
 	{
+		PushSelectedCycle();
 		OnPropertyChanged(nameof(Readiness));
 		OnPropertyChanged(nameof(IsReady));
 
@@ -432,9 +434,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private async Task RunAsync()
 	{
-		// The Concatenate Aliases tab lists the alias files the other tabs make, and the File Names
-		// tab's validity depends on which files they write.
-		ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
+		// The File Names tab's validity depends on which files the other tabs write.
 		_fileNames.RefreshFiles();
 
 		if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
@@ -460,7 +460,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			SelectedCycle = cycle,
 			OutputDirectory = OutputPreferences.Directory,
 			AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder,
-			// Settings ▸ Facility Profile: listed first in the duplicate alias report.
+			// Settings ▸ Facility: listed first in the duplicate alias report.
 			PrimaryFacility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
 				? facility.ToUpperInvariant()
 				: null,

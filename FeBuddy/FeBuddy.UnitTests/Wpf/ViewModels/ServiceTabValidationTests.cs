@@ -66,8 +66,8 @@ public sealed class ServiceTabValidationTests
 		ServicePreviewTabViewModel two = Preview(fixes, airways);
 
 		Assert.Equal(
-			"Fixes needs fixing before the run. In the list of tabs on the left, click the tab with a red dot: " +
-			"the red box at its top lists what to fix, and each area to fix is outlined in red.",
+			"Fixes needs fixing before the run.\nIn the list of tabs on the left, click the tab with a red dot. " +
+			"The red box at its top lists what to fix, and each area to fix is outlined in red.",
 			one.BlockingIssue);
 		Assert.StartsWith("Fixes and Airways need fixing before the run.", two.BlockingIssue, StringComparison.Ordinal);
 		Assert.Contains("click each tab with a red dot", two.BlockingIssue, StringComparison.Ordinal);
@@ -83,7 +83,7 @@ public sealed class ServiceTabValidationTests
 
 		Assert.Null(preview.BlockingIssue);
 		Assert.Equal(
-			"NAVAIDs has unsaved changes (an amber dot in the list on the left). They are saved before the run starts.",
+			"NAVAIDs has unsaved changes, marked with an amber dot in the list on the left.\nThey are saved before the run starts.",
 			preview.UnsavedNotice);
 	}
 

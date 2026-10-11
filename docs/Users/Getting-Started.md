@@ -37,7 +37,7 @@ doing. Later launches reuse the download and are much quicker.
 
 Open **Settings**:
 
-1. **Facility Profile** - choose your ARTCC. The tabs that pick ARTCCs start with it ticked.
+1. **Facility** - choose your ARTCC. The tabs that pick ARTCCs start with it ticked.
 2. **Default Output Directory** - where your files go: `Desktop\FE-Buddy_Output` to start, with a
    folder per cycle such as `AIRAC_2610`.
 3. **Default Region of Interest** - press **Set ROI…**, drag a box a little bigger than your ARTCC,
@@ -50,12 +50,12 @@ Open **Settings**:
 1. Open **AIRAC Service**. On the **General** tab, leave the cycle on **Current**. Every sub-service
    is included to start: untick any you don't want under **Include**, then **Save**.
 2. Click each tab with a red dot and fix what the red box at its top lists, then **Save** it. On a
-   first run that's usually **Airways**: on **High and Low Files**, choose High, Low or Both for each
-   blank airway type, or untick it under **Airway Types to Include**.
+   first run that's usually **Airways**: on **High and Low Airway Classification**, choose High, Low,
+   or Both for each blank airway type, or untick it under **Airway Types to Include**.
 3. Open **Preview Settings**, check what the run will do, and press **Run AIRAC Service**. The
    **Review** tab shows progress, then **Open output folder**.
 
-Before you upload `Combined_Alias.txt`, add your facility's own alias file on the **Concatenate
+Before you upload `Combined_Alias.txt`, add your facility's own alias file on the **Add Custom
 Aliases** tab, or uploading it removes your facility's aliases from vNAS.
 
 ## 5. Every cycle after

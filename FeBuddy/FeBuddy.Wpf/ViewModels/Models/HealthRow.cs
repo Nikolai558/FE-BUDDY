@@ -1,6 +1,6 @@
 namespace FeBuddy.Wpf.ViewModels.Models;
 
-/// <summary>One row in the shell's systems-health popover (Internet / AIRAC data / Updates).</summary>
+/// <summary>One row in the shell's systems-health popover (Internet / AIRAC data / Updates, and GitHub tokens when one needs attention).</summary>
 /// <param name="Name">What the row reports on, e.g. <c>Internet</c>.</param>
 /// <param name="Detail">Its state in a few words, e.g. <c>connected</c>.</param>
 /// <param name="Kind">The state's colour.</param>

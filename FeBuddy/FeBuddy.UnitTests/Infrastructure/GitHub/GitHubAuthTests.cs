@@ -126,10 +126,10 @@ public sealed class GitHubAuthTests : IDisposable
 
 	/// <summary>The check sends the token to GitHub's rate-limit endpoint and reads GitHub's answer.</summary>
 	[Theory]
-	[InlineData(HttpStatusCode.OK, true, "GitHub accepted this token.")]
-	[InlineData(HttpStatusCode.Unauthorized, false, "GitHub rejected this token. It may be mistyped, expired or revoked.")]
-	[InlineData(HttpStatusCode.ServiceUnavailable, false, "GitHub answered 503; try again later.")]
-	public async Task check_token_reads_githubs_answer(HttpStatusCode status, bool succeeded, string message)
+	[InlineData(HttpStatusCode.OK, true, "GitHub accepted this token. It has no expiry date.", false)]
+	[InlineData(HttpStatusCode.Unauthorized, false, "GitHub rejected this token. It may be mistyped, expired or revoked.", true)]
+	[InlineData(HttpStatusCode.ServiceUnavailable, false, "GitHub answered 503; try again later.", false)]
+	public async Task check_token_reads_githubs_answer(HttpStatusCode status, bool succeeded, string message, bool rejected)
 	{
 		CredentialInfo token = _store.Save(GitHubToken("ghp_abc"));
 		HttpRequestMessage? sent = null;
@@ -141,9 +141,33 @@ public sealed class GitHubAuthTests : IDisposable
 
 		CredentialCheck check = await GitHubAuth.CheckTokenAsync(_store, token.Id, client);
 
-		Assert.Equal(new CredentialCheck(succeeded, message), check);
+		Assert.Equal(new CredentialCheck(succeeded, message, IsRejected: rejected), check);
 		Assert.Equal("https://api.github.com/rate_limit", sent!.RequestUri!.ToString());
 		Assert.Equal("ghp_abc", sent.Headers.Authorization!.Parameter);
+	}
+
+	/// <summary>The check says when an accepted token expires, and warns within 57 days of it.</summary>
+	[Theory]
+	[InlineData(10, true, "GitHub accepted this token, but it expires in ")]
+	[InlineData(400, false, "GitHub accepted this token. It expires in ")]
+	public async Task check_token_says_when_it_expires(int daysLeft, bool soon, string start)
+	{
+		CredentialInfo token = _store.Save(GitHubToken("ghp_abc"));
+		DateTimeOffset expires = DateTimeOffset.UtcNow.AddDays(daysLeft);
+		using HttpClient client = new(new StubHttpHandler(_ =>
+		{
+			HttpResponseMessage response = new(HttpStatusCode.OK);
+			response.Headers.Add("GitHub-Authentication-Token-Expiration", expires.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", System.Globalization.CultureInfo.InvariantCulture));
+			return response;
+		}));
+
+		CredentialCheck check = await GitHubAuth.CheckTokenAsync(_store, token.Id, client);
+
+		Assert.True(check.Succeeded);
+		Assert.Equal(soon, check.ExpiresSoon);
+		Assert.Equal(expires.ToUnixTimeSeconds(), check.ExpiresAt!.Value.ToUnixTimeSeconds());
+		Assert.StartsWith(start, check.Message, StringComparison.Ordinal);
+		Assert.Equal(soon, check.Message.EndsWith("Make a new token on GitHub and paste it in with Edit.", StringComparison.Ordinal));
 	}
 
 	/// <summary>No network is reported as that, not as a rejected token.</summary>

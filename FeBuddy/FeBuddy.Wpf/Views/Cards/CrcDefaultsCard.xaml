@@ -41,7 +41,7 @@
              Visibility="{Binding ShowsCrcDefaultsCard, Converter={StaticResource BoolToVis}}">
     <ctl:Card Header="CRC ERAM Defaults" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[CrcDefaults]}">
         <StackPanel>
-            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding Note, ElementName=Self}" />
+            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" bhv:InlineCode.Text="{Binding Note, ElementName=Self}" />
 
             <!-- which files get them (the AIRAC sub-services), hidden when there is no choice to make -->
             <ContentPresenter Margin="0,8,0,0" Content="{Binding Choice, ElementName=Self}">

@@ -1,6 +1,6 @@
 <!--
     AreaCard  -  the Area card near the top of every AIRAC sub-service tab but Telephony and
-    Concatenate Aliases: one choice of which area the run uses - the tab's ARTCCs (Procedures: its
+    Add Custom Aliases: one choice of which area the run uses - the tab's ARTCCs (Procedures: its
     facilities), an ROI, everything, or (Procedures) none - with the chosen one's settings under it.
     Binds to the tab's view model through IAreaSettings; the tab names each choice and supplies its
     ARTCC list (ArtccsContent), anything more the ROI needs (RoiContent) and notes for the outputs
@@ -39,8 +39,10 @@
                              Visibility="{Binding OffersArtccs, Converter={StaticResource BoolToVis}}">
                     <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"><Run Text="{Binding ArtccsLabel, ElementName=Self, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=" — " /><Run Text="{Binding ArtccsDescription, ElementName=Self, Mode=OneWay}" /></TextBlock>
                 </RadioButton>
+                <!-- Bound through Self: a ContentPresenter with no content (a tab with no ARTCCs choice)
+                     loses the tab as its DataContext, and would show its empty margins. -->
                 <ContentPresenter Content="{Binding ArtccsContent, ElementName=Self}" Margin="26,8,0,6"
-                                  Visibility="{Binding AreaArtccs, Converter={StaticResource BoolToVis}}" />
+                                  Visibility="{Binding DataContext.AreaArtccs, ElementName=Self, Converter={StaticResource BoolToVis}}" />
 
                 <RadioButton IsChecked="{Binding AreaRoi, Mode=TwoWay}" Margin="0,8,0,0">
                     <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"><Run Text="ROI" FontWeight="SemiBold" /><Run Text=" — " /><Run Text="{Binding RoiDescription, ElementName=Self, Mode=OneWay}" /></TextBlock>
@@ -50,7 +52,7 @@
                     <StackPanel>
                         <RadioButton Content="The default ROI" IsChecked="{Binding UseDefaultRoi, Mode=TwoWay}" Margin="0,6,0,0" />
                         <!-- its corners, or (in amber) that none is set and what to do -->
-                        <TextBlock Text="{Binding DefaultRoiSummary}" TextWrapping="Wrap" Margin="26,2,0,0"
+                        <TextBlock Text="{Binding DefaultRoiSummary}" TextWrapping="Wrap" Margin="42,2,0,0"
                                    MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">

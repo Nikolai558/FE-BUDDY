@@ -18,14 +18,15 @@ namespace FeBuddy.Core.Application.Airac.ConcatenateAliases;
 /// A file that cannot be read never throws - not even when Windows Credential Manager cannot be
 /// read, or a download cannot be read as text; only cancelling does. The result says why, in words
 /// the user can act on (a mistyped path, a token GitHub refused, a private repository and no
-/// credential, and so on). The Concatenate Aliases tab's <b>Check</b> button and the AIRAC run both use it.
+/// credential, and so on). The Add Custom Aliases tab's <b>Check</b> button and the AIRAC run both use it.
 /// </para>
 /// <para>
 /// A credential is added by <see cref="CredentialStore.Authorize"/> only, so it goes over HTTPS to
 /// one of its own websites or not at all. When it is not allowed there, the file is not downloaded
 /// without it either: a surprise anonymous request would only fail in a more confusing way. A file
 /// on GitHub is downloaded through the GitHub API (see <see cref="GitHubFileUrl"/>), which honours a
-/// token for private repositories.
+/// token for private repositories. A download whose token expires soon says so
+/// (<see cref="AliasSourceLoad.CredentialWarning"/>).
 /// </para>
 /// </remarks>
 public static class AliasSourceLoader
@@ -176,11 +177,15 @@ public static class AliasSourceLoader
 					return AliasSourceLoad.Failed(source, $"{site} sent the file in a form FE-Buddy cannot read as text: {ex.Message}");
 				}
 
-				return IsWebPage(response, text)
+				AliasSourceLoad load = IsWebPage(response, text)
 					? AliasSourceLoad.Failed(source,
 						$"{site} sent a web page, not an alias file. Use the address of the file itself" +
 						(url.Host.Contains("github", StringComparison.OrdinalIgnoreCase) ? " (on GitHub, the file's Raw link)." : "."))
 					: Checked(source, text);
+
+				return credentialName is null
+					? load
+					: load with { CredentialWarning = GitHubTokenExpiry.Warning(credentialName, GitHubTokenExpiry.Read(response), DateTimeOffset.UtcNow) };
 			}
 
 			(string problem, bool denied) = DescribeRefusal(response, site, credentialName, gitHubApi is not null);

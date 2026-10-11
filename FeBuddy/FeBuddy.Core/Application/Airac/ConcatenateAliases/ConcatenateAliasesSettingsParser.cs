@@ -10,16 +10,18 @@ namespace FeBuddy.Core.Application.Airac.ConcatenateAliases;
 
 /// <summary>
 /// Parses the raw <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>)
-/// supplies for the Concatenate Aliases sub-service: whether to combine the run's alias files into
-/// <c>Combined_Alias.txt</c>, and the user's custom alias files to add after them.
+/// supplies for the Add Custom Aliases sub-service (Concatenate Aliases, as the code still calls
+/// it): whether to add the user's custom alias files to <c>Combined_Alias.txt</c>, after the run's
+/// own alias files, and which files. Every run that writes an alias file writes
+/// <c>Combined_Alias.txt</c>, with or without them (see <see cref="AiracService"/>).
 /// </summary>
 /// <remarks>
 /// <para>
-/// Combining is on unless <c>CombineAliasFiles</c> is <c>N</c>. Each custom alias file is numbered,
+/// The custom alias files are added unless <c>AddCustomAliasFiles</c> is <c>N</c>. Each is numbered,
 /// and has either a file on this PC or a web address:
 /// </para>
 /// <code>
-/// CombineAliasFiles      = Y
+/// AddCustomAliasFiles    = Y
 /// Sources.1.FilePath     = C:\Users\me\Documents\ZOB-Alias.txt
 /// Sources.2.Url          = https://github.com/vZOB/facility/blob/main/ZOB-Alias.txt
 /// Sources.2.CredentialId = 0f8fad5bd9cb469fa16570867728950e
@@ -27,13 +29,13 @@ namespace FeBuddy.Core.Application.Airac.ConcatenateAliases;
 /// <para>
 /// They are merged in number order. <c>CredentialId</c> names a saved credential (see
 /// <c>CredentialStore</c>) and is only ever an id: the secret never passes through settings. While
-/// combining is off, the custom alias files are not read or checked: nothing would use them.
+/// they aren't added, the custom alias files are not read or checked: nothing would use them.
 /// </para>
 /// </remarks>
 public static class ConcatenateAliasesSettingsParser
 {
-	/// <summary>Whether to combine the alias files into <c>Combined_Alias.txt</c>: <c>Y</c> (the default) or <c>N</c>.</summary>
-	public const string CombineAliasFilesKey = "CombineAliasFiles";
+	/// <summary>Whether to add the custom alias files to <c>Combined_Alias.txt</c>: <c>Y</c> (the default) or <c>N</c>.</summary>
+	public const string AddCustomAliasFilesKey = "AddCustomAliasFiles";
 
 	/// <summary>The start of every custom alias file's keys.</summary>
 	public const string SourcesPrefix = "Sources.";
@@ -52,40 +54,40 @@ public static class ConcatenateAliasesSettingsParser
 	/// <summary>Keys the AIRAC Service sets on every block, which this sub-service does not need.</summary>
 	private static readonly HashSet<string> IgnoredKeys = new(StringComparer.OrdinalIgnoreCase) { "OutputDirectory" };
 
-	/// <summary>Whether the block combines the alias files: <c>CombineAliasFiles</c>, on unless it is <c>N</c>.</summary>
+	/// <summary>Whether the block adds the custom alias files: <c>AddCustomAliasFiles</c>, on unless it is <c>N</c>.</summary>
 	/// <param name="settings">The raw settings dictionary.</param>
-	/// <returns><see langword="true"/> unless combining is turned off.</returns>
-	/// <exception cref="ArgumentException">Thrown when <c>CombineAliasFiles</c> is neither <c>Y</c> nor <c>N</c>.</exception>
-	public static bool CombinesAliasFiles(IReadOnlyDictionary<string, string> settings)
+	/// <returns><see langword="true"/> unless adding them is turned off.</returns>
+	/// <exception cref="ArgumentException">Thrown when <c>AddCustomAliasFiles</c> is neither <c>Y</c> nor <c>N</c>.</exception>
+	public static bool AddsCustomAliasFiles(IReadOnlyDictionary<string, string> settings)
 	{
 		ArgumentNullException.ThrowIfNull(settings);
 
 		// The block's keys match ignoring case, whatever dictionary the caller built.
-		return SettingsValueReader.YesNo(new Dictionary<string, string>(settings, StringComparer.OrdinalIgnoreCase), CombineAliasFilesKey, defaultValue: true);
+		return SettingsValueReader.YesNo(new Dictionary<string, string>(settings, StringComparer.OrdinalIgnoreCase), AddCustomAliasFilesKey, defaultValue: true);
 	}
 
 	/// <summary>
-	/// Parses and validates <paramref name="settings"/>: whether to combine, and the user's custom alias
-	/// files.
+	/// Parses and validates <paramref name="settings"/>: whether to add the custom alias files, and
+	/// which.
 	/// </summary>
 	/// <param name="settings">The raw settings dictionary.</param>
-	/// <returns>Whether to combine, the custom alias files in merge order (none while combining is off), and any non-fatal parsing messages.</returns>
+	/// <returns>Whether to add them, the custom alias files in merge order (none while they aren't added), and any non-fatal parsing messages.</returns>
 	/// <exception cref="ArgumentException">
-	/// Thrown when <c>CombineAliasFiles</c> is neither <c>Y</c> nor <c>N</c>; or, while combining, when a
-	/// custom alias file has both a path and a web address, or only a credential; its path is not a
+	/// Thrown when <c>AddCustomAliasFiles</c> is neither <c>Y</c> nor <c>N</c>; or, while adding them, when
+	/// a custom alias file has both a path and a web address, or only a credential; its path is not a
 	/// full path; its web address is not an <c>http</c> or <c>https</c> address, or has a secret in it
 	/// (<see cref="UrlSecrets"/>); or its credential id is not an id.
 	/// </exception>
 	public static ConcatenateAliasesSettingsParseResult Parse(IReadOnlyDictionary<string, string> settings)
 	{
-		bool combine = CombinesAliasFiles(settings);
+		bool combine = AddsCustomAliasFiles(settings);
 
 		List<ServiceMessage> messages = [];
 		SortedDictionary<int, Dictionary<string, string>> byNumber = [];
 
 		foreach (KeyValuePair<string, string> entry in settings)
 		{
-			if (IgnoredKeys.Contains(entry.Key) || entry.Key.Equals(CombineAliasFilesKey, StringComparison.OrdinalIgnoreCase))
+			if (IgnoredKeys.Contains(entry.Key) || entry.Key.Equals(AddCustomAliasFilesKey, StringComparison.OrdinalIgnoreCase))
 			{
 				continue;
 			}
@@ -108,13 +110,13 @@ public static class ConcatenateAliasesSettingsParser
 			}
 
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"Unknown Concatenate Aliases setting '{entry.Key}' was ignored. Custom alias files look like " +
+				$"Unknown Add Custom Aliases setting '{entry.Key}' was ignored. Custom alias files look like " +
 				$"'{SourcesPrefix}1.{FilePathKey}' or '{SourcesPrefix}1.{UrlKey}'."));
 		}
 
 		if (!combine)
 		{
-			return new ConcatenateAliasesSettingsParseResult([], messages, Combine: false);
+			return new ConcatenateAliasesSettingsParseResult([], messages, AddsCustomFiles: false);
 		}
 
 		List<AliasSource> sources = [];
@@ -134,7 +136,7 @@ public static class ConcatenateAliasesSettingsParser
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
 				$"No custom alias files are set, so {AiracOutputPaths.CombinedAliasFileName} holds only FE-Buddy's aliases. " +
 				"vNAS takes one alias file per facility, so uploading it would remove your facility's own aliases from vNAS. " +
-				"To keep them, add your facility's alias file on the Concatenate Aliases tab.")
+				"To keep them, add your facility's alias file on the Add Custom Aliases tab.")
 			{ IsAdvisory = true });
 		}
 
@@ -154,7 +156,7 @@ public static class ConcatenateAliasesSettingsParser
 			&& !f.Equals(CredentialIdKey, StringComparison.OrdinalIgnoreCase)))
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"Unknown Concatenate Aliases setting '{SourcesPrefix}{number}.{field}' was ignored."));
+				$"Unknown Add Custom Aliases setting '{SourcesPrefix}{number}.{field}' was ignored."));
 		}
 
 		if (filePath.Length > 0 && url.Length > 0)

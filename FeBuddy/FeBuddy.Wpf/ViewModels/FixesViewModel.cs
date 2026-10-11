@@ -374,18 +374,8 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
-	{
-		ServicePreviewRow[] rows =
-		[
-			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
-			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("Area", DescribeArea()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
-		];
-
-		return [new ServicePreviewSection("Fixes", rows) { WhatYoullGet = WhatYoullGet }];
-	}
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
+		[new ServicePreviewSection("Fixes", PreviewRows()) { WhatYoullGet = WhatYoullGet }];
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -410,6 +400,15 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 			_ => "Every fix",
 		};
 
+		(IReadOnlyList<SummaryFile> files, IReadOnlyList<string> notes) = fixes is null
+			? ([], [])
+			: GroupedSummaryFiles([.. OutputFiles()], file => file.Label == "Symbols" ? "Fix symbols." : "Fix ID text.", _outputBy switch
+			{
+				FixOutputBy.FixUse => "fix use ticked below",
+				FixOutputBy.Chart => "chart ticked below",
+				_ => "combination added below",
+			});
+
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, fixes ?? _outputBy switch
 			{
@@ -418,7 +417,11 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 				_ => "No fixes until you add a chart + fix use combination",
 			})
 			.Add(SummaryJoin.AndOnly, fixes is null ? null : RoiLine(roi => $"those inside {roi}"))
-			.ToList());
+			.ToList())
+		{
+			Files = files,
+			Notes = notes,
+		};
 	}
 
 	// ================= save contract =================
@@ -1001,26 +1004,6 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		}
 
 		return result;
-	}
-
-	private string DescribeGeojsonFiles()
-	{
-		List<string> kinds = [];
-		if (EmitSymbols) kinds.Add("Symbols");
-		if (EmitText) kinds.Add("Text");
-
-		string files = kinds.Count > 0 ? string.Join(", ", kinds) : "none";
-
-		string layout = _outputBy switch
-		{
-			FixOutputBy.All => "one file each",
-			FixOutputBy.FixUse => "one pair per fix use",
-			FixOutputBy.Chart => "one pair per chart",
-			FixOutputBy.ChartAndFixUse => "one pair per combination",
-			_ => string.Empty,
-		};
-
-		return $"{files} - {layout}";
 	}
 
 	private void RaiseOwnSettingProperties()

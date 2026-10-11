@@ -85,12 +85,15 @@ public static class GitHubAuth
 		}
 	}
 
-	/// <summary>Asks GitHub whether a saved GitHub token works, with a request that needs no permissions.</summary>
+	/// <summary>
+	/// Asks GitHub whether a saved GitHub token works, with a request that needs no permissions, and
+	/// when it expires (<see cref="GitHubTokenExpiry"/>).
+	/// </summary>
 	/// <param name="store">The credentials the token is saved in.</param>
 	/// <param name="id">The credential's id.</param>
 	/// <param name="httpClient">The client to use; <see langword="null"/> creates one.</param>
 	/// <param name="cancellationToken">Cancels the check.</param>
-	/// <returns>Whether GitHub accepted it, and a message for the user.</returns>
+	/// <returns>Whether GitHub accepted it, when it expires, and a message for the user.</returns>
 	public static async Task<CredentialCheck> CheckTokenAsync(
 		CredentialStore store,
 		Guid id,
@@ -124,8 +127,8 @@ public static class GitHubAuth
 
 			return response.StatusCode switch
 			{
-				HttpStatusCode.OK => new CredentialCheck(true, "GitHub accepted this token."),
-				HttpStatusCode.Unauthorized => new CredentialCheck(false, "GitHub rejected this token. It may be mistyped, expired or revoked."),
+				HttpStatusCode.OK => Accepted(GitHubTokenExpiry.Read(response), DateTimeOffset.UtcNow),
+				HttpStatusCode.Unauthorized => new CredentialCheck(false, "GitHub rejected this token. It may be mistyped, expired or revoked.", IsRejected: true),
 				_ => new CredentialCheck(false, $"GitHub answered {(int)response.StatusCode}; try again later."),
 			};
 		}
@@ -133,6 +136,22 @@ public static class GitHubAuth
 		{
 			return new CredentialCheck(false, $"Could not reach GitHub: {ex.Message}");
 		}
+	}
+
+	/// <summary>What the check says about a token GitHub accepted: whether, and when, it expires.</summary>
+	private static CredentialCheck Accepted(DateTimeOffset? expiresAt, DateTimeOffset now)
+	{
+		if (expiresAt is not { } expires)
+		{
+			return new CredentialCheck(true, "GitHub accepted this token. It has no expiry date.");
+		}
+
+		bool soon = GitHubTokenExpiry.IsSoon(expires, now);
+		string message = soon
+			? $"GitHub accepted this token, but it {GitHubTokenExpiry.DescribeWhen(expires, now)}. Make a new token on GitHub and paste it in with Edit."
+			: $"GitHub accepted this token. It {GitHubTokenExpiry.DescribeWhen(expires, now)}.";
+
+		return new CredentialCheck(true, message, expires, soon);
 	}
 
 	/// <summary>

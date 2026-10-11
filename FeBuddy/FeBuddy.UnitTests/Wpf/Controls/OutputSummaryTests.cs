@@ -148,6 +148,48 @@ public sealed class OutputSummaryTests
 	}
 
 	[Fact]
+	public void blocks_with_the_same_lines_but_different_files_or_notes_stay_apart()
+	{
+		SummaryFile[] files = [new SummaryFile("Airways_High_Lines.geojson", "Every High airway")];
+
+		IReadOnlyList<SummaryBlock> shown = SummaryBlock.ForOutputsOn(
+			Alias | Geojson | Changes,
+			Block(Geojson, "every airway") with { Files = files },
+			Block(Alias, "every airway"),
+			Block(Changes, "every airway") with { Files = files, Notes = ["UNLIMITED goes in both."] });
+
+		Assert.Equal([Geojson, Alias, Changes], shown.Select(block => block.Outputs));
+		Assert.Equal(files, shown[0].Files);
+		Assert.Empty(shown[1].Files);
+		Assert.Equal(["UNLIMITED goes in both."], shown[2].Notes);
+	}
+
+	[Fact]
+	public void blocks_with_the_same_files_and_notes_still_merge()
+	{
+		SummaryFile[] files = [new SummaryFile("Fix_Symbols.geojson")];
+
+		IReadOnlyList<SummaryBlock> shown = SummaryBlock.ForOutputsOn(
+			Alias | Geojson,
+			Block(Geojson, "every fix") with { Files = files, Notes = ["n"] },
+			Block(Alias, "every fix") with { Files = [new SummaryFile("Fix_Symbols.geojson")], Notes = ["n"] });
+
+		Assert.Equal(Geojson | Alias, Assert.Single(shown).Outputs);
+	}
+
+	[Fact]
+	public void a_file_shows_its_name_as_code_and_says_whether_it_has_a_description()
+	{
+		SummaryFile described = new("Airports.txt", "An ISR command for every airport.");
+		SummaryFile bare = new("Fix_Text.geojson", " ");
+
+		Assert.Equal("`Airports.txt`", described.Code);
+		Assert.True(described.HasDescription);
+		Assert.False(bare.HasDescription);
+		Assert.False(new SummaryFile("Fix_Text.geojson").HasDescription);
+	}
+
+	[Fact]
 	public void with_every_output_off_nothing_is_shown()
 	{
 		Assert.Empty(SummaryBlock.ForOutputsOn(SubServiceOutputKinds.None, Block(Alias | Geojson, "every fix")));
@@ -183,6 +225,37 @@ public sealed class OutputSummaryTests
 			Assert.Equal(2, summary.Items[0].Lines.Count);
 			Assert.True(summary.Items[0].HasIncludes);
 			Assert.Equal(includes, summary.Items[0].Includes);
+		});
+
+	/// <summary>
+	/// Files sit under an "outputs" chip below a block's lines; a block with no lines lists them
+	/// straight under its tags, with no chip.
+	/// </summary>
+	[Fact]
+	public void files_get_an_outputs_chip_only_below_lines() =>
+		StaThread.Run(() =>
+		{
+			SummaryFile[] files = [new SummaryFile("Airports_Text.geojson", "A label at each airport.")];
+			OutputSummary summary = new()
+			{
+				Blocks =
+				[
+					Block(Geojson, "every operational airport") with { Files = files, Notes = ["a note"] },
+					new SummaryBlock(Alias, []) { Files = [new SummaryFile("Airports.txt")] },
+					Block(Changes, "every chart"),
+				],
+			};
+
+			Assert.True(summary.Items[0].HasFiles);
+			Assert.True(summary.Items[0].ShowsOutputsChip);
+			Assert.Equal(files, summary.Items[0].Files);
+			Assert.Equal(["a note"], summary.Items[0].Notes);
+
+			Assert.True(summary.Items[1].HasFiles);
+			Assert.False(summary.Items[1].ShowsOutputsChip);
+
+			Assert.False(summary.Items[2].HasFiles);
+			Assert.False(summary.Items[2].ShowsOutputsChip);
 		});
 
 	[Fact]

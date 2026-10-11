@@ -18,6 +18,10 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Credentials;
+using FeBuddy.Core.Infrastructure.GitHub;
+using FeBuddy.Core.Infrastructure.GitHub.Models;
+using FeBuddy.Core.Infrastructure.Logging;
 
 using FeBuddy.Versioning;
 
@@ -25,9 +29,10 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// Backs <c>ShellWindow</c>: navigation, the status-bar Zulu clock, the top-centre AIRAC
-/// status indicator, the version chip and update badge, and the one-time notice about FE-Buddy 2.x's
-/// GitHub token variable. Everything but navigation is driven by <see cref="AppEnvironment"/> and
-/// <see cref="AiracCycleDataCache"/>.
+/// status indicator, the version chip and update badge, the Systems popover, and the one-time notice
+/// about FE-Buddy 2.x's GitHub token variable. Everything but navigation is driven by
+/// <see cref="AppEnvironment"/> and <see cref="AiracCycleDataCache"/>, and the popover's GitHub token
+/// row by a background check of the saved tokens (<see cref="GitHubTokenExpiry"/>).
 /// </summary>
 public sealed class ShellViewModel : ObservableObject
 {
@@ -44,9 +49,12 @@ public sealed class ShellViewModel : ObservableObject
 
 	private readonly Dispatcher _dispatcher;
 
+	private readonly NavItem _mapNav;
+
 	private object? _current;
 	private string _zuluClock = string.Empty;
 	private bool _navCollapsed;
+	private bool _navCollapsedForMap;
 	private bool _updateDeclinedThisSession;
 
 	private string _airacStatus = "Preparing AIRAC data…";
@@ -60,17 +68,24 @@ public sealed class ShellViewModel : ObservableObject
 	private bool _badgeShowsVersion;
 	private int _badgeSeconds;
 
+	private IReadOnlyList<GitHubTokenStatus> _gitHubTokens = [];
+	private bool _gitHubTokensChecked;
+	private int _gitHubTokenCheck;
+
 	/// <summary>Builds the navigation, starts the Zulu clock, and follows the launch state.</summary>
 	public ShellViewModel()
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
+		FileConversionsNav = Nav("File Conversions", GlyphFileConversions, () => new FileConversionsViewModel());
+		_mapNav = Nav("Map", GlyphMap, () => new MapViewModel());
+
 		PrimaryNav =
 		[
 			Nav("Dashboard",      GlyphDashboard,     () => new DashboardViewModel()),
 			Nav("AIRAC Service",  GlyphAiracService,  () => new AiracServiceViewModel()),
-			Nav("File Conversions", GlyphFileConversions, () => new FileConversionsViewModel()),
-			Nav("Map",            GlyphMap,           () => new MapViewModel()),
+			FileConversionsNav,
+			_mapNav,
 		];
 
 		SystemNav =
@@ -82,7 +97,12 @@ public sealed class ShellViewModel : ObservableObject
 		SystemHealth = [];
 
 		RecheckCommand = new RelayCommand(RecheckNow);
-		ToggleNavCommand = new RelayCommand(() => NavCollapsed = !NavCollapsed);
+		ToggleNavCommand = new RelayCommand(() =>
+		{
+			// The user's own choice: leaving Map no longer changes the rail.
+			_navCollapsedForMap = false;
+			NavCollapsed = !NavCollapsed;
+		});
 		OpenUpdateWindowCommand = new RelayCommand(OpenUpdateWindow, () => IsUpdateAvailable);
 
 		PrimaryNav[0].IsActive = true;
@@ -101,9 +121,13 @@ public sealed class ShellViewModel : ObservableObject
 		AppEnvironment.Changed += OnEnvironmentChanged;
 		AiracCycleDataCache.Instance.StateChanged += OnCycleStateChanged;
 
+		// A token added, edited or removed: check the saved GitHub tokens again.
+		CredentialStore.Default.Changed += (_, _) => _dispatcher.BeginInvoke(() => StartGitHubTokenCheck(again: true));
+
 		RefreshVersionState();
 		RefreshAiracStatus();
 		RefreshSystemHealth();
+		StartGitHubTokenCheck();
 
 		// The launch sequence may have found the old token variable before this subscribed.
 		_dispatcher.InvokeAsync(ShowLegacyGitHubTokenNotice, DispatcherPriority.ApplicationIdle);
@@ -114,6 +138,9 @@ public sealed class ShellViewModel : ObservableObject
 
 	/// <summary>The SYSTEM nav group: Settings, Info.</summary>
 	public ObservableCollection<NavItem> SystemNav { get; }
+
+	/// <summary>The File Conversions row, so the window can build that screen before its first open.</summary>
+	public NavItem FileConversionsNav { get; }
 
 	/// <summary>The rows of the systems-health popover.</summary>
 	public ObservableCollection<HealthRow> SystemHealth { get; }
@@ -318,12 +345,75 @@ public sealed class ShellViewModel : ObservableObject
 			OnlyIssueSummary: readiness == AiracCycleReadiness.Ready ? $"Ready except {which} {metafiles}" : null);
 	}
 
+	/// <summary>
+	/// The drawer's GitHub tokens row: the saved tokens GitHub rejected or that expire within
+	/// <see cref="GitHubTokenExpiry.WarningDays"/> days, one per line. <see langword="null"/> when none
+	/// needs attention, so the row shows only then.
+	/// </summary>
+	/// <param name="tokens">The tokens that need attention.</param>
+	/// <param name="now">Now.</param>
+	/// <returns>The row, or <see langword="null"/>.</returns>
+	internal static HealthRow? DescribeGitHubTokens(IReadOnlyList<GitHubTokenStatus> tokens, DateTimeOffset now)
+	{
+		if (tokens.Count == 0)
+		{
+			return null;
+		}
+
+		IEnumerable<string> lines = tokens.Select(token =>
+			token.IsRejected ? $"'{token.Name}' was rejected by GitHub"
+			: token.ExpiresAt is { } expires ? $"'{token.Name}' {GitHubTokenExpiry.DescribeWhen(expires, now)}"
+			: $"'{token.Name}' expires soon");
+
+		return tokens.Count == 1
+			? new HealthRow("GitHub token", lines.Single(), StatusKind.Warn, Note: "Paste a new token in Settings ▸ Credentials")
+			: new HealthRow("GitHub tokens", string.Join("\n", lines), StatusKind.Warn, Note: "Paste new tokens in Settings ▸ Credentials");
+	}
+
+	/// <summary>
+	/// Checks the saved GitHub tokens in the background, once launch is done and while online: at
+	/// startup, and <paramref name="again"/> when a credential is added, edited or removed.
+	/// </summary>
+	private void StartGitHubTokenCheck(bool again = false)
+	{
+		if ((_gitHubTokensChecked && !again) || !AppEnvironment.LaunchCompleted || !AppEnvironment.HasInternetConnection)
+		{
+			return;
+		}
+
+		_gitHubTokensChecked = true;
+		_ = CheckGitHubTokensAsync(++_gitHubTokenCheck);
+	}
+
+	/// <summary>
+	/// One background check. Only the latest check's answer is shown, and the discarded task can't
+	/// fail unnoticed: anything unexpected is logged.
+	/// </summary>
+	private async Task CheckGitHubTokensAsync(int check)
+	{
+		try
+		{
+			IReadOnlyList<GitHubTokenStatus> tokens = await GitHubTokenExpiry.FindTokensNeedingAttentionAsync(CredentialStore.Default);
+
+			if (check == _gitHubTokenCheck)
+			{
+				_gitHubTokens = tokens;
+				RefreshSystemHealth();
+			}
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning("GitHub", $"Checking the saved GitHub tokens failed: {ex.Message}");
+		}
+	}
+
 	private void OnEnvironmentChanged(object? sender, EventArgs e)
 	{
 		_dispatcher.BeginInvoke(() =>
 		{
 			RefreshVersionState();
 			RefreshSystemHealth();
+			StartGitHubTokenCheck();
 		});
 
 		// At idle, so the main window is on screen before the notice opens over it.
@@ -528,6 +618,11 @@ public sealed class ShellViewModel : ObservableObject
 			_ => new HealthRow("Updates", "latest version", StatusKind.Ok),
 		});
 
+		if (DescribeGitHubTokens(_gitHubTokens, DateTimeOffset.Now) is { } tokens)
+		{
+			SystemHealth.Add(tokens);
+		}
+
 		OnPropertyChanged(nameof(HealthWorst));
 		OnPropertyChanged(nameof(HealthSummary));
 	}
@@ -649,6 +744,22 @@ public sealed class ShellViewModel : ObservableObject
 		// where the user left it. The page keeps its settings and edits.
 		(item.CreatedViewModel as IOpensAtStart)?.ReturnToStart();
 
+		(NavCollapsed, _navCollapsedForMap) = RailFor(ReferenceEquals(item, _mapNav), NavCollapsed, _navCollapsedForMap);
+
 		Current = item.ViewModel;
 	}
+
+	/// <summary>
+	/// The nav rail when a section opens (issue #345): Map collapses it, so the map has the whole
+	/// width, and leaving Map expands it again. Once the user collapses or expands it themselves,
+	/// leaving Map leaves it as they set it.
+	/// </summary>
+	/// <param name="openingMap">Whether the section opening is Map.</param>
+	/// <param name="navCollapsed">Whether the rail is collapsed now.</param>
+	/// <param name="collapsedForMap">Whether opening Map collapsed it, and the user hasn't changed it since.</param>
+	/// <returns>Whether the rail is collapsed, and whether that was opening Map's doing.</returns>
+	internal static (bool NavCollapsed, bool CollapsedForMap) RailFor(bool openingMap, bool navCollapsed, bool collapsedForMap) =>
+		openingMap ? (true, collapsedForMap || !navCollapsed)
+		: collapsedForMap ? (false, false)
+		: (navCollapsed, false);
 }

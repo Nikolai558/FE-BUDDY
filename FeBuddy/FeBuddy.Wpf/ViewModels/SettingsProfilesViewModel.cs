@@ -30,13 +30,6 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class SettingsProfilesViewModel : ObservableObject
 {
-	/// <summary>Explains profiles, on the card.</summary>
-	public const string Description =
-		"A profile is a complete set of FE-Buddy's settings: your facility and output folder, every " +
-		"service's choices, the File Conversions' and the Map's. Keep one for each facility you work " +
-		"on, or one to try things out in. Your update channel, the News posts you have read, FE-Buddy's " +
-		"GitHub token and your saved credentials are the same in every profile.";
-
 	private const string LogSource = "Settings";
 
 	private readonly Func<string, string, string, bool> _confirm;

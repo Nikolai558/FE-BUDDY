@@ -11,7 +11,7 @@ namespace FeBuddy.Wpf.Controls;
 /// page's <see cref="Card.OutputsOnProperty"/>). Its look is in Theme/Controls.Surfaces.xaml.
 /// <code>
 /// &lt;ctl:OutputLine Kind="Geojson" Text="Only airways that cross the region, clipped at its edge." /&gt;
-/// &lt;ctl:OutputLine Kind="Alias" Text="{Binding AreaAliasNote}" /&gt;
+/// &lt;ctl:OutputLine Kind="Alias" Text="Every operational airport, whichever you pick above." /&gt;
 /// </code>
 /// </summary>
 public sealed class OutputLine : Control

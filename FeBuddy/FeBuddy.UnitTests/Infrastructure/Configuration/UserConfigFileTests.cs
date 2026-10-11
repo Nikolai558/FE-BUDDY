@@ -345,7 +345,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	// ============================ the layout version ============================
 
-	/// <summary>A stand-in second layout: Settings ▸ Facility Profile's ARTCC moved under General.</summary>
+	/// <summary>A stand-in second layout: Settings ▸ Facility's ARTCC moved under General.</summary>
 	private static readonly UserConfigMigration MoveArtcc =
 		new(2, "Moved the facility's ARTCC under General", settings => settings.Move("Services.AiracService.UserArtccId", "General.Facility.ArtccId"));
 

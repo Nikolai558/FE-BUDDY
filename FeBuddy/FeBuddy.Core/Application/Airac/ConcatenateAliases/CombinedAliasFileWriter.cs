@@ -293,8 +293,8 @@ public static class CombinedAliasFileWriter
 
 	/// <summary>
 	/// Deletes the <c>Combined_Alias.txt</c> an earlier run left, when this run writes none, so it cannot
-	/// be uploaded by mistake. <see cref="AiracService"/> uses it too, for a run that rewrites alias
-	/// files without writing a new one.
+	/// be uploaded by mistake. <see cref="AiracService"/> uses it too, for a run stopped at the duplicate
+	/// alias commands.
 	/// </summary>
 	/// <param name="outputDirectory">The run's cycle folder.</param>
 	/// <param name="fileName">The file's name - the one this run would have written it under.</param>

@@ -48,12 +48,6 @@ public sealed class CredentialsViewModel : ObservableObject
 		Refresh();
 	}
 
-	/// <summary>Explains the card under its heading.</summary>
-	public const string Description =
-		"Sign-ins FE-Buddy uses to download from protected websites, such as a private GitHub repository. They are " +
-		"kept in Windows Credential Manager, encrypted with your Windows sign-in - never in a settings profile or a " +
-		"settings export - and a saved password or token is never shown again. Changes here are saved straight away.";
-
 	/// <summary>The saved credentials, by name.</summary>
 	public ObservableCollection<CredentialRow> Rows { get; } = [];
 
@@ -85,7 +79,10 @@ public sealed class CredentialsViewModel : ObservableObject
 	/// <summary>Removes a saved credential, once confirmed. The parameter is its <see cref="CredentialRow"/>.</summary>
 	public ICommand RemoveCommand { get; }
 
-	/// <summary>Asks GitHub whether a saved GitHub token works. The parameter is its <see cref="CredentialRow"/>.</summary>
+	/// <summary>
+	/// Asks GitHub whether a saved GitHub token works, and when it expires. The parameter is its
+	/// <see cref="CredentialRow"/>.
+	/// </summary>
 	public ICommand CheckCommand { get; }
 
 	/// <summary>Removes every FE-Buddy credential from this PC, once confirmed.</summary>
@@ -189,7 +186,11 @@ public sealed class CredentialsViewModel : ObservableObject
 		{
 			CredentialCheck check = await GitHubAuth.CheckTokenAsync(_store, row.Info.Id);
 
-			if (check.Succeeded)
+			if (check is { Succeeded: true, ExpiresSoon: true })
+			{
+				Toast.Warn($"{row.Name} expires soon", check.Message);
+			}
+			else if (check.Succeeded)
 			{
 				Toast.Success($"{row.Name} works", check.Message);
 			}

@@ -21,6 +21,61 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ---
 
+## 3.0.0-beta.7
+### AIRAC Service
+- What You'll Get now lists the files each output writes, with what goes in each and any notes, and
+  says where to turn the outputs on and off. Airports' Outputs card is gone: its details are here now.
+- Clearer wording on the General, ARTCC Boundaries, and Airports tabs, and on the Area, What Files
+  Do You Want?, Split GeoJSON at the Antimeridian, and CRC ERAM Defaults cards. File names show as
+  code.
+- Clearer wording on the Airways, NAVAIDs, Fixes, and Wx Stations tabs. Their Outputs and Station
+  Data cards are gone: their details are in What You'll Get.
+- Airways: **Split into** is now the **File Layout** card, and **High and Low Files** is now **High
+  and Low Airway Classification**.
+- Airways: "Only airways that cross the ROI" is now under **ROI** on the Area card, where it applies.
+  Picked with **Everything**, it used to do nothing without saying so.
+- NAVAIDs: `Navaids.txt` now has every NAVAID type. The **NAVAID Types** card narrows the GeoJSON only.
+- Clearer wording on the Departures and Arrivals tabs. Their Outputs cards are gone: their details are
+  in What You'll Get.
+- Clearer wording on the Procedures and Telephony tabs. Their d-TPP Data and Telephony Data cards
+  are gone: a missing d-TPP Metafile now shows in an amber box at the top of Procedures, and
+  Telephony's What You'll Get links the FAA pages it reads.
+- Procedures: the cards that add to the area name the documents they add to, and while
+  `Faa_Chart_Recall.txt` is on, say they don't apply to it. **Procedures at Any Airport** takes ENTER
+  as well as **Add**.
+- Departures and Arrivals: **Amendment Date** now asks first whether to keep only recently amended
+  procedures. It names the selected cycle, and What You'll Get names the oldest cycle kept ("in the
+  last 3 cycles (since cycle 2608)").
+- The Area card no longer leaves a gap above **ROI** on tabs with no ARTCCs choice.
+- ARTCC Boundaries: with one file per ARTCC and altitude, the ARTCCs ticked earlier no longer narrow
+  the CRC ERAM Defaults and File Names lists while the area is ROI or Everything.
+- Every run that makes an alias file now writes `Combined_Alias.txt`, the one alias file vNAS takes.
+- Concatenate Aliases is now **Add Custom Aliases**: one card that asks whether to add your own alias
+  files to `Combined_Alias.txt`. Its buttons are now **Add local file** and **Add remote file**, and
+  the FE-Buddy Alias Files card is gone. Your choice and files are kept.
+- File Names is one **Rename Files** card now: the files are listed under **Yes**.
+- Preview Settings shows each tab's What You'll Get, then only the settings it leaves out, such as the
+  ROI's corners. The sub-services are listed one per line.
+- Review: file names in the run's messages show as code, and **Output** names the folder.
+
+### File Conversions
+- File Conversions no longer pauses the first time you open it.
+- Clearer wording on the ERAM to GeoJSON, DAT to GeoJSON, and SCT2 to GeoJSON pages.
+
+### Map
+- Feature #345 - Opening Map collapses the menu on the left, so the map has the room. Leaving Map
+  expands it again, unless you collapsed or expanded it yourself.
+
+### Settings
+- FE-Buddy now warns when a GitHub token is within 57 days of expiring: in the run, in Settings ▸
+  Credentials ▸ **Check**, and under **Systems**, which also flags a token GitHub rejects. Saved GitHub
+  tokens are checked in the background at startup.
+- Clearer wording on the Settings Profile, GeoJSON Files, Credentials, and Updates cards. Facility
+  Profile is now **Facility**, Updates is **Updates / Update Channel**, and Reset FE-Buddy is
+  **Reset / Uninstall**, with its two buttons one above the other.
+
+---
+
 ## 3.0.0-beta.6
 ### AIRAC Service
 - Bug #333 - The What You'll Get card, now **What You'll Get with the Current Settings**, no longer

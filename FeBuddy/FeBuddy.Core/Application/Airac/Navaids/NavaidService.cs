@@ -51,7 +51,8 @@ public static class NavaidService
 		NavaidBuildAllResult buildResult = NavaidBuilder.BuildAll(allNasrCsvData);
 		messages.AddRange(buildResult.Messages);
 
-		// ExcludedTypes leaves a type out of everything; the ROI narrows the GeoJSON output only.
+		// ExcludedTypes and the ROI narrow the GeoJSON only: the alias file has every NAVAID, so a
+		// controller's .nav command answers for any of them.
 		IReadOnlyList<Navaid> includedNavaids = NavaidFilter.ExcludeTypes(buildResult.Navaids, settings.ExcludedTypes);
 		IReadOnlyList<Navaid> navaidsInRoi = NavaidGeojsonWriter.FilterToRoi(includedNavaids, settings.Roi);
 
@@ -59,7 +60,7 @@ public static class NavaidService
 		messages.AddRange(geojsonResult.Messages);
 
 		NavaidAliasGenerateResult? aliasResult = settings.GenerateAliasFile
-			? NavaidAliasWriter.Generate(includedNavaids, settings)
+			? NavaidAliasWriter.Generate(buildResult.Navaids, settings)
 			: null;
 
 		if (aliasResult is not null)
@@ -67,8 +68,8 @@ public static class NavaidService
 			messages.AddRange(aliasResult.Messages);
 		}
 
-		// The ROI limits the GeoJSON only; a region with no NAVAIDs in it would otherwise end in
-		// a clean-looking run with no GeoJSON at all, so say why.
+		// The types and the ROI limit the GeoJSON only; a filter that leaves no NAVAIDs would
+		// otherwise end in a clean-looking run with no GeoJSON at all, so say why.
 		if (settings.GenerateGeojson && navaidsInRoi.Count == 0)
 		{
 			string text = includedNavaids.Count == 0
@@ -79,7 +80,7 @@ public static class NavaidService
 
 			if (aliasResult?.FilePath is not null)
 			{
-				text += " The alias file still covers every included NAVAID.";
+				text += " The alias file still covers every NAVAID.";
 			}
 
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, text) { IsAdvisory = true });

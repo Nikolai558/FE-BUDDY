@@ -39,12 +39,12 @@ namespace FeBuddy.Core.Application.Airac;
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
 /// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx
-/// Stations, Procedures, Telephony, Concatenate Aliases) against one cycle's NASR data and gathers
+/// Stations, Procedures, Telephony, Add Custom Aliases) against one cycle's NASR data and gathers
 /// the results. Four need more than the NASR cycle: Wx Stations and Telephony read data that is
 /// not published per cycle at all - aviationweather.gov's station list and the FAA telephony
 /// pages - which the run downloads fresh every time (see <see cref="AiracSharedDataLoader"/>);
 /// Procedures also needs the selected cycle's (and the previous cycle's) FAA d-TPP Metafile (see
-/// <see cref="AiracCycleDataCache.GetDtppAsync"/>); and Concatenate Aliases reads the user's own
+/// <see cref="AiracCycleDataCache.GetDtppAsync"/>); and Add Custom Aliases reads the user's own
 /// custom alias files, from this PC or the web (see <see cref="AliasSourceLoader"/>).
 /// </summary>
 /// <remarks>
@@ -62,9 +62,9 @@ namespace FeBuddy.Core.Application.Airac;
 /// Once every sub-service has run, the alias files the run wrote are checked together for
 /// commands more than one line uses (<see cref="DuplicateAliasReport"/>), and
 /// <c>Duplicate_Alias_Commands.txt</c> is written into the cycle folder. Then vNAS takes one
-/// alias file per facility, so when Concatenate Aliases is in the run and combining is on, every
-/// alias file the run wrote is merged, followed by the custom alias files, into
-/// <c>Aliases\Combined_Alias.txt</c> (<see cref="CombinedAliasFileWriter"/>).
+/// alias file per facility, so every alias file the run wrote is merged into
+/// <c>Aliases\Combined_Alias.txt</c> (<see cref="CombinedAliasFileWriter"/>), followed by the
+/// custom alias files while Add Custom Aliases (the Concatenate Aliases block) adds them.
 /// </para>
 /// <para>
 /// A file the user renamed (<see cref="AiracServiceSettings.FileNames"/>) is written under its new
@@ -75,8 +75,8 @@ public static class AiracService
 {
 	private const string LogSource = "AiracService";
 
-	/// <summary>The Concatenate Aliases sub-service's name in progress reports: its tab's title.</summary>
-	private const string ConcatenateAliasesName = "Concatenate Aliases";
+	/// <summary>The Add Custom Aliases (Concatenate Aliases) sub-service's name in progress reports: its tab's title.</summary>
+	private const string ConcatenateAliasesName = "Add Custom Aliases";
 
 	/// <summary>
 	/// Whether the run's cycle folder already holds anything - an earlier run of the same cycle
@@ -99,8 +99,8 @@ public static class AiracService
 	/// (awaiting an in-flight parse rather than starting a second one). When Procedures is selected
 	/// its d-TPP Metafiles come from the cache the same way; when Wx Stations or Telephony is
 	/// selected, the latest copy of its data is downloaded first (see
-	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy; and when Concatenate
-	/// Aliases is selected and combining, its custom alias files are read first (see
+	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy; and when Add Custom
+	/// Aliases is selected and adds them, the custom alias files are read first (see
 	/// <see cref="AliasSourceLoader"/>) - one that cannot be read is left out of <c>Combined_Alias.txt</c>
 	/// with a warning.
 	/// </summary>
@@ -182,7 +182,7 @@ public static class AiracService
 			ConcatenateAliasesSettingsParseResult parsed = ConcatenateAliasesSettingsParser.Parse(settings.ConcatenateAliases);
 			supplementalMessages.AddRange(parsed.Messages);
 
-			if (parsed.Combine)
+			if (parsed.AddsCustomFiles)
 			{
 				progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, "Reading your custom alias files"));
 
@@ -208,7 +208,7 @@ public static class AiracService
 	/// <summary>
 	/// Runs every selected sub-service against the supplied parsed cycle data and supplemental
 	/// data (Wx station data, the FAA telephony pages, the FAA d-TPP Metafiles when Procedures is
-	/// selected, and the custom alias files when Concatenate Aliases combines). The other
+	/// selected, and the custom alias files when Add Custom Aliases adds them). The other
 	/// <c>RunAsync</c> loads all of that first, then calls this.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
@@ -265,7 +265,17 @@ public static class AiracService
 
 		// What getting the downloaded data produced (a fresh copy, an older copy and its age, or none)
 		// leads the run's messages, so the Review tab says it before anything built from that data.
-		List<ServiceMessage> messages = [.. supplementalData.Messages, .. fileNamesParse.Messages];
+		// A GitHub token that downloaded a custom alias file and expires soon is warned about once.
+		List<ServiceMessage> messages =
+		[
+			.. supplementalData.Messages,
+			.. fileNamesParse.Messages,
+			.. (supplementalData.CustomAliasFiles ?? [])
+				.Select(load => load.CredentialWarning)
+				.OfType<string>()
+				.Distinct(StringComparer.Ordinal)
+				.Select(warning => new ServiceMessage(LogLevel.Warning, ConcatenateAliasesName, warning) { IsAdvisory = true }),
+		];
 
 		foreach (ServiceMessage message in messages)
 		{
@@ -392,22 +402,22 @@ public static class AiracService
 			}
 		}
 
-		// vNAS takes one alias file, so every alias file the run wrote goes into Combined_Alias.txt, then
-		// the user's own custom alias files - while Concatenate Aliases is in the run and combining.
-		bool combine = settings.ConcatenateAliases is not null && ConcatenateAliasesSettingsParser.CombinesAliasFiles(settings.ConcatenateAliases);
+		// vNAS takes one alias file, so every run that writes an alias file writes Combined_Alias.txt: those
+		// files, then the user's own custom alias files while Add Custom Aliases adds them. A run that
+		// writes no alias file leaves an earlier one alone, like any other earlier file ("Overwrite
+		// files") - unless Add Custom Aliases is in it, with custom files of its own to combine.
+		bool combine = aliasFiles.Length > 0 || settings.ConcatenateAliases is not null;
+		string progressName = settings.ConcatenateAliases is not null ? ConcatenateAliasesName : "AIRAC";
 		CombinedAliasResult? combinedAliasResult = null;
 
 		if (duplicateOutcome.Stopped)
 		{
-			if (settings.ConcatenateAliases is not null)
-			{
-				progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, $"Stopped at the duplicate alias commands, so {combinedAliasFileName} was not written.", 100));
-			}
+			progress?.Report(new AiracServiceProgress(progressName, $"Stopped at the duplicate alias commands, so {combinedAliasFileName} was not written.", 100));
 		}
 		else if (combine)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
-			progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, $"Writing {combinedAliasFileName}"));
+			progress?.Report(new AiracServiceProgress(progressName, $"Writing {combinedAliasFileName}"));
 
 			IReadOnlyList<AliasSourceLoad> customFiles = supplementalData.CustomAliasFiles ?? [];
 			string[] feBuddyFiles = [.. aliasFiles.Select(file => file.FilePath)];
@@ -423,33 +433,7 @@ public static class AiracService
 				: $"{combinedAliasFileName}: {combinedAliasResult.FeBuddyCommandCount:N0} command(s) from {combinedAliasResult.FeBuddyFiles.Count} " +
 					$"FE-Buddy alias file(s), then {combinedAliasResult.CustomCommandCount:N0} custom command(s).";
 
-			progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, summary, 100));
-		}
-		else
-		{
-			if (settings.ConcatenateAliases is not null)
-			{
-				progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, $"Combining is off, so {combinedAliasFileName} was not written.", 100));
-			}
-
-			// Combined_Alias.txt is built from the run's alias files, so one an earlier run left is out of
-			// date once this run rewrites them without writing a new one. A run that writes no alias
-			// file leaves it alone, like any other earlier file ("Overwrite files").
-			if (aliasFiles.Length > 0)
-			{
-				(string sentence, bool failed) = CombinedAliasFileWriter.DeleteEarlierFile(outputDirectory, combinedAliasFileName);
-
-				if (sentence.Length > 0)
-				{
-					string why = settings.ConcatenateAliases is null ? "Concatenate Aliases is not in the run" : "Combining is off on the Concatenate Aliases tab";
-					ServiceMessage deleted = new(failed ? LogLevel.Warning : LogLevel.Info, LogSource,
-						$"{why}, so {combinedAliasFileName} was not written.{sentence}")
-					{ IsAdvisory = true };
-
-					messages.Add(deleted);
-					AppLog.Write(deleted.Level, deleted.Source, deleted.Text);
-				}
-			}
+			progress?.Report(new AiracServiceProgress(progressName, summary, 100));
 		}
 
 		if (!anySelected)

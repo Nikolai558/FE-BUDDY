@@ -79,7 +79,7 @@ public sealed class WhatsNewViewModel(Action back, Action openGuide) : Observabl
 	/// <summary>What a facility engineer gets.</summary>
 	public IReadOnlyList<Point> ForEngineers { get; } =
 	[
-		new("Pick what you need", "10 sub-services, each with its own options, plus Concatenate Aliases to build your one vNAS alias file."),
+		new("Pick what you need", "10 sub-services, each with its own options, plus Add Custom Aliases to put your own aliases in your one vNAS alias file."),
 		new("Region of Interest", "Draw one box and your maps stay in your area. Commands like `.apt`, `.nav` and chart recalls still cover the whole FAA."),
 		new("vNAS-ready", "Every file is ready to upload. GeoJSON can carry your CRC ERAM defaults; alias files combine with your facility's own (local or private GitHub) into one `Combined_Alias.txt`. Your commands win."),
 		new("Procedure changes", "`Procedure_Changes.md` lists New, Changed and Deleted charts with links."),

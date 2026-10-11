@@ -48,7 +48,7 @@ public static class ServiceAreas
 	/// <summary>The Virtual Airlines card (Telephony tab).</summary>
 	public const string VirtualAirlines = "VirtualAirlines";
 
-	/// <summary>The Custom Alias Files card (Concatenate Aliases tab).</summary>
+	/// <summary>The Combine Alias Files card (Add Custom Aliases tab).</summary>
 	public const string CustomAliasFiles = "CustomAliasFiles";
 
 	/// <summary>The Output Files card (File Names tab).</summary>

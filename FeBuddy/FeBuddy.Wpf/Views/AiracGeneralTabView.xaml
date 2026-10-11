@@ -166,7 +166,7 @@
 
                 <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="Untick all of a sub-service's files and it's left out. Tick one and it's back in. A sub-service that's left out is greyed out on the left and keeps its settings. Concatenate Aliases, which joins the alias files into one for vNAS, is included whenever an alias file is ticked." />
+                           Text="Untick all of a sub-service's files and it's left out. Tick one and it's back in. A sub-service that's left out is greyed out on the left and keeps its settings. Whenever an alias file is ticked, every run writes Combined_Alias.txt for vNAS, and Add Custom Aliases is included to add your facility's own aliases to it." />
             </StackPanel>
         </ctl:Card>
     </StackPanel>

@@ -48,7 +48,7 @@ Each card's title row tags the files its settings change: **Alias**, **GeoJSON**
 columns. A tag is struck through while that file is off, and a card whose files are all off is
 greyed out. Where a card changes two files differently, a line for each says how.
 
-Each sub-service tab but Concatenate Aliases starts with **What You'll Get with the Current
+Each sub-service tab but Add Custom Aliases starts with **What You'll Get with the Current
 Settings**: what its files will hold, under each file's tag, one filter per line. Read top to
 bottom, chips and all, it's one sentence: "Every STAR **for** airports in ZOB **and only** those
 amended this cycle". **for** and **in** say where, **but only** and **and only** narrow the lines
@@ -75,12 +75,12 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
   **Alias**, **GeoJSON**, and Procedures' **Procedure Changes** and **Procedures JSON**. All are on
   until you first save. Unticking **Include** unticks its files, and ticking it ticks them all; untick
   its last file and it's left out, tick one and it's back in. One left out is greyed out in the list
-  to the left and keeps its settings. Concatenate Aliases comes in by itself while an alias file is
+  to the left and keeps its settings. Add Custom Aliases comes in by itself while an alias file is
   ticked.
 
 ### The cards most tabs share
 
-The tabs that write GeoJSON share these cards; Procedures, Telephony and Concatenate Aliases have
+The tabs that write GeoJSON share these cards; Procedures, Telephony and Add Custom Aliases have
 their own.
 
 - **What Files Do You Want?** - which of **Lines**, **Symbols**, and **Text** to write, each with the
@@ -270,28 +270,27 @@ aviationweather.gov's station list (not NASR), downloaded every run. No Lines or
   (`KDTW` / `DTW_Detroit/Metro Wayne Cnty`).
 - **Area** - with **ROI**, a station is included when it's inside the ROI.
 
-### Concatenate Aliases tab
+### Add Custom Aliases tab
 
-vNAS takes one alias file per facility, so this tab writes `Aliases\Combined_Alias.txt`: every alias
-file the run makes, then your facility's own, which win because CRC uses the last copy of a command.
-Upload that one file. Untick **Combine the alias files into one file for vNAS** to leave each alias
-file on its own. The tab is greyed out while no sub-service makes an alias file.
+vNAS takes one alias file per facility, so every run that makes an alias file writes
+`Aliases\Combined_Alias.txt`: every alias file the run makes, then - if you answer **Yes** - your
+facility's own, which win because CRC uses the last copy of a command. Upload that one file. The tab
+is greyed out while no sub-service makes an alias file.
 
-- **FE-Buddy Alias Files** - which of FE-Buddy's alias files go in, as the General tab stands.
-- **Custom Alias Files** - your own, merged in the order listed. Each is one line - its name, how it
-  stands, **Check** and the order buttons - until you click it open for its address and credential:
-  - **Add file…** for a file on this PC (it must hold alias commands), or **Add web address**. On
-    GitHub, paste the file's page or its Raw link; FE-Buddy shows it as the Raw link. Never put a
-    password or token in the address: for a private repository, choose a **Credential**
-    ([GitHub token guide](GitHub-Token-Guide.md)).
-  - **Check** reads the file now. If GitHub won't show it, Check asks whether the repository is
-    private and points you to the token guide - or, with a credential chosen, to its
-    [troubleshooting](GitHub-Token-Guide.md#if-something-goes-wrong).
-  - Every run reads them fresh. One that can't be read is left out with a warning: don't upload
-    until it's fixed. With none at all, the Review tab warns that uploading would remove your
-    facility's own aliases from vNAS.
-  - Last cycle's `Combined_Alias.txt` works as a custom file: FE-Buddy's section in it is dropped. A
-    `.FeUseOnly` line moves to the top.
+Your files are added in the order listed. Each is one line - its name, how it stands, **Check** and
+the order buttons - until you click it open for its address and credential:
+
+- **Add local file** needs a file holding alias commands. For **Add remote file** on GitHub, paste
+  the file's page or its Raw link; FE-Buddy shows it as the Raw link. Never put a password or token
+  in the address: for a private repository, choose a **Credential**
+  ([GitHub token guide](GitHub-Token-Guide.md)).
+- **Check** reads the file now. If GitHub won't show it, Check asks whether the repository is private
+  and points you to the token guide - or, with a credential chosen, to its
+  [troubleshooting](GitHub-Token-Guide.md#if-something-goes-wrong).
+- Every run reads them fresh. One that can't be read is left out with a warning: don't upload until
+  it's fixed. With none at all, the Review tab warns that uploading would remove your facility's own
+  aliases from vNAS.
+- A `.FeUseOnly` line in your files moves to the top.
 
 ### File Names tab
 

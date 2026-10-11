@@ -18,6 +18,10 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Credentials;
+using FeBuddy.Core.Infrastructure.GitHub;
+using FeBuddy.Core.Infrastructure.GitHub.Models;
+using FeBuddy.Core.Infrastructure.Logging;
 
 using FeBuddy.Versioning;
 
@@ -25,9 +29,10 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// Backs <c>ShellWindow</c>: navigation, the status-bar Zulu clock, the top-centre AIRAC
-/// status indicator, the version chip and update badge, and the one-time notice about FE-Buddy 2.x's
-/// GitHub token variable. Everything but navigation is driven by <see cref="AppEnvironment"/> and
-/// <see cref="AiracCycleDataCache"/>.
+/// status indicator, the version chip and update badge, the Systems popover, and the one-time notice
+/// about FE-Buddy 2.x's GitHub token variable. Everything but navigation is driven by
+/// <see cref="AppEnvironment"/> and <see cref="AiracCycleDataCache"/>, and the popover's GitHub token
+/// row by a background check of the saved tokens (<see cref="GitHubTokenExpiry"/>).
 /// </summary>
 public sealed class ShellViewModel : ObservableObject
 {
@@ -59,6 +64,10 @@ public sealed class ShellViewModel : ObservableObject
 	private string _updateBadgeVersionText = string.Empty;
 	private bool _badgeShowsVersion;
 	private int _badgeSeconds;
+
+	private IReadOnlyList<GitHubTokenStatus> _gitHubTokens = [];
+	private bool _gitHubTokensChecked;
+	private int _gitHubTokenCheck;
 
 	/// <summary>Builds the navigation, starts the Zulu clock, and follows the launch state.</summary>
 	public ShellViewModel()
@@ -101,9 +110,13 @@ public sealed class ShellViewModel : ObservableObject
 		AppEnvironment.Changed += OnEnvironmentChanged;
 		AiracCycleDataCache.Instance.StateChanged += OnCycleStateChanged;
 
+		// A token added, edited or removed: check the saved GitHub tokens again.
+		CredentialStore.Default.Changed += (_, _) => _dispatcher.BeginInvoke(() => StartGitHubTokenCheck(again: true));
+
 		RefreshVersionState();
 		RefreshAiracStatus();
 		RefreshSystemHealth();
+		StartGitHubTokenCheck();
 
 		// The launch sequence may have found the old token variable before this subscribed.
 		_dispatcher.InvokeAsync(ShowLegacyGitHubTokenNotice, DispatcherPriority.ApplicationIdle);
@@ -318,12 +331,75 @@ public sealed class ShellViewModel : ObservableObject
 			OnlyIssueSummary: readiness == AiracCycleReadiness.Ready ? $"Ready except {which} {metafiles}" : null);
 	}
 
+	/// <summary>
+	/// The drawer's GitHub tokens row: the saved tokens GitHub rejected or that expire within
+	/// <see cref="GitHubTokenExpiry.WarningDays"/> days, one per line. <see langword="null"/> when none
+	/// needs attention, so the row shows only then.
+	/// </summary>
+	/// <param name="tokens">The tokens that need attention.</param>
+	/// <param name="now">Now.</param>
+	/// <returns>The row, or <see langword="null"/>.</returns>
+	internal static HealthRow? DescribeGitHubTokens(IReadOnlyList<GitHubTokenStatus> tokens, DateTimeOffset now)
+	{
+		if (tokens.Count == 0)
+		{
+			return null;
+		}
+
+		IEnumerable<string> lines = tokens.Select(token =>
+			token.IsRejected ? $"'{token.Name}' was rejected by GitHub"
+			: token.ExpiresAt is { } expires ? $"'{token.Name}' {GitHubTokenExpiry.DescribeWhen(expires, now)}"
+			: $"'{token.Name}' expires soon");
+
+		return tokens.Count == 1
+			? new HealthRow("GitHub token", lines.Single(), StatusKind.Warn, Note: "Paste a new token in Settings ▸ Credentials")
+			: new HealthRow("GitHub tokens", string.Join("\n", lines), StatusKind.Warn, Note: "Paste new tokens in Settings ▸ Credentials");
+	}
+
+	/// <summary>
+	/// Checks the saved GitHub tokens in the background, once launch is done and while online: at
+	/// startup, and <paramref name="again"/> when a credential is added, edited or removed.
+	/// </summary>
+	private void StartGitHubTokenCheck(bool again = false)
+	{
+		if ((_gitHubTokensChecked && !again) || !AppEnvironment.LaunchCompleted || !AppEnvironment.HasInternetConnection)
+		{
+			return;
+		}
+
+		_gitHubTokensChecked = true;
+		_ = CheckGitHubTokensAsync(++_gitHubTokenCheck);
+	}
+
+	/// <summary>
+	/// One background check. Only the latest check's answer is shown, and the discarded task can't
+	/// fail unnoticed: anything unexpected is logged.
+	/// </summary>
+	private async Task CheckGitHubTokensAsync(int check)
+	{
+		try
+		{
+			IReadOnlyList<GitHubTokenStatus> tokens = await GitHubTokenExpiry.FindTokensNeedingAttentionAsync(CredentialStore.Default);
+
+			if (check == _gitHubTokenCheck)
+			{
+				_gitHubTokens = tokens;
+				RefreshSystemHealth();
+			}
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning("GitHub", $"Checking the saved GitHub tokens failed: {ex.Message}");
+		}
+	}
+
 	private void OnEnvironmentChanged(object? sender, EventArgs e)
 	{
 		_dispatcher.BeginInvoke(() =>
 		{
 			RefreshVersionState();
 			RefreshSystemHealth();
+			StartGitHubTokenCheck();
 		});
 
 		// At idle, so the main window is on screen before the notice opens over it.
@@ -527,6 +603,11 @@ public sealed class ShellViewModel : ObservableObject
 			{ IsAheadOfLatestRelease: true } => new HealthRow("Updates", "dev build — ahead of release", StatusKind.Ok),
 			_ => new HealthRow("Updates", "latest version", StatusKind.Ok),
 		});
+
+		if (DescribeGitHubTokens(_gitHubTokens, DateTimeOffset.Now) is { } tokens)
+		{
+			SystemHealth.Add(tokens);
+		}
 
 		OnPropertyChanged(nameof(HealthWorst));
 		OnPropertyChanged(nameof(HealthSummary));

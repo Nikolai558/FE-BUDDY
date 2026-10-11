@@ -3,6 +3,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.GitHub.Models;
 
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
@@ -82,6 +83,29 @@ public sealed class SystemHealthTests
 
 		Assert.Equal(new HealthRow("AIRAC data", "ready — a best-effort cycle failed", StatusKind.Warn, "next: no d-TPP Metafile yet"), row);
 		Assert.Equal("1 needs attention", ShellViewModel.SummarizeHealth([Internet, row, Updates]));
+	}
+
+	/// <summary>The GitHub token row shows only while a token needs attention, and counts as one issue.</summary>
+	[Fact]
+	public void a_github_token_that_needs_attention_adds_an_amber_row()
+	{
+		DateTimeOffset now = new(2026, 10, 11, 12, 0, 0, TimeSpan.Zero);
+
+		Assert.Null(ShellViewModel.DescribeGitHubTokens([], now));
+
+		HealthRow one = ShellViewModel.DescribeGitHubTokens([new GitHubTokenStatus("ZOB", now.AddDays(12), false)], now)!;
+
+		Assert.Equal(
+			new HealthRow("GitHub token", $"'ZOB' expires in 12 days, on {now.AddDays(12).ToLocalTime():d MMM yyyy}", StatusKind.Warn, "Paste a new token in Settings ▸ Credentials"),
+			one);
+		Assert.Equal("1 needs attention", ShellViewModel.SummarizeHealth([Internet, one, Updates]));
+
+		HealthRow two = ShellViewModel.DescribeGitHubTokens(
+			[new GitHubTokenStatus("Old", null, true), new GitHubTokenStatus("Odd", null, false)], now)!;
+
+		Assert.Equal("GitHub tokens", two.Name);
+		Assert.Equal("'Old' was rejected by GitHub\n'Odd' expires soon", two.Detail);
+		Assert.Equal("Paste new tokens in Settings ▸ Credentials", two.Note);
 	}
 
 	[Theory]

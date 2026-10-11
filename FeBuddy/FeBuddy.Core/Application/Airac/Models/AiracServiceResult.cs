@@ -112,7 +112,8 @@ public sealed record AiracServiceResult : ServiceResult
 
 	/// <summary>
 	/// What writing <c>Aliases\Combined_Alias.txt</c> produced, or <see langword="null"/> when it was
-	/// not written: Concatenate Aliases was not in the run, or its combining was off.
+	/// not tried: the run wrote no alias file and Add Custom Aliases wasn't in it, or the run stopped
+	/// at the duplicate alias commands.
 	/// </summary>
 	public CombinedAliasResult? CombinedAlias { get; init; }
 }

@@ -55,7 +55,7 @@ Open **Settings**:
 3. Open **Preview Settings**, check what the run will do, and press **Run AIRAC Service**. The
    **Review** tab shows progress, then **Open output folder**.
 
-Before you upload `Combined_Alias.txt`, add your facility's own alias file on the **Concatenate
+Before you upload `Combined_Alias.txt`, add your facility's own alias file on the **Add Custom
 Aliases** tab, or uploading it removes your facility's aliases from vNAS.
 
 ## 5. Every cycle after

@@ -170,7 +170,7 @@ FeBuddy.Wpf/
   no `Areas`). Which outputs
   are on comes from the sub-service's row on the General tab (`SubServiceRow`, read through
   `ISubServiceOutputs`), so the tab's own save and undo never change them. A sub-service left out
-  keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Concatenate Aliases is the exception:
+  keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Add Custom Aliases (`ConcatenateAliasesViewModel`) is the exception:
   it derives from `SubServiceSettingsViewModel`, uses none of the shared cards and has no row.
 - **A conversion page** derives from `FileConversionTabViewModel` (on `ConversionTabViewModel`):
   source files, CRC defaults and its own run button.

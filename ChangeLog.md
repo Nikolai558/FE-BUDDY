@@ -45,6 +45,15 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - The Area card no longer leaves a gap above **ROI** on tabs with no ARTCCs choice.
 - ARTCC Boundaries: with one file per ARTCC and altitude, the ARTCCs ticked earlier no longer narrow
   the CRC ERAM Defaults and File Names lists while the area is ROI or Everything.
+- Every run that makes an alias file now writes `Combined_Alias.txt`, the one alias file vNAS takes.
+- Concatenate Aliases is now **Add Custom Aliases**: one card that asks whether to add your own alias
+  files to `Combined_Alias.txt`. Its buttons are now **Add local file** and **Add remote file**, and
+  the FE-Buddy Alias Files card is gone. Your choice and files are kept.
+
+### Settings
+- FE-Buddy now warns when a GitHub token is within 57 days of expiring: in the run, in Settings ▸
+  Credentials ▸ **Check**, and under **Systems**, which also flags a token GitHub rejects. Saved GitHub
+  tokens are checked in the background at startup.
 
 ---
 

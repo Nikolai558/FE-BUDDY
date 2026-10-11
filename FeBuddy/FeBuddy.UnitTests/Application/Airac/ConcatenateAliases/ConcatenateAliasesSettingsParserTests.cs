@@ -32,7 +32,7 @@ public sealed class ConcatenateAliasesSettingsParserTests
 			],
 			result.Sources);
 		Assert.Empty(result.Messages);
-		Assert.True(result.Combine);
+		Assert.True(result.AddsCustomFiles);
 	}
 
 	[Fact]
@@ -56,30 +56,30 @@ public sealed class ConcatenateAliasesSettingsParserTests
 		Assert.Equal(LogLevel.Warning, warning.Level);
 		Assert.True(warning.IsAdvisory);
 		Assert.StartsWith("No custom alias files are set, so Combined_Alias.txt holds only FE-Buddy's aliases.", warning.Text, StringComparison.Ordinal);
-		Assert.EndsWith("add your facility's alias file on the Concatenate Aliases tab.", warning.Text, StringComparison.Ordinal);
+		Assert.EndsWith("add your facility's alias file on the Add Custom Aliases tab.", warning.Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
-	public void combining_is_on_unless_turned_off()
+	public void the_custom_files_are_added_unless_turned_off()
 	{
-		Assert.True(ConcatenateAliasesSettingsParser.CombinesAliasFiles(Block()));
-		Assert.True(ConcatenateAliasesSettingsParser.CombinesAliasFiles(Block(("CombineAliasFiles", " "))));
-		Assert.True(ConcatenateAliasesSettingsParser.CombinesAliasFiles(Block(("combinealiasfiles", "y"))));
-		Assert.False(ConcatenateAliasesSettingsParser.CombinesAliasFiles(Block(("CombineAliasFiles", "N"))));
-		Assert.Throws<ArgumentException>(() => ConcatenateAliasesSettingsParser.CombinesAliasFiles(Block(("CombineAliasFiles", "maybe"))));
-		Assert.Throws<ArgumentNullException>(() => ConcatenateAliasesSettingsParser.CombinesAliasFiles(null!));
+		Assert.True(ConcatenateAliasesSettingsParser.AddsCustomAliasFiles(Block()));
+		Assert.True(ConcatenateAliasesSettingsParser.AddsCustomAliasFiles(Block(("AddCustomAliasFiles", " "))));
+		Assert.True(ConcatenateAliasesSettingsParser.AddsCustomAliasFiles(Block(("addcustomaliasfiles", "y"))));
+		Assert.False(ConcatenateAliasesSettingsParser.AddsCustomAliasFiles(Block(("AddCustomAliasFiles", "N"))));
+		Assert.Throws<ArgumentException>(() => ConcatenateAliasesSettingsParser.AddsCustomAliasFiles(Block(("AddCustomAliasFiles", "maybe"))));
+		Assert.Throws<ArgumentNullException>(() => ConcatenateAliasesSettingsParser.AddsCustomAliasFiles(null!));
 	}
 
-	/// <summary>Off, nothing reads the custom alias files, so they are neither returned nor checked.</summary>
+	/// <summary>Not added, nothing reads the custom alias files, so they are neither returned nor checked.</summary>
 	[Fact]
-	public void with_combining_off_the_custom_files_are_not_read()
+	public void with_adding_off_the_custom_files_are_not_read()
 	{
 		ConcatenateAliasesSettingsParseResult result = ConcatenateAliasesSettingsParser.Parse(Block(
-			("CombineAliasFiles", "N"),
+			("AddCustomAliasFiles", "N"),
 			("Sources.1.FilePath", "not a full path"),
 			("Colour", "x")));
 
-		Assert.False(result.Combine);
+		Assert.False(result.AddsCustomFiles);
 		Assert.Empty(result.Sources);
 		Assert.Contains("'Colour'", Assert.Single(result.Messages).Text, StringComparison.Ordinal);
 	}

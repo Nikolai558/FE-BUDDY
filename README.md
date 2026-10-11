@@ -45,7 +45,7 @@ FE-Buddy 3.0 is a from-scratch rewrite. It makes:
 | **Procedures** | - (`Procedure_Changes.md` and `Procedures.json` instead, from the FAA's d-TPP Metafile) | `Faa_Chart_Recall.txt` |
 | **Telephony** | - | `Telephony.txt` - operators by designator and by spoken telephony, plus virtual airlines |
 | **Wx Stations** | Every US and US-territory station that reports METAR, from aviationweather.gov | - |
-| **Concatenate Aliases** | - | `Combined_Alias.txt` - every alias file the run makes, then your facility's own, as one file for vNAS |
+| **Add Custom Aliases** | - | Adds your facility's own alias files to `Combined_Alias.txt` - every alias file the run makes, as one file for vNAS |
 
 It also converts FAA `.dat` video maps, VRC sector files and ERAM GeoMaps to GeoJSON, has a map to
 check GeoJSON files and set your Region of Interest, and exports an Alias Command Guide and practice

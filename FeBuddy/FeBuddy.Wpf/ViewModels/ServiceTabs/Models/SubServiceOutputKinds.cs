@@ -7,7 +7,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 [Flags]
 public enum SubServiceOutputKinds
 {
-	/// <summary>Nothing of its own (Concatenate Aliases, which combines the others' alias files).</summary>
+	/// <summary>Nothing of its own (Add Custom Aliases, which adds custom aliases to the others' combined alias file).</summary>
 	None = 0,
 
 	/// <summary>An alias file, e.g. <c>Airports.txt</c>.</summary>

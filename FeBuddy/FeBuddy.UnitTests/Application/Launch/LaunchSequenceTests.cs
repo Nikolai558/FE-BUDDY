@@ -421,12 +421,12 @@ public sealed class LaunchSequenceTests : IDisposable
 	}
 
 	/// <summary>
-	/// With Concatenate Aliases selected, the single-settings overload reads the custom alias files
+	/// With Add Custom Aliases selected, the single-settings overload reads the custom alias files
 	/// before any sub-service runs: a readable one is merged into Combined_Alias.txt, one that cannot
 	/// be read is left out with a warning, and the block's own parsing messages reach the run.
 	/// </summary>
 	[Fact]
-	public async Task airac_service_reads_the_custom_alias_files_first_when_concatenate_aliases_is_selected()
+	public async Task airac_service_reads_the_custom_alias_files_first_when_add_custom_aliases_is_selected()
 	{
 		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
 		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
@@ -453,7 +453,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			},
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
-		Assert.Contains(reports, r => r.SubService == "Concatenate Aliases" && r.Message == "Reading your custom alias files");
+		Assert.Contains(reports, r => r.SubService == "Add Custom Aliases" && r.Message == "Reading your custom alias files");
 
 		CombinedAliasResult merged = result.CombinedAlias!;
 		Assert.Equal(2, merged.CustomFileCount);
@@ -465,9 +465,9 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains($"{missingFile} was not found", StringComparison.Ordinal));
 	}
 
-	/// <summary>With combining off, the custom alias files are not read at all, and no combined file is written.</summary>
+	/// <summary>With the custom alias files not added, they are not read at all, and the combined file has nothing to hold.</summary>
 	[Fact]
-	public async Task airac_service_does_not_read_the_custom_alias_files_while_combining_is_off()
+	public async Task airac_service_does_not_read_the_custom_alias_files_while_they_are_not_added()
 	{
 		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
 		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
@@ -482,14 +482,14 @@ public sealed class LaunchSequenceTests : IDisposable
 				OutputDirectory = Path.Combine(_root, "output"),
 				ConcatenateAliases = new Dictionary<string, string>
 				{
-					["CombineAliasFiles"] = "N",
+					["AddCustomAliasFiles"] = "N",
 					["Sources.1.FilePath"] = Path.Combine(_root, "Missing-Alias.txt"),
 				},
 			},
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
 		Assert.DoesNotContain(reports, r => r.Message == "Reading your custom alias files");
-		Assert.Null(result.CombinedAlias);
+		Assert.Null(result.CombinedAlias!.FilePath);
 		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("was not found", StringComparison.Ordinal));
 	}
 

@@ -5,7 +5,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 
 namespace FeBuddy.Wpf.Views;
 
-/// <summary>The Concatenate Aliases sub-service tab. See ConcatenateAliasesView.xaml.</summary>
+/// <summary>The Add Custom Aliases sub-service tab. See ConcatenateAliasesView.xaml.</summary>
 public partial class ConcatenateAliasesView : UserControl
 {
 	/// <summary>Creates the view.</summary>

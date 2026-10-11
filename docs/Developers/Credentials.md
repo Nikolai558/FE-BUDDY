@@ -14,7 +14,12 @@ downloads from a protected website uses one.
   it out. An import keeps this PC's own choice for FE-Buddy's GitHub token, and for a custom alias
   file's credential only where that file is unchanged.
 - **Users manage them in Settings ▸ Credentials:** add, edit, remove, remove all, and **Check** (asks
-  GitHub whether a token still works). A saved secret is never shown again.
+  GitHub whether a token still works, and when it expires). A saved secret is never shown again.
+- **Expiring GitHub tokens are flagged** from 57 days before (`GitHubTokenExpiry`, read from GitHub's
+  `GitHub-Authentication-Token-Expiration` header): by **Check**, by a run that downloads with one,
+  and in the Systems popover. Once launch is done and while online, the shell checks every saved
+  GitHub token in the background (again whenever a credential changes) and adds a row for any that
+  expires soon or that GitHub rejects.
 - **A full uninstall removes them** (the `RemoveFeBuddyCredentials` custom action, after
   `InstallFinalize`, so a cancelled or failed uninstall keeps them); an upgrade never does. One it
   can't remove is logged, with a warning saying how to delete it by hand.
@@ -48,7 +53,7 @@ website can never collect a user's token.
 ## Using a credential in a feature
 
 Everything goes through `CredentialStore` (`FeBuddy.Core/Infrastructure/Credentials`); a feature
-never reads or stores a secret itself. Concatenate Aliases is the working example:
+never reads or stores a secret itself. Add Custom Aliases is the working example:
 `ConcatenateAliasesViewModel` offers the drop-down and saves `Sources.<n>.CredentialId`, and
 `AliasSourceLoader` downloads with it.
 
@@ -91,7 +96,7 @@ switch (store.Authorize(request, credentialId))
 - **Never log, toast, show or put in an exception a secret** or a request's headers. Name the
   credential instead.
 - **Never put a secret in a URL.** `UrlSecrets.Describe` finds a user name and password or a token
-  in an address the user types; Concatenate Aliases refuses one.
+  in an address the user types; Add Custom Aliases refuses one.
 - **Never copy a secret into `UserConfig`, a file or an environment variable.**
 - **Never let a record print a secret:** a record's `ToString` prints every member, so one holding a
   secret must leave it out, as `CredentialDraft` does.

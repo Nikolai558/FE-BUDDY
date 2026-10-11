@@ -126,10 +126,10 @@ public sealed record AiracServiceSettings
 	public IReadOnlyDictionary<string, string>? Telephony { get; init; }
 
 	/// <summary>
-	/// The Concatenate Aliases sub-service settings block - whether to combine every alias file the run
-	/// writes into <c>Aliases\Combined_Alias.txt</c>, and the user's custom alias files to add after them -
-	/// or <see langword="null"/> when Concatenate Aliases is not in this run, which then writes no
-	/// combined file.
+	/// The Add Custom Aliases (Concatenate Aliases) sub-service settings block - whether to add the
+	/// user's custom alias files to <c>Aliases\Combined_Alias.txt</c> after every alias file the run
+	/// writes, and which files - or <see langword="null"/> when it is not in this run. The combined file
+	/// is written either way while the run writes an alias file.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? ConcatenateAliases { get; init; }
 }

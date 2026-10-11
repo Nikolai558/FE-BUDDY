@@ -21,7 +21,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <remarks>
 /// <para>
 /// The list is read from the other tabs' settings as they are now, each time the tab is shown (see
-/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the Concatenate Aliases tab reads
+/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the Add Custom Aliases tab reads
 /// its alias files. A file's choice - whether to rename it, and its new name - is kept by file key,
 /// including files the current settings do not write, so a file that drops off the list and comes
 /// back keeps its choice.

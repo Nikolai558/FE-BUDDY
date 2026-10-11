@@ -11,7 +11,7 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// <remarks>
 /// The file goes in the cycle folder's <c>Aliases</c> folder (see
 /// <see cref="AiracOutputPaths.AliasDirectory"/>), like every other alias file; an AIRAC Service run
-/// with Concatenate Aliases also copies it into <c>Combined_Alias.txt</c>.
+/// also copies it into <c>Combined_Alias.txt</c>.
 /// </remarks>
 public static class ChartRecallAliasWriter
 {

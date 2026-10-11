@@ -58,15 +58,17 @@ public static class AiracSubServices
 	/// <summary>The Telephony sub-service key.</summary>
 	public const string TelephonyKey = "Telephony";
 
-	/// <summary>The Concatenate Aliases sub-service key.</summary>
+	/// <summary>
+	/// The Add Custom Aliases sub-service key: its first name, Concatenate Aliases, kept so its saved
+	/// settings carry over.
+	/// </summary>
 	public const string ConcatenateAliasesKey = "ConcatenateAliases";
 
 	private const SubServiceOutputKinds AliasAndGeojson = SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson;
 
 	/// <summary>
-	/// Every sub-service, in the order the General tab's table and the tab rail show them. The
-	/// Concatenate Aliases tab lists FE-Buddy's alias files in this order too, straight from the list,
-	/// so keep the <see cref="SubServiceDescriptor.Order"/> values in the same order as the entries.
+	/// Every sub-service, in the order the General tab's table and the tab rail show them. Keep the
+	/// <see cref="SubServiceDescriptor.Order"/> values in the same order as the entries.
 	/// </summary>
 	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
 	[
@@ -139,9 +141,9 @@ public static class AiracSubServices
 			Help: new SubServiceHelp(
 				"A symbol and a label for every US and US-territory station that reports METARs, from aviationweather.gov. GeoJSON only.",
 				Geojson: "Wx_Symbols and Wx_Text (the ICAO ID, then the IATA ID and name). With ROI as the area, only the stations inside it.")),
-		new SubServiceDescriptor(ConcatenateAliasesKey, "Concatenate Aliases", 110, () => new ConcatenateAliasesViewModel(),
+		new SubServiceDescriptor(ConcatenateAliasesKey, "Add Custom Aliases", 110, () => new ConcatenateAliasesViewModel(),
 			Help: new SubServiceHelp(
-				"Combines every alias file the run makes, then your facility's own alias files, into Combined_Alias.txt, " +
-				"since vNAS takes one alias file per facility.")),
+				"Adds your facility's own alias files to Combined_Alias.txt, after every alias file the run makes. " +
+					"Every run that makes an alias file writes Combined_Alias.txt, since vNAS takes one alias file per facility.")),
 	];
 }

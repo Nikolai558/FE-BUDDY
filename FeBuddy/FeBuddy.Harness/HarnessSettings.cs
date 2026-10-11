@@ -22,7 +22,7 @@ internal static class HarnessSettings
 	/// The folder the services write into, as the AIRAC Service's <c>AIRAC_&lt;cycle&gt;</c> folder
 	/// would be: alias files in its <c>Aliases</c> folder and GeoJSON in its <c>Geojson</c> folder. The
 	/// harness calls each service directly, so there is no cycle folder of its own - and no
-	/// <c>Aliases\Combined_Alias.txt</c>: only an AIRAC Service run with Concatenate Aliases writes it.
+	/// <c>Aliases\Combined_Alias.txt</c>: only an AIRAC Service run writes it.
 	/// </summary>
 	public const string OutputDirectory = @"C:\Users\ksand\Downloads\FE-Buddy-Output";
 

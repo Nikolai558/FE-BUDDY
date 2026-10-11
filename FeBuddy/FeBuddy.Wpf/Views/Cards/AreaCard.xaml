@@ -1,6 +1,6 @@
 <!--
     AreaCard  -  the Area card near the top of every AIRAC sub-service tab but Telephony and
-    Concatenate Aliases: one choice of which area the run uses - the tab's ARTCCs (Procedures: its
+    Add Custom Aliases: one choice of which area the run uses - the tab's ARTCCs (Procedures: its
     facilities), an ROI, everything, or (Procedures) none - with the chosen one's settings under it.
     Binds to the tab's view model through IAreaSettings; the tab names each choice and supplies its
     ARTCC list (ArtccsContent), anything more the ROI needs (RoiContent) and notes for the outputs

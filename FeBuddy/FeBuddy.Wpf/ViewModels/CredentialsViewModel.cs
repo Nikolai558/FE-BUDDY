@@ -85,7 +85,10 @@ public sealed class CredentialsViewModel : ObservableObject
 	/// <summary>Removes a saved credential, once confirmed. The parameter is its <see cref="CredentialRow"/>.</summary>
 	public ICommand RemoveCommand { get; }
 
-	/// <summary>Asks GitHub whether a saved GitHub token works. The parameter is its <see cref="CredentialRow"/>.</summary>
+	/// <summary>
+	/// Asks GitHub whether a saved GitHub token works, and when it expires. The parameter is its
+	/// <see cref="CredentialRow"/>.
+	/// </summary>
 	public ICommand CheckCommand { get; }
 
 	/// <summary>Removes every FE-Buddy credential from this PC, once confirmed.</summary>
@@ -189,7 +192,11 @@ public sealed class CredentialsViewModel : ObservableObject
 		{
 			CredentialCheck check = await GitHubAuth.CheckTokenAsync(_store, row.Info.Id);
 
-			if (check.Succeeded)
+			if (check is { Succeeded: true, ExpiresSoon: true })
+			{
+				Toast.Warn($"{row.Name} expires soon", check.Message);
+			}
+			else if (check.Succeeded)
 			{
 				Toast.Success($"{row.Name} works", check.Message);
 			}

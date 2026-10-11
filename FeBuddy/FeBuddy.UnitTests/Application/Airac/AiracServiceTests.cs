@@ -24,8 +24,8 @@ namespace FeBuddy.UnitTests.Application.Airac;
 /// Exercises the <see cref="AiracService"/> orchestrator: it dispatches each sub-service whose
 /// block is present, with the supplemental data it needs, and aggregates its result, writes every
 /// sub-service into the one <c>AIRAC_&lt;cycle&gt;</c> folder with the duplicate-alias report,
-/// combines the alias files into <c>Combined_Alias.txt</c> as Concatenate Aliases asks, writes
-/// renamed files under their new names, handles an earlier run's files as asked, and is a safe
+/// combines the alias files into <c>Combined_Alias.txt</c> (with the custom files Add Custom Aliases
+/// adds), writes renamed files under their new names, handles an earlier run's files as asked, and is a safe
 /// no-op (with a warning) when nothing is selected.
 /// </summary>
 public sealed class AiracServiceTests : IDisposable
@@ -114,12 +114,13 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Null(result.Airways);
 		Assert.Equal(1, result.Airports!.AirportCount);
 		Assert.Equal(1, result.Departures!.AirportProcedureCount);
-		// Both sub-services wrote an alias file, so one more "AIRAC" report follows for the
-		// duplicate-alias check once every sub-service has run.
+		// Both sub-services wrote an alias file, so "AIRAC" reports follow once every sub-service has
+		// run: the duplicate-alias check, then writing Combined_Alias.txt and what it holds.
 		Assert.Equal(
-			["Airports", "Airports", "Departures", "Departures", "AIRAC"],
+			["Airports", "Airports", "Departures", "Departures", "AIRAC", "AIRAC", "AIRAC"],
 			reports.Select(r => r.SubService));
-		Assert.Equal(100, reports[^2].PercentComplete);
+		Assert.Equal(100, reports[3].PercentComplete);
+		Assert.Equal(100, reports[^1].PercentComplete);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => AiracService.RunAsync(settings, data, new AiracSupplementalData(), cancellationToken: new CancellationToken(canceled: true)));
@@ -275,7 +276,7 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.True(File.Exists(result.DuplicateAliasReport.FilePath));
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Level == LogLevel.Warning
 			&& m.Text.StartsWith("You stopped the run at the duplicate alias commands, so it saved no alias file and no Combined_Alias.txt.", StringComparison.Ordinal));
-		Assert.Contains(reports, r => r.SubService == "Concatenate Aliases" && r.Message.StartsWith("Stopped at the duplicate alias commands", StringComparison.Ordinal));
+		Assert.Contains(reports, r => r.SubService == "Add Custom Aliases" && r.Message.StartsWith("Stopped at the duplicate alias commands", StringComparison.Ordinal));
 	}
 
 	/// <summary>Saved choices that settle every duplicate are made without asking.</summary>
@@ -878,7 +879,7 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			Telephony = new Dictionary<string, string>(),
-			ConcatenateAliases = new Dictionary<string, string> { ["combinealiasfiles"] = "y" },
+			ConcatenateAliases = new Dictionary<string, string> { ["addcustomaliasfiles"] = "y" },
 			FileNames = new Dictionary<string, string>
 			{
 				["Telephony.txt"] = "ZOB Telephony",
@@ -903,8 +904,9 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Contains("Files checked: ZOB Telephony.txt", File.ReadAllText(result.DuplicateAliasReport.FilePath), StringComparison.Ordinal);
 	}
 
+	/// <summary>Without Add Custom Aliases the combined file is still written - under its new name, over an earlier one.</summary>
 	[Fact]
-	public async Task a_renamed_combined_file_an_earlier_run_left_is_deleted_under_its_new_name()
+	public async Task a_renamed_combined_file_is_written_under_its_new_name_without_add_custom_aliases()
 	{
 		string renamed = Path.Combine(CycleFolder, "Aliases", "ZOB vNAS.txt");
 		Directory.CreateDirectory(Path.GetDirectoryName(renamed)!);
@@ -921,8 +923,8 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 
-		Assert.False(File.Exists(renamed));
-		Assert.Contains(result.Messages, m => m.Text.StartsWith("Concatenate Aliases is not in the run, so ZOB vNAS.txt was not written.", StringComparison.Ordinal));
+		Assert.Equal(renamed, result.CombinedAlias!.FilePath);
+		Assert.DoesNotContain(".old last run's aliases", File.ReadAllText(renamed), StringComparison.Ordinal);
 	}
 	[Fact]
 	public async Task a_new_name_for_no_file_is_a_warning_on_the_run()
@@ -956,8 +958,9 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.True(File.Exists(earlier));
 	}
 
+	/// <summary>Every run that writes an alias file writes the combined file, Add Custom Aliases in it or not.</summary>
 	[Fact]
-	public async Task without_concatenate_aliases_no_combined_file_is_written()
+	public async Task without_add_custom_aliases_the_combined_file_holds_fe_buddys_alias_files()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -966,15 +969,20 @@ public sealed class AiracServiceTests : IDisposable
 			Telephony = new Dictionary<string, string>(),
 		};
 
+		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
-			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator }, new SynchronousProgress(reports.Add));
 
-		Assert.Null(result.CombinedAlias);
-		Assert.False(File.Exists(CombinedAliasFile));
+		Assert.Equal(CombinedAliasFile, result.CombinedAlias!.FilePath);
+		Assert.Equal(["Telephony.txt"], result.CombinedAlias.FeBuddyFiles);
+		Assert.Equal(0, result.CombinedAlias.CustomFileCount);
+		Assert.StartsWith("Combined_Alias.txt: ", reports.Last(p => p.SubService == "AIRAC").Message, StringComparison.Ordinal);
+		Assert.DoesNotContain(reports, p => p.SubService == "Add Custom Aliases");
 	}
 
+	/// <summary>With the custom files not added, the combined file still has FE-Buddy's, over an earlier one.</summary>
 	[Fact]
-	public async Task with_combining_off_no_combined_file_is_written_and_an_earlier_one_is_deleted()
+	public async Task with_custom_files_not_added_the_combined_file_holds_only_fe_buddys()
 	{
 		Directory.CreateDirectory(Path.GetDirectoryName(CombinedAliasFile)!);
 		File.WriteAllText(CombinedAliasFile, ".old last run's aliases");
@@ -984,24 +992,19 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			Telephony = new Dictionary<string, string>(),
-			ConcatenateAliases = new Dictionary<string, string> { ["CombineAliasFiles"] = "N", ["Sources.1.FilePath"] = "not even a full path" },
+			ConcatenateAliases = new Dictionary<string, string> { ["AddCustomAliasFiles"] = "N", ["Sources.1.FilePath"] = "not even a full path" },
 		};
 
 		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator }, new SynchronousProgress(reports.Add));
 
-		Assert.Null(result.CombinedAlias);
-		Assert.False(File.Exists(CombinedAliasFile));
+		Assert.Equal(0, result.CombinedAlias!.CustomFileCount);
+		Assert.DoesNotContain(".old last run's aliases", File.ReadAllText(CombinedAliasFile), StringComparison.Ordinal);
 
-		ServiceMessage deleted = Assert.Single(result.Messages, m => m.Text.StartsWith("Combining is off on the Concatenate Aliases tab, so Combined_Alias.txt was not written.", StringComparison.Ordinal));
-		Assert.True(deleted.IsAdvisory);
-		Assert.Equal(LogLevel.Info, deleted.Level);
-		Assert.Contains("The one an earlier run wrote was deleted", deleted.Text, StringComparison.Ordinal);
-
-		AiracServiceProgress done = reports.Last(p => p.SubService == "Concatenate Aliases");
+		AiracServiceProgress done = reports.Last(p => p.SubService == "Add Custom Aliases");
 		Assert.Equal(100, done.PercentComplete);
-		Assert.Equal("Combining is off, so Combined_Alias.txt was not written.", done.Message);
+		Assert.StartsWith("Combined_Alias.txt: ", done.Message, StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -1024,6 +1027,10 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("was not written.", StringComparison.Ordinal));
 	}
 
+	/// <summary>
+	/// Add Custom Aliases with nothing to combine writes no combined file, and deletes an earlier one -
+	/// or, when it can't, says not to upload it.
+	/// </summary>
 	[Fact]
 	public async Task an_earlier_combined_file_that_cannot_be_deleted_is_a_warning()
 	{
@@ -1034,7 +1041,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Telephony = new Dictionary<string, string>(),
+			ConcatenateAliases = new Dictionary<string, string>(),
 		};
 
 		AiracServiceResult result;
@@ -1042,20 +1049,19 @@ public sealed class AiracServiceTests : IDisposable
 		// Held open without delete sharing, as another program might, so it cannot be deleted.
 		using (new FileStream(CombinedAliasFile, FileMode.Open, FileAccess.Read, FileShare.Read))
 		{
-			result = await AiracService.RunAsync(
-				settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+			result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 		}
 
 		Assert.True(File.Exists(CombinedAliasFile));
 
-		ServiceMessage notDeleted = Assert.Single(result.Messages, m => m.Text.StartsWith("Concatenate Aliases is not in the run", StringComparison.Ordinal));
+		ServiceMessage notDeleted = Assert.Single(result.Messages, m => m.Text.StartsWith("Combined_Alias.txt was not written", StringComparison.Ordinal));
 		Assert.Equal(LogLevel.Warning, notDeleted.Level);
 		Assert.Contains("could not be deleted", notDeleted.Text, StringComparison.Ordinal);
 		Assert.Contains("do not upload it", notDeleted.Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
-	public async Task the_concatenate_aliases_block_puts_the_custom_files_last_and_reports_its_progress()
+	public async Task the_add_custom_aliases_block_puts_the_custom_files_last_and_reports_its_progress()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -1086,14 +1092,43 @@ public sealed class AiracServiceTests : IDisposable
 
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.StartsWith("Left custom alias file 2 (Extra.txt) out", StringComparison.Ordinal));
 
-		AiracServiceProgress done = reports.Last(p => p.SubService == "Concatenate Aliases");
+		AiracServiceProgress done = reports.Last(p => p.SubService == "Add Custom Aliases");
 		Assert.Equal(100, done.PercentComplete);
 		Assert.StartsWith("Combined_Alias.txt: ", done.Message, StringComparison.Ordinal);
 		Assert.EndsWith(" command(s) from 1 FE-Buddy alias file(s), then 1 custom command(s).", done.Message, StringComparison.Ordinal);
 	}
 
+	/// <summary>A GitHub token that expires soon is warned about once, on the Review tab, however many files it downloaded.</summary>
 	[Fact]
-	public async Task a_concatenate_aliases_block_alone_counts_as_something_selected()
+	public async Task a_token_that_expires_soon_is_warned_about_once()
+	{
+		const string Warning = "The GitHub token 'ZOB GitHub' expires in 9 days, on 20 Oct 2026. Make a new token on GitHub and paste it into 'ZOB GitHub' in Settings ▸ Credentials.";
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ConcatenateAliases = new Dictionary<string, string>(),
+		};
+		AiracSupplementalData supplemental = new()
+		{
+			CustomAliasFiles =
+			[
+				AliasSourceLoad.Read(new AliasSource(1, AliasSourceKind.Url, "https://github.com/o/r/blob/main/A.txt"), ".a .ECHO A\r\n") with { CredentialWarning = Warning },
+				AliasSourceLoad.Read(new AliasSource(2, AliasSourceKind.Url, "https://github.com/o/r/blob/main/B.txt"), ".b .ECHO B\r\n") with { CredentialWarning = Warning },
+				AliasSourceLoad.Read(new AliasSource(3, AliasSourceKind.File, @"C:\C.txt"), ".c .ECHO C\r\n"),
+			],
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), supplemental);
+
+		ServiceMessage warned = Assert.Single(result.Messages, m => m.Text == Warning);
+		Assert.True(warned.IsAdvisory);
+		Assert.Equal(LogLevel.Warning, warned.Level);
+		Assert.Equal("Add Custom Aliases", warned.Source);
+	}
+
+	[Fact]
+	public async Task an_add_custom_aliases_block_alone_counts_as_something_selected()
 	{
 		AiracServiceSettings settings = new()
 		{

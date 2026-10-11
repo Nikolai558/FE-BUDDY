@@ -13,6 +13,26 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-11
+<!--
+PostId: 2026-10-11.1
+-->
+
+**Version 3.0.0-beta.7 Compiled!**
+
+Easier to read, from AIRAC Service to Settings
+
+- **Clearer wording** on every AIRAC Service tab, File Conversions, and Settings. File names show as code
+- **What You'll Get** now lists each file a tab writes and what goes in it, so most **Outputs** cards are gone
+- **Every run writes `Combined_Alias.txt`**. Concatenate Aliases is now **Add Custom Aliases**: just say whether to add your facility's own alias files
+- **GitHub tokens**: FE-Buddy warns you 57 days before one expires, under **Systems** and in the run
+- `Navaids.txt` now has every NAVAID type
+- **Map** collapses the menu on the left to give the map room, and **File Conversions** opens without a pause
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.7)!!!
+
+---
+
 ## 2026-10-09
 <!--
 PostId: 2026-10-09.1

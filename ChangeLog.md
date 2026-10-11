@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.7
 ### AIRAC Service
 - What You'll Get now lists the files each output writes, with what goes in each and any notes, and
   says where to turn the outputs on and off. Airports' Outputs card is gone: its details are here now.

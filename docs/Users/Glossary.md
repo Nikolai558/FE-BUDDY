@@ -60,7 +60,7 @@ NAVAID and procedure, published as CSV files each AIRAC cycle. Most of FE-Buddy 
 obstacles, as opposed to a SID.
 
 **Output folder** - Where FE-Buddy writes your files (Settings ▸ Default Output Directory). Each cycle
-gets its own `AIRAC_<cycle>` folder there.
+gets its own `AIRAC_<cycle>` folder there, inside `FE-Buddy_Output` unless you untick it.
 
 **Region of Interest (ROI)** - A box on the map, set by its south-west and north-east corners.
 FE-Buddy's maps keep only what is inside or crossing it. Make it a little bigger than your ARTCC.

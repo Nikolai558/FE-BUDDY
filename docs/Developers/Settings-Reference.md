@@ -90,7 +90,7 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and 
 | `PrettyPrintGeojson` | `Y` / `N` (`OutputFormatting`) | `N` |
 | `DefaultOutputDirectory` | a folder | the Desktop |
 | `AddFeBuddyOutputFolder` | `Y` / `N` - put the output in a `FE-Buddy_Output` folder | `Y` |
-| `FeBuddyGitHub.CredentialId` | the GitHub token FE-Buddy's own GitHub requests use (`GitHubAuth`) | none |
+| `FeBuddyGitHub.CredentialId` | the id (`"N"` GUID) of the saved GitHub token credential FE-Buddy's own GitHub requests use (`GitHubAuth`); blank for none | none |
 | `LegacyGitHubTokenNoticeShown` | `Y` once the notice about 2.x's `FEBUDDY_GITHUB_TOKEN` has been shown | none |
 
 ### Services.AiracService
@@ -106,8 +106,8 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and 
 | `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
 
 The default ROI is saved by `DefaultRoiStore`: by the Map as soon as it is set or cleared, by
-Settings when **Save** is pressed. Clearing it only sets `FilterByRoi` to `N`, so the corners come
-back next time.
+Settings when **Save** is pressed. Clearing it only sets `FilterByRoi` to `N`; the corners stay in
+the file but aren't read until a new ROI replaces them.
 
 ### Services.AiracService.DuplicateAliases
 
@@ -138,7 +138,7 @@ A ticked file with no name is not saved, so the tab flags it until it is named o
 
 ### Services.MapService
 
-Saved by the Map (`MapLayersState`) the moment a choice is made; the Map has no Save button.
+Saved by the Map (`MapLayersState`) the moment a choice is made, with no Save button.
 
 | Key | Values | Default |
 |---|---|---|
@@ -181,8 +181,8 @@ none of them.
 | `FebProperties` | | list of the sub-service's `feb.*` names; **required** when the above is `Y` | none |
 | `CrcDefaultsFor` | `CrcDefaultsScope` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `CrcDefaultsFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
 | `Area` | `Area` | which one area filter the run uses (`SubServiceArea`): `Artccs` (ARTCC Boundaries, Departures, Arrivals; Procedures' facilities), `Roi`, `Everything`, or Procedures' `None`. Only that filter is read | see below |
-| `FilterByRoi` | `Roi.OverrideDefaultRoi` (the tab's own ROI rather than the default) | `Y` / `N`; **required** `Y` with `Area = Roi` | `N` |
-| `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCorners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees; **required** with `FilterByRoi = Y` | none |
+| `FilterByRoi` | not saved: sent `Y` while `Area = Roi` and an ROI is set (the tab saves its own-or-default choice as `Roi.OverrideDefaultRoi`) | `Y` / `N`; **required** `Y` with `Area = Roi` | `N` |
+| `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCorners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees; **required** with `Area = Roi` (which also needs `FilterByRoi = Y`) | none |
 | `Crc.<Class>.<Kind>.<field>` | `CrcEramPropertyDefaults.<row>.<field>` | see [CRC defaults](#crc-defaults) | none |
 
 - The app sends `Area`, and only the filter it names: the tab's ARTCCs with `Artccs`; with `Roi`,
@@ -192,7 +192,7 @@ none of them.
   (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Settings ▸ Facility ARTCC) if it has
   any, otherwise the ROI if it has its own or the default ROI is on, otherwise `Everything`
   (Procedures: the ROI only with the old `IncludeRoiAirports`, otherwise `None`).
-- A block without `Area` (the harness) means the same: its ARTCC list if it has one, otherwise the
+- A block without `Area` (one written by hand, or before there was a choice) means the same: its ARTCC list if it has one, otherwise the
   ROI with `FilterByRoi = Y`, otherwise everything (`SubServiceSettingsReader.ReadArea`).
 - `CrcDefaultsFiles` keeps every choice, even for files the current settings don't write, so a file
   switched off and on keeps its choice. A run sends only the files written.
@@ -204,14 +204,14 @@ none of them.
 
 ### Where files go
 
-`AiracService` sets `OutputDirectory` on every block to the run's cycle folder,
+`AiracService` sets `OutputDirectory` on every sub-service's block (not Add Custom Aliases') to the run's cycle folder,
 `<output>[\FE-Buddy_Output]\AIRAC_<cycle>`; the harness and tests pass their own. Inside it,
 `AiracOutputPaths` lays the files out:
 
 | File | Goes in |
 |---|---|
 | Alias file | `Aliases\` |
-| `Combined_Alias.txt` | `Aliases\`, whenever the run wrote an alias file or [Add Custom Aliases](#add-custom-aliases) is in it |
+| `Combined_Alias.txt` | `Aliases\`, whenever the run wrote an alias file or [Add Custom Aliases](#add-custom-aliases) is in it, unless the user stops the run at the duplicate review |
 | GeoJSON | `Geojson\` (Departures and Arrivals: `Geojson\<ARTCC>\<airport>\`) |
 | Procedures' documents | `Publication_Docs\` |
 | `Duplicate_Alias_Commands.txt` | the cycle folder itself, whenever the run wrote an alias file |
@@ -221,7 +221,9 @@ none of them.
 A **file key** names one output file: a GeoJSON file's name without `.geojson`, or the alias file's
 name. `CrcDefaultsFor` and the File Names tab use them, matching case-insensitively. A
 `CrcDefaultsFor` key that isn't one of the sub-service's GeoJSON keys throws. A key for a file that
-isn't written this run does nothing. Each sub-service's keys are in its `*OutputFiles` class.
+isn't written this run is ignored by most sub-services, but ARTCC Boundaries, Fixes' and NAVAIDs'
+per-group layouts and Airways' `Designation` layout still require the `Crc.*` values of every
+listed key that isn't excluded. Each sub-service's keys are in its `*OutputFiles` class.
 
 | Sub-service | GeoJSON keys | Alias key |
 |---|---|---|
@@ -282,11 +284,13 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 | ERAM to GeoJSON | `GeoMap` (Line, Symbol, Text) | `GeoMap_Line`, `GeoMap_Symbol`, `GeoMap_Text` |
 
 - Only the defaults a file actually needs are required: one being written *and* in `CrcDefaultsFor`
-  (for a conversion, a kind it writes whose `IncludeCrc…Defaults` is `Y`). Other valid CRC keys are
+  (but see [File keys](#file-keys) for the sub-services that read every listed key; for a
+  conversion, a kind it writes whose `IncludeCrc…Defaults` is `Y`, and for ERAM only with
+  `DefaultsSource` `XmlThenCard` or `Card`). Other valid CRC keys are
   ignored; a key for a class, kind or field the sub-service doesn't have is a warning.
 - Values are checked against what CRC can draw; a bad value throws, naming the key.
-- ARTCC Boundaries' per-ARTCC classes and Fixes' group classes come from the cycle's own data
-  (`AddCrcRows`), not a fixed list.
+- ARTCC Boundaries' per-ARTCC classes, and Fixes' chart, combination and unknown fix-use classes,
+  come from the cycle's own data (`AddCrcRows`); Fixes' known fix uses are a fixed list.
 
 ## Airports
 
@@ -392,8 +396,8 @@ unknown-key warning).
 - No `GenerateGeojson` or `GenerateAliasFile`: Fixes always writes GeoJSON and has no alias file.
 - **`FebProperties`:** `fixId`, `fixUseCode`, `charts`. The Text file never carries `fixId`.
 - An unknown fix use in `ExcludedFixUses` or `Combinations` warns but is still used. Excluding every
-  known fix use throws with `OutputBy = FixUse`, as does a combination that isn't both a chart and a
-  fix use.
+  known fix use throws with `OutputBy = FixUse`. A `Combinations` entry that isn't
+  `<chart>+<fix use>` throws, whatever the layout.
 
 ## Wx Stations
 
@@ -442,7 +446,7 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `GenerateAliasFile` | `Outputs.Telephony.Alias` (General tab, where it can't be unticked) | must be `Y`: `Telephony.txt` is Telephony's only output | `Y` |
+| `GenerateAliasFile` | `Outputs.Telephony.Alias` (General tab; unticking it leaves Telephony out of the run) | must be `Y`: `Telephony.txt` is Telephony's only output | `Y` |
 | `VirtualAirlines.<n>.Designator` | | a virtual airline's three-letter designator (`<n>` from 1) | none |
 | `VirtualAirlines.<n>.Telephony` | | its telephony | none |
 | `VirtualAirlines.<n>.Organization` | | its virtual organization | none |
@@ -532,7 +536,7 @@ Settings ▸ **Export…** writes the profile in use to a file another user can 
 **Import…** (`UserConfigTransfer`): the same tree as a profile, under a header.
 
 ```json
-{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 1, "appVersion": "3.0.0",
+{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 2, "appVersion": "3.0.0",
   "exportedUtc": "2026-09-27T12:00:00Z", "settings": { "General": { ... }, "Services": { ... } } }
 ```
 
@@ -555,7 +559,8 @@ no list:
   has, a folder FE-Buddy reads from that exists, or a file that exists. A network path is refused
   unless it is this user's own Desktop, Documents or profile. Otherwise this PC keeps its own; a
   custom alias file is left out instead, since this PC's entry at that number is a different file.
-- **The user chooses where the settings go** (`UserConfigImportMode`):
+- **The user chooses where the settings go** (`ImportDestination`; Replace and Merge are
+  `UserConfigImportMode`):
   - **A new profile** (`ApplyAsNewProfile`) gets the file's settings, and FE-Buddy switches to it.
   - **Replace** makes the profile in use match the file: anything the file leaves out goes back to
     its default, except the Local, Secret and credential-choice keys above.
@@ -571,11 +576,13 @@ no list:
 
 1. **Pick its node:** `General` for app-wide preferences, the tab's own node otherwise.
 2. **Save and load it** in the tab's `LoadFromConfig` / `WriteToConfig` with `Get` / `Set` (relative
-   to the tab's node). If more than one class reads it, add a constant to `UserConfigKeys`.
+   to the tab's node; a file conversion tab: `LoadOwnSettings` / `SaveOwnSettings`). If more than one
+   class reads it, add a constant to `UserConfigKeys`.
 3. **If Core needs it:** send it from `BuildSettingsBlock` (or
-   `GeojsonSubServiceViewModel.AddSharedSettings`), read it in the parser with `SettingsValueReader`,
-   and add it to the parser's `OwnKeys` (or `SubServiceSettingsReader.CommonKeys`), or it is reported
-   as unknown. Add it to `HarnessSettings.cs` and a parser test.
+   `GeojsonSubServiceViewModel.AddSharedSettings`; a file conversion tab: `AddOwnSettings`), read it
+   in the parser with `SettingsValueReader`, and add it to the parser's `OwnKeys` (or
+   `SubServiceSettingsReader.CommonKeys`, or `ConversionSettingsReader.ConversionKeys`), or it is
+   reported as unknown. Add it to `HarnessSettings.cs` and a parser test.
 4. **Mind its name** - it decides how it travels in an export. A name ending in `Folder`,
    `Directory` or `FilePath` is a machine path, `CredentialId` a credential choice, `Token`,
    `Password` and the like a secret. A yes/no setting ending in `Folder` goes in
@@ -591,15 +598,15 @@ the settings file while every setting keeps its dotted path needs only step 3, a
 1. **Bump `UserConfigVersion.Current`.**
 2. **Add the step** that turns the old layout into the new one to `UserConfigMigrations.All`:
    ```csharp
-   new UserConfigMigration(2, "Airways' buffer distances moved under Buffer", settings =>
+   new UserConfigMigration(3, "Airways' buffer distances moved under Buffer", settings =>
    {
        settings.Move("Services.AiracService.Airways.FixBufferNm", "Services.AiracService.Airways.Buffer.FixNm");
-       settings.ChangeValue("Services.AiracService.Airways.Buffer.Enabled", value => value == "true" ? "Y" : "N");
+       settings.ChangeValue("Services.AiracService.Airways.Buffer.Enabled", value => value == "true" ? "Y" : value == "false" ? "N" : value);
    })
    ```
-   A step edits the settings by dotted path (`Move`, `ChangeValue`, `Set`, `Remove`). Each edit can
-   run twice without harm, so write the step the same way: it may meet a file that already has some
-   of the new layout.
+   A step edits the settings by dotted path (`Move`, `ChangeValue`, `Set`, `Remove`). It may meet a
+   file that already has some of the new layout: `Move`, `Set` and `Remove` can run twice without
+   harm, and a `ChangeValue` must leave an already-changed value alone.
 3. **For a file that moves**, have `UserConfigFile` look for it where the old layout kept it too.
 4. **Add a sample** of the new layout: `FeBuddy.UnitTests\Fixtures\UserConfig\UserConfig.v<N>.json`,
    a full file as the new version saves it, with its fingerprint in `UserConfigLayoutTests`.

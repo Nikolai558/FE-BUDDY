@@ -38,8 +38,9 @@ FE-Buddy's update window, so write them for users:
 
 2. **Set the version.** In `FeBuddy/FeBuddy.Wpf/FeBuddy.Wpf.csproj`, set
    `<Version>3.0.0-alpha.2</Version>` - the only place the version lives ([Figure 2](#figure-2)). It
-   must be exactly one step after the
-   [latest release](https://github.com/Nikolai558/FE-BUDDY/releases):
+   must be exactly one step after the highest-numbered published
+   [release](https://github.com/Nikolai558/FE-BUDDY/releases) - pre-releases count, and it isn't
+   necessarily the one GitHub labels Latest:
 
    | Latest release | Next can be |
    |---|---|
@@ -96,8 +97,9 @@ FE-Buddy's update window, so write them for users:
    | Release source | The pull request is from `v3-development`. |
    | Release pre-flight | The version is one step after the last release and not released yet; `ChangeLog.md` has its section, newest, with `## Unreleased` empty; developer mode is off; the installer-counter token works; the MSI builds with the right version and 2.x's upgrade identity; the release notes render. |
 
-   - **Checks > Release checks > Release pre-flight > Summary** shows exactly what the release notes
-     will say ([Figure 8](#figure-8)); the **release-preview** artifact there has the MSI.
+   - **Checks > Release checks > Release pre-flight > Summary** shows what the release notes will say,
+     apart from the SHA-256: the release builds the MSI again ([Figure 8](#figure-8)). The
+     **release-preview** artifact there has the MSI.
    - A check failed? The summary says why. Fix it with a pull request into `v3-development`; the
      release pull request picks it up and runs again.
    - **"This branch is out-of-date with the base branch" is normal** - every release leaves a merge
@@ -137,9 +139,9 @@ FE-Buddy's update window, so write them for users:
 - The release workflow adds a commit to `v3-development` (the installer counter), so pull before
   starting new work.
 - Don't merge another release pull request while a draft is waiting: publish or delete it first.
-- The installer is always `FE-BUDDY-Setup.msi`, so
+- The installer is always `FE-BUDDY-Setup.msi`, so from the first stable 3.x release on,
   `https://github.com/Nikolai558/FE-BUDDY/releases/latest/download/FE-BUDDY-Setup.msi` is always the
-  latest **stable** release.
+  latest **stable** release. Until then GitHub's Latest is 2.9.3, which has no such file.
 
 ## When something goes wrong
 
@@ -148,19 +150,21 @@ FE-Buddy's update window, so write them for users:
   created a draft, delete that first.
 - **A deliberate exception to the one-step rule** (a number skipped and never released) - add the
   `skip-version-step` label to the release pull request.
-- **"Installer-counter token" failed** - the `RELEASE_COUNTER_PAT` secret has expired or lost access.
+- **"Installer-counter token" failed** - the `RELEASE_COUNTER_PAT` secret has expired, expires within
+  7 days, or lost access.
   Make a new fine-grained token (repository `Nikolai558/FE-BUDDY`, **Contents: Read and write**) on
   an account that can bypass the `v3-development` ruleset, and save it under **Settings > Secrets
   and variables > Actions**.
-- **A published release was wrong** - tags can't be moved or deleted. Fix it and release the next
+- **A published release was wrong** - tags aren't moved or deleted. Fix it and release the next
   version.
 
 ## Branch protection
 
 Rulesets protect `v3-development`, `releases` and 2.x's `development`, and every tag. Only the
 repository admins can bypass them. Changes reach those branches only by pull request, as a merge
-commit, once the required checks pass (`releases` also needs signed commits); nobody can push,
-force-push, delete or re-create them. Only the admins can create, move or delete a tag. Other
+commit, once the required checks pass (`releases` also needs signed commits). The one exception is
+the installer-counter commit the Release workflow makes to `v3-development` with
+`RELEASE_COUNTER_PAT`. Nobody can push, force-push, delete or re-create them. Only the admins can create, move or delete a tag. Other
 branches are unrestricted.
 
 ## What does what

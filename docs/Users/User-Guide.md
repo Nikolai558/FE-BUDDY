@@ -12,8 +12,8 @@ Unfamiliar words are in the [glossary](Glossary.md).
 ## The window
 
 - **Menu (left)** - the arrow at its top collapses it to icons.
-- **Systems (foot of the menu)** - one dot for the worst of Internet, AIRAC data and Updates; click
-  it for a dot each. Green is fine, amber needs a look or is still working, red isn't working.
+- **Systems (foot of the menu)** - one dot for the worst of Internet, AIRAC data, Updates and, when
+  one needs attention, your saved GitHub tokens; click it for a dot each. Green is fine, amber needs a look or is still working, red isn't working.
   A cycle whose d-TPP Metafile isn't out yet turns AIRAC data amber; when that's the only thing, the
   box says *Ready except next d-TPP Metafile*. **Re-check** runs the checks again.
 - **Top** - the version (hover it for the update status) and the AIRAC status. When there's an
@@ -50,13 +50,13 @@ greyed out. Where a card changes two files differently, a line for each says how
 
 Each sub-service tab but Add Custom Aliases starts with **What You'll Get with the Current
 Settings**: what its files will hold, under each file's tag, one filter per line. Read top to
-bottom, chips and all, it's one sentence: "Every STAR **for** airports in ZOB **and only** those
-amended this cycle". **for** and **in** say where, **but only** and **and only** narrow the lines
+bottom, chips and all, it's one sentence: "Every arrival **for** airports in ZOB **and only** those
+amended in cycle 2610". **for** and **in** say where, **but only** and **and only** narrow the lines
 above, and **along with** adds to them. Where its files get different things, each file has its own
 lines, and **Outputs include** lists what narrows one file further (Procedures:
 `Procedure_Changes.md` keeps only what changed). Under **outputs** are the files it writes, each with
 what goes in it, then any **note** on them. Its last line says where those outputs are turned on and
-off: the General tab.
+off: the General tab. Procedures and Telephony list their files on an **Outputs** card instead.
 
 ### Saving
 
@@ -72,7 +72,7 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
   for when to expect it), *failed*, or *not yet published* (the FAA releases a cycle a few weeks
   early).
 - **Sub-Services** - tick **Include** for each sub-service to run, and the files it makes:
-  **Alias**, **GeoJSON**, and Procedures' **Procedure Changes** and **Procedures JSON**. All are on
+  **Alias**, **GeoJSON**, and Procedures' **Changes** and **JSON**. All are on
   until you first save. Unticking **Include** unticks its files, and ticking it ticks them all; untick
   its last file and it's left out, tick one and it's back in. One left out is greyed out in the list
   to the left and keeps its settings. Add Custom Aliases comes in by itself while an alias file is
@@ -80,8 +80,8 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 
 ### The cards most tabs share
 
-The tabs that write GeoJSON share these cards; Procedures, Telephony and Add Custom Aliases have
-their own.
+The tabs that write GeoJSON share these cards (ARTCC Boundaries has no What Files Do You Want?, and
+Wx Stations no FE-Buddy Properties); Procedures, Telephony and Add Custom Aliases have their own.
 
 - **What Files Do You Want?** - which of **Lines**, **Symbols**, and **Text** to write, each with the
   files it makes. Symbols with exactly the same properties are written as one feature (a MultiPoint),
@@ -250,11 +250,12 @@ for its telephony (`.idAVA`, `.idAVIANCA`; just one when they're the same, `.idN
 the operator's card. Operators that share a command show a card each. Telephony has no area.
 
 - **Virtual Airlines** - add your facility's own (3LD, telephony and virtual organization). Each gets
-  the same two commands and a card marked `--VA--`, after any real operator sharing the command.
+  the same two commands and a card marked `--VA--`, after any real operator with the same 3LD or
+  telephony.
   Only one card is written for each 3LD and telephony: a virtual airline with a real operator's is
   left out (the tab flags yours), and so is one of the list's with yours.
-  - **Include the Virtual Airline List (GNG + VATSIM-Radar)** adds about 700 virtual airlines after
-    yours: the list VATSIM-Radar shows, built from GNG's fictional airlines and VATSIM-Radar's own
+  - **Include the Virtual Airline List (GNG + VATSIM-Radar)** adds several hundred virtual airlines
+    after yours: the list VATSIM-Radar shows, built from GNG's fictional airlines and VATSIM-Radar's own
     additions. Runs download each part at most once a day; **Download the latest list** fetches both
     now. A part that can't be downloaded is named in amber, and its last copy is used.
 - The operators come from FAA Order JO 7340.2, Chapter 3 (Sections 1 and 4, linked from What You'll
@@ -338,8 +339,8 @@ Converts files you already have into GeoJSON; it doesn't need the AIRAC data. Pi
 (for ERAM, then the **File**) and the **Output**, then **Continue** to that conversion's page; the
 back arrow returns to the picker. Each page has **Source Files** - every matching file in a folder
 (remembered), or files you pick (forgotten when FE-Buddy closes) - and **CRC ERAM Defaults**,
-written into every file unless you untick **Include**. **Convert…** at the foot runs it (offering to
-save first), and the results show under it. A record that can't be read is skipped and listed there.
+written into every file unless you untick **Include**. The **Convert** button at the foot runs it
+(offering to save first), and the results show under it. A record that can't be read is skipped and listed there.
 
 ### DAT to GeoJSON
 
@@ -433,7 +434,7 @@ to give the map room, and leaving Map expands it again, unless you collapse or e
 - **AIRAC Cycle** - pick a cycle, then:
   - **Live data** - ARTCC boundaries, towered airports and VOR / VORTAC / TACANs, straight from the
     FAA data, no run needed.
-  - **Output of the AIRAC run** - the gear picks any GeoJSON file that cycle's run wrote. Pick
+  - **Output of the AIRAC *cycle* run** - the gear picks any GeoJSON file that cycle's run wrote. Pick
     another cycle and the same files from its run are shown.
 - **Your Files** - **Load GeoJSON…** opens files from anywhere. One that can't be drawn says why.
   **Show all files** shows or hides them all; right-click a file for **Deselect all files except this
@@ -442,15 +443,15 @@ to give the map room, and leaving Map expands it again, unless you collapse or e
   opens); **Reset** goes back to the contiguous US.
 - **Properties** - **Ctrl + click** a line, dot or label to see what it is: a file's properties as
   written (and where it is in the file), or what the AIRAC data says about a live airport, runway,
-  NAVAID or boundary. Overlapping shapes are all listed, top first, and drawn highlighted. A
+  NAVAID or boundary. Overlapping shapes are listed, top first (up to 25), and drawn highlighted. A
   polygon is picked at its outline. The copy button copies a file's properties as JSON. **Esc**
   closes the panel.
 
 ## Settings
 
 Press **Save** at the top to keep your changes (credentials save at once). **Export…** and
-**Import…** share your setup, leaving out this PC's own (update channel, credentials, which News
-you've read). An import asks where the settings go - a new profile, added to the profile in use, or
+**Import…** share your setup, leaving out this PC's own (update channel, credentials, FE-Buddy's
+GitHub token, which News you've read). An import asks where the settings go - a new profile, added to the profile in use, or
 in place of its settings - and shows what will change first.
 
 - **Settings Profile** - a profile is a whole set of settings: keep one for each facility, or one
@@ -469,8 +470,8 @@ in place of its settings - and shows what will change first.
 - **Credentials** - tokens and passwords for protected downloads, such as a private GitHub alias
   file. Kept in Windows Credential Manager and removed when FE-Buddy is uninstalled. See the
   [GitHub token guide](GitHub-Token-Guide.md).
-- **FE-Buddy's GitHub Requests** - advanced: a GitHub token for FE-Buddy's own update and News
-  checks, to get past GitHub's limit of 60 requests an hour. Most people never need it.
+- **FE-Buddy's GitHub Requests** - advanced: a GitHub token for FE-Buddy's own update checks, News
+  and update downloads, to get past GitHub's limit of 60 requests an hour. Most people never need it.
 - **Updates / Update Channel** - the update channel (Stable suits almost everyone; Beta and Alpha
   are for development, not early access). It's set when FE-Buddy first starts and only changes
   here - updating never changes it. **Check for updates now** and **Open the Releases Page**.
@@ -489,5 +490,6 @@ in place of its settings - and shows what will change first.
   - **Export FE-Buddy Alias Command Guide** saves it as a web page, Markdown or both, for your
     facility's website.
   - **Export Alias Command Practice** saves a web page that quizzes your controllers: they type the
-    command for a chart or procedure, and it says what's wrong and how the right one is built.
+    command for a chart, procedure, airway or ISR card, and it says what's wrong and how the right
+    one is built.
 - Links to this guide, the FAQ, the change log and the issue tracker.

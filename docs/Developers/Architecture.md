@@ -58,8 +58,8 @@ the Systems box turns green, and the AIRAC Service screen unlocks.
 
 | Readiness | When | AIRAC Service |
 |---|---|---|
-| `Waiting` | a required cycle is still in progress | locked |
-| `Ready` | current ready, previous and next settled | open |
+| `Waiting` | any of the three cycles is still downloading or parsing | locked |
+| `Ready` | current and previous ready, next ready or not yet published | open |
 | `Degraded` | current ready, previous or next failed | open; the failed cycle shows *failed* |
 | `Unavailable` | the current cycle failed | locked |
 
@@ -88,9 +88,9 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
   or added at the end. Each part is kept, checked (GNG: `rows` numbers `records`, at least 100; GitHub:
   an array with a virtual airline) and fallen back on by itself, so one part failing never cuts the
   other short. A run uses a copy under 24 hours old without downloading (`SharedDataRefreshResult.Reused`);
-  the Telephony tab's button always downloads. 3.0.0-beta.4's single `vatsim_radar_airlines.json`
-  (from `data.vatsim-radar.com`, which only takes TLS 1.3 - Windows 10 can't) is read only while
-  neither part has a copy, and deleted once both have one.
+  the Telephony tab's button always downloads. The single `vatsim_radar_airlines.json` that
+  3.0.0-beta.4 and earlier kept (beta.4's from `data.vatsim-radar.com`, which only takes TLS 1.3 -
+  Windows 10 can't) is read only while neither part has a copy, and deleted once both have one.
 - **`Telephony.txt` writes only the first operator for each 3LD and telephony** (`TelephonyBuilder`):
   the FAA's, then the user's virtual airlines, then the list's. The rest are named in Info messages.
 - **The d-TPP Metafile** is keyed by cycle, so each cycle folder gets its own
@@ -104,7 +104,7 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
 ```
 Preview Settings ▸ Run AIRAC Service
   save any unsaved tab (the user confirms); stop if any tab is invalid
-  each tab's BuildSettingsBlock() → Dictionary<string,string>
+  each tab's BuildSettingsBlock() → IReadOnlyDictionary<string,string>
   the File Names tab's new names
   AIRAC_<cycle> has files? ask: Overwrite / Delete all / Cancel
         │  AiracServiceSettings
@@ -142,7 +142,7 @@ Not every sub-service has all four steps:
 | Add Custom Aliases | the user's custom alias files | no | adds them to `Combined_Alias.txt` |
 
 - **The settings block is the contract.** Every tab, and the harness, hands Core a flat
-  `Dictionary<string, string>` ([Settings reference](Settings-Reference.md)). Core never sees a
+  `IReadOnlyDictionary<string, string>` ([Settings reference](Settings-Reference.md)). Core never sees a
   view-model; the app never sees typed settings.
 - **Problems don't lose the run.** A missing or invalid required setting throws `ArgumentException`
   (the tab's own validation normally prevents it). Anything else - a waypoint that can't be found, a

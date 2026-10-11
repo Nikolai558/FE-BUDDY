@@ -49,8 +49,7 @@ FE-Buddy 3.0 is a from-scratch rewrite. It makes:
 
 It also converts FAA `.dat` video maps, VRC sector files and ERAM GeoMaps to GeoJSON, has a map to
 check GeoJSON files and set your Region of Interest, and exports an Alias Command Guide and practice
-quiz for your controllers. Some 2.x tools aren't in 3.0 yet - see
-[Do I still need 2.x?](docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)
+quiz for your controllers.
 
 ---
 

@@ -17,8 +17,6 @@ You choose what to make and how it looks, and a **Region of Interest** keeps the
 It also converts FAA `.dat` video maps, VRC sector files and ERAM GeoMaps to GeoJSON, and has a map
 for checking GeoJSON files.
 
-Some 2.x tools aren't in 3.0 yet; see [Do I still need FE-Buddy 2.x?](FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)
-
 ## 1. Install
 
 Download `FE-BUDDY-Setup.msi` from the newest release on

@@ -37,7 +37,7 @@ public enum CycleDataState
 /// </summary>
 public enum AiracCycleReadiness
 {
-	/// <summary>At least one required cycle is still downloading, parsing, or not started.</summary>
+	/// <summary>At least one of the three cycles is still downloading, parsing, or not started.</summary>
 	Waiting = 0,
 
 	/// <summary>Every available cycle is parsed and ready; the service unlocks.</summary>

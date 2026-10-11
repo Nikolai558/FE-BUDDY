@@ -10,7 +10,7 @@ publishes it, a few weeks early, you can pick **Next** on the General tab and ge
 ### Where are my files?
 
 In an `AIRAC_<cycle>` folder (such as `AIRAC_2610`) in your output folder - Settings ▸ Default
-Output Directory. **Open output folder** on the Review tab goes straight there. See
+Output Directory, inside `FE-Buddy_Output` unless you untick it. **Open output folder** on the Review tab goes straight there. See
 [Output files](User-Guide.md#output-files).
 
 ### Why does Windows show a different version number?
@@ -46,17 +46,6 @@ Since cycle 2609 the FAA's data lists ORF's NUTIY and SWOPE departures as STARs 
 `.orfNUTIYf` and `.orfSWOPEf` are in both files. `Duplicate_Alias_Commands.txt` lists them with any
 other duplicates. To pick which line keeps a command once and for all, see Duplicate Alias Commands
 on the [Preview Settings tab](User-Guide.md#preview-settings-tab).
-
-### Do I still need FE-Buddy 2.x?
-
-Only for what 3.0 doesn't do yet:
-
-- the VRC, vSTARS and vERAM files 2.x's AIRAC data made (3.0 makes CRC files only);
-- DAT to SCT2;
-- SCT2 to and from DXF, KML and FAA GeoMap XML;
-- vSTARS and vERAM video maps to GeoJSON.
-
-Installing 3.0 replaces 2.x, so hold off if you need those.
 
 ## Something is wrong
 
@@ -100,7 +89,8 @@ GitHub's messages are explained in [If something goes wrong](GitHub-Token-Guide.
 ### The installer won't replace what's installed
 
 It won't put an older stable version over a newer one. To leave a pre-release (alpha, beta or rc) for
-the latest stable, choose **Stable** in Settings ▸ Updates, **Save**, then **Go back now**.
+the latest stable, choose **Stable** in Settings ▸ Updates / Update Channel, **Save**, then **Go back
+now**.
 
 ### FE-Buddy crashed
 

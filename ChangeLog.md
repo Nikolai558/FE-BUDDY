@@ -58,6 +58,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - File Conversions no longer pauses the first time you open it.
 - Clearer wording on the ERAM to GeoJSON, DAT to GeoJSON, and SCT2 to GeoJSON pages.
 
+### Map
+- Feature #345 - Opening Map collapses the menu on the left, so the map has the room. Leaving Map
+  expands it again, unless you collapsed or expanded it yourself.
+
 ### Settings
 - FE-Buddy now warns when a GitHub token is within 57 days of expiring: in the run, in Settings ▸
   Credentials ▸ **Check**, and under **Systems**, which also flags a token GitHub rejects. Saved GitHub

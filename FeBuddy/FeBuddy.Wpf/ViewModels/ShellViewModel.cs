@@ -49,9 +49,12 @@ public sealed class ShellViewModel : ObservableObject
 
 	private readonly Dispatcher _dispatcher;
 
+	private readonly NavItem _mapNav;
+
 	private object? _current;
 	private string _zuluClock = string.Empty;
 	private bool _navCollapsed;
+	private bool _navCollapsedForMap;
 	private bool _updateDeclinedThisSession;
 
 	private string _airacStatus = "Preparing AIRAC data…";
@@ -75,13 +78,14 @@ public sealed class ShellViewModel : ObservableObject
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
 		FileConversionsNav = Nav("File Conversions", GlyphFileConversions, () => new FileConversionsViewModel());
+		_mapNav = Nav("Map", GlyphMap, () => new MapViewModel());
 
 		PrimaryNav =
 		[
 			Nav("Dashboard",      GlyphDashboard,     () => new DashboardViewModel()),
 			Nav("AIRAC Service",  GlyphAiracService,  () => new AiracServiceViewModel()),
 			FileConversionsNav,
-			Nav("Map",            GlyphMap,           () => new MapViewModel()),
+			_mapNav,
 		];
 
 		SystemNav =
@@ -93,7 +97,12 @@ public sealed class ShellViewModel : ObservableObject
 		SystemHealth = [];
 
 		RecheckCommand = new RelayCommand(RecheckNow);
-		ToggleNavCommand = new RelayCommand(() => NavCollapsed = !NavCollapsed);
+		ToggleNavCommand = new RelayCommand(() =>
+		{
+			// The user's own choice: leaving Map no longer changes the rail.
+			_navCollapsedForMap = false;
+			NavCollapsed = !NavCollapsed;
+		});
 		OpenUpdateWindowCommand = new RelayCommand(OpenUpdateWindow, () => IsUpdateAvailable);
 
 		PrimaryNav[0].IsActive = true;
@@ -735,6 +744,22 @@ public sealed class ShellViewModel : ObservableObject
 		// where the user left it. The page keeps its settings and edits.
 		(item.CreatedViewModel as IOpensAtStart)?.ReturnToStart();
 
+		(NavCollapsed, _navCollapsedForMap) = RailFor(ReferenceEquals(item, _mapNav), NavCollapsed, _navCollapsedForMap);
+
 		Current = item.ViewModel;
 	}
+
+	/// <summary>
+	/// The nav rail when a section opens (issue #345): Map collapses it, so the map has the whole
+	/// width, and leaving Map expands it again. Once the user collapses or expands it themselves,
+	/// leaving Map leaves it as they set it.
+	/// </summary>
+	/// <param name="openingMap">Whether the section opening is Map.</param>
+	/// <param name="navCollapsed">Whether the rail is collapsed now.</param>
+	/// <param name="collapsedForMap">Whether opening Map collapsed it, and the user hasn't changed it since.</param>
+	/// <returns>Whether the rail is collapsed, and whether that was opening Map's doing.</returns>
+	internal static (bool NavCollapsed, bool CollapsedForMap) RailFor(bool openingMap, bool navCollapsed, bool collapsedForMap) =>
+		openingMap ? (true, collapsedForMap || !navCollapsed)
+		: collapsedForMap ? (false, false)
+		: (navCollapsed, false);
 }

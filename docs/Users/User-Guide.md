@@ -419,7 +419,8 @@ run's alias files (CRC runs only one of them), grouped by ARTCC - yours first - 
 ## Map
 
 A map for checking GeoJSON files and setting your Region of Interest. **Set ROI…** in Settings and
-**Pick on map…** on a tab open the same map in a window.
+**Pick on map…** on a tab open the same map in a window. Opening Map collapses the menu on the left
+to give the map room, and leaving Map expands it again, unless you collapse or expand it yourself.
 
 - **Toolbar** - hover a button for what it does. A map opens where the last one was left.
 - **Zoom** - the box beside the zoom buttons shows the zoom as a percentage of your home view

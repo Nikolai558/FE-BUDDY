@@ -54,7 +54,9 @@ bottom, chips and all, it's one sentence: "Every STAR **for** airports in ZOB **
 amended this cycle". **for** and **in** say where, **but only** and **and only** narrow the lines
 above, and **along with** adds to them. Where its files get different things, each file has its own
 lines, and **Outputs include** lists what narrows one file further (Procedures:
-`Procedure_Changes.md` keeps only what changed).
+`Procedure_Changes.md` keeps only what changed). Under **outputs** are the files it writes, each with
+what goes in it, then any **note** on them. Its last line says where those outputs are turned on and
+off: the General tab.
 
 ### Saving
 
@@ -65,7 +67,7 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 
 ### General tab
 
-- **Cycle** - Previous, Current or Next, with its effective date and status: *ready*, *partial*
+- **AIRAC Cycle** - Previous, Current or Next, with its effective date and status: *ready*, *partial*
   (the [d-TPP Metafile](#procedures-tab) isn't out yet, so Procedures writes nothing; hover the row
   for when to expect it), *failed*, or *not yet published* (the FAA releases a cycle a few weeks
   early).
@@ -81,10 +83,11 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 The tabs that write GeoJSON share these cards; Procedures, Telephony and Concatenate Aliases have
 their own.
 
-- **Outputs** - which of the tab's files are on; change them on the General tab.
-- **What Files Do You Want?** - which of **Lines**, **Symbols** and **Text** to write. Symbols with
-  exactly the same properties are written as one feature (a MultiPoint), so Symbols files stay
-  small; labels are always one feature each.
+- **Outputs** (Airways, Departures, Arrivals, and NAVAIDs) - which of the tab's files are on; change
+  them on the General tab.
+- **What Files Do You Want?** - which of **Lines**, **Symbols**, and **Text** to write, each with the
+  files it makes. Symbols with exactly the same properties are written as one feature (a MultiPoint),
+  so Symbols files stay small; labels are always one feature each.
 - **FE-Buddy Properties** - optional `feb.*` fields that tell you what each object is in a GeoJSON
   viewer. CRC ignores them. One that differs from point to point, such as an ID, keeps each symbol a
   feature of its own.
@@ -94,12 +97,13 @@ their own.
   specific to *tab*** and type its corners or **Pick on map…**. A tab you've never saved starts on
   its ARTCCs if any are ticked, otherwise the ROI if a default ROI is set, otherwise Everything.
   Procedures has an Area card of its own.
-- **CRC ERAM Defaults** - how CRC draws a file, written as a hidden feature at its top. At the top of
-  the card, choose which GeoJSON files get them: **No CRC-ERAM defaults** (to start), **Every GeoJSON
-  file from this tab**, or **Only the files I tick**. Then fill in every box shown; the lists offer
-  only values CRC accepts. Airways, NAVAIDs, ARTCC
-  Boundaries and Fixes can ask for a set per class (High or Low, NAVAID type, altitude, fix group),
-  so their files can look different.
+- **CRC ERAM Defaults** - CRC's "Map Defaults": how CRC draws a file, written as a hidden feature at
+  its top ([vNAS docs](https://docs.virtualnas.net/data-admin/video-maps/#map-defaults)). At the top
+  of the card, choose which GeoJSON files get them: **No CRC-ERAM defaults** (to start), **Every
+  GeoJSON file from this tab**, or **Only the files I tick**. Then fill in every box shown; the lists
+  offer only values CRC accepts. They're saved with your settings, so it's a one-time setup.
+  Airways, NAVAIDs, ARTCC Boundaries, and Fixes can ask for a set per class (High or Low, NAVAID
+  type, altitude, fix group), so their files can look different.
 
 ### ARTCC Boundaries tab
 
@@ -107,20 +111,21 @@ Each ARTCC's boundary as lines. No Symbols, Text or alias file.
 
 - **Area** - the ARTCCs you tick, drawn in full; every boundary inside the ROI, clipped at its
   edge; or every boundary.
-- **File Layout** - **High and Low** (the default; an UNLIMITED boundary goes in both), **High, Low
+- **File Layout** - **High and Low** (the default; an UNLIMITED boundary goes in both), **High, Low,
   and Unlimited**, or **One file per ARTCC and altitude** (`ARTCC-Boundary_ZOB-HIGH_Lines`, …), to
-  style your own ARTCC apart from its neighbours.
-- **Split GeoJSON at the Antimeridian** - leave it on: ZAK, ZAN, ZAP and ZOA cross ±180°.
+  style your own ARTCC apart from its neighbors.
+- **Split GeoJSON at the Antimeridian** - leave it on: ZAK, ZAN, ZAP, and ZOA cross ±180°, and most
+  GeoJSON viewers, CRC included, need the lines split.
 - ZAK, ZAP and ZWY have two overlapping oceanic rings at one altitude; the `feb.type` property tells
   them apart.
 
 ### Airports tab
 
-- **Files** - Runways (lines), Airports symbols, and Airports text (FAA ID and name). With **ROI**
-  as the area, an airport is included when its reference point is inside it.
+- **Files** - `Runways_Lines`, `Airports_Symbols`, and `Airports_Text` (FAA ID and name). With
+  **ROI** as the area, only the airports inside it.
 - **`Airports.txt`** - an `.apt` command for each FAA ID, and the ICAO ID if it's different, showing
-  the airport's card in CRC: name, tower type, ARTCC, longest runway, elevation, CTAF, weather, hours
-  and airspace class. It covers every open airport; the area only limits the GeoJSON.
+  the airport's card in CRC: name, tower type, ARTCC, longest runway, elevation, CTAF, weather, hours,
+  and airspace class. It covers every operational airport; the area only limits the GeoJSON.
 
 ### Airways tab
 

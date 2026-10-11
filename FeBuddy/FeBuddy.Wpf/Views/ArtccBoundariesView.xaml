@@ -12,7 +12,6 @@
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
-             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:ArtccBoundariesViewModel}"
              d:DesignWidth="900" d:DesignHeight="1400">
@@ -52,9 +51,6 @@
                         <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                                 Margin="0,4,0,0" Command="{Binding ClearLocationsCommand}"
                                 Visibility="{Binding HasLocations, Converter={StaticResource BoolToVis}}" />
-                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
-                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                                   Text="Your facility from Settings ▸ Facility Profile starts ticked." />
                     </StackPanel>
                 </cards:AreaCard.ArtccsContent>
             </cards:AreaCard>
@@ -62,18 +58,21 @@
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">
                 <StackPanel>
-                    <RadioButton GroupName="ArtccBoundaryOutputBy" Margin="0,4,0,0"
-                                 Content="High and Low: ARTCC-Boundary_High_Lines and _Low_Lines. UNLIMITED lines go in both."
-                                 IsChecked="{Binding OutputHighLow, Mode=TwoWay}" />
-                    <RadioButton GroupName="ArtccBoundaryOutputBy" Margin="0,6,0,0"
-                                 Content="High, Low and Unlimited: adds ARTCC-Boundary_Unlimited_Lines."
-                                 IsChecked="{Binding OutputHighLowUnlimited, Mode=TwoWay}" />
-                    <RadioButton GroupName="ArtccBoundaryOutputBy" Margin="0,6,0,0"
-                                 Content="One file per ARTCC and altitude, Ex: ARTCC-Boundary_ZOB-HIGH_Lines"
-                                 IsChecked="{Binding OutputByArtccAltitude, Mode=TwoWay}" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               bhv:InlineCode.Text="Files go in `Geojson\` in the cycle's folder." />
+                    <ctl:Option Margin="0,4,0,0"
+                                Description="`ARTCC-Boundary_High_Lines.geojson`&#xA;`ARTCC-Boundary_Low_Lines.geojson`&#xA;Boundaries labeled &quot;UNLIMITED&quot; go in both files.">
+                        <RadioButton GroupName="ArtccBoundaryOutputBy" Content="High and Low"
+                                     IsChecked="{Binding OutputHighLow, Mode=TwoWay}" />
+                    </ctl:Option>
+                    <ctl:Option Margin="0,10,0,0"
+                                Description="`ARTCC-Boundary_High_Lines.geojson`&#xA;`ARTCC-Boundary_Low_Lines.geojson`&#xA;`ARTCC-Boundary_Unlimited_Lines.geojson`">
+                        <RadioButton GroupName="ArtccBoundaryOutputBy" Content="High, Low, and Unlimited"
+                                     IsChecked="{Binding OutputHighLowUnlimited, Mode=TwoWay}" />
+                    </ctl:Option>
+                    <ctl:Option Margin="0,10,0,0"
+                                Description="Example: `ARTCC-Boundary_ZOB-HIGH_Lines.geojson`">
+                        <RadioButton GroupName="ArtccBoundaryOutputBy" Content="One file per ARTCC and altitude"
+                                     IsChecked="{Binding OutputByArtccAltitude, Mode=TwoWay}" />
+                    </ctl:Option>
                 </StackPanel>
             </ctl:Card>
 
@@ -84,7 +83,7 @@
             <ctl:Card Header="Split GeoJSON at the Antimeridian" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Splits a line that crosses 180° longitude in two, so it doesn't stretch across the whole map. ZAK, ZAN, ZAP and ZOA cross it. Leave this on unless another tool needs the lines whole." />
+                               Text="Splits a line that crosses 180° longitude in two, so it doesn't stretch across the whole map. ZAK, ZAN, ZAP, and ZOA cross it.&#xA;&#xA;Most GeoJSON viewers, including CRC, need you to leave this option ticked ON, unless specifically told otherwise." />
                     <CheckBox Content="Split boundary lines at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
             </ctl:Card>

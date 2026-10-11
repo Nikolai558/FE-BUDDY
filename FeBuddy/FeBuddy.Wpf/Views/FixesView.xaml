@@ -35,9 +35,8 @@
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
-                                    SymbolsDescription="A symbol at each fix."
-                                    TextDescription="A label at each fix with its identifier."
-                                    Footnote="Files go in `Geojson\` in the cycle's folder." />
+                                    SymbolsDescription="`*_Symbols.geojson`&#xA;Fix symbols."
+                                    TextDescription="`*_Text.geojson`&#xA;Fix ID text." />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">

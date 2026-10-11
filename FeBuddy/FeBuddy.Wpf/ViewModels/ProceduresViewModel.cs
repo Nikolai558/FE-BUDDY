@@ -248,6 +248,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <remarks>The FAA Chart Recall alias file, <c>Faa_Chart_Recall.txt</c>.</remarks>
 	protected override bool HasAliasFile => true;
 
+	/// <inheritdoc />
+	/// <remarks>None: the Outputs card says where Procedures' outputs are turned on and off.</remarks>
+	public override string? WhatYoullGetFooter => null;
+
 	// ================= d-TPP data =================
 
 	/// <summary>Whether <see cref="SetDtppData"/> has been called yet for the currently selected cycle.</summary>

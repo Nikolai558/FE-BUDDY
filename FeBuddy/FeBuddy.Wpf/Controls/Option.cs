@@ -19,7 +19,10 @@ public sealed class Option : ContentControl
 	public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register(
 		nameof(Description), typeof(string), typeof(Option), new PropertyMetadata(null));
 
-	/// <summary>The explanation shown under the control. Leave unset for none.</summary>
+	/// <summary>
+	/// The explanation shown under the control. Leave unset for none. A file name between backticks
+	/// shows as code (<c>bhv:InlineCode</c>), and <c>&amp;#xA;</c> starts a new line.
+	/// </summary>
 	public string? Description
 	{
 		get => (string?)GetValue(DescriptionProperty);

@@ -237,8 +237,11 @@ Say, Preferred Routes:
    of filter lines per output, or one for outputs that get the same, each line after the first
    joined by a `SummaryJoin` chip so the block reads as one sentence (`SummaryLines` words a
    narrowing "but only" or "and only" by where it falls), with any `Includes` lines under "Outputs
-   include", also used by its `BuildPreviewSummary()`); and, in `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that
-   puts its `BuildSettingsBlock()` into the run's settings.
+   include", then the `Files` it writes (`SummaryFile`: a name and what goes in it) and any `Notes`,
+   also used by its `BuildPreviewSummary()`); and, in `AiracServiceViewModel`, a tab accessor
+   (`TabFor<PreferredRoutesViewModel>(…)`) and the line that puts its `BuildSettingsBlock()` into the
+   run's settings. Card text can put a file name between backticks to show it as code, and a
+   `[text](https://…)` link: `bhv:InlineCode`, which `ctl:Option` descriptions use too.
 
 Copy from `Fixes` for the usual shape, `WxStations` for data that doesn't come from NASR, `Telephony`
 for an alias file and no GeoJSON, or `Procedures` for documents instead of GeoJSON.

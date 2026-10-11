@@ -4,20 +4,24 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 
+using FeBuddy.Wpf.Shell;
+
 namespace FeBuddy.Wpf.Behaviors;
 
 /// <summary>
 /// <c>bhv:InlineCode.Text="Files are written to `Geojson\` in the cycle's folder."</c> on a
 /// <see cref="TextBlock"/> - shows the text with every part between backticks in the look
 /// Markdown gives <c>`code`</c>: the mono font on a faint panel. Folder names and paths in
-/// descriptions use it, so they stand out from the words around them.
+/// descriptions use it, so they stand out from the words around them. A Markdown link,
+/// <c>[HERE](https://docs.virtualnas.net/)</c>, outside the backticks shows as a link that opens in
+/// the browser.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Set it instead of <c>Text</c>: it replaces the TextBlock's inlines. Only a backtick is special,
-/// so a name such as <c>Combined_Alias.txt</c> needs no escaping, and a backtick with no partner shows
-/// as it is. Line breaks (<c>&amp;#xA;</c> in XAML, <c>\n</c> in code) work as they do in
-/// <c>Text</c>.
+/// Set it instead of <c>Text</c>: it replaces the TextBlock's inlines. Only a backtick and a
+/// <c>[text](https://...)</c> link are special, so a name such as <c>Combined_Alias.txt</c> needs no
+/// escaping, and a backtick with no partner shows as it is. Line breaks (<c>&amp;#xA;</c> in XAML,
+/// <c>\n</c> in code) work as they do in <c>Text</c>.
 /// </para>
 /// <para>
 /// Code text is sized from the TextBlock's own font size, at the ratio <c>MarkdownView</c> uses
@@ -123,6 +127,59 @@ public static class InlineCode
 		return parts;
 	}
 
+	/// <summary>
+	/// Splits plain text at its Markdown links, <c>[text](https://...)</c>: each link's text and
+	/// address, and the plain text around them. Only an <c>http</c> or <c>https</c> address makes a
+	/// link; anything else stays in the plain text as written.
+	/// </summary>
+	/// <param name="text">The plain text: a part <see cref="Split"/> did not mark as code.</param>
+	/// <returns>The parts, in order, none of them empty; <c>Url</c> is <see langword="null"/> for plain text.</returns>
+	internal static IReadOnlyList<(string Text, string? Url)> SplitLinks(string text)
+	{
+		ArgumentNullException.ThrowIfNull(text);
+
+		List<(string Text, string? Url)> parts = [];
+		int plainStart = 0;
+		int searchFrom = 0;
+
+		while (text.IndexOf('[', searchFrom) is int open and >= 0)
+		{
+			int closeText = text.IndexOf("](", open + 1, StringComparison.Ordinal);
+			int closeUrl = closeText < 0 ? -1 : text.IndexOf(')', closeText + 2);
+
+			if (closeUrl < 0)
+			{
+				break;
+			}
+
+			string label = text[(open + 1)..closeText];
+			string url = text[(closeText + 2)..closeUrl];
+
+			if (label.Length == 0 || label.Contains('[') || !Uri.TryCreate(url, UriKind.Absolute, out Uri? uri)
+				|| (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+			{
+				searchFrom = open + 1;
+				continue;
+			}
+
+			if (open > plainStart)
+			{
+				parts.Add((text[plainStart..open], null));
+			}
+
+			parts.Add((label, url));
+			plainStart = closeUrl + 1;
+			searchFrom = plainStart;
+		}
+
+		if (plainStart < text.Length)
+		{
+			parts.Add((text[plainStart..], null));
+		}
+
+		return parts;
+	}
+
 	private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 	{
 		if (d is not TextBlock textBlock)
@@ -134,20 +191,35 @@ public static class InlineCode
 
 		foreach ((string part, bool isCode) in Split(e.NewValue as string ?? string.Empty))
 		{
-			Run run = new(part);
-
-			if (isCode)
+			if (!isCode)
 			{
-				ApplyLook(run);
-				run.SetBinding(TextElement.FontSizeProperty, new Binding(nameof(TextBlock.FontSize))
+				foreach ((string plain, string? url) in SplitLinks(part))
 				{
-					Source = textBlock,
-					Converter = CodeSize.Instance,
-				});
+					textBlock.Inlines.Add(url is null ? new Run(plain) : Link(plain, url));
+				}
+
+				continue;
 			}
+
+			Run run = new(part);
+			ApplyLook(run);
+			run.SetBinding(TextElement.FontSizeProperty, new Binding(nameof(TextBlock.FontSize))
+			{
+				Source = textBlock,
+				Converter = CodeSize.Instance,
+			});
 
 			textBlock.Inlines.Add(run);
 		}
+	}
+
+	/// <summary>A link in the accent colour that opens <paramref name="url"/> in the browser.</summary>
+	private static Hyperlink Link(string text, string url)
+	{
+		Hyperlink link = new(new Run(text)) { ToolTip = url };
+		link.SetResourceReference(TextElement.ForegroundProperty, "Brush.Accent");
+		link.Click += (_, _) => BrowserLauncher.Open(url);
+		return link;
 	}
 
 	/// <summary>The code text's font size from the TextBlock's.</summary>

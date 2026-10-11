@@ -43,9 +43,8 @@
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
-                                    SymbolsDescription="A symbol at each NAVAID."
-                                    TextDescription="A two-line label at each NAVAID: its identifier, then its name and type."
-                                    Footnote="Files go in `Geojson\` in the cycle's folder." />
+                                    SymbolsDescription="`*_Symbols.geojson`&#xA;NAVAID symbols."
+                                    TextDescription="`*_Text.geojson`&#xA;Each NAVAID's ID, then its name and type on a second line." />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">

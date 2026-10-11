@@ -56,9 +56,6 @@
                         <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                                 Margin="0,4,0,0" Command="{Binding ClearArtccsCommand}"
                                 Visibility="{Binding HasArtccs, Converter={StaticResource BoolToVis}}" />
-                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
-                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                                   Text="Your facility from Settings ▸ Facility Profile starts ticked." />
                     </StackPanel>
                 </cards:AreaCard.ArtccsContent>
                 <cards:AreaCard.RoiContent>
@@ -73,9 +70,9 @@
             </cards:AreaCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard LinesDescription="The departure's routes as lines. A stretch shared by two routes is drawn once."
-                                    SymbolsDescription="A symbol at each of its fixes."
-                                    TextDescription="A label at each of its fixes with the fix's identifier."
+            <cards:GeojsonFilesCard LinesDescription="`*_Lines.geojson`&#xA;Departure routes drawn as lines."
+                                    SymbolsDescription="`*_Symbols.geojson`&#xA;Departure waypoint symbols."
+                                    TextDescription="`*_Text.geojson`&#xA;Departure waypoint ID text."
                                     Footnote="Files go in `Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\` in the cycle's folder, named &lt;airport&gt;_&lt;departure&gt;_Lines, _Symbols and _Text." />
 
             <!-- ============ FE-Buddy properties ============ -->

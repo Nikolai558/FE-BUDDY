@@ -90,9 +90,9 @@
             </cards:AreaCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard LinesDescription="Each airway as a line through its fixes in order. An airway with a gap is drawn in pieces."
-                                    SymbolsDescription="A symbol at each fix, drawn as a VOR, NDB or intersection. A fix on several airways is drawn once."
-                                    TextDescription="A label at each fix with its identifier." />
+            <cards:GeojsonFilesCard LinesDescription="`*_Lines.geojson`&#xA;Airway lines drawn from waypoint to waypoint."
+                                    SymbolsDescription="`*_Symbols.geojson`&#xA;Airway waypoint symbols."
+                                    TextDescription="`*_Text.geojson`&#xA;Airway waypoint ID text." />
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard />
@@ -196,7 +196,7 @@
             <ctl:Card Header="Split GeoJSON at the Antimeridian" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Splits a line that crosses 180° longitude in two, so it doesn't stretch across the whole map. Leave this on unless another tool needs the lines whole." />
+                               Text="Splits a line that crosses 180° longitude in two, so it doesn't stretch across the whole map.&#xA;&#xA;Most GeoJSON viewers, including CRC, need you to leave this option ticked ON, unless specifically told otherwise." />
                     <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
             </ctl:Card>

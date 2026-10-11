@@ -11,6 +11,8 @@ using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+using FeBuddy.UnitTests.Application.Airac.ArtccBoundaries.Fixtures;
+
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
@@ -234,27 +236,40 @@ public sealed class WhatYoullGetTests : IDisposable
 
 	// ---- Airports ----
 
-	/// <summary>With everything both outputs get the same, so the card has one block; the ROI area splits them.</summary>
+	/// <summary>A block's files by name, as the card lists them.</summary>
+	private static string[] FileNames(SummaryBlock block) => [.. block.Files.Select(file => file.Name)];
+
+	/// <summary>
+	/// The GeoJSON block lists its files under the lines; the alias file always has every operational
+	/// airport, so its block only describes the file. The ROI narrows the GeoJSON alone.
+	/// </summary>
 	[Fact]
-	public void airports_splits_into_a_block_per_output_once_the_roi_narrows_the_geojson()
+	public void airports_gives_each_output_its_block_and_lists_its_files()
 	{
 		AirportsViewModel tab = new();
 		Assert.Equal(SubServiceArea.Everything, tab.Area);
-		Assert.Equal(["Every open airport"], Lines(Assert.Single(tab.WhatYoullGet)));
-		Assert.Equal(Alias | Geojson, tab.WhatYoullGetOutputs);
+		Assert.Equal([Geojson, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
+		Assert.Equal(["Every operational airport"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["Runways_Lines.geojson", "Airports_Symbols.geojson", "Airports_Text.geojson"], FileNames(tab.WhatYoullGet[0]));
+		Assert.Empty(tab.WhatYoullGet[1].Lines);
+		Assert.Equal(["Airports.txt"], FileNames(tab.WhatYoullGet[1]));
+		Assert.Contains("`.aptDTW`", tab.WhatYoullGet[1].Files[0].Description, StringComparison.Ordinal);
 		List<string?> changed = Changed(tab);
 
 		DefaultRoiStore.Set(new RegionOfInterest(39.5, -85.25, 43.75, -78.5));
 		tab.Area = SubServiceArea.Roi;
 
 		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGet), changed);
-		Assert.Equal([Geojson, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
-		Assert.Equal(["Every open airport", "but only those with their reference point inside the default ROI"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["Every open airport, inside the default ROI or not"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["Every operational airport", "but only airports inside the default ROI"], Lines(tab.WhatYoullGet[0]));
+		Assert.Empty(tab.WhatYoullGet[1].Lines);
+
+		tab.EmitSymbols = false;
+
+		Assert.Equal(["Runways_Lines.geojson", "Airports_Text.geojson"], FileNames(tab.WhatYoullGet[0]));
 
 		Attach(tab, AiracSubServices.AirportsKey, Alias);
 
-		Assert.Equal(["Every open airport, inside the default ROI or not"], Lines(Assert.Single(tab.WhatYoullGet)));
+		Assert.Equal(["Airports.txt"], FileNames(Assert.Single(tab.WhatYoullGet)));
 	}
 
 	/// <summary>The summary says ROI, and which one: the default, or the one the tab has of its own.</summary>
@@ -264,9 +279,17 @@ public sealed class WhatYoullGetTests : IDisposable
 		AirportsViewModel tab = new() { Area = SubServiceArea.Roi, OverrideRoi = true };
 
 		Assert.Equal(
-			["Every open airport", "but only those with their reference point inside the ROI specific to the Airports sub-service"],
+			["Every operational airport", "but only airports inside the ROI specific to the Airports sub-service"],
 			Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["Every open airport, inside the ROI specific to the Airports sub-service or not"], Lines(tab.WhatYoullGet[1]));
+	}
+
+	/// <summary>Only a tab whose outputs are turned on and off on the General tab says so, naming them.</summary>
+	[Fact]
+	public void the_footer_names_the_outputs_the_general_tab_turns_on_and_off()
+	{
+		Assert.Equal("Turn GeoJSON and Alias output on or off on the General tab, to the left.", new AirportsViewModel().WhatYoullGetFooter);
+		Assert.Equal("Turn GeoJSON output on or off on the General tab, to the left.", new ArtccBoundariesViewModel().WhatYoullGetFooter);
+		Assert.Null(new TelephonyViewModel().WhatYoullGetFooter);
 	}
 
 	[Fact]
@@ -371,6 +394,54 @@ public sealed class WhatYoullGetTests : IDisposable
 		tab.Area = SubServiceArea.Roi;
 
 		Assert.Equal(["Every ARTCC boundary", "but only the parts inside the default ROI"], Lines(Assert.Single(tab.WhatYoullGet)));
+	}
+
+	/// <summary>Each file layout lists its files; High and Low notes that UNLIMITED boundaries go in both.</summary>
+	[Fact]
+	public void artcc_boundaries_lists_the_files_its_layout_writes()
+	{
+		ArtccBoundariesViewModel tab = new();
+
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(["ARTCC-Boundary_High_Lines.geojson", "ARTCC-Boundary_Low_Lines.geojson"], FileNames(block));
+		Assert.Equal("Boundaries labeled \"HIGH\"", block.Files[0].Description);
+		Assert.Equal(["Boundaries labeled \"UNLIMITED\" go in both files."], block.Notes);
+
+		tab.OutputHighLowUnlimited = true;
+
+		block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(
+			["ARTCC-Boundary_High_Lines.geojson", "ARTCC-Boundary_Low_Lines.geojson", "ARTCC-Boundary_Unlimited_Lines.geojson"],
+			FileNames(block));
+		Assert.Empty(block.Notes);
+
+		tab.OutputByArtccAltitude = true;
+
+		block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(["ARTCC-Boundary_<ARTCC>-<altitude>_Lines.geojson"], FileNames(block));
+		Assert.Contains("`ARTCC-Boundary_ZOB-HIGH_Lines.geojson`", block.Files[0].Description, StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// One file per ARTCC and altitude: with a few ARTCCs ticked, each file is listed; any other area
+	/// writes files for every ARTCC, so only how they're named is given.
+	/// </summary>
+	[Fact]
+	public void artcc_boundaries_lists_each_artcc_file_only_for_a_few_ticked_artccs()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.ArtccBoundaries.LocationFilter", "ZOB");
+		ArtccBoundariesViewModel tab = new() { OutputByArtccAltitude = true };
+		tab.LoadCycleDependentLists(ArtccBoundaryTestData.Build(
+			segRows: [.. ArtccBoundaryTestData.ZobHighRows(), .. ArtccBoundaryTestData.ZobLowRows(), .. ArtccBoundaryTestData.ZakCtaRows()]));
+
+		Assert.Equal(SubServiceArea.Artccs, tab.Area);
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(["ARTCC-Boundary_ZOB-HIGH_Lines.geojson", "ARTCC-Boundary_ZOB-LOW_Lines.geojson"], FileNames(block));
+		Assert.Equal("ZOB's boundary labeled \"HIGH\"", block.Files[0].Description);
+
+		tab.Area = SubServiceArea.Everything;
+
+		Assert.Equal(["ARTCC-Boundary_<ARTCC>-<altitude>_Lines.geojson"], FileNames(Assert.Single(tab.WhatYoullGet)));
 	}
 
 	// ---- Fixes ----

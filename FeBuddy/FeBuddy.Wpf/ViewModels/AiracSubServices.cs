@@ -74,16 +74,16 @@ public static class AiracSubServices
 			Outputs: SubServiceOutputKinds.Geojson,
 			Help: new SubServiceHelp(
 				"Each ARTCC's boundary as lines, from the FAA's NASR data. GeoJSON only.",
-				Geojson: "Boundary lines in ARTCC-Boundary_High_Lines and _Low_Lines, plus _Unlimited_Lines if you want it, " +
+				Geojson: "Boundary lines in ARTCC-Boundary_High_Lines and ARTCC-Boundary_Low_Lines, plus ARTCC-Boundary_Unlimited_Lines if you want it, " +
 					"or one file per ARTCC and altitude. Pick the area: the ARTCCs you tick, an ROI the lines are cut off at, or every ARTCC.")),
 		new SubServiceDescriptor(AirportsKey, "Airports", 20, () => new AirportsViewModel(), AirportOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
-				"Every open airport in the FAA's NASR data: map files of its runways, a symbol and a label, and an .apt command that shows its details in CRC.",
+				"Every operational airport in the FAA's NASR data: map files of its runways, a symbol and a label, and an .apt command that shows its details in CRC.",
 				Alias: "Airports.txt: an .apt command for each airport by FAA ID and by ICAO ID, Ex: .aptDTW or .aptKDTW. It shows the " +
-					"name, tower, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF, weather, hours and airspace. " +
-					"Every open airport is included. The area doesn't apply.",
-				Geojson: "Runways_Lines, Airports_Symbols and Airports_Text (FAA ID and name). " +
-					"With ROI as the area, only the airports with their reference point inside it.")),
+					"name, tower, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF, weather, hours, and airspace. " +
+					"Every operational airport is included. The area doesn't apply.",
+				Geojson: "Runways_Lines, Airports_Symbols, and Airports_Text (FAA ID and name). " +
+					"With ROI as the area, only the airports inside it.")),
 		new SubServiceDescriptor(AirwaysKey, "Airways", 30, () => new AirwaysViewModel(), AirwayOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
 				"Every airway in the FAA's NASR data: map files of its line, fixes and labels, and a command that shows its fixes on the scope.",

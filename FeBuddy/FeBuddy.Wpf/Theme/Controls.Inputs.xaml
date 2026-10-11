@@ -44,7 +44,7 @@
                         <ContentPresenter />
                         <TextBlock x:Name="Description" Margin="26,4,0,0"
                                    Style="{DynamicResource Text.Prose}"
-                                   Text="{TemplateBinding Description}" />
+                                   bhv:InlineCode.Text="{TemplateBinding Description}" />
                     </StackPanel>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Description" Value="{x:Null}">

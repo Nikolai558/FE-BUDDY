@@ -31,6 +31,9 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 {
 	private const string Node = "Services.AiracService.ArtccBoundaries";
 
+	/// <summary>The most per-ARTCC files What You'll Get lists one by one; more are summed up by how they're named.</summary>
+	private const int MaxSummaryFiles = 6;
+
 	private ArtccBoundaryOutputBy _outputBy = ArtccBoundaryOutputBy.HighLow;
 	private bool _splitAtAntimeridian = true;
 	private HashSet<string> _savedLocationFilter = new(StringComparer.OrdinalIgnoreCase);
@@ -228,8 +231,51 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, boundaries)
 			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"the parts inside {roi}"))
-			.ToList());
+			.ToList())
+		{
+			Files = [.. SummaryFiles()],
+			Notes = _outputBy == ArtccBoundaryOutputBy.HighLow ? ["Boundaries labeled \"UNLIMITED\" go in both files."] : [],
+		};
 	}
+
+	/// <summary>
+	/// The files What You'll Get lists: the fixed High, Low (and Unlimited) files, or with one file per
+	/// ARTCC and altitude, each file while there are only a few, otherwise how they're named.
+	/// </summary>
+	private IEnumerable<SummaryFile> SummaryFiles()
+	{
+		if (_outputBy != ArtccBoundaryOutputBy.ArtccAltitude)
+		{
+			yield return HighLowSummaryFile(ArtccBoundaryOutputFiles.HighClass);
+			yield return HighLowSummaryFile(ArtccBoundaryOutputFiles.LowClass);
+
+			if (_outputBy == ArtccBoundaryOutputBy.HighLowUnlimited)
+			{
+				yield return HighLowSummaryFile(ArtccBoundaryOutputFiles.UnlimitedClass);
+			}
+
+			yield break;
+		}
+
+		OutputFileOption[] files = [.. OutputFiles()];
+
+		if (Area == SubServiceArea.Artccs && files.Length is > 0 and <= MaxSummaryFiles)
+		{
+			foreach (OutputFileOption file in files)
+			{
+				yield return new SummaryFile($"{file.Key}.geojson", $"{file.Group}'s boundary labeled \"{file.Label}\"");
+			}
+
+			yield break;
+		}
+
+		yield return new SummaryFile(
+			$"{ArtccBoundaryOutputFiles.KeyFor("<ARTCC>", "<altitude>")}.geojson",
+			$"One file for each ARTCC and altitude, e.g. `{ArtccBoundaryOutputFiles.KeyFor("ZOB", "HIGH")}.geojson`");
+	}
+
+	private static SummaryFile HighLowSummaryFile(string group) =>
+		new($"{ArtccBoundaryOutputFiles.KeyFor(group)}.geojson", $"Boundaries labeled \"{group.ToUpperInvariant()}\"");
 
 	// ================= save contract =================
 
@@ -289,7 +335,10 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	{
 		if (_outputBy == ArtccBoundaryOutputBy.ArtccAltitude)
 		{
-			HashSet<string> selected = new(SelectedLocationIds(), StringComparer.OrdinalIgnoreCase);
+			// The ticked ARTCCs narrow the files only while the area is the ARTCCs.
+			HashSet<string> selected = Area == SubServiceArea.Artccs
+				? new(SelectedLocationIds(), StringComparer.OrdinalIgnoreCase)
+				: new(StringComparer.OrdinalIgnoreCase);
 
 			foreach ((string locationId, string altitude) in _locationAltitudePairs)
 			{
@@ -334,8 +383,8 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	/// <summary>The "GeoJSON files" preview row: what the current file layout produces.</summary>
 	private string DescribeGeojsonFiles() => _outputBy switch
 	{
-		ArtccBoundaryOutputBy.HighLow => "High and Low (UNLIMITED lines in both)",
-		ArtccBoundaryOutputBy.HighLowUnlimited => "High, Low and Unlimited",
+		ArtccBoundaryOutputBy.HighLow => "High and Low (UNLIMITED boundaries in both)",
+		ArtccBoundaryOutputBy.HighLowUnlimited => "High, Low, and Unlimited",
 		ArtccBoundaryOutputBy.ArtccAltitude => "One file per ARTCC and altitude",
 		_ => string.Empty,
 	};

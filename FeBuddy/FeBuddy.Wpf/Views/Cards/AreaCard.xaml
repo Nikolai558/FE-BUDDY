@@ -39,8 +39,10 @@
                              Visibility="{Binding OffersArtccs, Converter={StaticResource BoolToVis}}">
                     <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"><Run Text="{Binding ArtccsLabel, ElementName=Self, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=" — " /><Run Text="{Binding ArtccsDescription, ElementName=Self, Mode=OneWay}" /></TextBlock>
                 </RadioButton>
+                <!-- Bound through Self: a ContentPresenter with no content (a tab with no ARTCCs choice)
+                     loses the tab as its DataContext, and would show its empty margins. -->
                 <ContentPresenter Content="{Binding ArtccsContent, ElementName=Self}" Margin="26,8,0,6"
-                                  Visibility="{Binding AreaArtccs, Converter={StaticResource BoolToVis}}" />
+                                  Visibility="{Binding DataContext.AreaArtccs, ElementName=Self, Converter={StaticResource BoolToVis}}" />
 
                 <RadioButton IsChecked="{Binding AreaRoi, Mode=TwoWay}" Margin="0,8,0,0">
                     <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"><Run Text="ROI" FontWeight="SemiBold" /><Run Text=" — " /><Run Text="{Binding RoiDescription, ElementName=Self, Mode=OneWay}" /></TextBlock>

@@ -55,6 +55,12 @@ public abstract class ServiceTabViewModel : ObservableObject
 		WhatYoullGet.Aggregate(SubServiceOutputKinds.None, (outputs, block) => outputs | block.Outputs);
 
 	/// <summary>
+	/// The line at the foot of the tab's What You'll Get card, e.g. <c>Turn GeoJSON and Alias output
+	/// on or off on the General tab, to the left.</c>; <see langword="null"/> for none (the base).
+	/// </summary>
+	public virtual string? WhatYoullGetFooter => null;
+
+	/// <summary>
 	/// Per-field validation messages, keyed by the field key a view passes to
 	/// <c>FieldState.Error</c>. Bind as <c>{Binding FieldErrors[SwLat]}</c>.
 	/// </summary>

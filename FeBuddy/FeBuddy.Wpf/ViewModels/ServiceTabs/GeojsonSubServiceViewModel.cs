@@ -141,6 +141,14 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <summary>Whether the tab's current settings write its alias file.</summary>
 	public bool WritesAliasFile => HasAliasFile && GenerateAliasFile;
 
+	/// <inheritdoc />
+	/// <remarks>
+	/// Names GeoJSON, and Alias too for a sub-service with an alias file. Procedures and Telephony,
+	/// whose outputs are not these, override it.
+	/// </remarks>
+	public override string? WhatYoullGetFooter =>
+		$"Turn {(HasAliasFile ? "GeoJSON and Alias" : "GeoJSON")} output on or off on the General tab, to the left.";
+
 	/// <summary>
 	/// Every file the tab's current settings write, for the File Names tab: its key, the folder it
 	/// goes in inside the cycle folder, and FE-Buddy's name for it.

@@ -25,27 +25,20 @@
             <!-- ============ what the outputs get, every filter in one place ============ -->
             <cards:SummaryCard />
 
-            <!-- ============ outputs ============ -->
-            <cards:OutputsCard GeojsonDescription="Map files of airports and their runways. Pick which files below."
-                               AliasDescription="Writes an .apt command for every open airport that shows its details in CRC: name, tower, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF, weather, hours and airspace.&#xA;Type .apt and the FAA or ICAO ID, Ex: .aptDTW or .aptKDTW" />
-
             <!-- ============ area: an ROI, or everything ============ -->
             <cards:AreaCard Outputs="{Binding AreaOutputs}"
                             Intro="Choose which airports the GeoJSON includes."
-                            RoiDescription="only airports with their reference point inside an ROI"
-                            EverythingDescription="every open airport">
+                            RoiDescription="only airports inside an ROI"
+                            EverythingDescription="every operational airport">
                 <cards:AreaCard.Footer>
-                    <ctl:OutputLine Kind="Alias" Text="Every open airport, whichever you pick above." Margin="0,14,0,0" />
+                    <ctl:OutputLine Kind="Alias" Text="Every operational airport, whichever you pick above." Margin="0,14,0,0" />
                 </cards:AreaCard.Footer>
             </cards:AreaCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard LinesLabel="Runways — Lines"
-                                    LinesDescription="Each airport's runways, drawn as lines."
-                                    SymbolsLabel="Airports — Symbols"
-                                    SymbolsDescription="A symbol at each airport's reference point."
-                                    TextLabel="Airports — Text"
-                                    TextDescription="A label at each airport with its FAA ID and name." />
+            <cards:GeojsonFilesCard LinesDescription="`Runways_Lines.geojson`&#xA;Each airport's runways, drawn as lines."
+                                    SymbolsDescription="`Airports_Symbols.geojson`&#xA;An airport symbol, drawn at each airport's reference point."
+                                    TextDescription="`Airports_Text.geojson`&#xA;A label with the airport's FAA ID and name, drawn at each airport's reference point." />
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard />

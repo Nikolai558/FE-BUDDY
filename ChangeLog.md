@@ -18,6 +18,15 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### AIRAC Service
+- What You'll Get now lists the files each output writes, with what goes in each and any notes, and
+  says where to turn the outputs on and off. Airports' Outputs card is gone: its details are here now.
+- Clearer wording on the General, ARTCC Boundaries, and Airports tabs, and on the Area, What Files
+  Do You Want?, Split GeoJSON at the Antimeridian, and CRC ERAM Defaults cards. File names show as
+  code.
+- The Area card no longer leaves a gap above **ROI** on tabs with no ARTCCs choice.
+- ARTCC Boundaries: with one file per ARTCC and altitude, the ARTCCs ticked earlier no longer narrow
+  the CRC ERAM Defaults and File Names lists while the area is ROI or Everything.
 
 ---
 

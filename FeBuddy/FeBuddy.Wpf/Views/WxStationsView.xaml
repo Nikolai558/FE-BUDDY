@@ -33,9 +33,8 @@
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
-                                    SymbolsDescription="A symbol at each weather station."
-                                    TextDescription="A two-line label at each station: its ICAO ID, then its IATA ID and name. Ex: KDTW, then DTW_Detroit/Metro Wayne Cnty"
-                                    Footnote="Files go in `Geojson\` in the cycle's folder." />
+                                    SymbolsDescription="`Wx_Symbols.geojson`&#xA;Weather station symbols."
+                                    TextDescription="`Wx_Text.geojson`&#xA;Each station's ICAO ID, then its IATA ID and name on a second line. Ex: KDTW, then DTW_Detroit/Metro Wayne Cnty" />
 
             <!-- ============ station data ============ -->
             <ctl:Card Header="Station Data" Outputs="Geojson">

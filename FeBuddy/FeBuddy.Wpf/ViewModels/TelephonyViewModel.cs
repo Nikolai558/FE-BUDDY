@@ -109,6 +109,10 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// <remarks>Telephony writes no GeoJSON at all.</remarks>
 	protected override (string? Lines, string? Symbols, string? Text) EmitKeys => (null, null, null);
 
+	/// <inheritdoc />
+	/// <remarks>None: Telephony's one output is on whenever it is included on the General tab.</remarks>
+	public override string? WhatYoullGetFooter => null;
+
 	// ================= telephony data =================
 
 	/// <summary>What the Telephony Data card and the Preview Settings tab say about FE-Buddy's kept copies of the FAA pages.</summary>

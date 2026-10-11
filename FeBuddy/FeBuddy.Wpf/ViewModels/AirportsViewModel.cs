@@ -142,17 +142,47 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	}
 
 	/// <inheritdoc />
-	/// <remarks>The ROI narrows the GeoJSON only; with any other area the two blocks are the same, and merge.</remarks>
+	/// <remarks>
+	/// The ROI narrows the GeoJSON only: the alias file always has every operational airport, so its
+	/// block only describes the file.
+	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
-		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, "Every open airport")
-			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"those with their reference point inside {roi}"))
-			.ToList());
+		List<SummaryFile> geojsonFiles = [];
 
-		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, RoiLine(roi => $"Every open airport, inside {roi} or not") ?? "Every open airport")
-			.ToList());
+		if (EmitLines)
+		{
+			geojsonFiles.Add(new($"{AirportOutputFiles.RunwaysLines}.geojson", "Each airport's runways, drawn as lines."));
+		}
+
+		if (EmitSymbols)
+		{
+			geojsonFiles.Add(new($"{AirportOutputFiles.AirportsSymbols}.geojson", "An airport symbol, drawn at each airport's reference point."));
+		}
+
+		if (EmitText)
+		{
+			geojsonFiles.Add(new($"{AirportOutputFiles.AirportsText}.geojson", "A label with the airport's FAA ID and name, drawn at each airport's reference point."));
+		}
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
+			.Add(SummaryJoin.First, "Every operational airport")
+			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"airports inside {roi}"))
+			.ToList())
+		{
+			Files = geojsonFiles,
+		};
+
+		yield return new SummaryBlock(SubServiceOutputKinds.Alias, [])
+		{
+			Files =
+			[
+				new(AirportOutputFiles.Alias,
+					"An ISR command, `.apt` and the FAA or ICAO ID, for every operational airport in the NAS. It has details "
+					+ "such as the airport's name, tower status, responsible ARTCC, longest runway, and more.\n"
+					+ "Example: `.aptDTW` or `.aptKDTW`"),
+			],
+		};
 	}
 
 	// ================= save contract =================
@@ -174,7 +204,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		{
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
-				"GeoJSON is on but none of its files are selected. Turn on Symbols, Text or Runway lines, "
+				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols, or Text, "
 				+ "or turn GeoJSON off for Airports on the General tab.");
 		}
 

@@ -55,7 +55,7 @@
         </ctl:Card>
 
         <!-- ============ cycle ============ -->
-        <ctl:Card Header="Cycle">
+        <ctl:Card Header="AIRAC Cycle">
             <StackPanel>
                 <ItemsControl ItemsSource="{Binding CycleOptions}" Margin="0,4,0,0">
                     <ItemsControl.ItemTemplate>

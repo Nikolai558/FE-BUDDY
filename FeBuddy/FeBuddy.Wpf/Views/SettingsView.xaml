@@ -360,20 +360,22 @@
 
                 <!-- ================= 7. RESET / UNINSTALL ================= -->
                 <!-- Last, away from everyday settings. Each window says what goes and asks what to keep.
-                     Uninstall shows only in the installed copy. -->
+                     Uninstall works only in the installed copy. -->
                 <ctl:Card Header="Reset / Uninstall">
                     <StackPanel>
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
                                    Text="Want to set FE-Buddy up as &quot;New&quot;? Select &quot;Reset FE-Buddy&quot;." />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
-                                   Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0">
                             <Run Text="Got promoted out of the FE department, or " /><Run Text="somehow" FontWeight="SemiBold" /><Run Text=" found a better resource than FE-Buddy? Select &quot;Uninstall FE-Buddy&quot;." />
                         </TextBlock>
                         <Button Style="{StaticResource Button.Ghost}" Content="Reset FE-Buddy…" HorizontalAlignment="Left"
                                 Margin="0,12,0,0" Command="{Binding ResetCommand}" />
+                        <!-- Greyed out (UninstallCommand) in a copy the installer didn't install, which says why. -->
                         <Button Style="{StaticResource Button.Ghost.Danger}" Content="Uninstall FE-Buddy…" HorizontalAlignment="Left"
-                                Margin="0,8,0,0" Command="{Binding UninstallCommand}"
-                                Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}}" />
+                                Margin="0,8,0,0" Command="{Binding UninstallCommand}" />
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                   Text="This copy of FE-Buddy wasn't installed with its installer, so it can't uninstall itself."
+                                   Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     </StackPanel>
                 </ctl:Card>
             </StackPanel>

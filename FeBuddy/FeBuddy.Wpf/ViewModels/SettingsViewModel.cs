@@ -602,7 +602,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	/// <summary>
 	/// Whether this copy can uninstall itself: it is the one the installer installed, and the
-	/// installer recorded its ProductCode. Otherwise Uninstall FE-Buddy… is not shown.
+	/// installer recorded its ProductCode. Otherwise Uninstall FE-Buddy… is greyed out, with a line saying why.
 	/// </summary>
 	public bool CanUninstall { get; } =
 		AppEnvironment.IsMsiInstalled && AppUninstall.UninstallerArguments(InstalledProduct.ProductCode) is not null;

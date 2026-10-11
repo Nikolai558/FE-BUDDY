@@ -83,8 +83,6 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 The tabs that write GeoJSON share these cards; Procedures, Telephony and Concatenate Aliases have
 their own.
 
-- **Outputs** (Departures and Arrivals) - which of the tab's files are on; change them on the General
-  tab.
 - **What Files Do You Want?** - which of **Lines**, **Symbols**, and **Text** to write, each with the
   files it makes. Symbols with exactly the same properties are written as one feature (a MultiPoint),
   so Symbols files stay small; labels are always one feature each.
@@ -153,7 +151,8 @@ covers STARs. Otherwise the two tabs work the same.
   per airport: `Geojson\<ARTCC>\<airport>\<airport>_<procedure>_Lines.geojson`. Arrivals add `STAR`
   (`LAS_BLAID_STAR_Lines.geojson`).
 - **Alias file** - `Departures.txt` or `Arrivals.txt`: a command per airport and procedure that draws
-  its fixes. A STAR lists its transitions first, then its bodies.
+  its fixes (`.laxDOTSSf`, `.lasBLAIDf`). A STAR lists its transitions first, then its bodies. The
+  Alias Command Guide, under Info, has more examples and the exceptions.
 - **Routes** - each airport gets the bodies the FAA's data assigns it (all of them when the
   procedure has no assignments), plus every transition. When the data assigns bodies to some
   airports but not others, a departure's left-out airport gets only the transitions, and a STAR's
@@ -162,8 +161,9 @@ covers STARs. Otherwise the two tabs work the same.
   own), the ROI, or everything. With **ROI**, **Which Departures (or Arrivals) the ROI Keeps**: every
   procedure for an airport inside it, or any procedure with a fix inside it. The area limits the
   alias file too.
-- **Amendment Date** - every procedure, or only those amended in the last *N* cycles (counting the
-  selected one), the last *N* days, or since a date.
+- **Amendment Date** - **No** for every procedure, or **Yes** for only those amended in the last *N*
+  cycles (1 is the selected cycle only; What You'll Get names the oldest cycle kept), the last *N*
+  days (counted from today, not the cycle's effective date), or since a date.
 - **Names** - the FAA computer code without its version (`DOTSS2.DOTSS` is `DOTSS`; a STAR's runs the
   other way, so `AALAN.BLAID2` is `BLAID`), or the name without punctuation when there's no code
   (`O'HARE` is `OHARE`).

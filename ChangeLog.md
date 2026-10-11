@@ -31,6 +31,11 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Airways: "Only airways that cross the ROI" is now under **ROI** on the Area card, where it applies.
   Picked with **Everything**, it used to do nothing without saying so.
 - NAVAIDs: `Navaids.txt` now has every NAVAID type. The **NAVAID Types** card narrows the GeoJSON only.
+- Clearer wording on the Departures and Arrivals tabs. Their Outputs cards are gone: their details are
+  in What You'll Get.
+- Departures and Arrivals: **Amendment Date** now asks first whether to keep only recently amended
+  procedures. It names the selected cycle, and What You'll Get names the oldest cycle kept ("in the
+  last 3 cycles (since cycle 2608)").
 - The Area card no longer leaves a gap above **ROI** on tabs with no ARTCCs choice.
 - ARTCC Boundaries: with one file per ARTCC and altitude, the ARTCCs ticked earlier no longer narrow
   the CRC ERAM Defaults and File Names lists while the area is ROI or Everything.

@@ -36,6 +36,10 @@ public partial class GeojsonFilesCard : UserControl
 	/// <summary>Identifies the <see cref="Footnote"/> dependency property.</summary>
 	public static readonly DependencyProperty FootnoteProperty = Register(nameof(Footnote), null);
 
+	/// <summary>Identifies the <see cref="Footer"/> dependency property.</summary>
+	public static readonly DependencyProperty FooterProperty =
+		DependencyProperty.Register(nameof(Footer), typeof(object), typeof(GeojsonFilesCard), new PropertyMetadata(null));
+
 	/// <summary>Identifies the <see cref="ShowLines"/> dependency property.</summary>
 	public static readonly DependencyProperty ShowLinesProperty =
 		DependencyProperty.Register(nameof(ShowLines), typeof(bool), typeof(GeojsonFilesCard), new PropertyMetadata(true));
@@ -70,8 +74,14 @@ public partial class GeojsonFilesCard : UserControl
 	/// <summary>What the Text file holds, shown under its name.</summary>
 	public string? TextDescription { get => (string?)GetValue(TextDescriptionProperty); set => SetValue(TextDescriptionProperty, value); }
 
-	/// <summary>Optional small print under the options, e.g. where the files are written.</summary>
+	/// <summary>Optional small print under the options.</summary>
 	public string? Footnote { get => (string?)GetValue(FootnoteProperty); set => SetValue(FootnoteProperty, value); }
+
+	/// <summary>
+	/// Optional content under the options, for more than a line of small print: Departures and
+	/// Arrivals say where their files are saved and how they're named.
+	/// </summary>
+	public object? Footer { get => GetValue(FooterProperty); set => SetValue(FooterProperty, value); }
 
 	/// <summary>Whether the Lines option is offered. Default <see langword="true"/>; off for a sub-service with no Lines file (Fixes, NAVAIDs, Wx Stations).</summary>
 	public bool ShowLines { get => (bool)GetValue(ShowLinesProperty); set => SetValue(ShowLinesProperty, value); }

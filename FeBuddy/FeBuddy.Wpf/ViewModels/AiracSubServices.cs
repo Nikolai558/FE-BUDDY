@@ -97,14 +97,14 @@ public static class AiracSubServices
 				"Arrivals from the FAA's NASR data: map files for each one in a folder per airport, and a command for each airport and arrival that shows its fixes.",
 				Alias: "Arrivals.txt: a command for each airport and arrival that shows its fixes, Ex: .lasBLAIDf. " +
 					"The area (ARTCCs, ROI, or everything) and the amendment date narrow it, the same as the GeoJSON.",
-				Geojson: "Lines, Symbols and Text for each airport and arrival, in Geojson\\<ARTCC>\\<airport>\\. " +
+				Geojson: "Lines, Symbols, and Text for each airport and arrival, in Geojson\\<ARTCC>\\<airport>\\. " +
 					"Narrow them by area (ARTCCs, ROI, or everything) and amendment date.")),
 		new SubServiceDescriptor(DeparturesKey, "Departures", 50, () => new DeparturesViewModel(), DepartureOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
 				"SIDs, and obstacle departures (ODPs) if you want them, from the FAA's NASR data: map files for each one in a folder per airport, and a command for each airport and departure that shows its fixes.",
 				Alias: "Departures.txt: a command for each airport and departure that shows its fixes, Ex: .laxDOTSSf. " +
 					"The area (ARTCCs, ROI, or everything) and the amendment date narrow it, the same as the GeoJSON.",
-				Geojson: "Lines, Symbols and Text for each airport and departure, in Geojson\\<ARTCC>\\<airport>\\. " +
+				Geojson: "Lines, Symbols, and Text for each airport and departure, in Geojson\\<ARTCC>\\<airport>\\. " +
 					"Narrow them by area (ARTCCs, ROI, or everything) and amendment date.")),
 		new SubServiceDescriptor(NavaidsKey, "NAVAIDs", 60, () => new NavaidsViewModel(), NavaidOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(

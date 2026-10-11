@@ -7,6 +7,8 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Navaids;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -133,6 +135,33 @@ public sealed class WhatYoullGetTests : IDisposable
 			Lines(Assert.Single(tab.WhatYoullGet)));
 	}
 
+	/// <summary>With the cycle known, 1 cycle names it, and more name the oldest cycle kept.</summary>
+	[Fact]
+	public void departures_name_the_cycles_the_amendment_keeps()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Departures.Amendment.Filter", "Cycles");
+		UserConfigFile.TrySetValue("Services.AiracService.Departures.Amendment.WithinCycles", "1");
+		DeparturesViewModel tab = new();
+
+		Assert.Equal("but only those amended in the selected cycle", Lines(Assert.Single(tab.WhatYoullGet))[1]);
+
+		tab.SetSelectedCycle(AiracCycleResolver.GetCycle(AiracCyclePosition.Current, new DateOnly(2026, 10, 1)));
+
+		Assert.Equal("but only those amended in cycle 2610", Lines(Assert.Single(tab.WhatYoullGet))[1]);
+
+		tab.AmendedWithinCycles = "5";
+
+		Assert.Equal("but only those amended in the last 5 cycles (since cycle 2606)", Lines(Assert.Single(tab.WhatYoullGet))[1]);
+
+		tab.SetSelectedCycle(AiracCycleResolver.GetCycle(AiracCyclePosition.Current, new DateOnly(2026, 2, 19)));
+
+		Assert.Equal("but only those amended in the last 5 cycles (since cycle 2511)", Lines(Assert.Single(tab.WhatYoullGet))[1]);
+
+		tab.AmendedWithinCycles = "x";
+
+		Assert.Equal("but only those amended in the last x cycles", Lines(Assert.Single(tab.WhatYoullGet))[1]);
+	}
+
 	[Fact]
 	public void departures_with_the_artccs_area_and_none_ticked_says_what_to_tick()
 	{
@@ -150,8 +179,29 @@ public sealed class WhatYoullGetTests : IDisposable
 		UserConfigFile.TrySetValue("Services.AiracService.Departures.Amendment.WithinDays", "1");
 
 		Assert.Equal(
-			["Every SID and obstacle departure", "but only those amended in the last day"],
+			["Every SID and obstacle departure", "but only those amended in the last day, counting back from today"],
 			Lines(Assert.Single(new DeparturesViewModel().WhatYoullGet)));
+	}
+
+	/// <summary>The departures and the alias file are listed under one block, with where the GeoJSON goes.</summary>
+	[Fact]
+	public void departures_lists_each_departures_files_and_the_alias_file()
+	{
+		DeparturesViewModel tab = new() { EmitSymbols = false };
+
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(
+			["<Airport ID>_<Departure ID>_Lines.geojson", "<Airport ID>_<Departure ID>_Text.geojson", "Departures.txt"],
+			FileNames(block));
+		Assert.Contains("`.laxDOTSSf`", block.Files[2].Description, StringComparison.Ordinal);
+		Assert.Contains("Alias Command Guide", block.Files[2].Description, StringComparison.Ordinal);
+		Assert.Equal([@"Each airport's GeoJSON files go in `Geojson\<ARTCC ID>\<Airport ID>\`."], block.Notes);
+
+		Attach(tab, AiracSubServices.DeparturesKey, Alias);
+		block = Assert.Single(tab.WhatYoullGet);
+
+		Assert.Equal(["Departures.txt"], FileNames(block));
+		Assert.Empty(block.Notes);
 	}
 
 	// ---- Arrivals ----
@@ -169,10 +219,53 @@ public sealed class WhatYoullGetTests : IDisposable
 		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.ArtccFilter", "ZLA,ZOA,ZAB");
 		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.Filter", "Cycles");
 		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.WithinCycles", "1");
+		ArrivalsViewModel tab = new();
+		tab.SetSelectedCycle(Cycle2610);
 
 		Assert.Equal(
-			["Every arrival", "for airports in ZAB, ZLA, and ZOA", "and only those amended this cycle"],
-			Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
+			["Every arrival", "for airports in ZAB, ZLA, and ZOA", "and only those amended in cycle 2610"],
+			Lines(Assert.Single(tab.WhatYoullGet)));
+	}
+
+	/// <summary>Cycle 2610, effective 2026-10-01.</summary>
+	private static AiracCycleInfo Cycle2610 => AiracCycleResolver.GetCycle(AiracCyclePosition.Current, new DateOnly(2026, 10, 1));
+
+	/// <summary>
+	/// With the cycle known, the cycles filter names the oldest cycle it keeps, and the card is told
+	/// again when the selected cycle changes.
+	/// </summary>
+	[Fact]
+	public void arrivals_name_the_oldest_cycle_the_amendment_keeps()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.Filter", "Cycles");
+		UserConfigFile.TrySetValue("Services.AiracService.Arrivals.Amendment.WithinCycles", "3");
+		ArrivalsViewModel tab = new();
+		List<string?> changed = Changed(tab);
+
+		tab.SetSelectedCycle(Cycle2610);
+
+		Assert.Contains(nameof(ServiceTabViewModel.WhatYoullGet), changed);
+		Assert.Contains(nameof(ArrivalsViewModel.AmendmentQuestion), changed);
+		Assert.Equal(["Every arrival", "but only those amended in the last 3 cycles (since cycle 2608)"], Lines(Assert.Single(tab.WhatYoullGet)));
+
+		changed.Clear();
+		tab.SetSelectedCycle(Cycle2610);
+
+		Assert.Empty(changed);
+	}
+
+	/// <summary>The arrivals' files say they're arrivals (STAR), and where they go.</summary>
+	[Fact]
+	public void arrivals_list_each_arrivals_files_and_the_alias_file()
+	{
+		SummaryBlock block = Assert.Single(new ArrivalsViewModel().WhatYoullGet);
+
+		Assert.Equal(
+			["<Airport ID>_<Arrival ID>_STAR_Lines.geojson", "<Airport ID>_<Arrival ID>_STAR_Symbols.geojson",
+				"<Airport ID>_<Arrival ID>_STAR_Text.geojson", "Arrivals.txt"],
+			FileNames(block));
+		Assert.Contains("`.lasBLAIDf`", block.Files[3].Description, StringComparison.Ordinal);
+		Assert.Single(block.Notes);
 	}
 
 	[Fact]
@@ -188,15 +281,16 @@ public sealed class WhatYoullGetTests : IDisposable
 			[
 				"Every arrival",
 				"but only those with at least one fix inside the default ROI",
-				"and only those amended this cycle",
+				"and only those amended in the selected cycle",
 			],
 			Lines(Assert.Single(new ArrivalsViewModel().WhatYoullGet)));
 	}
 
 	[Theory]
-	[InlineData("Days", "WithinDays", "30", "but only those amended in the last 30 days")]
-	[InlineData("Days", "WithinDays", "1", "but only those amended in the last day")]
+	[InlineData("Days", "WithinDays", "30", "but only those amended in the last 30 days, counting back from today")]
+	[InlineData("Days", "WithinDays", "1", "but only those amended in the last day, counting back from today")]
 	[InlineData("Cycles", "WithinCycles", "3", "but only those amended in the last 3 cycles")]
+	[InlineData("Cycles", "WithinCycles", "x", "but only those amended in the last x cycles")]
 	[InlineData("Date", "OnOrAfter", "2026-09-01", "but only those amended on or after 2026-09-01")]
 	[InlineData("Date", "OnOrAfter", "", "but only those amended on or after a date not yet picked")]
 	public void arrivals_words_each_amendment_filter(string filter, string key, string value, string expected)

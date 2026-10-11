@@ -9,6 +9,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -355,6 +356,34 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	public ICommand PickRoiOnMapCommand { get; }
 
 	// ================= readiness =================
+
+	/// <summary>
+	/// The cycle picked on the General tab, for text that names it (<c>since cycle 2605</c>), or
+	/// <see langword="null"/> until the screen says (a tab built on its own).
+	/// </summary>
+	public AiracCycleInfo? SelectedCycle { get; private set; }
+
+	/// <summary>Follows the cycle picked on the General tab: what names it is told again.</summary>
+	/// <param name="cycle">The selected cycle.</param>
+	public void SetSelectedCycle(AiracCycleInfo cycle)
+	{
+		ArgumentNullException.ThrowIfNull(cycle);
+
+		if (cycle == SelectedCycle)
+		{
+			return;
+		}
+
+		SelectedCycle = cycle;
+		OnPropertyChanged(nameof(SelectedCycle));
+		OnSelectedCycleChanged();
+		RaiseWhatYoullGetChanged();
+	}
+
+	/// <summary>After the selected cycle changes: a tab with text that names it announces that text. The base does nothing.</summary>
+	protected virtual void OnSelectedCycleChanged()
+	{
+	}
 
 	/// <summary>Whether the AIRAC data is ready; lists built from the cycle stay disabled until it is.</summary>
 	public bool IsCycleReady

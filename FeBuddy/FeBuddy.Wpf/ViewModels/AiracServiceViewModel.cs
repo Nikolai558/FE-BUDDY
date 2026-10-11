@@ -70,6 +70,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		_general.CycleChanged += (_, _) =>
 		{
 			_fileNames.RefreshFiles();
+			PushSelectedCycle();
 			_ = LoadCycleDataAsync();
 		};
 
@@ -312,8 +313,23 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		}
 	}
 
+	/// <summary>
+	/// Tells every sub-service tab which cycle the General tab has picked, for text that names it:
+	/// when the screen opens, when the pick changes, and when the date moves the cycles along.
+	/// </summary>
+	private void PushSelectedCycle()
+	{
+		AiracCycleInfo cycle = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition);
+
+		foreach (GeojsonSubServiceViewModel tab in _tabsByKey.Values.OfType<GeojsonSubServiceViewModel>())
+		{
+			tab.SetSelectedCycle(cycle);
+		}
+	}
+
 	private void RefreshReadiness()
 	{
+		PushSelectedCycle();
 		OnPropertyChanged(nameof(Readiness));
 		OnPropertyChanged(nameof(IsReady));
 

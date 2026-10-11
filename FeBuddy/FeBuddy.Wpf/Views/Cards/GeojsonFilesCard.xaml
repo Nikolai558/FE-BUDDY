@@ -5,7 +5,8 @@
     supplies only the wording, and ShowLines="False" for a sub-service with no Lines file.
     Under each option: the file's name (code look, bhv:InlineCode) indented one step past the
     label, then what goes in it indented once more - the way What You'll Get lists files.
-    Footnote shows folder names between backticks in the code look too.
+    Footnote shows folder names between backticks in the code look too; Footer takes anything longer
+    (Departures and Arrivals: where their files are saved and how they're named).
 
     Usage:
         <cards:GeojsonFilesCard LinesFile="*_Lines.geojson"
@@ -54,6 +55,17 @@
                        MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                        bhv:InlineCode.Text="{Binding Footnote, ElementName=Self}"
                        Visibility="{Binding Footnote, ElementName=Self, Converter={StaticResource StringToVis}}" />
+            <ContentPresenter Margin="0,14,0,0" Content="{Binding Footer, ElementName=Self}">
+                <ContentPresenter.Style>
+                    <Style TargetType="ContentPresenter">
+                        <Style.Triggers>
+                            <Trigger Property="Content" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentPresenter.Style>
+            </ContentPresenter>
         </StackPanel>
     </ctl:Card>
 </UserControl>

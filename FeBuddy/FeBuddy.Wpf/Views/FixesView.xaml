@@ -35,8 +35,8 @@
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
-                                    SymbolsDescription="`*_Symbols.geojson`&#xA;Fix symbols."
-                                    TextDescription="`*_Text.geojson`&#xA;Fix ID text." />
+                                    SymbolsFile="*_Symbols.geojson" SymbolsDescription="Fix symbols."
+                                    TextFile="*_Text.geojson" TextDescription="Fix ID text." />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">

@@ -36,9 +36,9 @@
             </cards:AreaCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard LinesDescription="`Runways_Lines.geojson`&#xA;Each airport's runways, drawn as lines."
-                                    SymbolsDescription="`Airports_Symbols.geojson`&#xA;An airport symbol, drawn at each airport's reference point."
-                                    TextDescription="`Airports_Text.geojson`&#xA;A label with the airport's FAA ID and name, drawn at each airport's reference point." />
+            <cards:GeojsonFilesCard LinesFile="Runways_Lines.geojson" LinesDescription="Each airport's runways, drawn as lines."
+                                    SymbolsFile="Airports_Symbols.geojson" SymbolsDescription="An airport symbol, drawn at each airport's reference point."
+                                    TextFile="Airports_Text.geojson" TextDescription="A label with the airport's FAA ID and name, drawn at each airport's reference point." />
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard />

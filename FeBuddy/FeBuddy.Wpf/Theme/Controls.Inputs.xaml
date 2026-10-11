@@ -32,8 +32,10 @@
                     xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors">
 
     <!-- ============================ OPTION ============================ -->
-    <!-- One option row: the control, then its Description indented to sit under the control's
-         label text. The one place that indent and the description's text style are set. -->
+    <!-- One option row: the control, then its Description indented one step (16) past the
+         control's label text (26 in: the box or disc and its gap), so it reads as belonging to the
+         option. The one place that indent and the description's text style are set; text placed
+         under an option by hand uses the same 42. -->
     <Style TargetType="ctl:Option">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
@@ -42,7 +44,7 @@
                 <ControlTemplate TargetType="ctl:Option">
                     <StackPanel>
                         <ContentPresenter />
-                        <TextBlock x:Name="Description" Margin="26,4,0,0"
+                        <TextBlock x:Name="Description" Margin="42,4,0,0"
                                    Style="{DynamicResource Text.Prose}"
                                    bhv:InlineCode.Text="{TemplateBinding Description}" />
                     </StackPanel>

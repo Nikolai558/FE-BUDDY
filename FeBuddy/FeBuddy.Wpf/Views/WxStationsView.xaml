@@ -32,8 +32,8 @@
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
-                                    SymbolsDescription="`Wx_Symbols.geojson`&#xA;Weather station symbols."
-                                    TextDescription="`Wx_Text.geojson`&#xA;Each station's ICAO ID, then its IATA ID and name on a second line. Ex: KDTW, then DTW_Detroit/Metro Wayne Cnty" />
+                                    SymbolsFile="Wx_Symbols.geojson" SymbolsDescription="Weather station symbols."
+                                    TextFile="Wx_Text.geojson" TextDescription="Each station's ICAO ID, then its IATA ID and name on a second line.&#xA;Example: KDTW, then DTW_Detroit/Metro Wayne Cnty" />
 
             <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
             <cards:CrcDefaultsCard SymbolsTitle="Wx Stations — Symbols" TextTitle="Wx Stations — Text">

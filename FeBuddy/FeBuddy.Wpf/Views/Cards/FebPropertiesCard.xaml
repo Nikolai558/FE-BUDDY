@@ -25,7 +25,8 @@
                         Description="Extra fields on each map object, such as its ID or name, so you can tell what it is in a GeoJSON viewer. CRC ignores them. They make the files bigger. Each one starts with &quot;feb.&quot; so it can't clash with CRC's own fields.">
                 <CheckBox Content="Include FE-Buddy properties" IsChecked="{Binding IncludeFebCustomProperties}" />
             </ctl:Option>
-            <ItemsControl Margin="26,8,0,0" ItemsSource="{Binding FebProperties}"
+            <!-- Under the option's description, one step past its label (as ctl:Option indents it). -->
+            <ItemsControl Margin="42,8,0,0" ItemsSource="{Binding FebProperties}"
                           IsEnabled="{Binding IncludeFebCustomProperties}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>

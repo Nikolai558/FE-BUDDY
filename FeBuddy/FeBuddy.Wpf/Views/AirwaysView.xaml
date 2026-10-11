@@ -41,7 +41,7 @@
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
                         <RadioButton GroupName="AliasScope" Content="Only airways that cross the ROI" Margin="0,3,0,0"
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}" />
-                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,0"
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="42,2,0,0"
                                    MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                    Text="Each command still has all of its airway's waypoints." />
                     </StackPanel>
@@ -49,9 +49,9 @@
             </cards:AreaCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard LinesDescription="`*_Lines.geojson`&#xA;Airway lines drawn from waypoint to waypoint."
-                                    SymbolsDescription="`*_Symbols.geojson`&#xA;Airway waypoint symbols."
-                                    TextDescription="`*_Text.geojson`&#xA;Airway waypoint ID text." />
+            <cards:GeojsonFilesCard LinesFile="*_Lines.geojson" LinesDescription="Airway lines drawn from waypoint to waypoint."
+                                    SymbolsFile="*_Symbols.geojson" SymbolsDescription="Airway waypoint symbols."
+                                    TextFile="*_Text.geojson" TextDescription="Airway waypoint ID text." />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">
@@ -62,7 +62,7 @@
                                      IsChecked="{Binding OutputHighLow, Mode=TwoWay}" />
                     </ctl:Option>
                     <ctl:Option Margin="0,10,0,0"
-                                Description="One set of files for each airway type.&#xA;Examples: `Airways_J_Lines.geojson`, `Airways_Q_Lines.geojson`, `Airways_V_Lines.geojson`">
+                                Description="One set of files for each airway type.&#xA;Examples:&#xA;`Airways_J_Lines.geojson`&#xA;`Airways_Q_Lines.geojson`&#xA;`Airways_V_Lines.geojson`">
                         <RadioButton GroupName="AirwayOutputBy" Content="Airway Types"
                                      IsChecked="{Binding OutputByDesignation, Mode=TwoWay}" />
                     </ctl:Option>

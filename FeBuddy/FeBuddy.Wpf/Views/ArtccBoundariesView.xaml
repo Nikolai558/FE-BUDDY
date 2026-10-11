@@ -69,7 +69,7 @@
                                      IsChecked="{Binding OutputHighLowUnlimited, Mode=TwoWay}" />
                     </ctl:Option>
                     <ctl:Option Margin="0,10,0,0"
-                                Description="Example: `ARTCC-Boundary_ZOB-HIGH_Lines.geojson`">
+                                Description="Example:&#xA;`ARTCC-Boundary_ZOB-HIGH_Lines.geojson`">
                         <RadioButton GroupName="ArtccBoundaryOutputBy" Content="One file per ARTCC and altitude"
                                      IsChecked="{Binding OutputByArtccAltitude, Mode=TwoWay}" />
                     </ctl:Option>

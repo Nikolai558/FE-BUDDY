@@ -70,9 +70,9 @@
             </cards:AreaCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard LinesDescription="`*_Lines.geojson`&#xA;Arrival routes drawn as lines."
-                                    SymbolsDescription="`*_Symbols.geojson`&#xA;Arrival waypoint symbols."
-                                    TextDescription="`*_Text.geojson`&#xA;Arrival waypoint ID text."
+            <cards:GeojsonFilesCard LinesFile="*_Lines.geojson" LinesDescription="Arrival routes drawn as lines."
+                                    SymbolsFile="*_Symbols.geojson" SymbolsDescription="Arrival waypoint symbols."
+                                    TextFile="*_Text.geojson" TextDescription="Arrival waypoint ID text."
                                     Footnote="Files go in `Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\` in the cycle's folder, beside that airport's departures, named &lt;airport&gt;_&lt;arrival&gt;_STAR_Lines, _Symbols and _Text." />
 
             <!-- ============ FE-Buddy properties ============ -->

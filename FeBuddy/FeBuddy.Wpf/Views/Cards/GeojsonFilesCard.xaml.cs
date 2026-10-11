@@ -9,17 +9,26 @@ public partial class GeojsonFilesCard : UserControl
 	/// <summary>Identifies the <see cref="LinesLabel"/> dependency property.</summary>
 	public static readonly DependencyProperty LinesLabelProperty = Register(nameof(LinesLabel), "Lines");
 
+	/// <summary>Identifies the <see cref="LinesFile"/> dependency property.</summary>
+	public static readonly DependencyProperty LinesFileProperty = Register(nameof(LinesFile), null);
+
 	/// <summary>Identifies the <see cref="LinesDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty LinesDescriptionProperty = Register(nameof(LinesDescription), null);
 
 	/// <summary>Identifies the <see cref="SymbolsLabel"/> dependency property.</summary>
 	public static readonly DependencyProperty SymbolsLabelProperty = Register(nameof(SymbolsLabel), "Symbols");
 
+	/// <summary>Identifies the <see cref="SymbolsFile"/> dependency property.</summary>
+	public static readonly DependencyProperty SymbolsFileProperty = Register(nameof(SymbolsFile), null);
+
 	/// <summary>Identifies the <see cref="SymbolsDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty SymbolsDescriptionProperty = Register(nameof(SymbolsDescription), null);
 
 	/// <summary>Identifies the <see cref="TextLabel"/> dependency property.</summary>
 	public static readonly DependencyProperty TextLabelProperty = Register(nameof(TextLabel), "Text");
+
+	/// <summary>Identifies the <see cref="TextFile"/> dependency property.</summary>
+	public static readonly DependencyProperty TextFileProperty = Register(nameof(TextFile), null);
 
 	/// <summary>Identifies the <see cref="TextDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty TextDescriptionProperty = Register(nameof(TextDescription), null);
@@ -37,19 +46,28 @@ public partial class GeojsonFilesCard : UserControl
 	/// <summary>The Lines option's label. Defaults to "Lines".</summary>
 	public string? LinesLabel { get => (string?)GetValue(LinesLabelProperty); set => SetValue(LinesLabelProperty, value); }
 
-	/// <summary>What the Lines file holds, shown under its option.</summary>
+	/// <summary>The Lines file's name, or its pattern (<c>*_Lines.geojson</c>), shown as code under its option.</summary>
+	public string? LinesFile { get => (string?)GetValue(LinesFileProperty); set => SetValue(LinesFileProperty, value); }
+
+	/// <summary>What the Lines file holds, shown under its name.</summary>
 	public string? LinesDescription { get => (string?)GetValue(LinesDescriptionProperty); set => SetValue(LinesDescriptionProperty, value); }
 
 	/// <summary>The Symbols option's label. Defaults to "Symbols".</summary>
 	public string? SymbolsLabel { get => (string?)GetValue(SymbolsLabelProperty); set => SetValue(SymbolsLabelProperty, value); }
 
-	/// <summary>What the Symbols file holds, shown under its option.</summary>
+	/// <summary>The Symbols file's name, or its pattern (<c>*_Symbols.geojson</c>), shown as code under its option.</summary>
+	public string? SymbolsFile { get => (string?)GetValue(SymbolsFileProperty); set => SetValue(SymbolsFileProperty, value); }
+
+	/// <summary>What the Symbols file holds, shown under its name.</summary>
 	public string? SymbolsDescription { get => (string?)GetValue(SymbolsDescriptionProperty); set => SetValue(SymbolsDescriptionProperty, value); }
 
 	/// <summary>The Text option's label. Defaults to "Text".</summary>
 	public string? TextLabel { get => (string?)GetValue(TextLabelProperty); set => SetValue(TextLabelProperty, value); }
 
-	/// <summary>What the Text file holds, shown under its option.</summary>
+	/// <summary>The Text file's name, or its pattern (<c>*_Text.geojson</c>), shown as code under its option.</summary>
+	public string? TextFile { get => (string?)GetValue(TextFileProperty); set => SetValue(TextFileProperty, value); }
+
+	/// <summary>What the Text file holds, shown under its name.</summary>
 	public string? TextDescription { get => (string?)GetValue(TextDescriptionProperty); set => SetValue(TextDescriptionProperty, value); }
 
 	/// <summary>Optional small print under the options, e.g. where the files are written.</summary>

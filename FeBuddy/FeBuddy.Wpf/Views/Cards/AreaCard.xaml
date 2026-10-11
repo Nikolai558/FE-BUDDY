@@ -52,7 +52,7 @@
                     <StackPanel>
                         <RadioButton Content="The default ROI" IsChecked="{Binding UseDefaultRoi, Mode=TwoWay}" Margin="0,6,0,0" />
                         <!-- its corners, or (in amber) that none is set and what to do -->
-                        <TextBlock Text="{Binding DefaultRoiSummary}" TextWrapping="Wrap" Margin="26,2,0,0"
+                        <TextBlock Text="{Binding DefaultRoiSummary}" TextWrapping="Wrap" Margin="42,2,0,0"
                                    MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">

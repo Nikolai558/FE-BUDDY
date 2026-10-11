@@ -21,7 +21,7 @@ public static class ServiceAreas
 	/// <summary>The Area card (AreaCard): the area, its ARTCCs and its ROI.</summary>
 	public const string Area = "Area";
 
-	/// <summary>The High and Low Files card (Airways tab).</summary>
+	/// <summary>The High and Low Airway Classification card (Airways tab).</summary>
 	public const string HighAndLowFiles = "HighAndLowFiles";
 
 	/// <summary>The Fix Uses card (Fixes tab).</summary>

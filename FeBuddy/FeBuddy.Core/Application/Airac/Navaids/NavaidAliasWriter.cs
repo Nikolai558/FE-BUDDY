@@ -18,8 +18,9 @@ namespace FeBuddy.Core.Application.Airac.Navaids;
 /// alias's replacement text on whitespace and rejoins it with single spaces.
 /// </para>
 /// <para>
-/// The file covers every included NAVAID (after <see cref="NavaidFilter.ExcludeTypes"/>) and is
-/// deliberately never ROI-filtered, the same as every other alias writer.
+/// The file covers every NAVAID: it is deliberately never narrowed by the NAVAID types
+/// (<see cref="NavaidFilter.ExcludeTypes"/>) or the ROI, which limit the GeoJSON only, so a
+/// controller's <c>.nav</c> command answers for any NAVAID.
 /// </para>
 /// <para>
 /// Each NAVAID contributes an ID command (<c>.nav&lt;NavId&gt;</c>) and, when its name yields a
@@ -43,9 +44,9 @@ public static class NavaidAliasWriter
 	private const string SpaceEscape = @"\s";
 
 	/// <summary>
-	/// Writes the alias file for every included NAVAID.
+	/// Writes the alias file for every NAVAID.
 	/// </summary>
-	/// <param name="navaids">Every included NAVAID (after <see cref="NavaidFilter.ExcludeTypes"/>), ROI-independent.</param>
+	/// <param name="navaids">Every built NAVAID, whatever its type or place.</param>
 	/// <param name="settings">The parsed NAVAIDs settings.</param>
 	/// <returns>The path written (or <see langword="null"/> when there was nothing to write), the command count, and any messages.</returns>
 	public static NavaidAliasGenerateResult Generate(IReadOnlyList<Navaid> navaids, NavaidSettings settings)

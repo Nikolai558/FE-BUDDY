@@ -34,8 +34,8 @@ public sealed record NavaidSettings
 	public NavaidOutputBy OutputBy { get; init; } = NavaidOutputBy.All;
 
 	/// <summary>
-	/// NASR <c>NAV_TYPE</c> names to leave out of every output (GeoJSON and the alias file),
-	/// trimmed and upper-cased. Default: none.
+	/// NASR <c>NAV_TYPE</c> names to leave out of the GeoJSON, trimmed and upper-cased. The alias
+	/// file ignores them and always covers every NAVAID. Default: none.
 	/// </summary>
 	public IReadOnlyCollection<string> ExcludedTypes { get; init; } = [];
 
@@ -83,7 +83,7 @@ public sealed record NavaidSettings
 	/// <summary>
 	/// The Region of Interest the GeoJSON output is filtered to, or <see langword="null"/> for
 	/// no filtering. A NAVAID is in or out on its own coordinates; the alias file ignores this
-	/// entirely and always covers every included NAVAID.
+	/// entirely and always covers every NAVAID.
 	/// </summary>
 	public RegionOfInterest? Roi { get; init; }
 

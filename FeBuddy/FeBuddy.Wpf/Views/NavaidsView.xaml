@@ -27,17 +27,13 @@
             <!-- ============ what the outputs get, every filter in one place ============ -->
             <cards:SummaryCard />
 
-            <!-- ============ outputs ============ -->
-            <cards:OutputsCard GeojsonDescription="Map files of NAVAIDs. Pick which files below."
-                               AliasDescription="Writes .nav commands that show a NAVAID's name, type, frequency and ARTCCs in CRC.&#xA;Type .nav and its identifier or its name with no spaces, Ex: .navAA or .navCEDAR&#xA;When a command fits more than one NAVAID, it shows each of them." />
-
             <!-- ============ area: an ROI, or everything ============ -->
             <cards:AreaCard Outputs="{Binding AreaOutputs}"
                             Intro="Choose which NAVAIDs the GeoJSON includes. The NAVAID types below still apply."
                             RoiDescription="only NAVAIDs inside an ROI"
-                            EverythingDescription="every NAVAID in service">
+                            EverythingDescription="every operational NAVAID">
                 <cards:AreaCard.Footer>
-                    <ctl:OutputLine Kind="Alias" Text="Every NAVAID of the types ticked below, whichever you pick above." Margin="0,14,0,0" />
+                    <ctl:OutputLine Kind="Alias" Text="Every operational NAVAID, whichever you pick above." Margin="0,14,0,0" />
                 </cards:AreaCard.Footer>
             </cards:AreaCard>
 
@@ -49,12 +45,16 @@
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">
                 <StackPanel>
-                    <RadioButton GroupName="NavaidOutputBy" Margin="0,4,0,0"
-                                 Content="All NAVAIDs in one file (NAVAIDs_Symbols.geojson, NAVAIDs_Text.geojson)"
-                                 IsChecked="{Binding OutputAllInOne, Mode=TwoWay}" />
-                    <RadioButton GroupName="NavaidOutputBy" Margin="0,6,0,0"
-                                 Content="One file per NAVAID type (Ex: NAVAIDs_VORTACs_Symbols.geojson)"
-                                 IsChecked="{Binding OutputByType, Mode=TwoWay}" />
+                    <ctl:Option Margin="0,4,0,0"
+                                Description="`NAVAIDs_Symbols.geojson`&#xA;`NAVAIDs_Text.geojson`">
+                        <RadioButton GroupName="NavaidOutputBy" Content="All-in-One File"
+                                     IsChecked="{Binding OutputAllInOne, Mode=TwoWay}" />
+                    </ctl:Option>
+                    <ctl:Option Margin="0,10,0,0"
+                                Description="Examples:&#xA;`NAVAIDs_VORTACs_Symbols.geojson`&#xA;`NAVAIDs_VORTACs_Text.geojson`&#xA;`NAVAIDs_TACANs_Symbols.geojson`&#xA;`NAVAIDs_TACANs_Text.geojson`">
+                        <RadioButton GroupName="NavaidOutputBy" Content="One File per Type"
+                                     IsChecked="{Binding OutputByType, Mode=TwoWay}" />
+                    </ctl:Option>
                 </StackPanel>
             </ctl:Card>
 
@@ -62,10 +62,10 @@
             <cards:FebPropertiesCard />
 
             <!-- ============ NAVAID types ============ -->
-            <ctl:Card Header="NAVAID Types" Outputs="Alias, Geojson" bhv:FieldState.Error="{Binding FieldErrors[NavaidTypes]}">
+            <ctl:Card Header="NAVAID Types" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[NavaidTypes]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Tick the NAVAID types you want. Unticked types are left out of the GeoJSON and the alias file." />
+                               Text="Select the NAVAID types you want.&#xA;Note: These types apply to the GeoJSON only. The alias file always has every type." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="NAVAID types appear once the selected cycle's data is loaded."

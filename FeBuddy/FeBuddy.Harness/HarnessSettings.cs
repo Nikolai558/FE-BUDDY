@@ -304,7 +304,7 @@ internal static class HarnessSettings
 			// How the GeoJSON is grouped. "All" writes one merged Symbols/Text pair; "Type"
 			// writes a Symbols/Text pair per NAVAID type present (NavaidOutputFiles.TypeKey).
 			{ "OutputBy", "All" },   // or "Type"
-			{ "ExcludedTypes", "" }, // e.g. "CONSOLAN,MARINE NDB" to drop those types entirely
+			{ "ExcludedTypes", "" }, // e.g. "CONSOLAN,MARINE NDB" to drop those types from the GeoJSON (the alias file keeps every type)
 
 			// SymbolStyleBy and FanMarkerStyle matter only in "All" mode, and only when the
 			// merged Symbols file gets CRC-ERAM defaults (below). "Type" styles each NAVAID from

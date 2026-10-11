@@ -144,12 +144,26 @@ public sealed class NavaidSettingsParserTests
 	}
 
 	[Fact]
-	public void excluding_every_known_type_throws()
+	public void excluding_every_known_type_throws_while_the_geojson_is_written()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["ExcludedTypes"] = string.Join(',', NavaidTypes.All);
 
-		Assert.Throws<ArgumentException>(() => NavaidSettingsParser.Parse(settings));
+		ArgumentException error = Assert.Throws<ArgumentException>(() => NavaidSettingsParser.Parse(settings));
+		Assert.Contains("GeoJSON would be empty", error.Message, StringComparison.Ordinal);
+	}
+
+	/// <summary>The types narrow the GeoJSON only, so with it off, excluding them all leaves the alias file as it is.</summary>
+	[Fact]
+	public void excluding_every_known_type_is_fine_with_only_the_alias_file()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["ExcludedTypes"] = string.Join(',', NavaidTypes.All);
+		settings["GenerateGeojson"] = "N";
+
+		NavaidSettings parsed = NavaidSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(NavaidTypes.All.Count, parsed.ExcludedTypes.Count);
 	}
 
 	[Fact]

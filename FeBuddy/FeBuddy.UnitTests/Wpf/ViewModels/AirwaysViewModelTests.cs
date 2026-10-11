@@ -12,7 +12,7 @@ using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers the High and Low Files card of <see cref="AirwaysViewModel"/>: the file each designation
+/// Covers the High and Low Airway Classification card of <see cref="AirwaysViewModel"/>: the file each designation
 /// goes in, its defaults, the designations that still need one, and what is saved and sent - plus
 /// what the run gets with GeoJSON off on the General tab, and an unknown saved split - against a
 /// throwaway config and a stand-in cycle.
@@ -79,13 +79,13 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Equal(AirwayStratum.Low, Designation(tab, "T").Stratum);
 		Assert.Equal(AirwayStratum.Low, Designation(tab, "V").Stratum);
 		Assert.Null(Designation(tab, "Y").Stratum);
-		Assert.Equal("Choose High, Low or Both.", Designation(tab, "Y").StratumError);
+		Assert.Equal("Choose High, Low, or Both.", Designation(tab, "Y").StratumError);
 		Assert.Null(Designation(tab, "J").StratumError);
 
 		Assert.True(tab.ShowsStrata);
 		Assert.False(tab.IsDirty);
 		Assert.Equal(
-			"Choose High, Low or Both for Y, ZK on the High and Low Files card, or untick them under Airway Types to Include.",
+			"Choose High, Low, or Both for Y, ZK on the High and Low Airway Classification card, or untick them under Airway Types to Include.",
 			tab.ValidationError);
 	}
 
@@ -182,7 +182,7 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Equal(AirwayStratum.High, Designation(reloaded, "Q").Stratum);
 		Assert.Equal(AirwayStratum.Low, Designation(reloaded, "Y").Stratum);
 		Assert.Null(Designation(reloaded, "ZK").Stratum);
-		Assert.StartsWith("Choose High, Low or Both for ZK ", reloaded.ValidationError, StringComparison.Ordinal);
+		Assert.StartsWith("Choose High, Low, or Both for ZK ", reloaded.ValidationError, StringComparison.Ordinal);
 		Assert.False(reloaded.IsDirty);
 	}
 
@@ -239,23 +239,18 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Contains(nameof(AirwaysViewModel.OutputsOn), changed);
 	}
 
-	/// <summary>The area narrows the alias file only with "Only airways that cross the ROI", so its card tags the alias file only then.</summary>
+	/// <summary>Which airways the alias file gets is chosen on the Area card, so the card tags it whatever is picked.</summary>
 	[Fact]
-	public void the_area_card_tags_the_alias_file_only_with_only_airways_that_cross_the_roi()
+	public void the_area_card_tags_the_alias_file_too()
 	{
 		AirwaysViewModel tab = NewTab("J");
-		List<string?> changed = [];
-		tab.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
-		Assert.Equal(SubServiceOutputKinds.Geojson, tab.AreaOutputs);
-		Assert.StartsWith("Every airway, inside the ROI or not", tab.AreaAliasNote, StringComparison.Ordinal);
+		Assert.Equal(SubServiceOutputKinds.Geojson | SubServiceOutputKinds.Alias, tab.AreaOutputs);
 
 		tab.AliasRoiAirwaysOnly = true;
 
 		Assert.Equal(SubServiceOutputKinds.Geojson | SubServiceOutputKinds.Alias, tab.AreaOutputs);
-		Assert.StartsWith("With ROI picked, only airways that cross the ROI", tab.AreaAliasNote, StringComparison.Ordinal);
-		Assert.Contains(nameof(AirwaysViewModel.AreaOutputs), changed);
-		Assert.Contains(nameof(AirwaysViewModel.AreaAliasNote), changed);
+		Assert.True(tab.IsDirty);
 	}
 
 	/// <summary>An unknown saved split (a typo, or a number) falls back to High and Low files.</summary>
@@ -265,6 +260,34 @@ public sealed class AirwaysViewModelTests : IDisposable
 		UserConfigFile.TrySetValue("Services.AiracService.Airways.OutputBy", "7");
 
 		Assert.Equal(AirwayGeojsonOutputBy.HighLow, NewTab("J").OutputBy);
+	}
+
+	/// <summary>The File Layout card's two radios set the split, and each follows a change made the other way.</summary>
+	[Fact]
+	public void the_file_layout_radios_set_the_split()
+	{
+		AirwaysViewModel tab = NewTab("J");
+		List<string?> changed = [];
+		tab.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+		Assert.True(tab.OutputHighLow);
+		Assert.False(tab.OutputByDesignation);
+
+		tab.OutputByDesignation = true;
+
+		Assert.Equal(AirwayGeojsonOutputBy.Designation, tab.OutputBy);
+		Assert.False(tab.OutputHighLow);
+		Assert.Contains(nameof(AirwaysViewModel.OutputHighLow), changed);
+		Assert.False(tab.ShowsStrata);
+
+		tab.OutputByDesignation = false;
+		Assert.Equal(AirwayGeojsonOutputBy.Designation, tab.OutputBy);
+
+		tab.OutputHighLow = true;
+
+		Assert.Equal(AirwayGeojsonOutputBy.HighLow, tab.OutputBy);
+		Assert.True(tab.ShowsStrata);
+		tab.OutputHighLow = false;
+		Assert.Equal(AirwayGeojsonOutputBy.HighLow, tab.OutputBy);
 	}
 
 	[Fact]

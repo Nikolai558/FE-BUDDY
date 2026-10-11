@@ -149,6 +149,37 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	public override string? WhatYoullGetFooter =>
 		$"Turn {(HasAliasFile ? "GeoJSON and Alias" : "GeoJSON")} output on or off on the General tab, to the left.";
 
+	/// <summary>The most files What You'll Get lists one by one; a layout that writes more lists one group's as an example.</summary>
+	protected const int MaxSummaryFiles = 6;
+
+	/// <summary>
+	/// What You'll Get's files for a layout with a set of files per group - an airway type, a NAVAID
+	/// type, a fix use: every file while there are only a few (<see cref="MaxSummaryFiles"/>),
+	/// otherwise the first group's, with a note that there is a set for each.
+	/// </summary>
+	/// <param name="files">The GeoJSON files the settings write, in order (<see cref="OutputFiles"/>).</param>
+	/// <param name="describe">What goes in a file.</param>
+	/// <param name="eachGroup">What there is a set for, e.g. <c>airway type selected below</c>.</param>
+	/// <returns>The files to list, and the note when only some are.</returns>
+	protected static (IReadOnlyList<SummaryFile> Files, IReadOnlyList<string> Notes) GroupedSummaryFiles(
+		IReadOnlyList<OutputFileOption> files, Func<OutputFileOption, string> describe, string eachGroup)
+	{
+		ArgumentNullException.ThrowIfNull(files);
+		ArgumentNullException.ThrowIfNull(describe);
+
+		string[] groups = [.. files.Select(file => file.Group).Distinct(StringComparer.OrdinalIgnoreCase)];
+
+		if (files.Count <= MaxSummaryFiles || groups.Length <= 1)
+		{
+			return ([.. files.Select(file => new SummaryFile($"{file.Key}.geojson", describe(file)))], []);
+		}
+
+		return (
+			[.. files.Where(file => file.Group.Equals(groups[0], StringComparison.OrdinalIgnoreCase))
+				.Select(file => new SummaryFile($"{file.Key}.geojson", describe(file)))],
+			[$"One set of files like these for each {eachGroup}: {groups.Length} in all."]);
+	}
+
 	/// <summary>
 	/// Every file the tab's current settings write, for the File Names tab: its key, the folder it
 	/// goes in inside the cycle folder, and FE-Buddy's name for it.

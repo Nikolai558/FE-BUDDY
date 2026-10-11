@@ -41,21 +41,26 @@
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" Outputs="Geojson">
                 <StackPanel>
-                    <RadioButton GroupName="FixOutputBy" Margin="0,4,0,0"
-                                 Content="All fixes in one file (Fix_Symbols.geojson, Fix_Text.geojson)"
-                                 IsChecked="{Binding OutputAll, Mode=TwoWay}" />
-                    <RadioButton GroupName="FixOutputBy" Margin="0,6,0,0"
-                                 Content="One file per fix use (Ex: Fix_WYPNT_Symbols.geojson)"
-                                 IsChecked="{Binding OutputByFixUse, Mode=TwoWay}" />
-                    <RadioButton GroupName="FixOutputBy" Margin="0,6,0,0"
-                                 Content="One file per chart (Ex: Fix_ENROUTE-LOW_Symbols.geojson)"
-                                 IsChecked="{Binding OutputByChart, Mode=TwoWay}" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,6"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="A fix on several charts goes in each of their files. Fixes on no chart go in Fix_NO-CHART." />
-                    <RadioButton GroupName="FixOutputBy" Margin="0,0,0,0"
-                                 Content="One file per chart and fix use combination you add below (Ex:Fix_ENROUTE-LOW-WYPNT_Symbols.geojson)"
-                                 IsChecked="{Binding OutputByCombination, Mode=TwoWay}" />
+                    <ctl:Option Margin="0,4,0,0"
+                                Description="`Fix_Symbols.geojson`&#xA;`Fix_Text.geojson`">
+                        <RadioButton GroupName="FixOutputBy" Content="All-in-One File"
+                                     IsChecked="{Binding OutputAll, Mode=TwoWay}" />
+                    </ctl:Option>
+                    <ctl:Option Margin="0,10,0,0"
+                                Description="Examples:&#xA;`Fix_WYPNT_Symbols.geojson`&#xA;`Fix_WYPNT_Text.geojson`&#xA;`Fix_RPRTNG-PNT_Symbols.geojson`&#xA;`Fix_RPRTNG-PNT_Text.geojson`">
+                        <RadioButton GroupName="FixOutputBy" Content="One File per Fix Use"
+                                     IsChecked="{Binding OutputByFixUse, Mode=TwoWay}" />
+                    </ctl:Option>
+                    <ctl:Option Margin="0,10,0,0"
+                                Description="Examples:&#xA;`Fix_ENROUTE-LOW_Symbols.geojson`&#xA;`Fix_ENROUTE-LOW_Text.geojson`&#xA;`Fix_ENROUTE-HIGH_Symbols.geojson`&#xA;`Fix_ENROUTE-HIGH_Text.geojson`&#xA;Note: A fix on several charts goes in each of their files, and fixes on no chart go in the `Fix_NO-CHART` files.">
+                        <RadioButton GroupName="FixOutputBy" Content="One File per Chart Type"
+                                     IsChecked="{Binding OutputByChart, Mode=TwoWay}" />
+                    </ctl:Option>
+                    <ctl:Option Margin="0,10,0,0"
+                                Description="Examples:&#xA;`Fix_ENROUTE-LOW-WYPNT_Symbols.geojson`&#xA;`Fix_ENROUTE-LOW-WYPNT_Text.geojson`&#xA;`Fix_ENROUTE-HIGH-RPRTNG-PNT_Symbols.geojson`&#xA;`Fix_ENROUTE-HIGH-RPRTNG-PNT_Text.geojson`">
+                        <RadioButton GroupName="FixOutputBy" Content="One File per Fix Use and Chart Type Combination (you set up below)"
+                                     IsChecked="{Binding OutputByCombination, Mode=TwoWay}" />
+                    </ctl:Option>
                 </StackPanel>
             </ctl:Card>
 

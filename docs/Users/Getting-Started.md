@@ -50,8 +50,8 @@ Open **Settings**:
 1. Open **AIRAC Service**. On the **General** tab, leave the cycle on **Current**. Every sub-service
    is included to start: untick any you don't want under **Include**, then **Save**.
 2. Click each tab with a red dot and fix what the red box at its top lists, then **Save** it. On a
-   first run that's usually **Airways**: on **High and Low Files**, choose High, Low or Both for each
-   blank airway type, or untick it under **Airway Types to Include**.
+   first run that's usually **Airways**: on **High and Low Airway Classification**, choose High, Low,
+   or Both for each blank airway type, or untick it under **Airway Types to Include**.
 3. Open **Preview Settings**, check what the run will do, and press **Run AIRAC Service**. The
    **Review** tab shows progress, then **Open output folder**.
 

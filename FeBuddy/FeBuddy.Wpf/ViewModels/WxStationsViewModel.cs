@@ -64,7 +64,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	// ================= station data =================
 
-	/// <summary>What the Station Data card and the Preview Settings tab say about FE-Buddy's kept copy of the station list.</summary>
+	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the station list.</summary>
 	public string StationDataStatus => _stationDataStatus;
 
 	/// <summary>
@@ -140,12 +140,30 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <inheritdoc />
+	/// <remarks>Names where the stations come from, since it isn't the cycle's NASR data.</remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
+		List<SummaryFile> files = [];
+
+		if (EmitSymbols)
+		{
+			files.Add(new($"{WxStationOutputFiles.Symbols}.geojson", "A symbol at each station."));
+		}
+
+		if (EmitText)
+		{
+			files.Add(new($"{WxStationOutputFiles.Text}.geojson",
+				"Each station's ICAO ID, then its IATA ID and name on a second line. Example: KDTW, then DTW_Detroit/Metro Wayne Cnty"));
+		}
+
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, "Every US and US-territory station that reports METARs")
+			.Add(SummaryJoin.First, "Every US and US-territory station with an ICAO ID that reports METARs")
 			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"those inside {roi}"))
-			.ToList());
+			.ToList())
+		{
+			Files = files,
+			Notes = ["The stations come from [aviationweather.gov](https://aviationweather.gov/), not the cycle's FAA data. Every run downloads the latest list."],
+		};
 	}
 
 	// ================= save contract =================

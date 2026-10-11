@@ -199,8 +199,8 @@ FeBuddy.Wpf/
   long. A file name can be plain `Content`: the theme's versions have no access keys, so an
   underscore shows as written.
 - **A two-way ComboBox in a template** is safest with its items from `x:Static`, as `AirwaysView`'s
-  High and Low Files drop-downs do. Whatever it binds to, test switching to another tab and back:
-  bug #251 lost the Airways choices that way.
+  High and Low Airway Classification drop-downs do. Whatever it binds to, test switching to another
+  tab and back: bug #251 lost the Airways choices that way.
 - **Fonts:** Segoe UI throughout (`Font.Display`, `Font.Body`), Cascadia Mono then Consolas for code
   (`Font.Mono`), and Segoe Fluent Icons for glyphs (`Font.Icon`), set in `Theme/Typography.xaml`.
   Body text is 14.5, captions 12.5; a size outside the `Text.*` styles keeps to the same scale.

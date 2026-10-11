@@ -31,9 +31,6 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 {
 	private const string Node = "Services.AiracService.ArtccBoundaries";
 
-	/// <summary>The most per-ARTCC files What You'll Get lists one by one; more are summed up by how they're named.</summary>
-	private const int MaxSummaryFiles = 6;
-
 	private ArtccBoundaryOutputBy _outputBy = ArtccBoundaryOutputBy.HighLow;
 	private bool _splitAtAntimeridian = true;
 	private HashSet<string> _savedLocationFilter = new(StringComparer.OrdinalIgnoreCase);

@@ -9,9 +9,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Navaids;
 
 /// <summary>
 /// Runs the whole NAVAIDs pipeline (<see cref="NavaidService.Run"/>): the built/GeoJSON counts,
-/// that <c>ExcludedTypes</c> leaves a type out of every output while the ROI narrows the GeoJSON
-/// only (the alias file still covers everything included), and the advisory messages when there is
-/// nothing to write.
+/// that <c>ExcludedTypes</c> and the ROI narrow the GeoJSON only (the alias file covers every
+/// NAVAID), and the advisory messages when there is nothing to write.
 /// </summary>
 public sealed class NavaidServiceTests : IDisposable
 {
@@ -59,7 +58,7 @@ public sealed class NavaidServiceTests : IDisposable
 	}
 
 	[Fact]
-	public void excluded_types_are_left_out_of_every_output_but_the_roi_only_narrows_the_geojson()
+	public void excluded_types_and_the_roi_narrow_the_geojson_only()
 	{
 		NasrCsvDataCollection data = NavaidTestData.Build([NavaidTestData.CgtRow(), NavaidTestData.ElyRow(), NavaidTestData.FanMarkerRow("OM")]);
 
@@ -69,14 +68,14 @@ public sealed class NavaidServiceTests : IDisposable
 			("FilterByRoi", "Y"),
 			("RoiSwLat", "40.0"), ("RoiSwLon", "-89.0"), ("RoiNeLat", "43.0"), ("RoiNeLon", "-86.0")));
 
-		// CGT and ELY are included (FAN MARKER excluded entirely); only CGT is inside the ROI.
+		// CGT and ELY are left for the GeoJSON (FAN MARKER excluded); only CGT is inside the ROI.
 		Assert.Equal(2, result.NavaidCount);
 		Assert.Equal(1, result.GeojsonNavaidCount);
 
 		string aliasContents = File.ReadAllText(result.AliasFilePath!);
 		Assert.Contains(".navCGT ", aliasContents);
 		Assert.Contains(".navELY ", aliasContents); // outside the ROI, but the alias file is never ROI-filtered
-		Assert.DoesNotContain(".navOM ", aliasContents); // excluded entirely
+		Assert.Contains(".navOM ", aliasContents); // an excluded type, but the alias file has every type
 	}
 
 	[Fact]
@@ -100,7 +99,7 @@ public sealed class NavaidServiceTests : IDisposable
 	}
 
 	[Fact]
-	public void a_run_whose_filters_leave_nothing_says_so_without_mentioning_the_alias_file()
+	public void a_run_whose_filters_leave_no_geojson_says_so_and_still_writes_the_alias_file()
 	{
 		NasrCsvDataCollection data = NavaidTestData.Build([NavaidTestData.FanMarkerRow("OM")]);
 
@@ -108,9 +107,24 @@ public sealed class NavaidServiceTests : IDisposable
 
 		Assert.Equal(0, result.NavaidCount);
 		Assert.Equal(0, result.GeojsonNavaidCount);
+		Assert.NotNull(result.AliasFilePath);
+		Assert.Contains(result.Messages, m =>
+			m.IsAdvisory
+			&& m.Text.Contains("No NAVAIDs matched the configured filters", StringComparison.Ordinal)
+			&& m.Text.Contains("alias file still covers every NAVAID", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public void with_no_alias_file_the_advisory_leaves_it_out()
+	{
+		NasrCsvDataCollection data = NavaidTestData.Build([NavaidTestData.FanMarkerRow("OM")]);
+
+		NavaidServiceResult result = NavaidService.Run(data, Settings(("ExcludedTypes", "FAN MARKER"), ("GenerateAliasFile", "N")));
+
 		Assert.Null(result.AliasFilePath);
 		Assert.Contains(result.Messages, m =>
 			m.IsAdvisory && m.Text.Contains("No NAVAIDs matched the configured filters", StringComparison.Ordinal));
+		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("alias file", StringComparison.Ordinal));
 	}
 
 	[Fact]

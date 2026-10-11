@@ -257,8 +257,8 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// The types narrow both files; the ROI area narrows the GeoJSON only. With any other area the
-	/// two blocks are the same, and merge.
+	/// The types and the ROI area narrow the GeoJSON only: the alias file always has every
+	/// operational NAVAID, so its block only describes the file.
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
@@ -266,18 +266,44 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		string[] excluded = [.. ExcludedTypeNames()];
 
 		// Name the shorter list: what is left out, or what is kept.
-		string navaids = excluded.Length == 0 ? "Every NAVAID in service"
-			: excluded.Length <= included.Length ? $"Every NAVAID in service except {SummaryLines.Join(excluded, "and")}"
-			: $"NAVAIDs in service that are {SummaryLines.Join(included, "or")}";
+		string navaids = excluded.Length == 0 ? "Every operational NAVAID"
+			: excluded.Length <= included.Length ? $"Every operational NAVAID except {SummaryLines.Join(excluded, "and")}"
+			: $"Operational NAVAIDs that are {SummaryLines.Join(included, "or")}";
+
+		(IReadOnlyList<SummaryFile> files, IReadOnlyList<string> notes) = GroupedSummaryFiles(
+			[.. OutputFiles().Where(file => file.IsGeojson)], DescribeGeojsonFile, "NAVAID type ticked below");
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
 			.Add(SummaryJoin.First, navaids)
 			.Add(SummaryJoin.AndOnly, RoiLine(roi => $"those inside {roi}"))
-			.ToList());
+			.ToList())
+		{
+			Files = files,
+			Notes = notes,
+		};
 
-		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, RoiLine(roi => $"{navaids}, inside {roi} or not") ?? navaids)
-			.ToList());
+		yield return new SummaryBlock(SubServiceOutputKinds.Alias, [])
+		{
+			Files =
+			[
+				new(NavaidOutputFiles.Alias,
+					"A `.nav` command for every operational NAVAID in the NAS, by its ID and by its name. It shows the "
+					+ "NAVAID's name, type, frequency, and ARTCCs. When a command fits more than one NAVAID, it shows each of them.\n"
+					+ "Example: `.navAA` or `.navCEDAR`"),
+			],
+		};
+	}
+
+	/// <summary>What a GeoJSON file holds, for What You'll Get: every NAVAID's, or one type's.</summary>
+	private string DescribeGeojsonFile(OutputFileOption file)
+	{
+		string which = _outputBy == NavaidOutputBy.All
+			? "NAVAID"
+			: IncludedTypes().FirstOrDefault(type => NavaidOutputFiles.TypeGroup(type) == file.Group) ?? file.Group;
+
+		return file.Label == "Symbols"
+			? $"A symbol at each {which}."
+			: $"Each {which}'s ID, then its name and type on a second line.";
 	}
 
 	// ================= save contract =================
@@ -333,11 +359,12 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 				+ "or turn GeoJSON off for NAVAIDs on the General tab.");
 		}
 
-		if (Types.Count > 0 && Types.All(t => !t.IsSelected))
+		// The types narrow the GeoJSON only, so ticking none matters only while it is written.
+		if (GenerateGeojson && Types.Count > 0 && Types.All(t => !t.IsSelected))
 		{
 			validation.AddArea(
 				ServiceAreas.NavaidTypes,
-				"No NAVAID types are ticked. Tick at least one, or untick NAVAIDs under Include on the General tab.");
+				"No NAVAID types are ticked. Tick at least one, or turn GeoJSON off for NAVAIDs on the General tab.");
 		}
 
 		if (ShowFanMarkerStyle && string.IsNullOrWhiteSpace(FanMarkerStyle))

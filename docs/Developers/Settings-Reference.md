@@ -355,14 +355,14 @@ unknown-key warning).
 | `GenerateAliasFile` | `Outputs.Navaids.Alias` (General tab) | `Y` / `N` | `Y` |
 | `EmitSymbols`, `EmitText` | | `Y` / `N` (there is no Lines file) | `Y` |
 | `OutputBy` | | `All`, `Type` | `All` |
-| `ExcludedTypes` | | list of NASR `NAV_TYPE` names, left out of the GeoJSON and the alias file | none |
+| `ExcludedTypes` | | list of NASR `NAV_TYPE` names, left out of the GeoJSON (the alias file always has every type) | none |
 | `SymbolStyleBy` | | `Type`, `File` - read only with `OutputBy = All` | `Type` |
 | `FanMarkerStyle` | | a CRC symbol style for fan markers, when the merged Symbols file gets CRC defaults styled by type | none |
 
 - **`FebProperties`:** `navId`, `navType`, `name`, `freq`, `lowAltArtccId`, `highAltArtccId`. The Text
   file never carries `navId`, `navType` or `name`; its label already shows them.
 - An unknown name in `ExcludedTypes` warns but is still excluded, so a type NASR adds can be
-  unticked. Excluding every known type throws.
+  unticked. Excluding every known type throws while `GenerateGeojson` is `Y`.
 - A fan marker with no `FanMarkerStyle` gets no style, with a warning; an invalid style throws. The
   app requires one whenever the merged Symbols file gets CRC defaults styled by type and fan markers
   are included.

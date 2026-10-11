@@ -89,7 +89,7 @@ public static class AiracSubServices
 				"Every airway in the FAA's NASR data: map files of its line, fixes and labels, and a command that shows its fixes on the scope.",
 				Alias: "Airways.txt: a command for each airway that shows its fixes, Ex: .J3F. Every airway, " +
 					"or, with ROI as the area, only those that cross it.",
-				Geojson: "Airways_High and Airways_Low, or a set per airway type (J, V, Q, T, …), each with Lines, Symbols and Text. " +
+				Geojson: "Airways_High and Airways_Low, or a set per airway type (J, V, Q, T, …), each with Lines, Symbols, and Text. " +
 					"Pick the airway types, which file each goes in, and whether lines stop short of their fixes. " +
 					"With ROI as the area, the lines are cut off at its edge.")),
 		new SubServiceDescriptor(ArrivalsKey, "Arrivals", 40, () => new ArrivalsViewModel(), ArrivalOutputFiles.Alias, AliasAndGeojson,
@@ -108,11 +108,11 @@ public static class AiracSubServices
 					"Narrow them by area (ARTCCs, ROI, or everything) and amendment date.")),
 		new SubServiceDescriptor(NavaidsKey, "NAVAIDs", 60, () => new NavaidsViewModel(), NavaidOutputFiles.Alias, AliasAndGeojson,
 			new SubServiceHelp(
-				"NAVAIDs from the FAA's NASR data: a symbol and a label on the map, and .nav commands that show each one's name, type, frequency and ARTCCs.",
+				"NAVAIDs from the FAA's NASR data: a symbol and a label on the map, and .nav commands that show each one's name, type, frequency, and ARTCCs.",
 				Alias: "Navaids.txt: a .nav command for each identifier and each name, Ex: .navAA or .navCEDAR. " +
-					"The NAVAID types you untick are left out. The area doesn't apply.",
-				Geojson: "NAVAIDs_Symbols and NAVAIDs_Text, or a pair per NAVAID type. Pick the NAVAID types, the file layout " +
-					"and how symbols are drawn. With ROI as the area, only the NAVAIDs inside it.")),
+					"Every operational NAVAID is included: the area and the NAVAID types don't apply.",
+				Geojson: "NAVAIDs_Symbols and NAVAIDs_Text, or a pair per NAVAID type. Pick the NAVAID types, the file layout, " +
+					"and how symbols are drawn. The types and the area limit the GeoJSON only. With ROI as the area, only the NAVAIDs inside it.")),
 		new SubServiceDescriptor(FixesKey, "Fixes", 70, () => new FixesViewModel(),
 			Outputs: SubServiceOutputKinds.Geojson,
 			Help: new SubServiceHelp(

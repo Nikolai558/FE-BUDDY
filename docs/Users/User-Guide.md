@@ -83,8 +83,8 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 The tabs that write GeoJSON share these cards; Procedures, Telephony and Concatenate Aliases have
 their own.
 
-- **Outputs** (Airways, Departures, Arrivals, and NAVAIDs) - which of the tab's files are on; change
-  them on the General tab.
+- **Outputs** (Departures and Arrivals) - which of the tab's files are on; change them on the General
+  tab.
 - **What Files Do You Want?** - which of **Lines**, **Symbols**, and **Text** to write, each with the
   files it makes. Symbols with exactly the same properties are written as one feature (a MultiPoint),
   so Symbols files stay small; labels are always one feature each.
@@ -129,17 +129,20 @@ Each ARTCC's boundary as lines. No Symbols, Text or alias file.
 
 ### Airways tab
 
-- **Split into** - **High and Low** (`Airways_High`, `Airways_Low`) or **Airway types** (`Airways_J`,
-  `Airways_V`, …). For High and Low, the **High and Low Files** card puts each airway type in High,
-  Low or Both, by type rather than altitude: J and Q start in High, V and T in Low, and any other type
-  must be chosen. For no Airways GeoJSON, untick its **GeoJSON** box on the General tab.
-- **`Airways.txt`** - a command per airway that shows its fixes, e.g. `.J3F`: **Every airway** or,
-  with **ROI** as the area, **Only airways that cross the ROI**.
+- **File Layout** - **High and Low** (`Airways_High`, `Airways_Low`) or **Airway Types**
+  (`Airways_J`, `Airways_V`, …). For High and Low, the **High and Low Airway Classification** card
+  puts each airway type in High, Low, or Both, by type rather than altitude: J and Q start in High, V
+  and T in Low, and any other type must be chosen. For no Airways GeoJSON, untick its **GeoJSON** box
+  on the General tab.
+- **`Airways.txt`** - a command per airway that draws its waypoints, e.g. `.J3F`.
 - **Airway Types to Include** - untick one to leave it out of the GeoJSON and the alias file.
 - **Buffer Airway Waypoints** (off to start) - stops lines short of each waypoint so they don't run
-  through the symbols: 2.5 NM around fixes and 5 NM around NAVAIDs to start.
+  through the symbols: 2.5 NM around fixes and 5 NM around NAVAIDs to start, up to 10 NM. A leg too
+  short for both gaps isn't drawn.
 - **Split GeoJSON at the Antimeridian** - leave it on.
 - **Area** - with **ROI**, an airway is included when its line crosses the ROI, and is clipped to it.
+  Under ROI, while the alias file is on, choose whether it gets **Every airway** or **Only airways
+  that cross the ROI**. With Everything, it gets every airway.
 
 ### Departures and Arrivals tabs
 
@@ -168,26 +171,27 @@ covers STARs. Otherwise the two tabs work the same.
 
 ### NAVAIDs tab
 
-- **NAVAID Types** - all on to start; an unticked type is left out of the GeoJSON and the alias
-  file. NAVAIDs marked SHUTDOWN are always left out.
-- **File Layout** - *All in one file* (`NAVAIDs_Symbols`, `NAVAIDs_Text`) or *One file per NAVAID
-  type* (`NAVAIDs_VORTACs_Symbols`, …).
+- **NAVAID Types** - all on to start; an unticked type is left out of the GeoJSON. The alias file
+  always has every type. NAVAIDs marked SHUTDOWN are always left out.
+- **File Layout** - **All-in-One File** (`NAVAIDs_Symbols`, `NAVAIDs_Text`) or **One File per Type**
+  (`NAVAIDs_VORTACs_Symbols`, …).
 - **Files** - Symbols, and Text: the identifier, then the name and type (`CGT` /
   `CHICAGO HEIGHTS VORTAC`).
-- **NAVAID Symbol Style** - with *All in one file* and CRC-ERAM defaults on the Symbols file: **By
+- **NAVAID Symbol Style** - with **All-in-One File** and CRC-ERAM defaults on the Symbols file: **By
   NAVAID type** (you choose the fan markers' symbol), or **The same symbol for every NAVAID**.
 - **`Navaids.txt`** - a `.nav` command for each identifier and each name, showing the name, type,
-  frequency and ARTCCs. NAVAIDs that share an identifier (`ABQ` is a VORTAC and a VOT) share one
-  command. It covers every NAVAID of the ticked types; the area only limits the GeoJSON.
+  frequency, and ARTCCs. NAVAIDs that share an identifier (`ABQ` is a VORTAC and a VOT) share one
+  command. It covers every operational NAVAID; the types and the area only limit the GeoJSON.
 
 ### Fixes tab
 
 A symbol and a label (its identifier) for every NASR fix. No Lines or alias file.
 
-- **File Layout** - all fixes in one file (the default: `Fix_Symbols`, `Fix_Text`), or one file per
-  fix use (`Fix_WYPNT_Symbols`), per chart (`Fix_ENROUTE-LOW_Symbols`; a fix on several charts goes
-  in each, one on none in `Fix_NO-CHART_Symbols`), or per chart + fix use pair you add under
-  **Combinations** (`Fix_ENROUTE-LOW-WYPNT_Symbols`). Untick any fix uses or charts you don't want.
+- **File Layout** - **All-in-One File** (the default: `Fix_Symbols`, `Fix_Text`), or one file per
+  fix use (`Fix_WYPNT_Symbols`), per chart type (`Fix_ENROUTE-LOW_Symbols`; a fix on several charts
+  goes in each, one on none in `Fix_NO-CHART_Symbols`), or per fix use and chart type combination you
+  add under **Combinations** (`Fix_ENROUTE-LOW-WYPNT_Symbols`). Untick any fix uses or charts you
+  don't want.
 - **Area** - with **ROI**, a fix is included when it's inside the ROI.
 
 ### Procedures tab
@@ -257,12 +261,11 @@ the operator's card. Operators that share a command show a card each. Telephony 
 
 ### Wx Stations tab
 
-A symbol and a label for every US and US-territory station that reports METAR. No Lines or alias
-file.
+A symbol and a label for every US and US-territory station that reports METARs, from
+aviationweather.gov's station list (not NASR), downloaded every run. No Lines or alias file.
 
 - **What Files Do You Want?** - Symbols, and Text: the ICAO ID, then the IATA ID and site name
   (`KDTW` / `DTW_Detroit/Metro Wayne Cnty`).
-- **Station Data** - aviationweather.gov's station list, not NASR, downloaded every run.
 - **Area** - with **ROI**, a station is included when it's inside the ROI.
 
 ### Concatenate Aliases tab

@@ -3,12 +3,12 @@ using FeBuddy.Core.Domain.Navaids.Models;
 namespace FeBuddy.Core.Application.Airac.Navaids;
 
 /// <summary>
-/// The settings-driven <c>ExcludedTypes</c> filter, which applies to every NAVAIDs output alike.
+/// The settings-driven <c>ExcludedTypes</c> filter, which narrows the NAVAIDs GeoJSON only.
 /// </summary>
 /// <remarks>
-/// Unlike the ROI (<see cref="NavaidGeojsonWriter.FilterToRoi"/>, which limits the GeoJSON output
-/// only), an excluded type is left out of the GeoJSON <em>and</em> the alias file - so this runs
-/// before either writer sees the NAVAIDs, on the full, ROI-independent list.
+/// Like the ROI (<see cref="NavaidGeojsonWriter.FilterToRoi"/>), an excluded type is left out of the
+/// GeoJSON but not the alias file, which has every NAVAID. It runs first, on the full list, and the
+/// ROI then narrows what it keeps.
 /// </remarks>
 public static class NavaidFilter
 {

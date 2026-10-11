@@ -4,8 +4,11 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Domain.Crc.Models;
+using FeBuddy.Core.Domain.Navaids;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -292,15 +295,44 @@ public sealed class WhatYoullGetTests : IDisposable
 		Assert.Null(new TelephonyViewModel().WhatYoullGetFooter);
 	}
 
+	// ---- NAVAIDs ----
+
+	/// <summary>The types and the ROI narrow the GeoJSON only; the alias file always has every NAVAID, so its block only describes the file.</summary>
 	[Fact]
-	public void navaids_alias_file_gets_them_inside_the_roi_or_not()
+	public void navaids_types_and_roi_narrow_the_geojson_only()
 	{
 		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
 		UserConfigFile.TrySetValue("Services.AiracService.Navaids.ExcludedTypes", "VOT");
-		NavaidsViewModel tab = new();
+		NavaidsViewModel tab = new() { Area = SubServiceArea.Roi };
 
-		Assert.Equal(["Every NAVAID in service except VOT", "but only those inside the default ROI"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["Every NAVAID in service except VOT, inside the default ROI or not"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["Every operational NAVAID except VOT", "but only those inside the default ROI"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["NAVAIDs_Symbols.geojson", "NAVAIDs_Text.geojson"], FileNames(tab.WhatYoullGet[0]));
+		Assert.Equal("A symbol at each NAVAID.", tab.WhatYoullGet[0].Files[0].Description);
+		Assert.Empty(tab.WhatYoullGet[1].Lines);
+		Assert.Equal(["Navaids.txt"], FileNames(tab.WhatYoullGet[1]));
+		Assert.Contains("every operational NAVAID in the NAS", tab.WhatYoullGet[1].Files[0].Description, StringComparison.Ordinal);
+	}
+
+	/// <summary>One file per type lists every file while there are few, otherwise one type's as an example.</summary>
+	[Fact]
+	public void navaids_one_file_per_type_lists_one_types_files_once_there_are_many()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Navaids.ExcludedTypes", string.Join(',', NavaidTypes.All.Skip(2)));
+		NavaidsViewModel tab = new() { OutputByType = true };
+
+		SummaryBlock block = tab.WhatYoullGet[0];
+		string[] first = [NavaidOutputFiles.TypeKey(NavaidTypes.All[0], CrcFeatureKind.Symbol), NavaidOutputFiles.TypeKey(NavaidTypes.All[0], CrcFeatureKind.Text)];
+		Assert.Equal(4, block.Files.Count);
+		Assert.Equal([.. first.Select(key => key + ".geojson")], FileNames(block).Take(2));
+		Assert.Equal($"A symbol at each {NavaidTypes.All[0]}.", block.Files[0].Description);
+		Assert.Empty(block.Notes);
+
+		UserConfigFile.TrySetValue("Services.AiracService.Navaids.ExcludedTypes", string.Empty);
+		tab = new NavaidsViewModel { OutputByType = true };
+		block = tab.WhatYoullGet[0];
+
+		Assert.Equal([.. first.Select(key => key + ".geojson")], FileNames(block));
+		Assert.Equal([$"One set of files like these for each NAVAID type ticked below: {NavaidTypes.All.Count} in all."], block.Notes);
 	}
 
 	// ---- Airways ----
@@ -319,43 +351,69 @@ public sealed class WhatYoullGetTests : IDisposable
 		return tab;
 	}
 
+	/// <summary>
+	/// The airway types ticked narrow both outputs; the ROI narrows the GeoJSON, and the alias file only
+	/// with "Only airways that cross the ROI" - which, picked under ROI, does nothing with any other area.
+	/// </summary>
 	[Fact]
-	public void airways_names_the_excluded_types_and_says_whether_the_region_narrows_the_alias_file()
+	public void airways_names_the_types_and_says_whether_the_roi_narrows_the_alias_file()
 	{
 		AirwaysViewModel tab = AirwaysTab("J", "V", "Y");
 		tab.Designations.Single(d => d.Designation == "Y").Included = false;
+		tab.AliasRoiAirwaysOnly = true;
 
-		Assert.Equal(["Every airway except the Y airways"], Lines(Assert.Single(tab.WhatYoullGet)));
+		Assert.Equal([Geojson, Alias], tab.WhatYoullGet.Select(block => block.Outputs));
+		Assert.Equal(["Maps of every airway type selected below (J and V)"], Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(["Every airway type selected below (J and V)"], Lines(tab.WhatYoullGet[1]));
+		Assert.Equal(["Airways.txt"], FileNames(tab.WhatYoullGet[1]));
+		Assert.Contains("`.J3F .FF OAK RBL LKV IMB GEG`", tab.WhatYoullGet[1].Files[0].Description, StringComparison.Ordinal);
 
 		tab.Area = SubServiceArea.Roi;
 		tab.OverrideRoi = true;
 
-		Assert.Equal(["Every airway except the Y airways", "but only those that cross the ROI specific to the Airways sub-service, cut off at its edge"], Lines(tab.WhatYoullGet[0]));
-		Assert.Equal(["Every airway except the Y airways, inside the ROI specific to the Airways sub-service or not"], Lines(tab.WhatYoullGet[1]));
-
-		tab.AliasRoiAirwaysOnly = true;
-
 		Assert.Equal(
-			["Every airway except the Y airways", "but only those that cross the ROI specific to the Airways sub-service, each with all of its fixes"],
+			["Maps of every airway type selected below (J and V)", "but only the portions inside the ROI specific to the Airways sub-service"],
+			Lines(tab.WhatYoullGet[0]));
+		Assert.Equal(
+			["Every airway type selected below (J and V)", "but only those that cross the ROI specific to the Airways sub-service, each with all of its waypoints"],
 			Lines(tab.WhatYoullGet[1]));
+
+		tab.AliasRoiAirwaysOnly = false;
+
+		Assert.Equal(["Every airway type selected below (J and V)"], Lines(tab.WhatYoullGet[1]));
 	}
 
+	/// <summary>High and Low lists the files of each stratum in use; a set per type lists one type's once there are many.</summary>
 	[Fact]
-	public void airways_names_what_is_kept_when_that_is_the_shorter_list()
+	public void airways_lists_the_high_and_low_files_or_one_types_as_an_example()
 	{
-		AirwaysViewModel tab = AirwaysTab("A", "B", "G", "J", "Q", "R", "T", "V", "Y");
+		AirwaysViewModel tab = AirwaysTab("J", "Q", "T", "V");
+		tab.EmitSymbols = false;
 
-		foreach (DesignationToggle type in tab.Designations.Where(d => d.Designation is not "J" and not "Q"))
-		{
-			type.Included = false;
-		}
+		SummaryBlock block = tab.WhatYoullGet[0];
+		Assert.Equal(
+			["Airways_High_Lines.geojson", "Airways_High_Text.geojson", "Airways_Low_Lines.geojson", "Airways_Low_Text.geojson"],
+			FileNames(block));
+		Assert.Equal("The lines of every airway type set as \"High\" or \"Both\" below.", block.Files[0].Description);
+		Assert.Equal("The waypoint IDs of every airway type set as \"Low\" or \"Both\" below.", block.Files[3].Description);
 
-		Assert.Equal(["The J and Q airways"], Lines(Assert.Single(tab.WhatYoullGet)));
+		tab.EmitSymbols = true;
+		tab.OutputByDesignation = true;
+		block = tab.WhatYoullGet[0];
+
+		Assert.Equal(["Airways_J_Lines.geojson", "Airways_J_Symbols.geojson", "Airways_J_Text.geojson"], FileNames(block));
+		Assert.Equal("Every J airway, drawn as lines.", block.Files[0].Description);
+		Assert.Equal("Every J airway waypoint, drawn as symbols.", block.Files[1].Description);
+		Assert.Equal(["One set of files like these for each airway type selected below: 4 in all."], block.Notes);
+
+		tab.Designations.Where(d => d.Designation != "J").ToList().ForEach(d => d.Included = false);
+
+		Assert.Empty(tab.WhatYoullGet[0].Notes);
 	}
 
-	/// <summary>With no type ticked there are no airways, so the region has nothing to narrow.</summary>
+	/// <summary>With no type ticked there are no airways, so the ROI has nothing to narrow and no file is listed.</summary>
 	[Fact]
-	public void airways_with_no_type_ticked_says_so_and_leaves_the_region_out()
+	public void airways_with_no_type_ticked_says_so_and_leaves_the_roi_out()
 	{
 		AirwaysViewModel tab = AirwaysTab("J", "V");
 		tab.Area = SubServiceArea.Roi;
@@ -366,7 +424,9 @@ public sealed class WhatYoullGetTests : IDisposable
 			type.Included = false;
 		}
 
-		Assert.Equal(["No airways: tick a type under Airway Types to Include"], Lines(Assert.Single(tab.WhatYoullGet)));
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(["No airways: tick a type under Airway Types to Include"], Lines(block));
+		Assert.Empty(block.Files);
 	}
 
 	/// <summary>Before a cycle is loaded there are no toggles: the saved exclusions stand in.</summary>
@@ -375,7 +435,11 @@ public sealed class WhatYoullGetTests : IDisposable
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Airways.ExcludedDesignations", "V,J,Q");
 
-		Assert.Equal(["Every airway except the J, Q, and V airways"], Lines(Assert.Single(new AirwaysViewModel().WhatYoullGet)));
+		Assert.Equal(["Maps of every airway type selected below (all but J, Q, and V)"], Lines(new AirwaysViewModel().WhatYoullGet[0]));
+
+		UserConfigFile.TrySetValue("Services.AiracService.Airways.ExcludedDesignations", string.Empty);
+
+		Assert.Equal(["Maps of every airway type selected below"], Lines(new AirwaysViewModel().WhatYoullGet[0]));
 	}
 
 	// ---- ARTCC Boundaries ----
@@ -490,6 +554,43 @@ public sealed class WhatYoullGetTests : IDisposable
 		DefaultRoiStore.Set(new RegionOfInterest(32.5, -120.0, 37.0, -114.0));
 
 		Assert.Equal(["Every fix", "but only those inside the default ROI"], Lines(Assert.Single(FixesTab().WhatYoullGet)));
+	}
+
+	/// <summary>Each layout lists its files; with none picked there are none to list.</summary>
+	[Fact]
+	public void fixes_list_the_files_their_layout_writes()
+	{
+		SummaryBlock block = Assert.Single(FixesTab().WhatYoullGet);
+		Assert.Equal(["Fix_Symbols.geojson", "Fix_Text.geojson"], FileNames(block));
+		Assert.Equal("Fix symbols.", block.Files[0].Description);
+
+		UserConfigFile.TrySetValue("Services.AiracService.Fixes.OutputBy", "FixUse");
+		block = Assert.Single(FixesTab().WhatYoullGet);
+
+		Assert.Equal(
+			["Fix_MIL-WYPNT_Symbols.geojson", "Fix_MIL-WYPNT_Text.geojson", "Fix_RPRTNG-PNT_Symbols.geojson", "Fix_RPRTNG-PNT_Text.geojson",
+				"Fix_WYPNT_Symbols.geojson", "Fix_WYPNT_Text.geojson"],
+			FileNames(block));
+		Assert.Empty(block.Notes);
+
+		UserConfigFile.TrySetValue("Services.AiracService.Fixes.OutputBy", "Chart");
+		UserConfigFile.TrySetValue("Services.AiracService.Fixes.ExcludedCharts", "IAP,ENROUTE-LOW,STAR,NO-CHART");
+
+		Assert.Empty(Assert.Single(FixesTab().WhatYoullGet).Files);
+	}
+
+	// ---- Wx Stations ----
+
+	/// <summary>The files, and where the stations come from, since it isn't the cycle's FAA data.</summary>
+	[Fact]
+	public void wx_stations_list_their_files_and_name_the_source()
+	{
+		WxStationsViewModel tab = new() { EmitText = false };
+
+		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
+		Assert.Equal(["Every US and US-territory station with an ICAO ID that reports METARs"], Lines(block));
+		Assert.Equal(["Wx_Symbols.geojson"], FileNames(block));
+		Assert.Contains("[aviationweather.gov](https://aviationweather.gov/)", Assert.Single(block.Notes), StringComparison.Ordinal);
 	}
 
 	// ---- Telephony ----

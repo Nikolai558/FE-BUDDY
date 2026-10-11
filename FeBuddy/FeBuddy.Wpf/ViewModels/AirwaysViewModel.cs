@@ -28,6 +28,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 {
 	private const string Node = "Services.AiracService.Airways";
 
+	/// <summary>What You'll Get's first line while no airway type is ticked.</summary>
+	private const string NoAirways = "No airways: tick a type under Airway Types to Include";
+
 	private static readonly Regex AirwayIdPattern = new(@"^Airway '([^']+)':", RegexOptions.Compiled);
 
 	private static readonly AirwayAltitudeClass[] AltitudeClasses =
@@ -75,11 +78,6 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// <inheritdoc />
 	public override string Title => "Airways";
 
-	/// <summary>The choices for <see cref="OutputBy"/>, in the order the menu shows them.</summary>
-	/// <remarks>Static, for the drop-down to bind with <c>x:Static</c> (see <see cref="StratumValues"/>).</remarks>
-	public static IReadOnlyList<AirwayGeojsonOutputBy> OutputByValues { get; } =
-		[AirwayGeojsonOutputBy.HighLow, AirwayGeojsonOutputBy.Designation];
-
 	/// <summary>How airway GeoJSON is split into files. GeoJSON itself is turned on and off on the General tab.</summary>
 	public AirwayGeojsonOutputBy OutputBy
 	{
@@ -89,37 +87,40 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			if (SetProperty(ref _outputBy, value))
 			{
 				MarkDirty();
-				OnPropertyChanged(nameof(OutputModeHint));
+				OnPropertyChanged(nameof(OutputHighLow));
+				OnPropertyChanged(nameof(OutputByDesignation));
 				OnPropertyChanged(nameof(ShowsStrata));
 			}
 		}
 	}
 
+	/// <summary>Whether the GeoJSON is a High set of files and a Low set, for the File Layout card's radio.</summary>
+	public bool OutputHighLow
+	{
+		get => _outputBy == AirwayGeojsonOutputBy.HighLow;
+		set { if (value) OutputBy = AirwayGeojsonOutputBy.HighLow; }
+	}
+
+	/// <summary>Whether the GeoJSON is a set of files per airway type, for the File Layout card's radio.</summary>
+	public bool OutputByDesignation
+	{
+		get => _outputBy == AirwayGeojsonOutputBy.Designation;
+		set { if (value) OutputBy = AirwayGeojsonOutputBy.Designation; }
+	}
+
 	/// <summary>
-	/// Whether the High and Low Files card shows: the tab writes High and Low files, and at least one
-	/// designation is included to choose a file for.
+	/// Whether the High and Low Airway Classification card shows: the tab writes High and Low files,
+	/// and at least one designation is included to choose a file for.
 	/// </summary>
 	public bool ShowsStrata => GenerateGeojson && OutputBy == AirwayGeojsonOutputBy.HighLow && Designations.Any(d => d.Included);
 
-	/// <summary>The files a designation can go in, for each row's drop-down on the High and Low Files card.</summary>
+	/// <summary>The files a designation can go in, for each row's drop-down on the High and Low Airway Classification card.</summary>
 	/// <remarks>
 	/// Static so the drop-downs bind it with <c>x:Static</c>: bound through the view's DataContext, it
 	/// went null while the view was swapped out for another tab, and each ComboBox then cleared its
 	/// selection back into the toggle - losing every saved choice.
 	/// </remarks>
 	public static IReadOnlyList<AirwayStratum> StratumValues { get; } = [AirwayStratum.High, AirwayStratum.Low, AirwayStratum.Both];
-
-	/// <summary>A multi-line description of the files the selected <see cref="OutputBy"/> writes.</summary>
-	public string OutputModeHint => OutputBy switch
-	{
-		AirwayGeojsonOutputBy.HighLow =>
-			"Airways_High and Airways_Low, each with Lines, Symbols and Text.\n" +
-			"You choose which file each airway type goes in.",
-		AirwayGeojsonOutputBy.Designation =>
-			"A set of files per airway type, each with Lines, Symbols and Text.\n" +
-			"Ex: Airways_J, Airways_V, Airways_Q",
-		_ => string.Empty,
-	};
 
 	/// <summary>Whether each line stops short of the waypoints at its ends, so it does not run through their symbols.</summary>
 	public bool BufferAirwayWaypoints { get => _bufferAirwayWaypoints; set { if (SetProperty(ref _bufferAirwayWaypoints, value)) MarkDirty(); } }
@@ -130,7 +131,11 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// <summary>How far, in NM, a buffered line stops short of a NAVAID (any other waypoint), as typed. Saved.</summary>
 	public string NavaidBufferNm { get => _navaidBufferNm; set { if (SetProperty(ref _navaidBufferNm, value)) MarkDirty(); } }
 
-	/// <summary>Which airways the alias file covers: <see langword="true"/> for ROI airways only, <see langword="false"/> for every FAA airway.</summary>
+	/// <summary>
+	/// Which airways the alias file covers while the area is the ROI: <see langword="true"/> for those
+	/// that cross it only, <see langword="false"/> for every airway. Chosen under ROI on the Area card,
+	/// and kept, though unused, while another area is picked: the alias file then has every airway.
+	/// </summary>
 	public bool AliasRoiAirwaysOnly
 	{
 		get => _aliasRoiAirwaysOnly;
@@ -138,22 +143,14 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			if (SetProperty(ref _aliasRoiAirwaysOnly, value))
 			{
-				OnPropertyChanged(nameof(AreaOutputs));
-				OnPropertyChanged(nameof(AreaAliasNote));
 				MarkDirty();
 			}
 		}
 	}
 
 	/// <inheritdoc />
-	/// <remarks>The GeoJSON always, and the alias file only with <see cref="AliasRoiAirwaysOnly"/>.</remarks>
-	public override SubServiceOutputKinds AreaOutputs =>
-		SubServiceOutputKinds.Geojson | (AliasRoiAirwaysOnly ? SubServiceOutputKinds.Alias : SubServiceOutputKinds.None);
-
-	/// <summary>What the area does to the alias file, for the Area card.</summary>
-	public string AreaAliasNote => AliasRoiAirwaysOnly
-		? "With ROI picked, only airways that cross the ROI, each with all of its fixes, as you picked \"Only airways that cross the ROI\" on the Outputs card."
-		: "Every airway, inside the ROI or not, unless you pick \"Only airways that cross the ROI\" on the Outputs card.";
+	/// <remarks>The GeoJSON, and the alias file too: which airways it gets is chosen under ROI.</remarks>
+	public override SubServiceOutputKinds AreaOutputs => SubServiceOutputKinds.Geojson | SubServiceOutputKinds.Alias;
 
 	/// <summary>Whether a line that crosses 180 degrees longitude is split in two there.</summary>
 	public bool SplitAtAntimeridian { get => _splitAtAntimeridian; set { if (SetProperty(ref _splitAtAntimeridian, value)) MarkDirty(); } }
@@ -301,7 +298,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= save contract =================
 
 	/// <inheritdoc />
-	/// <remarks>The High and Low Files card shows only while GeoJSON is on.</remarks>
+	/// <remarks>The High and Low Airway Classification card shows only while GeoJSON is on.</remarks>
 	protected override void OnOutputsChanged()
 	{
 		base.OnOutputsChanged();
@@ -332,9 +329,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		foreach (string name in new[]
 		{
-			nameof(OutputBy), nameof(OutputModeHint), nameof(ShowsStrata),
+			nameof(OutputBy), nameof(OutputHighLow), nameof(OutputByDesignation), nameof(ShowsStrata),
 			nameof(BufferAirwayWaypoints), nameof(FixBufferNm), nameof(NavaidBufferNm),
-			nameof(AliasRoiAirwaysOnly), nameof(AreaOutputs), nameof(AreaAliasNote), nameof(SplitAtAntimeridian),
+			nameof(AliasRoiAirwaysOnly), nameof(SplitAtAntimeridian),
 		})
 		{
 			OnPropertyChanged(name);
@@ -373,14 +370,14 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
-				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols or Text, or turn GeoJSON off for Airways on the General tab.");
+				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols, or Text, or turn GeoJSON off for Airways on the General tab.");
 		}
 
 		bool needsStrata = GenerateGeojson && OutputBy == AirwayGeojsonOutputBy.HighLow;
 
 		foreach (DesignationToggle toggle in Designations)
 		{
-			toggle.StratumError = needsStrata && toggle.Included && toggle.Stratum is null ? "Choose High, Low or Both." : null;
+			toggle.StratumError = needsStrata && toggle.Included && toggle.Stratum is null ? "Choose High, Low, or Both." : null;
 		}
 
 		// The distances only matter - and only show - while buffered GeoJSON is written.
@@ -396,7 +393,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			validation.AddArea(
 				ServiceAreas.HighAndLowFiles,
-				$"Choose High, Low or Both for {string.Join(", ", unchosen)} on the High and Low Files card, " +
+				$"Choose High, Low, or Both for {string.Join(", ", unchosen)} on the High and Low Airway Classification card, " +
 				"or untick them under Airway Types to Include.");
 		}
 
@@ -442,8 +439,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// The designations narrow both files; the ROI area narrows the GeoJSON, and the alias file only
-	/// with "Only airways that cross the ROI". With any other area the two blocks are the same, and merge.
+	/// The airway types narrow both outputs; the ROI area narrows the GeoJSON, and the alias file only
+	/// with "Only airways that cross the ROI" picked under it. The GeoJSON block lists its files: High
+	/// and Low, or a set per airway type.
 	/// </remarks>
 	protected override IEnumerable<SummaryBlock> BuildWhatYoullGet()
 	{
@@ -456,26 +454,63 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		bool none = Designations.Count > 0 && included.Length == 0;
 
-		// Name the shorter list: what is left out, or what is kept.
-		string airways = excluded.Length == 0 ? "Every airway"
-			: none ? "No airways: tick a type under Airway Types to Include"
-			: Designations.Count == 0 || excluded.Length <= included.Length ? $"Every airway except the {SummaryLines.Join(excluded, "and")} airways"
-			: $"The {SummaryLines.Join(included, "and")} airways";
+		string types = Designations.Count > 0 ? $" ({SummaryLines.Join(included, "and")})"
+			: excluded.Length > 0 ? $" (all but {SummaryLines.Join(excluded, "and")})"
+			: string.Empty;
 
-		// With no airways, the region has nothing to narrow.
+		// With no airways, the ROI has nothing to narrow.
 		bool hasRoi = HasRoi && !none;
-		bool aliasUsesRegion = AliasRoiAirwaysOnly && hasRoi;
+		bool aliasUsesRoi = AliasRoiAirwaysOnly && hasRoi;
+
+		(IReadOnlyList<SummaryFile> files, IReadOnlyList<string> notes) = OutputBy == AirwayGeojsonOutputBy.HighLow
+			? ([.. OutputFiles().Where(file => file.IsGeojson).Select(file => new SummaryFile($"{file.Key}.geojson", DescribeStratumFile(file)))], [])
+			: GroupedSummaryFiles([.. OutputFiles().Where(file => file.IsGeojson)], DescribeTypeFile, "airway type selected below");
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Geojson, new SummaryLines()
-			.Add(SummaryJoin.First, airways)
-			.Add(SummaryJoin.AndOnly, hasRoi ? $"those that cross {RoiName}, cut off at its edge" : null)
-			.ToList());
+			.Add(SummaryJoin.First, none ? NoAirways : $"Maps of every airway type selected below{types}")
+			.Add(SummaryJoin.AndOnly, hasRoi ? $"the portions inside {RoiName}" : null)
+			.ToList())
+		{
+			Files = none ? [] : files,
+			Notes = none ? [] : notes,
+		};
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
-			.Add(SummaryJoin.First, aliasUsesRegion || !hasRoi ? airways : $"{airways}, inside {RoiName} or not")
-			.Add(SummaryJoin.AndOnly, aliasUsesRegion ? $"those that cross {RoiName}, each with all of its fixes" : null)
-			.ToList());
+			.Add(SummaryJoin.First, none ? NoAirways : $"Every airway type selected below{types}")
+			.Add(SummaryJoin.AndOnly, aliasUsesRoi ? $"those that cross {RoiName}, each with all of its waypoints" : null)
+			.ToList())
+		{
+			Files = none
+				? []
+				:
+				[
+					new(AirwayOutputFiles.Alias,
+						"Writes a command for each airway that draws its waypoints on a CRC STARS or ERAM window.\n"
+						+ "Example for airway J3: `.J3F .FF OAK RBL LKV IMB GEG`"),
+				],
+		};
 	}
+
+	/// <summary>What a High or Low file holds, for What You'll Get.</summary>
+	private static string DescribeStratumFile(OutputFileOption file)
+	{
+		string what = file.Label switch
+		{
+			"Lines" => "The lines",
+			"Symbols" => "The waypoint symbols",
+			_ => "The waypoint IDs",
+		};
+
+		return $"{what} of every airway type set as \"{file.Group}\" or \"Both\" below.";
+	}
+
+	/// <summary>What one airway type's file holds, for What You'll Get.</summary>
+	private static string DescribeTypeFile(OutputFileOption file) => file.Label switch
+	{
+		"Lines" => $"Every {file.Group} airway, drawn as lines.",
+		"Symbols" => $"Every {file.Group} airway waypoint, drawn as symbols.",
+		_ => $"Every {file.Group} airway waypoint, drawn as its fix or NAVAID ID.",
+	};
 
 	// ================= helpers =================
 

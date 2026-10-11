@@ -24,6 +24,13 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Clearer wording on the General, ARTCC Boundaries, and Airports tabs, and on the Area, What Files
   Do You Want?, Split GeoJSON at the Antimeridian, and CRC ERAM Defaults cards. File names show as
   code.
+- Clearer wording on the Airways, NAVAIDs, Fixes, and Wx Stations tabs. Their Outputs and Station
+  Data cards are gone: their details are in What You'll Get.
+- Airways: **Split into** is now the **File Layout** card, and **High and Low Files** is now **High
+  and Low Airway Classification**.
+- Airways: "Only airways that cross the ROI" is now under **ROI** on the Area card, where it applies.
+  Picked with **Everything**, it used to do nothing without saying so.
+- NAVAIDs: `Navaids.txt` now has every NAVAID type. The **NAVAID Types** card narrows the GeoJSON only.
 - The Area card no longer leaves a gap above **ROI** on tabs with no ARTCCs choice.
 - ARTCC Boundaries: with one file per ARTCC and altitude, the ARTCCs ticked earlier no longer narrow
   the CRC ERAM Defaults and File Names lists while the area is ROI or Everything.

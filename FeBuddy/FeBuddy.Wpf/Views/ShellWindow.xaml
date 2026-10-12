@@ -320,7 +320,8 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- nav rail: Width animates between 232 and 60 on NavCollapsed -->
+                <!-- nav rail: Width animates between 232 and 68 on NavCollapsed. Collapsed, 68 leaves each
+                     row room for its 20-wide icon after the row's 15 / 10 margins, centred in its highlight. -->
                 <Border x:Name="NavRail" Grid.Column="0" Width="232" ClipToBounds="True"
                         Background="{StaticResource Brush.Panel}"
                         BorderBrush="{StaticResource Brush.Stroke}"
@@ -332,7 +333,7 @@
                                     <DataTrigger.EnterActions>
                                         <BeginStoryboard>
                                             <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty="Width" To="60" Duration="0:0:0.15">
+                                                <DoubleAnimation Storyboard.TargetProperty="Width" To="68" Duration="0:0:0.15">
                                                     <DoubleAnimation.EasingFunction>
                                                         <CubicEase EasingMode="EaseInOut" />
                                                     </DoubleAnimation.EasingFunction>

@@ -31,6 +31,14 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ### File Conversions
 - ERAM to GeoJSON: clearer descriptions of `Geomaps.xml` and its output in the picker.
 
+### Info
+- Bug #349 - The hover highlight on the **Open →** links, and on What's New's **View the guide →**,
+  now surrounds the text instead of sitting above it.
+
+### Look and feel
+- The collapsed menu on the left no longer cuts off the right edge of its icons, and centers them in
+  their highlight.
+
 ---
 
 ## 3.0.0-beta.7

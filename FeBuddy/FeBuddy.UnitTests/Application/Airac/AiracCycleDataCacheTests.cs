@@ -917,6 +917,165 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		Assert.Equal(2, previousAttempts);
 	}
 
+	// ---- Dev launch: what the launch pipeline leaves out ----
+
+	/// <summary>How many times each step ran.</summary>
+	private sealed class StepCounts
+	{
+		public int Probes;
+		public int Downloads;
+		public int Parses;
+		public int Prunes;
+	}
+
+	/// <summary>A cache whose every step is counted; <paramref name="onDisk"/> are the cycles already downloaded.</summary>
+	private static AiracCycleDataCache CountingCache(StepCounts counts, string[]? onDisk = null, string? notPublished = null) => new(
+		probe: (cycle, _) =>
+		{
+			Interlocked.Increment(ref counts.Probes);
+			return Task.FromResult(cycle.AiracCycleId == notPublished ? AiracCyclePublicationState.NotYetPublished : AiracCyclePublicationState.Published);
+		},
+		download: (cycle, _) =>
+		{
+			Interlocked.Increment(ref counts.Downloads);
+			return Task.FromResult($@"C:\cache\{cycle.AiracCycleId}");
+		},
+		parse: (_, _) =>
+		{
+			Interlocked.Increment(ref counts.Parses);
+			return Task.FromResult(new NasrCsvDataCollection());
+		},
+		isLocallyAvailable: cycle => onDisk?.Contains(cycle.AiracCycleId) == true,
+		pruneAllBut: _ => Interlocked.Increment(ref counts.Prunes),
+		cycleDirectory: cycle => $@"C:\cache\{cycle.AiracCycleId}");
+
+	[Fact]
+	public async Task a_normal_launch_loads_nothing_on_demand()
+	{
+		AiracCycleDataCache cache = CountingCache(new StepCounts());
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.False(cache.LoadsOnDemand);
+		Assert.All(cache.Entries, entry => Assert.False(cache.IsLoading(entry)));
+	}
+
+	[Fact]
+	public async Task download_on_parse_off_downloads_every_cycle_and_parses_none_until_one_is_asked_for()
+	{
+		StepCounts counts = new();
+		AiracCycleDataCache cache = CountingCache(counts);
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: true, Parse: false, Prune: true));
+
+		Assert.Equal(3, counts.Probes);
+		Assert.Equal(3, counts.Downloads);
+		Assert.Equal(0, counts.Parses);
+		Assert.Equal(1, counts.Prunes);
+		Assert.All(cache.Entries, entry => Assert.Equal(CycleDataState.Downloaded, entry.State));
+		Assert.All(cache.Entries, entry => Assert.False(cache.IsLoading(entry)));
+		Assert.True(cache.LoadsOnDemand);
+		Assert.Equal(AiracCycleReadiness.NotLoaded, cache.ComputeReadiness());
+
+		await cache.GetAsync("2610");
+
+		Assert.Equal(1, counts.Parses);
+		Assert.Equal(3, counts.Downloads);
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task download_off_parse_on_parses_only_the_cycles_on_disk_without_touching_the_network()
+	{
+		StepCounts counts = new();
+		AiracCycleDataCache cache = CountingCache(counts, onDisk: ["2610", "2609"]);
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: true, Prune: false));
+
+		Assert.Equal(0, counts.Probes);
+		Assert.Equal(0, counts.Downloads);
+		Assert.Equal(2, counts.Parses);
+		Assert.Equal(0, counts.Prunes);
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2609")!.State);
+		Assert.Equal(CycleDataState.NotDownloaded, cache.GetEntry("2611")!.State);
+		Assert.False(cache.IsLoading(cache.GetEntry("2611")!));
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Cycle 2611 isn't on disk and wasn't downloaded", StringComparison.Ordinal));
+
+		// Asked for later, the missing cycle is checked, downloaded and parsed then.
+		await cache.GetAsync("2611");
+
+		Assert.Equal(1, counts.Probes);
+		Assert.Equal(1, counts.Downloads);
+		Assert.Equal(3, counts.Parses);
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2611")!.State);
+	}
+
+	[Fact]
+	public async Task download_off_parse_off_only_tracks_the_three_cycles()
+	{
+		StepCounts counts = new();
+		AiracCycleDataCache cache = CountingCache(counts, onDisk: ["2609"]);
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+
+		Assert.Equal(0, counts.Probes + counts.Downloads + counts.Parses + counts.Prunes);
+		Assert.Equal(["2610", "2609", "2611"], cache.Entries.Select(e => e.Cycle.AiracCycleId));
+		Assert.Equal(CycleDataState.NotDownloaded, cache.GetEntry("2610")!.State);
+		Assert.Equal(CycleDataState.Downloaded, cache.GetEntry("2609")!.State);
+		Assert.Equal(@"C:\cache\2609", cache.GetEntry("2609")!.CycleDirectory);
+		Assert.Equal(AiracCycleReadiness.NotLoaded, cache.ComputeReadiness());
+
+		// The current cycle loads on demand; the one on disk only needs parsing.
+		await cache.GetAsync("2610");
+		await cache.GetAsync("2609");
+
+		Assert.Equal(1, counts.Downloads);
+		Assert.Equal(2, counts.Parses);
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task a_cycle_left_unloaded_is_waiting_while_it_loads_on_demand()
+	{
+		TaskCompletionSource<string> currentDownload = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => cycle.AiracCycleId == Current.AiracCycleId ? currentDownload.Task : Task.FromResult(cycle.AiracCycleId),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+		Assert.Equal(AiracCycleReadiness.NotLoaded, cache.ComputeReadiness());
+
+		Task<NasrCsvDataCollection> load = cache.GetAsync("2610");
+
+		Assert.True(cache.IsLoading(cache.GetEntry("2610")!));
+		Assert.Equal(AiracCycleReadiness.Waiting, cache.ComputeReadiness());
+
+		currentDownload.SetResult("2610");
+		await load.WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task a_cycle_asked_for_later_that_the_faa_has_not_published_is_said_to_be_that()
+	{
+		StepCounts counts = new();
+		AiracCycleDataCache cache = CountingCache(counts, notPublished: "2611");
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetAsync("2611"));
+
+		Assert.Contains("has not been published", ex.Message, StringComparison.Ordinal);
+		Assert.Equal(CycleDataState.NotYetPublished, cache.GetEntry("2611")!.State);
+		Assert.Equal(0, counts.Downloads);
+	}
+
 	// ---- Dtpp: FindDtppFile ----
 
 	[Fact]

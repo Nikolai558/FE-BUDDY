@@ -433,6 +433,32 @@ public sealed class AreaTests : IDisposable
 	}
 
 	/// <summary>
+	/// Before the cycle's facility list has loaded (the cycle picked can still be loading when the
+	/// screen opens), Procedure Charts counts the facilities the list will tick - the Settings facility
+	/// when it has never saved any - so the Area card isn't flagged in the meantime.
+	/// </summary>
+	[Fact]
+	public void procedures_count_the_facilities_the_list_will_tick_before_it_loads()
+	{
+		UserConfigFile.TrySetValue(UserConfigAreas.FacilityKey, "ZOB");
+		ProceduresViewModel tab = new() { Area = SubServiceArea.Artccs };
+
+		Assert.False(tab.HasFacilities);
+		Assert.DoesNotContain("Tick at least one facility on the Area card, or pick another area.", tab.ValidationErrors);
+		Assert.Equal("ZOB", tab.BuildSettingsBlock()["Facilities"]);
+
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", "ZNY,ZDC");
+		ProceduresViewModel saved = new() { Area = SubServiceArea.Artccs };
+
+		Assert.Equal("ZDC,ZNY", saved.BuildSettingsBlock()["Facilities"]);
+
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", string.Empty);
+		ProceduresViewModel none = new() { Area = SubServiceArea.Artccs };
+
+		Assert.Contains("Tick at least one facility on the Area card, or pick another area.", none.ValidationErrors);
+	}
+
+	/// <summary>
 	/// Just after launch the previous cycle can still be on its way: that's said, not warned about,
 	/// since a run waits for it.
 	/// </summary>

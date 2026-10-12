@@ -139,7 +139,18 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
 		RefreshFacilities();
+
+		DevLaunch = DevLaunchCardViewModel.For(AppEnvironment.LaunchOptions, RestartInDevLaunch);
 	}
+
+	/// <summary>
+	/// The Developer card's choices of launch steps: only in a dev launch, and <see langword="null"/>
+	/// otherwise, so the card never shows in a normal launch.
+	/// </summary>
+	public DevLaunchCardViewModel? DevLaunch { get; }
+
+	/// <summary>Whether the Developer card shows: in a dev launch only.</summary>
+	public bool IsDevLaunch => DevLaunch is not null;
 
 	/// <summary><see langword="true"/> when a saved setting has been edited since the last Save.</summary>
 	public bool IsDirty
@@ -921,6 +932,28 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	}
 
 	/// <summary>
+	/// The Developer card's restart: closes FE-Buddy, once the user agrees to lose anything unfinished,
+	/// and starts it again in a dev launch with the steps just saved.
+	/// </summary>
+	private void RestartInDevLaunch()
+	{
+		Window? owner = Application.Current?.MainWindow;
+		IReadOnlyList<string> unfinished = _describeUnfinishedWork?.Invoke() ?? [];
+
+		if (unfinished.Count > 0
+			&& !ConfirmWindow.Show(
+				owner,
+				"Restart FE-Buddy?",
+				"FE-Buddy closes to start again with --dev, and this will be lost:\n\n" + string.Join("\n", unfinished.Select(item => "•  " + item)),
+				confirmText: "Restart anyway"))
+		{
+			return;
+		}
+
+		AppRestart.Restart(owner, "the dev launch", DevLaunchArgs.Argument);
+	}
+
+	/// <summary>
 	/// Says what the uninstall removes, saves a copy of the settings first when the user wants one,
 	/// then starts Windows' uninstall of this install and closes FE-Buddy so it can remove the files.
 	/// </summary>
@@ -1058,6 +1091,15 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		OnPropertyChanged(nameof(IsOnline));
 		CommandManager.InvalidateRequerySuggested();
 
+		// A dev launch can leave the current cycle unloaded; opening this page loads it, for the
+		// facility list. A normal launch never does this: it loads the current cycle at launch.
+		// LoadFacilitiesAsync's GetAsync does the loading, and readiness follows it.
+		if (readiness == AiracCycleReadiness.NotLoaded && Facilities.Count == 0)
+		{
+			_ = LoadFacilitiesAsync();
+			return;
+		}
+
 		if (!FacilitiesReady || Facilities.Count > 0)
 		{
 			return;
@@ -1087,6 +1129,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 				{
 					Facilities.Add(o);
 				}
+
+				// A list that arrives after the page is on screen (a dev launch loads the cycle only
+				// when the page opens) finds the drop-down bound to an empty list, which clears the
+				// facility it couldn't find yet. The user can't have chosen one meanwhile - the list is
+				// hidden until it's ready - so the saved one is put back, and the page stays unchanged.
+				SelectedFacility ??= Blank(UserConfigFile.GetValue(ArtccKey));
 			});
 		}
 		catch (Exception ex)

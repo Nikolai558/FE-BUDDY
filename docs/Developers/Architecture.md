@@ -44,6 +44,14 @@ Results land on `AppEnvironment`, and the AIRAC cache raises `StateChanged` as e
 The view-models listen, so the window fills in as launch goes: the status narrates the downloads,
 the Systems box turns green, and the AIRAC Service screen unlocks once the current cycle is ready.
 
+**A dev launch** (a Debug build started with `--dev`; see [Dev launch](README.md#dev-launch)) runs
+only the optional steps chosen on Settings' Developer card. `App.OnStartup` reads the argument and
+`DevLaunchSettings`, and publishes a `LaunchOptions` (`LaunchSequence.UseOptions`) before the window
+is built; Core never reads the command line. `LaunchSequence` skips what it leaves out and logs it,
+and hands the AIRAC cache an `AiracLaunchPlan` (download, parse, prune). The three cycles are always
+tracked; one left unloaded is `NotLoaded` until something asks for it (`GetAsync`), which probes,
+downloads and parses it then.
+
 ## The AIRAC data
 
 `AiracCycleDataCache` owns the FAA's NASR data for the session.
@@ -70,6 +78,7 @@ the Systems box turns green, and the AIRAC Service screen unlocks once the curre
 | `Ready` | the current cycle is ready, and neither other cycle has failed | open |
 | `Degraded` | the current cycle is ready, and previous or next failed | open; the failed cycle shows *failed* |
 | `Unavailable` | the current cycle failed | locked |
+| `NotLoaded` | a dev launch left the current cycle unloaded, and nothing has asked for it | locked; opening it loads the cycle |
 
 The next and previous cycles go on loading while the service is open. Asking for a cycle that's
 still loading waits for it rather than starting another download or parse: a run says
@@ -323,7 +332,7 @@ Argued out once; don't re-open them without a reason.
 - **Nothing is shown that isn't built.** No screen shows sample data.
 - **CRC defaults are never guessed.**
 - **Developer mode is a code constant** (`App.DevModeEnabled`), never a user setting. Pretty
-  printing is a user setting, forced on in developer mode.
+  printing is a user setting, forced on in developer mode. A dev launch turns developer mode on too.
 - **"Unsaved" means different from the last save**, everywhere.
 - **A run's results, warnings and output folder are in one place**: the Review tab, or, for a file
   conversion, under its Run card.

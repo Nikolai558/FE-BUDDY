@@ -2,6 +2,7 @@ using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
 
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.GitHub.Models;
 
@@ -122,6 +123,32 @@ public sealed class SystemHealthTests
 		Assert.Equal("GitHub tokens", two.Name);
 		Assert.Equal("'Old' was rejected by GitHub\n'Odd' expires soon", two.Detail);
 		Assert.Equal("Paste new tokens in Settings ▸ Credentials", two.Note);
+	}
+
+	/// <summary>A dev launch can leave cycles unloaded: that's said as it is, never as "ready" or "loading".</summary>
+	[Fact]
+	public void a_dev_launch_says_which_cycles_it_left_unloaded()
+	{
+		Assert.Equal(
+			new HealthRow("AIRAC data", "not loaded (dev launch) — a cycle loads when something needs it", StatusKind.Ok),
+			Airac(AiracCycleReadiness.NotLoaded, (Current, CycleDataState.Downloaded, false)));
+
+		HealthRow row = ShellViewModel.DescribeAiracData(
+			AiracCycleReadiness.Ready,
+			[(Previous, CycleDataState.NotDownloaded, false), (Current, Ready, true), (Next, CycleDataState.Parsing, false)],
+			notLoaded: [Previous]);
+
+		Assert.Equal("current ready, next loading…, previous not loaded (dev launch)", row.Detail);
+		Assert.Equal(StatusKind.Ok, row.Kind);
+	}
+
+	/// <summary>The launch's GitHub token check follows the Developer card in a dev launch, and always runs otherwise.</summary>
+	[Fact]
+	public void the_launch_checks_github_tokens_unless_a_dev_launch_leaves_it_out()
+	{
+		Assert.True(ShellViewModel.ChecksGitHubTokensAtLaunch(LaunchOptions.Normal));
+		Assert.True(ShellViewModel.ChecksGitHubTokensAtLaunch(LaunchOptions.DevLaunch(OptionalLaunchStep.CheckGitHubTokens)));
+		Assert.False(ShellViewModel.ChecksGitHubTokensAtLaunch(LaunchOptions.DevLaunch(OptionalLaunchStep.None)));
 	}
 
 	[Theory]

@@ -71,6 +71,9 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 - `CreateProfile`, `SwitchProfile`, `RenameProfile` and `DeleteProfile` are in
   `UserConfigFile.Profiles.cs`. The profile in use can't be deleted; Settings switches away first.
 - After a switch or an import every page reads the settings again (`ConfigPages.ReloadEverything`).
+- A dev launch's choice of launch steps is not a setting: it's in `%APPDATA%\FE-Buddy\DevLaunch.json`,
+  beside `User Configurations`, so no profile, import or export ever has it (see
+  [Dev launch](README.md#dev-launch)).
 - 3.0.0-beta.3 and earlier kept one `%APPDATA%\FE-Buddy\UserConfig.json`. While there is no profile,
   a launch moves it in as **Default**, its backups with it, so the old file is gone. One that can't
   be moved (in use, say) is left, and the next launch tries again.

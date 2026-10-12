@@ -89,7 +89,8 @@ FeBuddy.Core/
     │                     (AliasPracticeContent, AliasPracticeWriter, AliasPractice.js, built in)
     ├── Conversions/      ConversionSettingsReader, ConversionFiles, then DatToGeojson/,
     │                     SctToGeojson/ and EramToGeojson/
-    ├── Launch/           LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice
+    ├── Launch/           LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice, WelcomeNotice, and a
+    │                     dev launch's choices (OptionalLaunchSteps, DevLaunchSettings)
     ├── News/             NewsService
     ├── Settings/         SubServiceSettingsReader, CrcDefaultsReader, SettingsValueReader
     ├── Updates/          VersionCheck, UpdateInstaller, UpdateChannelSetting, AppUninstall
@@ -133,7 +134,7 @@ FeBuddy.Wpf/
 ├── Map/                 GeoJsonReader, WebMercator, ProjectedLayer, AiracMapLayers, BaseMap
 ├── Mvvm/                ObservableObject, RelayCommand
 ├── Shell/               app-wide services: Toast, Links, BrowserLauncher, DefaultRoiStore,
-│                        OutputPreferences, AppRestart
+│                        OutputPreferences, AppRestart, DevLaunchArgs
 ├── ViewModels/          ShellViewModel and one per screen or tab; AiracSubServices (the sub-service
 │   │                    catalogue); the map's MapViewModel and MapLayersState
 │   ├── Models/          small rows and records

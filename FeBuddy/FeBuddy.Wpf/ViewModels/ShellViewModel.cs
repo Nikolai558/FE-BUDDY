@@ -16,6 +16,7 @@ using FeBuddy.Wpf.Views;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
@@ -156,6 +157,17 @@ public sealed class ShellViewModel : ObservableObject
 
 	/// <summary>Opens the modal update window. Enabled only when an update is available.</summary>
 	public ICommand OpenUpdateWindowCommand { get; }
+
+	/// <summary>
+	/// Whether this is a dev launch, for the status bar's <c>DEV LAUNCH</c> badge, so one is never
+	/// mistaken for a normal launch. Fixed for the session.
+	/// </summary>
+	public bool IsDevLaunch { get; } = AppEnvironment.LaunchOptions.IsDevLaunch;
+
+	/// <summary>The badge's tooltip: which launch steps this dev launch left out.</summary>
+	public string DevLaunchToolTip { get; } = AppEnvironment.LaunchOptions.IsDevLaunch
+		? OptionalLaunchSteps.DescribeDevLaunch(AppEnvironment.LaunchOptions.Steps) + " Change them on Settings' Developer card."
+		: string.Empty;
 
 	/// <summary><see langword="true"/> for an icons-only nav rail.</summary>
 	public bool NavCollapsed
@@ -308,16 +320,27 @@ public sealed class ShellViewModel : ObservableObject
 	/// </summary>
 	/// <param name="readiness">The cycles' readiness as a whole.</param>
 	/// <param name="cycles">Each cycle's position, state and whether its d-TPP Metafile is downloaded.</param>
+	/// <param name="notLoaded">
+	/// The cycles a dev launch left unloaded and nothing has asked for yet: not on their way, so not
+	/// "loading". None in a normal launch.
+	/// </param>
 	/// <returns>The row.</returns>
 	internal static HealthRow DescribeAiracData(
 		AiracCycleReadiness readiness,
-		IReadOnlyList<(AiracCyclePosition Position, CycleDataState State, bool HasMetafile)> cycles)
+		IReadOnlyList<(AiracCyclePosition Position, CycleDataState State, bool HasMetafile)> cycles,
+		IReadOnlyCollection<AiracCyclePosition>? notLoaded = null)
 	{
 		const string Name = "AIRAC data";
+		notLoaded ??= [];
 
 		if (readiness == AiracCycleReadiness.Unavailable)
 		{
 			return new HealthRow(Name, "current cycle failed to download or parse", StatusKind.Down);
+		}
+
+		if (readiness == AiracCycleReadiness.NotLoaded)
+		{
+			return new HealthRow(Name, "not loaded (dev launch) — a cycle loads when something needs it", StatusKind.Ok);
 		}
 
 		if (readiness is not (AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded))
@@ -331,11 +354,15 @@ public sealed class ShellViewModel : ObservableObject
 		string[] notPublished = [.. cycles.Where(c => c.State == CycleDataState.NotYetPublished).Select(c => Named(c.Position))];
 		string[] noMetafile = [.. cycles.Where(c => c.State == CycleDataState.Ready && !c.HasMetafile).Select(c => Named(c.Position))];
 
-		// The service opens once the current cycle is ready; the others may still be on their way.
-		string[] loading = [.. cycles
+		// The service opens once the current cycle is ready; the others may still be on their way,
+		// or - in a dev launch - left for later.
+		string[] unsettled = [.. cycles
 			.Where(c => c.State is not (CycleDataState.Ready or CycleDataState.Failed or CycleDataState.NotYetPublished))
 			.Select(c => Named(c.Position))];
-		string stillLoading = loading.Length > 0 ? $", {string.Join(" / ", loading)} loading…" : string.Empty;
+		string[] idle = [.. cycles.Where(c => notLoaded.Contains(c.Position)).Select(c => Named(c.Position))];
+		string[] loading = [.. unsettled.Except(idle)];
+		string stillLoading = (loading.Length > 0 ? $", {string.Join(" / ", loading)} loading…" : string.Empty)
+			+ (idle.Length > 0 ? $", {string.Join(" / ", idle)} not loaded (dev launch)" : string.Empty);
 
 		string detail = readiness == AiracCycleReadiness.Degraded
 			? "ready — a best-effort cycle failed" + stillLoading
@@ -381,7 +408,8 @@ public sealed class ShellViewModel : ObservableObject
 
 	/// <summary>
 	/// Checks the saved GitHub tokens in the background, once launch is done and while online: at
-	/// startup, and <paramref name="again"/> when a credential is added, edited or removed.
+	/// startup (unless a dev launch leaves it out), and <paramref name="again"/> when a credential is
+	/// added, edited or removed.
 	/// </summary>
 	private void StartGitHubTokenCheck(bool again = false)
 	{
@@ -390,9 +418,22 @@ public sealed class ShellViewModel : ObservableObject
 			return;
 		}
 
+		if (!again && !ChecksGitHubTokensAtLaunch(AppEnvironment.LaunchOptions))
+		{
+			return;
+		}
+
 		_gitHubTokensChecked = true;
 		_ = CheckGitHubTokensAsync(++_gitHubTokenCheck);
 	}
+
+	/// <summary>
+	/// Whether launch checks the saved GitHub tokens: always, unless a dev launch leaves it out. A
+	/// credential added, edited or removed is checked either way.
+	/// </summary>
+	/// <param name="options">How FE-Buddy was started.</param>
+	/// <returns><see langword="true"/> when launch checks them.</returns>
+	internal static bool ChecksGitHubTokensAtLaunch(LaunchOptions options) => options.Runs(OptionalLaunchStep.CheckGitHubTokens);
 
 	/// <summary>
 	/// One background check. Only the latest check's answer is shown, and the discarded task can't
@@ -570,7 +611,13 @@ public sealed class ShellViewModel : ObservableObject
 
 		IsUpdateAvailable = version.UpdateAvailable && version.LatestVersion is not null;
 
-		if (!version.CheckSucceeded)
+		if (version.WasSkipped)
+		{
+			UpdateTooltipTitle = "Not checked for updates";
+			UpdateTooltipBody = "This dev launch left out the check for a newer version.";
+			VersionBrushKey = "Brush.Accent.Text";
+		}
+		else if (!version.CheckSucceeded)
 		{
 			UpdateTooltipTitle = "Update state unknown offline";
 			UpdateTooltipBody = version.Message ?? string.Empty;
@@ -615,15 +662,17 @@ public sealed class ShellViewModel : ObservableObject
 			return;
 		}
 
-		AiracCycleReadiness readiness = AiracCycleDataCache.Instance.ComputeReadiness();
+		AiracCycleDataCache cache = AiracCycleDataCache.Instance;
+		AiracCycleReadiness readiness = cache.ComputeReadiness();
 		AiracCycleDataCacheEntry? current = entries.FirstOrDefault(x => x.Position == AiracCyclePosition.Current);
 		AiracCycleDataCacheEntry? downloading = entries.FirstOrDefault(x => x.State == CycleDataState.Downloading);
 		AiracCycleDataCacheEntry? parsing = entries.FirstOrDefault(x => x.State == CycleDataState.Parsing);
 
-		// Once the current cycle is ready the service is open: say so, and name a cycle still on its way.
+		// Once the current cycle is ready the service is open: say so, and name a cycle still on its
+		// way (not one a dev launch left for later).
 		if (readiness is (AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded) && current is not null)
 		{
-			AiracCycleDataCacheEntry? loading = parsing ?? downloading ?? entries.FirstOrDefault(x => !AiracCycleDataCache.IsSettled(x));
+			AiracCycleDataCacheEntry? loading = parsing ?? downloading ?? entries.FirstOrDefault(cache.IsLoading);
 
 			AiracStatus = $"AIRAC {current.Cycle.AiracCycleId}  ·  eff {current.Cycle.EffectiveDateUtc:dd MMM yyyy}"
 				+ (readiness == AiracCycleReadiness.Degraded ? "  ·  degraded" : string.Empty)
@@ -643,18 +692,25 @@ public sealed class ShellViewModel : ObservableObject
 			return;
 		}
 
-		AiracStatus = readiness == AiracCycleReadiness.Unavailable
-			? "AIRAC data unavailable — current cycle failed"
-			: "Waiting for AIRAC data…";
+		AiracStatus = readiness switch
+		{
+			AiracCycleReadiness.Unavailable => "AIRAC data unavailable — current cycle failed",
+			AiracCycleReadiness.NotLoaded => "AIRAC data not loaded (dev launch)",
+			_ => "Waiting for AIRAC data…",
+		};
 	}
 
 	private void RefreshSystemHealth()
 	{
 		SystemHealth.Clear();
 
-		SystemHealth.Add(AppEnvironment.HasInternetConnection
-			? new HealthRow("Internet", "connected", StatusKind.Ok)
-			: new HealthRow("Internet", "offline — online features are disabled", StatusKind.Down));
+		// A dev launch can leave the check out: "online" is then only assumed, until a re-check.
+		SystemHealth.Add(
+			AppEnvironment.LaunchUtcSource is null && !AppEnvironment.LaunchOptions.Runs(OptionalLaunchStep.CheckClockAndInternet)
+				? new HealthRow("Internet", "not checked (dev launch)", StatusKind.Ok)
+			: AppEnvironment.HasInternetConnection
+				? new HealthRow("Internet", "connected", StatusKind.Ok)
+				: new HealthRow("Internet", "offline — online features are disabled", StatusKind.Down));
 
 		AiracCycleDataCache cache = AiracCycleDataCache.Instance;
 		AiracCycleReadiness readiness = cache.Entries.Count == 0
@@ -664,12 +720,14 @@ public sealed class ShellViewModel : ObservableObject
 		// A cycle's metafile is fetched before it is parsed, so a ready cycle without one stays
 		// without one until the next launch - as the General tab's "partial" says.
 		SystemHealth.Add(DescribeAiracData(readiness,
-			[.. cache.Entries.OrderBy(e => e.Position).Select(e => (e.Position, e.State, cache.FindDtppFile(e.Cycle.AiracCycleId) is not null))]));
+			[.. cache.Entries.OrderBy(e => e.Position).Select(e => (e.Position, e.State, cache.FindDtppFile(e.Cycle.AiracCycleId) is not null))],
+			[.. cache.Entries.Where(e => cache.LoadsOnDemand && !AiracCycleDataCache.IsSettled(e) && !cache.IsLoading(e)).Select(e => e.Position)]));
 
 		VersionCheckResult? version = AppEnvironment.Version;
 		SystemHealth.Add(version switch
 		{
 			null => new HealthRow("Updates", "checking…", StatusKind.Warn),
+			{ WasSkipped: true } => new HealthRow("Updates", "not checked (dev launch)", StatusKind.Ok),
 			{ CheckSucceeded: false } => new HealthRow("Updates", "state unknown (offline)", StatusKind.Warn),
 			{ UpdateAvailable: true } v => new HealthRow("Updates", $"v{v.LatestVersion} available", StatusKind.Warn),
 			{ RunningPreReleaseChannel: { } running } v => new HealthRow("Updates", $"{running.DisplayName()} release — ahead of {v.Channel.DisplayName()}", StatusKind.Ok),

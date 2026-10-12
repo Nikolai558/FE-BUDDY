@@ -64,6 +64,22 @@ public record VersionCheckResult(
 	public ReleaseSummary? LatestRelease { get; init; }
 
 	/// <summary>
+	/// <see langword="true"/> when no check was made: a dev launch left it out. The GUI says "not
+	/// checked" rather than "unknown offline".
+	/// </summary>
+	public bool WasSkipped { get; init; }
+
+	/// <summary>The result when a dev launch leaves the check out.</summary>
+	/// <param name="currentVersion">The running application's version string.</param>
+	/// <param name="channel">The user's channel.</param>
+	/// <returns>A result that says no check was made.</returns>
+	public static VersionCheckResult Skipped(string currentVersion, ReleaseChannel channel) =>
+		new(currentVersion, null, false, channel, CheckSucceeded: false, "Not checked: a dev launch left out the check for a newer version.")
+		{
+			WasSkipped = true,
+		};
+
+	/// <summary>
 	/// Whether the user can go back to <see cref="LatestVersion"/>: they are running a published
 	/// pre-release from a less stable channel than <see cref="Channel"/> (see
 	/// <see cref="RunningPreReleaseChannel"/>), and that channel's newest release is older. The

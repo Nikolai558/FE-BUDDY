@@ -1391,7 +1391,18 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private IEnumerable<string> SelectedFacilityIds() =>
 		Facilities.Count > 0
 			? Facilities.Where(f => f.IsSelected).Select(f => f.Artcc)
-			: _savedFacilities.OrderBy(a => a, StringComparer.OrdinalIgnoreCase);
+			: FacilitiesTheListWillTick();
+
+	/// <summary>
+	/// Before the cycle's facility list is built - the cycle picked can still be loading when the screen
+	/// opens - the ones it will tick: the saved ones, or, when the tab has never saved any, the Settings
+	/// facility (as <see cref="LoadCycleDependentLists"/> does). So the Area card isn't flagged for a
+	/// moment over a list that hasn't arrived.
+	/// </summary>
+	private IEnumerable<string> FacilitiesTheListWillTick() =>
+		Get("Facilities") is not null
+			? _savedFacilities.OrderBy(a => a, StringComparer.OrdinalIgnoreCase)
+			: NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey)) is { } facility ? [facility] : [];
 
 	private static string? NormalizeFacility(string? value) =>
 		string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToUpperInvariant();

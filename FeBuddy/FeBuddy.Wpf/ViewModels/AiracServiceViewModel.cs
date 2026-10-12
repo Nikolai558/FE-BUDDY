@@ -205,8 +205,37 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	private string WaitingMessage => Readiness switch
 	{
 		AiracCycleReadiness.Unavailable => "The current AIRAC cycle failed to download or parse. The AIRAC Service is unavailable — see the Dashboard activity log.",
+		AiracCycleReadiness.NotLoaded => $"Loading AIRAC {AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId}… This dev launch didn't load it at launch.",
 		_ => "Waiting for the current AIRAC cycle to finish downloading and parsing. This service will be available in a moment.",
 	};
+
+	/// <summary>
+	/// In a dev launch that left the current cycle unloaded (<see cref="AiracCycleReadiness.NotLoaded"/>),
+	/// opening this screen loads it: the service needs it. A normal launch never gets here - it
+	/// loads the current cycle at launch.
+	/// </summary>
+	private void LoadCurrentCycleIfLeftUnloaded()
+	{
+		if (Readiness != AiracCycleReadiness.NotLoaded)
+		{
+			return;
+		}
+
+		string cycleId = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
+		_ = LoadOnDemandAsync(cycleId);
+	}
+
+	private static async Task LoadOnDemandAsync(string cycleId)
+	{
+		try
+		{
+			await AiracCycleDataCache.Instance.GetAsync(cycleId).ConfigureAwait(false);
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning("AiracService", $"Could not load AIRAC {cycleId}: {ex.Message}");
+		}
+	}
 
 	/// <summary>
 	/// Builds every sub-service's tab, once: each takes its outputs from its row on the General tab,
@@ -333,6 +362,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	private void RefreshReadiness()
 	{
+		LoadCurrentCycleIfLeftUnloaded();
 		PushSelectedCycle();
 		OnPropertyChanged(nameof(Readiness));
 		OnPropertyChanged(nameof(IsReady));

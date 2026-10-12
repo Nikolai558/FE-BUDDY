@@ -27,6 +27,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Launch parses only the 9 NASR groups FE-Buddy reads (`NasrCsvGroups.InUse`) instead of all 24,
   with `NasrCsvParser.ParseAsync(directory, groups)`. Reading a group that wasn't parsed names it in
   the error. The log says how long each cycle's parse took.
+- Feature #346 - Dev launch: a Debug build started with `--dev` (the **FE-Buddy (Dev launch)**
+  profile) runs only the launch steps ticked on Settings' Developer card, shows **DEV LAUNCH** in the
+  status bar, and loads a cycle it skipped when something needs it.
 
 ---
 

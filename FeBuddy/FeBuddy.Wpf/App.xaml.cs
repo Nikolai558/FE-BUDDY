@@ -5,6 +5,7 @@ using System.Windows.Threading;
 using FeBuddy.Wpf.Shell;
 
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.FileSystem;
@@ -26,7 +27,8 @@ public partial class App : Application
 	/// Developer mode for the app (<see cref="DevMode.IsEnabled"/>). Deliberately a code
 	/// constant and never a user setting: flip it here for a troubleshooting build, and keep it
 	/// <see langword="false"/> in anything released. While on, every GeoJSON file is pretty
-	/// printed whatever Settings says, and Debug-level log entries are recorded.
+	/// printed whatever Settings says, and Debug-level log entries are recorded. A dev launch
+	/// (<see cref="DevLaunchArgs"/>) turns developer mode on too, without touching this.
 	/// </summary>
 	/// <remarks><c>FeBuddy.Harness</c> has its own equivalent in <c>HarnessSettings.DevMode</c>.</remarks>
 	private const bool DevModeEnabled = false;
@@ -37,8 +39,17 @@ public partial class App : Application
 	/// <inheritdoc />
 	protected override void OnStartup(StartupEventArgs e)
 	{
+		// A dev launch (--dev, Debug builds only) runs just the launch steps chosen on Settings'
+		// Developer card. A Release build says it ignored the argument, once the log is open.
+		bool devLaunchAsked = DevLaunchArgs.IsRequested(e.Args);
+#if DEBUG
+		bool devLaunch = devLaunchAsked;
+#else
+		bool devLaunch = false;
+#endif
+
 		// First, so everything that follows - the log sink included - sees the right mode.
-		DevMode.IsEnabled = DevModeEnabled;
+		DevMode.IsEnabled = DevModeEnabled || devLaunch;
 
 		DispatcherUnhandledException += OnUnhandled;
 
@@ -47,6 +58,15 @@ public partial class App : Application
 
 		// One shared log stream for the whole app; the file sink also prunes stale log files.
 		AppLog.StartFileSink();
+
+		if (devLaunchAsked && !devLaunch)
+		{
+			AppLog.Info("Launch", $"Ignored {DevLaunchArgs.Argument}: a dev launch works in Debug builds only.");
+		}
+
+		// Published before the window is built, so the shell and every page know a dev launch.
+		LaunchOptions options = devLaunch ? LaunchOptions.DevLaunch(DevLaunchSettings.Read()) : LaunchOptions.Normal;
+		LaunchSequence.UseOptions(options);
 
 		base.OnStartup(e);
 
@@ -58,15 +78,15 @@ public partial class App : Application
 
 		// The launch sequence runs off the UI thread. A failure in any step degrades the
 		// dependent feature and is logged - it never blocks the window from showing.
-		_ = Task.Run(RunLaunchSequenceAsync);
+		_ = Task.Run(() => RunLaunchSequenceAsync(options));
 	}
 
-	private static async Task RunLaunchSequenceAsync()
+	private static async Task RunLaunchSequenceAsync(LaunchOptions options)
 	{
 		try
 		{
 			string version = AppVersion.Current;
-			await LaunchSequence.RunAsync(version);
+			await LaunchSequence.RunAsync(version, options);
 		}
 		catch (Exception ex)
 		{

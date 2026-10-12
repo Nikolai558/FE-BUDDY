@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.9
 ### AIRAC Service
 - Feature #346 - A faster start: the AIRAC Service opens as soon as the current cycle is ready, about
   3 seconds after FE-Buddy starts instead of 9, while the next and previous cycles finish loading.

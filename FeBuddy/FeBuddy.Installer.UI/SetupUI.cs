@@ -56,7 +56,6 @@ public sealed class SetupUI : IEmbeddedUI
 	/// <inheritdoc />
 	public bool Initialize(Session session, string resourcePath, ref InstallUIOptions internalUILevel)
 	{
-		Dbg($"Initialize enter level={internalUILevel}");
 		InstallUIOptions level = (InstallUIOptions)((int)internalUILevel & 0xF);
 		bool full = level == InstallUIOptions.Full;
 		bool basic = level is InstallUIOptions.Basic or InstallUIOptions.Reduced;
@@ -89,10 +88,9 @@ public sealed class SetupUI : IEmbeddedUI
 				_choices.ApplyTo(session, context.Mode);
 			}
 		}
-		else if (DbgWait() == 1)
+		else if (WaitHandle.WaitAny([_started, _left]) == 1)
 		{
 			session.Log("FE-BUDDY setup window: closed before installing.");
-			Dbg("throwing InstallCanceledException");
 			throw new InstallCanceledException();
 		}
 		else
@@ -104,7 +102,6 @@ public sealed class SetupUI : IEmbeddedUI
 
 		// Windows Installer shows none of its dialogs now; it still resolves a missing source itself.
 		internalUILevel = InstallUIOptions.NoChange | InstallUIOptions.SourceResolutionOnly;
-		Dbg("Initialize returning true");
 		return true;
 	}
 
@@ -116,7 +113,6 @@ public sealed class SetupUI : IEmbeddedUI
 		MessageIcon icon,
 		MessageDefaultButton defaultButton)
 	{
-		Dbg($"ProcessMessage {messageType}");
 		if (_viewModel is null || _dispatcher is null)
 		{
 			return MessageResult.None;
@@ -176,7 +172,6 @@ public sealed class SetupUI : IEmbeddedUI
 				// result, as an MSI log's "Return value": 1 succeeded, 2 cancelled, 3 failed. Not an
 				// error code such as 1603.
 				_installResult = messageRecord.FieldCount >= 3 && !messageRecord.IsNull(3) ? messageRecord.GetInteger(3) : -1;
-				Dbg($"InstallEnd result={_installResult} record='{messageRecord}'");
 				return MessageResult.OK;
 
 			case InstallMessage.Initialize:
@@ -192,7 +187,6 @@ public sealed class SetupUI : IEmbeddedUI
 	/// <inheritdoc />
 	public void Shutdown()
 	{
-		Dbg("Shutdown enter");
 		if (_viewModel is null || _dispatcher is null)
 		{
 			return;
@@ -217,7 +211,6 @@ public sealed class SetupUI : IEmbeddedUI
 
 		// The finish page stays up until the user closes it.
 		_uiThread?.Join();
-		Dbg("Shutdown exit");
 	}
 
 	// ------------------------------------------------------------------ window thread
@@ -236,7 +229,6 @@ public sealed class SetupUI : IEmbeddedUI
 			app.Resources = (ResourceDictionary)Application.LoadComponent(
 				new Uri("/FeBuddy.Installer.UI;component/Theme/Setup.xaml", UriKind.Relative));
 
-			Dbg("resources loaded");
 			_dispatcher = Dispatcher.CurrentDispatcher;
 			_viewModel = new SetupViewModel(context);
 			_viewModel.StartRequested += choices =>
@@ -246,22 +238,12 @@ public sealed class SetupUI : IEmbeddedUI
 			};
 
 			_window = new SetupWindow(_viewModel);
-			Dbg("window constructed");
-			_window.Loaded += (_, _) => { Dbg("Loaded"); _windowReady.Set(); };
-			_window.ContentRendered += (_, _) => Dbg("ContentRendered");
+			_window.Loaded += (_, _) => _windowReady.Set();
 			_window.Closed += (_, _) => _left.Set();
-			Dbg("app.Run");
 			app.Run(_window);
-			Dbg("app.Run returned");
-		}
-		catch (Exception ex)
-		{
-			Dbg("RunWindow threw " + ex);
-			throw;
 		}
 		finally
 		{
-			Dbg("RunWindow finally");
 			_windowReady.Set();
 			_left.Set();
 		}
@@ -309,26 +291,6 @@ public sealed class SetupUI : IEmbeddedUI
 		}
 
 		return answer;
-	}
-
-	private int DbgWait()
-	{
-		Dbg("waiting");
-		int which = WaitHandle.WaitAny([_started, _left]);
-		Dbg("wait returned " + which);
-		return which;
-	}
-
-	private static void Dbg(string text)
-	{
-		try
-		{
-			System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "FE-BUDDY-Setup-trace.log"),
-				$"{DateTime.Now:HH:mm:ss.fff} [{Environment.CurrentManagedThreadId}] {text}{Environment.NewLine}");
-		}
-		catch (System.IO.IOException)
-		{
-		}
 	}
 
 	private static int Int(Record record, int field) =>

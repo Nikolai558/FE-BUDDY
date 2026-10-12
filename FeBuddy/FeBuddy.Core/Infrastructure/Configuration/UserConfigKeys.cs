@@ -35,6 +35,12 @@ public static class UserConfigKeys
 	/// </summary>
 	public const string LegacyGitHubTokenNoticeShown = "General.LegacyGitHubTokenNoticeShown";
 
+	/// <summary>
+	/// <c>Y</c> once FE-Buddy has shown its one-time welcome to FE-Buddy 3, so it never shows again.
+	/// Kept on this PC: it is about this PC's first launch.
+	/// </summary>
+	public const string WelcomeShown = "General.WelcomeShown";
+
 	/// <summary>How many decimal places GeoJSON coordinates are rounded to, 0 to 15 (6 when unset).</summary>
 	public const string CoordinatePrecision = "Services.AiracService.CoordinatePrecision";
 

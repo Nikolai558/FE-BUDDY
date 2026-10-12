@@ -31,6 +31,9 @@ The first launch downloads the FAA data for the previous, current and next AIRAC
 once the FAA has published it), which can take a few minutes. The top of the window says what it's
 doing. Later launches reuse the download and are much quicker.
 
+A welcome window opens once, the first time FE-Buddy 3 starts on your PC. **Go to Info** takes you
+to what's new and everything FE-Buddy can do, and it has a link to the Discord.
+
 ## 3. Settings - once
 
 Open **Settings**:

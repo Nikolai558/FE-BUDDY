@@ -59,6 +59,10 @@ public static class LaunchSequence
 			{
 				UserConfigReadResult read = UserConfigFile.ReadAll();
 
+				// No settings to read is FE-Buddy 3's first launch on this PC. Worked out before the
+				// update channel below is saved, since that writes the settings file.
+				WelcomeNotice.Check(read);
+
 				// App-wide output preferences are applied as soon as they are readable, so any
 				// file written this session follows them.
 				OutputFormatting.LoadFromUserConfig();

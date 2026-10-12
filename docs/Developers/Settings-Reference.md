@@ -62,7 +62,7 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 | File | Holds |
 |---|---|
 | `UserConfig.<Profile>.json` | One profile: every setting but the shared ones. The name follows Windows' rules for a file name, up to 64 characters; names differing only in case are the same profile. |
-| `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`). |
+| `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`). |
 | `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward). They move and go with it. |
 
 - In memory the two files are one dictionary, so a caller never knows which a key is in. `Save`
@@ -80,8 +80,8 @@ needed.
 
 ### General
 
-Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and the first
-`UpdateChannel`.
+Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, and the
+first `UpdateChannel`.
 
 | Key | Values | Default |
 |---|---|---|
@@ -92,6 +92,7 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and 
 | `AddFeBuddyOutputFolder` | `Y` / `N` - put the output in a `FE-Buddy_Output` folder | `Y` |
 | `FeBuddyGitHub.CredentialId` | the id (`"N"` GUID) of the saved GitHub token credential FE-Buddy's own GitHub requests use (`GitHubAuth`); blank for none | none |
 | `LegacyGitHubTokenNoticeShown` | `Y` once the notice about 2.x's `FEBUDDY_GITHUB_TOKEN` has been shown | none |
+| `WelcomeShown` | `Y` once the first-launch welcome to FE-Buddy 3 has been shown (`WelcomeNotice`) | none |
 
 ### Services.AiracService
 
@@ -550,7 +551,7 @@ no list:
 | Scope | Keys | Export | Import |
 |---|---|---|---|
 | Secret | under `Secrets`, or ending in `Token`, `Password`, `Secret`, `ApiKey`, `Credential` or `Credentials`, or called `Pat` | never | this PC's is kept |
-| Local | `General.UpdateChannel`, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, and anything outside `General` and `Services` | never | this PC's is kept |
+| Local | `General.UpdateChannel`, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, and anything outside `General` and `Services` | never | this PC's is kept |
 | Credential choice | ending in `CredentialId` | never | this PC's is kept only where the settings beside it are unchanged (the same custom alias file at the same address) |
 | Machine path | ending in `Folder`, `Directory` or `FilePath` (not `AddFeBuddyOutputFolder`) | your Desktop, Documents or profile become `%DESKTOP%`, `%DOCUMENTS%`, `%USERPROFILE%` | taken only where it works on this PC (below) |
 | Shared | everything else under `General` and `Services` | as it is | as it is |

@@ -27,7 +27,9 @@ needs it; launch never stops.
 
 1. Clear `%TEMP%\FE-Buddy`, read the settings profile in use and, at the first launch, save the update
    channel (`UpdateChannelSetting.SaveDefaultIfUnset`;
-   [Versioning](VERSIONING.md#pre-releases-and-channels)).
+   [Versioning](VERSIONING.md#pre-releases-and-channels)). No settings to read is FE-Buddy 3's first
+   launch on the PC: the shell then shows a one-time welcome (`WelcomeNotice`), before the notice in
+   step 2.
 2. Look for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` variable - its name only, never its value - and,
    if it is set, show a one-time notice (`LegacyGitHubTokenNotice`).
 3. Uninstall a copy of FE-Buddy 2.x that Squirrel installed in `%LOCALAPPDATA%\FE-BUDDY`, by running

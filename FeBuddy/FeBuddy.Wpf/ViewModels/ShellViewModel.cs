@@ -29,8 +29,8 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// Backs <c>ShellWindow</c>: navigation, the status-bar Zulu clock, the top-centre AIRAC
-/// status indicator, the version chip and update badge, the Systems popover, and the one-time notice
-/// about FE-Buddy 2.x's GitHub token variable. Everything but navigation is driven by
+/// status indicator, the version chip and update badge, the Systems popover, and the one-time windows
+/// at launch: the welcome to FE-Buddy 3, and the notice about FE-Buddy 2.x's GitHub token variable. Everything but navigation is driven by
 /// <see cref="AppEnvironment"/> and <see cref="AiracCycleDataCache"/>, and the popover's GitHub token
 /// row by a background check of the saved tokens (<see cref="GitHubTokenExpiry"/>).
 /// </summary>
@@ -50,12 +50,14 @@ public sealed class ShellViewModel : ObservableObject
 	private readonly Dispatcher _dispatcher;
 
 	private readonly NavItem _mapNav;
+	private readonly NavItem _infoNav;
 
 	private object? _current;
 	private string _zuluClock = string.Empty;
 	private bool _navCollapsed;
 	private bool _navCollapsedForMap;
 	private bool _updateDeclinedThisSession;
+	private bool _showingLaunchWindows;
 
 	private string _airacStatus = "Preparing AIRAC data…";
 	private string _versionText = "…";
@@ -79,6 +81,7 @@ public sealed class ShellViewModel : ObservableObject
 
 		FileConversionsNav = Nav("File Conversions", GlyphFileConversions, () => new FileConversionsViewModel());
 		_mapNav = Nav("Map", GlyphMap, () => new MapViewModel());
+		_infoNav = Nav("Info", GlyphInfo, () => new InfoViewModel());
 
 		PrimaryNav =
 		[
@@ -91,7 +94,7 @@ public sealed class ShellViewModel : ObservableObject
 		SystemNav =
 		[
 			Nav("Settings", GlyphSettings, () => new SettingsViewModel(OpenUpdateWindow, DescribeUnfinishedWork)),
-			Nav("Info",     GlyphInfo,     () => new InfoViewModel()),
+			_infoNav,
 		];
 
 		SystemHealth = [];
@@ -129,8 +132,8 @@ public sealed class ShellViewModel : ObservableObject
 		RefreshSystemHealth();
 		StartGitHubTokenCheck();
 
-		// The launch sequence may have found the old token variable before this subscribed.
-		_dispatcher.InvokeAsync(ShowLegacyGitHubTokenNotice, DispatcherPriority.ApplicationIdle);
+		// The launch sequence may have found a first launch, or the old token variable, before this subscribed.
+		_dispatcher.InvokeAsync(ShowLaunchWindows, DispatcherPriority.ApplicationIdle);
 	}
 
 	/// <summary>The main nav group: Dashboard, AIRAC Service, File Conversions, Map.</summary>
@@ -416,8 +419,53 @@ public sealed class ShellViewModel : ObservableObject
 			StartGitHubTokenCheck();
 		});
 
-		// At idle, so the main window is on screen before the notice opens over it.
-		_dispatcher.InvokeAsync(ShowLegacyGitHubTokenNotice, DispatcherPriority.ApplicationIdle);
+		// At idle, so the main window is on screen before a window opens over it.
+		_dispatcher.InvokeAsync(ShowLaunchWindows, DispatcherPriority.ApplicationIdle);
+	}
+
+	/// <summary>
+	/// Shows launch's one-time windows, one after the other: the welcome to FE-Buddy 3 first, then the
+	/// notice about FE-Buddy 2.x's GitHub token variable. An open window keeps the dispatcher running,
+	/// so a later call can arrive while one is open; it leaves the windows to the call already
+	/// showing them, which goes on to the next once the first is closed.
+	/// </summary>
+	private void ShowLaunchWindows()
+	{
+		if (_showingLaunchWindows)
+		{
+			return;
+		}
+
+		_showingLaunchWindows = true;
+
+		try
+		{
+			ShowWelcome();
+			ShowLegacyGitHubTokenNotice();
+		}
+		finally
+		{
+			_showingLaunchWindows = false;
+		}
+	}
+
+	/// <summary>
+	/// Shows the one-time welcome to FE-Buddy 3 (<see cref="WelcomeNotice"/>), the first time it opens
+	/// on this PC, and opens Info if the user asks.
+	/// </summary>
+	private void ShowWelcome()
+	{
+		if (!WelcomeNotice.Take())
+		{
+			return;
+		}
+
+		Window? owner = Application.Current?.MainWindow is { IsVisible: true } main ? main : null;
+
+		if (WelcomeWindow.Show(owner))
+		{
+			_infoNav.IsActive = true;
+		}
 	}
 
 	/// <summary>

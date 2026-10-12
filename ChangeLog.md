@@ -35,6 +35,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Bug #349 - The hover highlight on the **Open →** links, and on What's New's **View the guide →**,
   now surrounds the text instead of sitting above it.
 
+### Installing and uninstalling
+- Feature #351 - The first time FE-Buddy 3 opens on a PC, a short welcome points you to Info and
+  the Discord. Anyone who already has FE-Buddy 3 settings won't see it.
+
 ### Look and feel
 - The collapsed menu on the left no longer cuts off the right edge of its icons, and centers them in
   their highlight.

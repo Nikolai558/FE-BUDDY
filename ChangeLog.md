@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.8
 ### Updates
 - Bug #332 - In the update window, **Installed**, **Latest** and **Channel** now sit on the same
   line as their values instead of a little above them.

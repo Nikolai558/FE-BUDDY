@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Data;
 
 using FeBuddy.Wpf.Controls;
 using FeBuddy.Wpf.ViewModels;
@@ -10,13 +11,16 @@ namespace FeBuddy.Wpf.Views;
 /// itself when the view-model asks; the view-model's <see cref="ResetViewModel.Confirmed"/> says
 /// which button closed it.
 /// </summary>
+/// <remarks>
+/// It opens at the height its tallest choice needs - Delete my settings, which says what goes - as
+/// far as the screen allows, and keeps that height (issue #354). Sized to its content instead, it
+/// grew downwards when that choice was picked, from where it had opened, and took its buttons off
+/// the bottom of the screen. At a fixed height its body fills the rest and scrolls when it must.
+/// </remarks>
 public partial class ResetWindow : ChromeWindow
 {
-	/// <summary>The height the rest of the window takes - title bar, padding, heading and buttons - with room to spare.</summary>
-	private const double ReservedHeight = 200;
-
-	/// <summary>The least the body shrinks to, even on a very short screen.</summary>
-	private const double MinimumBodyHeight = 160;
+	/// <summary>The space kept above and below the window when it would otherwise fill the screen's height.</summary>
+	private const double ScreenMargin = 24;
 
 	/// <summary>Creates the window for <paramref name="viewModel"/>.</summary>
 	/// <param name="viewModel">The choices to show.</param>
@@ -28,7 +32,33 @@ public partial class ResetWindow : ChromeWindow
 		DataContext = viewModel;
 		viewModel.CloseRequested += (_, _) => Close();
 
-		// A long body scrolls rather than pushing the buttons off the bottom of the screen.
-		Body.MaxHeight = Math.Max(MinimumBodyHeight, SystemParameters.WorkArea.Height - ReservedHeight);
+		// Before the first render, so the window is never seen at another size.
+		Loaded += (_, _) => KeepTallestHeight();
+	}
+
+	/// <summary>
+	/// Measures the window with what deleting the settings shows, fixes its height there (no taller
+	/// than the screen's work area, less a margin), and centers it again on its owner, inside the
+	/// work area.
+	/// </summary>
+	private void KeepTallestHeight()
+	{
+		// Shown for the measurement only: SetCurrentValue leaves the binding in place, and
+		// UpdateTarget hands the choice back to it.
+		SettingsLoss.SetCurrentValue(VisibilityProperty, Visibility.Visible);
+		UpdateLayout();
+		double tallest = ActualHeight;
+		BindingOperations.GetBindingExpression(SettingsLoss, VisibilityProperty)?.UpdateTarget();
+
+		Rect area = SystemParameters.WorkArea;
+
+		SizeToContent = SizeToContent.Manual;
+		Height = Math.Min(tallest, Math.Max(area.Height - (2 * ScreenMargin), MinHeight));
+
+		double top = Owner is { } owner
+			? owner.Top + ((owner.ActualHeight - Height) / 2)
+			: area.Top + ((area.Height - Height) / 2);
+
+		Top = Math.Clamp(top, area.Top, Math.Max(area.Top, area.Bottom - Height));
 	}
 }

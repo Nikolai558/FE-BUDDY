@@ -20,22 +20,41 @@ public sealed class ChartRecallCodesTests
 	[InlineData("ILS Y RWY 22L", "IY22L")]
 	[InlineData("ILS Y OR LOC Y RWY 22L", "IY22L,LY22L")]
 	[InlineData("ILS RWY 23", "I23")]
-	[InlineData("VOR RWY 01L", "O01L")]
+	[InlineData("VOR RWY 01L", "O1L")]
 	[InlineData("NDB RWY 5", "N5")]
 	[InlineData("RNAV (GPS) Y RWY 22L", "RY22L")]
 	[InlineData("RNAV (RNP) Z RWY 19", "RZ19")]
 	[InlineData("LOC RWY 19", "L19")]
 	[InlineData("LOC/DME RWY 24", "LD24")]
-	[InlineData("VOR/DME RWY 03", "OD03")]
+	[InlineData("VOR/DME RWY 03", "OD3")]
 	[InlineData("NDB/DME RWY 23", "ND23")]
-	[InlineData("LDA X RWY 08", "DX08")]
+	[InlineData("LDA X RWY 08", "DX8")]
 	[InlineData("LDA/DME RWY 24", "DD24")]
 	[InlineData("GPS RWY 18", "G18")]
 	[InlineData("TACAN RWY 23", "T23")]
-	[InlineData("ILS OR LOC/DME RWY 06", "I06,LD06")]
+	[InlineData("ILS OR LOC/DME RWY 06", "I6,LD6")]
 	[InlineData("ILS OR LOC OR RNAV (GPS) RWY 21L", "I21L,L21L,R21L")]
 	public void an_approach_gets_its_type_variant_and_full_runway(string name, string expected) =>
 		Assert.Equal(expected.Split(','), Approach(name).Codes);
+
+	[Theory]
+	[InlineData("ILS RWY 06", "ILS RWY 6")]
+	[InlineData("ILS Z OR LOC RWY 04L", "ILS Z OR LOC RWY 4L")]
+	[InlineData("RNAV (GPS) RWY 01/19", "RNAV (GPS) RWY 1/19")]
+	[InlineData("RIVER VISUAL RWY 09", "RIVER VISUAL RWY 9")]
+	public void a_runways_leading_zero_is_dropped_so_both_ways_the_faa_prints_it_get_one_command(string withZero, string withoutZero)
+	{
+		IReadOnlyList<string> codes = Approach(withZero).Codes;
+
+		Assert.Equal(Approach(withoutZero).Codes, codes);
+		Assert.DoesNotContain(codes, code => code.Contains('0', StringComparison.Ordinal));
+	}
+
+	[Theory]
+	[InlineData("ILS RWY 0")]
+	[InlineData("ILS RWY 00")]
+	public void runway_zero_is_unrecognized(string name) =>
+		Assert.Equal([$"the runway in '{name}'"], Approach(name).Unrecognized);
 
 	[Theory]
 	[InlineData("ILS Z OR LOC RWY 23", "IZ23,LZ23")]
@@ -181,11 +200,13 @@ public sealed class ChartRecallCodesTests
 
 	[Theory]
 	[InlineData("22L", "22L")]
+	[InlineData("04L", "4L")]
 	[InlineData("30L/R", "30L,30R")]
 	[InlineData("16 R/C/L", "16R,16C,16L")]
 	[InlineData("12/30", "12,30")]
+	[InlineData("06/24", "6,24")]
 	[InlineData("", "")]
-	public void runways_expand_one_per_code_exactly_as_printed(string runwayText, string expected) =>
+	public void runways_expand_one_per_code_without_a_leading_zero(string runwayText, string expected) =>
 		Assert.Equal(expected.Split(','), ApproachCodes.ExpandRunways(runwayText));
 
 	// ---- other chart types ----

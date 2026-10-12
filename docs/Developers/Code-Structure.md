@@ -60,7 +60,7 @@ FeBuddy.Core/
 │   ├── FileSystem/       AppPaths, TempWorkspace, ServiceOutputPaths, AppDataReset
 │   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet, SymbolFeatureMerger,
 │   │                     AttributesSignature
-│   ├── GitHub/           GitHubAuth, GitHubRepository, GitHubFileUrl
+│   ├── GitHub/           GitHubAuth, GitHubRepository, GitHubFileUrl, GitHubTokenExpiry
 │   ├── Http/ Logging/ Markdown/   FeBuddyHttp, AppLog, MarkdownParser
 │   ├── Platform/         AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable,
 │   │                     LegacySquirrelInstall, LegacySquirrelShortcuts
@@ -144,10 +144,13 @@ FeBuddy.Wpf/
 └── Views/               ShellWindow, TabbedServiceView (AIRAC Service), FileConversionsView, one view
     │                    per tab or conversion page, MapWorkspace (every map), the dialog windows
     └── Cards/           the shared cards (Attention, What You'll Get, Area, What Files Do
-                         You Want?, FE-Buddy Properties, CRC ERAM Defaults, Source Files, Run);
+                         You Want?, FE-Buddy Helper Properties, CRC ERAM Defaults, Source
+                         Files, Run);
                          CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
-                         Defaults; and OutputStatusRow, an output's On/Off line (the Outputs
-                         cards of Procedures and Telephony)
+                         Defaults; OutputStatusRow, an output's On/Off line (the Outputs
+                         cards of Procedure Charts and Telephony); CrcDefaultsPanel; and
+                         DuplicateAliasesCard, the AIRAC Service's Duplicate Alias Commands
+                         run option
 ```
 
 ### How the screens are built
@@ -171,7 +174,8 @@ FeBuddy.Wpf/
   are on comes from the sub-service's row on the General tab (`SubServiceRow`, read through
   `ISubServiceOutputs`), so the tab's own save and undo never change them. A sub-service left out
   keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Add Custom Aliases (`ConcatenateAliasesViewModel`) is the exception:
-  it derives from `SubServiceSettingsViewModel`, uses none of the shared cards and has no row.
+  it derives from `SubServiceSettingsViewModel`, uses none of the shared cards but the Attention
+  card, and has no row.
 - **A conversion page** derives from `FileConversionTabViewModel` (on `ConversionTabViewModel`):
   source files, CRC defaults and its own run button.
 - **Saving.** Each tab saves its own config node. "Unsaved" means different from the last save:

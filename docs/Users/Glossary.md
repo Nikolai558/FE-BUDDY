@@ -31,14 +31,14 @@ tab's CRC ERAM Defaults card.
 
 **d-TPP Metafile** - The FAA's index of every chart in the Digital Terminal Procedures Publication -
 approach plates, SIDs, STARs, airport diagrams. Published each cycle, but only 15-18 days before it
-starts. Procedures is built from it.
+starts. Procedure Charts is built from it.
 
 **Designation** - The letters at the front of an airway ID: `J` in J3, `V` in V23.
 
-**FAA Chart Recall** - `Faa_Chart_Recall.txt`, Procedures' alias file: commands that open the FAA's
+**FAA Chart Recall** - `Faa_Chart_Recall.txt`, Procedure Charts' alias file: commands that open the FAA's
 current charts, a page each, such as `.dtwI22Lc` for DTW's ILS OR LOC RWY 22L.
 
-**FE-Buddy properties (`feb.*`)** - Optional extra fields on each GeoJSON feature, such as an airway's
+**FE-Buddy helper properties (`feb.*`)** - Optional extra fields on each GeoJSON feature, such as an airway's
 ID. Handy for checking a file; CRC ignores them.
 
 **Filters** - The CRC setting (0-40) that groups map elements, so a controller can turn groups on and
@@ -60,7 +60,7 @@ NAVAID and procedure, published as CSV files each AIRAC cycle. Most of FE-Buddy 
 obstacles, as opposed to a SID.
 
 **Output folder** - Where FE-Buddy writes your files (Settings ▸ Default Output Directory). Each cycle
-gets its own `AIRAC_<cycle>` folder there.
+gets its own `AIRAC_<cycle>` folder there, inside `FE-Buddy_Output` unless you untick it.
 
 **Region of Interest (ROI)** - A box on the map, set by its south-west and north-east corners.
 FE-Buddy's maps keep only what is inside or crossing it. Make it a little bigger than your ARTCC.
@@ -70,7 +70,7 @@ FE-Buddy's maps keep only what is inside or crossing it. Make it a little bigger
 **STAR** - Standard Terminal Arrival: a published arrival route.
 
 **Sub-service** - One kind of output the AIRAC Service makes: ARTCC Boundaries, Airports, Airways,
-Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations or Add Custom Aliases. Each
+Arrivals, Departures, NAVAIDs, Fixes, Procedure Charts, Telephony, Wx Stations or Add Custom Aliases. Each
 has its own tab. See the [user guide](User-Guide.md#airac-service).
 
 **Telephony** - An airline or operator's spoken call sign, such as `DELTA`. Also the sub-service

@@ -13,6 +13,25 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-12
+<!--
+PostId: 2026-10-12.1
+-->
+
+**Version 3.0.0-beta.8 Compiled!**
+
+Clearer names, and a welcome for new users
+
+- **Procedures is now Procedure Charts**, so it isn't mistaken for Arrivals and Departures. Its add cards are now **Additional Airport-Specific Procedures to Include** (first) and **Additional Procedures to Include**
+- **Arrivals and Departures**: What You'll Get shows the whole `.FF` command each alias runs
+- **First launch**: a short welcome points new users to **Info** and the Discord
+- **FE-Buddy Helper Properties** (was FE-Buddy Properties) has a clearer description
+- **Visual fixes**: the update window's labels, the hover on Info's **Open →** links, and the collapsed menu's icons
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.8)!!!
+
+---
+
 ## 2026-10-11
 <!--
 PostId: 2026-10-11.1

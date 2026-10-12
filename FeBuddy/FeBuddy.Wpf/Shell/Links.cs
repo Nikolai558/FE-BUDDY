@@ -1,8 +1,9 @@
 namespace FeBuddy.Wpf.Shell;
 
 /// <summary>
-/// External links surfaced in the UI (Dashboard description box, Info screen). Kept in one
-/// place so the Discord link the Dashboard shows and the Info screen's rows never drift.
+/// External links surfaced in the UI (Dashboard description box, Info screen, the first-launch
+/// welcome). Kept in one place so the Discord link the Dashboard and the welcome show and the Info
+/// screen's rows never drift.
 /// </summary>
 public static class Links
 {

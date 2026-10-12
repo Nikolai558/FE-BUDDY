@@ -193,7 +193,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		Assert.Equal(
 			["<Airport ID>_<Departure ID>_Lines.geojson", "<Airport ID>_<Departure ID>_Text.geojson", "Departures.txt"],
 			FileNames(block));
-		Assert.Contains("`.laxDOTSSf`", block.Files[2].Description, StringComparison.Ordinal);
+		Assert.Contains("`.laxGMNf .FF GMN VNY COREZ AVE EHF`", block.Files[2].Description, StringComparison.Ordinal);
 		Assert.Contains("Alias Command Guide", block.Files[2].Description, StringComparison.Ordinal);
 		Assert.Equal([@"Each airport's GeoJSON files go in `Geojson\<ARTCC ID>\<Airport ID>\`."], block.Notes);
 
@@ -264,7 +264,7 @@ public sealed class WhatYoullGetTests : IDisposable
 			["<Airport ID>_<Arrival ID>_STAR_Lines.geojson", "<Airport ID>_<Arrival ID>_STAR_Symbols.geojson",
 				"<Airport ID>_<Arrival ID>_STAR_Text.geojson", "Arrivals.txt"],
 			FileNames(block));
-		Assert.Contains("`.lasBLAIDf`", block.Files[3].Description, StringComparison.Ordinal);
+		Assert.Contains("`.lasBLAIDf .FF BCE HOLDM AALAN EHK PGA BLAID`", block.Files[3].Description, StringComparison.Ordinal);
 		Assert.Single(block.Notes);
 	}
 
@@ -384,8 +384,8 @@ public sealed class WhatYoullGetTests : IDisposable
 	[Fact]
 	public void the_footer_names_the_outputs_the_general_tab_turns_on_and_off()
 	{
-		Assert.Equal("Turn GeoJSON and Alias output on or off on the General tab, to the left.", new AirportsViewModel().WhatYoullGetFooter);
-		Assert.Equal("Turn GeoJSON output on or off on the General tab, to the left.", new ArtccBoundariesViewModel().WhatYoullGetFooter);
+		Assert.Equal("Turn GeoJSON and Alias output on or off in the General tab.", new AirportsViewModel().WhatYoullGetFooter);
+		Assert.Equal("Turn GeoJSON output on or off in the General tab.", new ArtccBoundariesViewModel().WhatYoullGetFooter);
 		Assert.Null(new TelephonyViewModel().WhatYoullGetFooter);
 	}
 
@@ -469,7 +469,7 @@ public sealed class WhatYoullGetTests : IDisposable
 			["Maps of every airway type selected below (J and V)", "but only the portions inside the ROI specific to the Airways sub-service"],
 			Lines(tab.WhatYoullGet[0]));
 		Assert.Equal(
-			["Every airway type selected below (J and V)", "but only those that cross the ROI specific to the Airways sub-service, each with all of its waypoints"],
+			["Every airway type selected below (J and V)", "but only those that cross the ROI specific to the Airways sub-service"],
 			Lines(tab.WhatYoullGet[1]));
 
 		tab.AliasRoiAirwaysOnly = false;
@@ -808,7 +808,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		tab.OverrideRoi = true;
 
 		Assert.Equal(
-			["Charts for airports within the ROI specific to the Procedures sub-service", "along with CLE and DTW"],
+			["Charts for airports within the ROI specific to the Procedure Charts sub-service", "along with CLE and DTW"],
 			Lines(Assert.Single(tab.WhatYoullGet)));
 	}
 

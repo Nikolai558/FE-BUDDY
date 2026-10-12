@@ -103,8 +103,9 @@
                         <TextBlock Text="Check out the Alias Command Guide" Style="{StaticResource Text.H2}" />
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
                                    Text="Every FE-Buddy alias command, explained for your controllers with real examples. Find it at Info ▸ Alias Command Guide, where you can also export it for your facility's website, along with a practice page your controllers can quiz themselves on." />
-                        <Button HorizontalAlignment="Left" Margin="0,6,0,0"
-                                Style="{StaticResource Button.Subtle}" Padding="0,4,0,0"
+                        <!-- padded so the hover highlight surrounds the text, as on Info's cards (#349) -->
+                        <Button HorizontalAlignment="Left" Margin="-8,6,0,-4"
+                                Style="{StaticResource Button.Subtle}" Padding="8,4"
                                 Foreground="{StaticResource Brush.Accent}"
                                 Content="View the guide →"
                                 Command="{Binding OpenGuideCommand}"

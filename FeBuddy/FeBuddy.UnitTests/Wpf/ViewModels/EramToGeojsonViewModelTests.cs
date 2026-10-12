@@ -123,7 +123,7 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 	{
 		EramToGeojsonViewModel tab = new() { IncludeFebCustomProperties = true };
 
-		Assert.Equal("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.", tab.ValidationError);
+		Assert.Equal("FE-Buddy helper properties are on but none are selected. Pick at least one, or switch them off.", tab.ValidationError);
 	}
 
 	/// <summary>An empty or missing folder has nothing to lose, so the run starts without asking.</summary>

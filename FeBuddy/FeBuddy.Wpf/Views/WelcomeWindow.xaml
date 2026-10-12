@@ -1,0 +1,48 @@
+<!--
+    WelcomeWindow  -  the one-time welcome to FE-Buddy 3 (#351), the first time it opens on this PC
+    (WelcomeNotice). Kept short on purpose: it points to Info, and to the Discord. Backs onto
+    WelcomeViewModel.
+-->
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.WelcomeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:WelcomeViewModel}"
+        Title="Welcome to FE-Buddy 3"
+        Width="600" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="32,28,32,24">
+        <StackPanel>
+            <ctl:BrandMark Width="64" Height="64" HorizontalAlignment="Left" />
+
+            <TextBlock Margin="0,20,0,0" TextWrapping="Wrap"
+                       FontFamily="{StaticResource Font.Display}" FontSize="26" FontWeight="Bold" LineHeight="32"
+                       Foreground="{StaticResource Brush.Text.Primary}"
+                       Text="Welcome to the new age of Facility Engineering tools and automation" />
+
+            <TextBlock Style="{StaticResource Text.Body}" Margin="0,14,0,0">
+                <Run Text="FE-Buddy 3.0 is a ground-up rewrite. Before you explore, take a few minutes in" /> <Run Text="Info" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Primary}" /> <Run Text="to see what's new and everything it can do." />
+            </TextBlock>
+
+            <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0">
+                <Run Text="Questions or ideas?" /> <Hyperlink Command="{Binding OpenDiscordCommand}" Foreground="{StaticResource Brush.Accent}">Join us on Discord</Hyperlink><Run Text="." />
+            </TextBlock>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,26,0,0">
+                <Button Content="Close" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding CloseCommand}" MinWidth="96" Margin="0,0,10,0" />
+                <Button Content="Go to Info" Style="{StaticResource Button.Primary}"
+                        Command="{Binding GoToInfoCommand}" IsDefault="True" MinWidth="140" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</ctl:ChromeWindow>

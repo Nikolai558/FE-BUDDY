@@ -14,7 +14,7 @@ public sealed class AiracSubServicesTests
 		Assert.Equal(
 			[
 				"ARTCC Boundaries", "Airports", "Airways", "Arrivals", "Departures", "NAVAIDs",
-				"Fixes", "Procedures", "Telephony", "Wx Stations", "Add Custom Aliases",
+				"Fixes", "Procedure Charts", "Telephony", "Wx Stations", "Add Custom Aliases",
 			],
 			AiracSubServices.All.Select(s => s.DisplayName));
 	}

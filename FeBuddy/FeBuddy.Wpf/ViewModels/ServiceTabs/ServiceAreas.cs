@@ -12,7 +12,7 @@ public static class ServiceAreas
 	/// <summary>The What Files Do You Want? card (GeojsonFilesCard).</summary>
 	public const string GeojsonFiles = "GeojsonFiles";
 
-	/// <summary>The FE-Buddy Properties card (FebPropertiesCard).</summary>
+	/// <summary>The FE-Buddy Helper Properties card (FebPropertiesCard).</summary>
 	public const string FebProperties = "FebProperties";
 
 	/// <summary>The CRC ERAM Defaults card (CrcDefaultsCard).</summary>
@@ -37,8 +37,8 @@ public static class ServiceAreas
 	public const string NavaidTypes = "NavaidTypes";
 
 	/// <summary>
-	/// The cards that add to the area what the Procedures documents cover: Airports, Procedures at
-	/// Any Airport and Airport + Procedure (Procedures tab).
+	/// The cards that add to the area what the Procedures documents cover: Airports, Additional
+	/// Airport-Specific Procedures to Include and Additional Procedures to Include (Procedures tab).
 	/// </summary>
 	public const string DocumentSelection = "DocumentSelection";
 

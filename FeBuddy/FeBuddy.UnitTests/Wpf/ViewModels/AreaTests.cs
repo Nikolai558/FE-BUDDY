@@ -346,7 +346,7 @@ public sealed class AreaTests : IDisposable
 	{
 		AirportsViewModel tab = new();
 
-		Assert.Equal(["FE-Buddy properties", "CRC ERAM defaults"], tab.BuildPreviewSummary().Single().Rows.Select(row => row.Label));
+		Assert.Equal(["FE-Buddy helper properties", "CRC ERAM defaults"], tab.BuildPreviewSummary().Single().Rows.Select(row => row.Label));
 
 		Attach(tab, AiracSubServices.AirportsKey, Alias);
 
@@ -382,7 +382,7 @@ public sealed class AreaTests : IDisposable
 		Assert.Contains(nameof(ProceduresViewModel.AreaNote), changed);
 		Assert.Equal($"Even if outside the facilities you selected, the airports you list here will be included in {Both}.", tab.AirportsIntro);
 		Assert.Equal($"Even if outside the facilities you selected, the procedures you list here will be included in {Both}.", tab.ProcedureNamesIntro);
-		Assert.Equal($"Even if outside the facilities you selected, the Airport + Procedure pairs you list here will be included in {Both}.", tab.AirportProceduresIntro);
+		Assert.Equal($"Even if outside the facilities you selected, the airport-specific procedures you list here will be included in {Both}.", tab.AirportProceduresIntro);
 		Assert.StartsWith("Select the following chart types to be included in the `Procedure_Changes.md` and `Procedures.json` files.\nNote:", tab.ChartTypesIntro, StringComparison.Ordinal);
 		Assert.EndsWith("outside the facilities you have chosen.", tab.AreaNote, StringComparison.Ordinal);
 
@@ -395,8 +395,8 @@ public sealed class AreaTests : IDisposable
 		tab.OverrideRoi = true;
 
 		Assert.Contains(nameof(ProceduresViewModel.AirportsIntro), changed);
-		Assert.StartsWith("Even if outside the ROI specific to Procedures you selected,", tab.AirportsIntro, StringComparison.Ordinal);
-		Assert.EndsWith("outside the ROI specific to Procedures you have set.", tab.AreaNote, StringComparison.Ordinal);
+		Assert.StartsWith("Even if outside the ROI specific to Procedure Charts you selected,", tab.AirportsIntro, StringComparison.Ordinal);
+		Assert.EndsWith("outside the ROI specific to Procedure Charts you have set.", tab.AreaNote, StringComparison.Ordinal);
 
 		tab.Area = SubServiceArea.None;
 

@@ -21,6 +21,38 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ---
 
+## 3.0.0-beta.8
+### Updates
+- Bug #332 - In the update window, **Installed**, **Latest** and **Channel** now sit on the same
+  line as their values instead of a little above them.
+
+### AIRAC Service
+- Clearer wording on the General tab, the What You'll Get footer ("in the General tab"), and the
+  Airports and Airways alias lines.
+- FE-Buddy Properties is now **FE-Buddy Helper Properties**, with a clearer description.
+- Feature #350 - **Procedures** is now **Procedure Charts**, so it isn't mistaken for Arrivals and
+  Departures. Their What You'll Get examples now show the whole `.FF` command.
+- Procedure Charts: **Procedures at Any Airport** is now **Additional Procedures to Include**, and
+  **Airport + Procedure** is now **Additional Airport-Specific Procedures to Include**, which now
+  comes first. Each says which versions of a procedure it includes.
+
+### File Conversions
+- ERAM to GeoJSON: clearer descriptions of `Geomaps.xml` and its output in the picker.
+
+### Info
+- Bug #349 - The hover highlight on the **Open →** links, and on What's New's **View the guide →**,
+  now surrounds the text instead of sitting above it.
+
+### Installing and uninstalling
+- Feature #351 - The first time FE-Buddy 3 opens on a PC, a short welcome points you to Info and
+  the Discord. Anyone who already has FE-Buddy 3 settings won't see it.
+
+### Look and feel
+- The collapsed menu on the left no longer cuts off the right edge of its icons, and centers them in
+  their highlight.
+
+---
+
 ## 3.0.0-beta.7
 ### AIRAC Service
 - What You'll Get now lists the files each output writes, with what goes in each and any notes, and

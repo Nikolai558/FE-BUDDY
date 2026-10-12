@@ -52,7 +52,10 @@ public static class AiracSubServices
 	/// <summary>The Wx Stations sub-service key.</summary>
 	public const string WxStationsKey = "WxStations";
 
-	/// <summary>The Procedures sub-service key.</summary>
+	/// <summary>
+	/// The Procedure Charts sub-service key: its first name, Procedures, kept so its saved settings
+	/// carry over.
+	/// </summary>
 	public const string ProceduresKey = "Procedures";
 
 	/// <summary>The Telephony sub-service key.</summary>
@@ -121,7 +124,7 @@ public static class AiracSubServices
 				"A symbol and a label for every fix in the FAA's NASR data. GeoJSON only.",
 				Geojson: "Fix_Symbols and Fix_Text, or files per fix use, per chart, or per chart and fix use. " +
 					"Pick the fix uses or charts. With ROI as the area, only the fixes inside it.")),
-		new SubServiceDescriptor(ProceduresKey, "Procedures", 80, () => new ProceduresViewModel(), ProcedureOutputFiles.Alias,
+		new SubServiceDescriptor(ProceduresKey, "Procedure Charts", 80, () => new ProceduresViewModel(), ProcedureOutputFiles.Alias,
 			SubServiceOutputKinds.Alias | SubServiceOutputKinds.ProcedureChanges | SubServiceOutputKinds.ProceduresJson,
 			new SubServiceHelp(
 				"The FAA's charts, from the d-TPP Metafile: what changed this cycle, a list of every chart, and commands that open a chart.",

@@ -233,7 +233,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			if (_general.RowFor(descriptor.Key) is { } row)
 			{
 				tab.SetAvailability(row.IsIncluded,
-					$"{descriptor.Help?.Summary}\nIt's left out of the run. To include it, tick {descriptor.DisplayName} under Include on the General tab.");
+					$"{descriptor.Help?.Summary}\nIt's left out of the run. To include it, tick {descriptor.DisplayName} under Include in the General tab.");
 			}
 
 			tabs.Add(tab);
@@ -268,7 +268,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		concatenate.SetAvailability(anyAliasFile,
 			$"{AiracSubServices.All.Single(d => d.Key == AiracSubServices.ConcatenateAliasesKey).Help?.Summary}\n" +
-			"No alias file is being made. To make one, tick a sub-service and its Alias box on the General tab.");
+			"No alias file is being made. To make one, tick a sub-service and its Alias box in the General tab.");
 
 		// Left on a tab that just went grey, go back to the start.
 		if (wasAvailable && !anyAliasFile && ReferenceEquals(SelectedTab, concatenate))
@@ -447,7 +447,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		if (runnable.Length == 0)
 		{
-			Toast.Warn("Nothing to run", "Include a sub-service on the General tab first.");
+			Toast.Warn("Nothing to run", "Include a sub-service in the General tab first.");
 			return;
 		}
 

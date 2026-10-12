@@ -21,14 +21,14 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 using DtppAirport = FeBuddy.Core.Infrastructure.Dtpp.Models.DtppMetafileXmlDataModel.Airport;
 using DtppRecord = FeBuddy.Core.Infrastructure.Dtpp.Models.DtppMetafileXmlDataModel.Record;
 
-// The base class already has a "FebProperties" member (the FE-Buddy Properties card's toggle
+// The base class already has a "FebProperties" member (the FE-Buddy Helper Properties card's toggle
 // list), which would otherwise hide Core's static FebProperties class in this file.
 using CoreFebProperties = FeBuddy.Core.Application.Airac.FebProperties;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Procedures</b> sub-service tab inside the AIRAC Service screen: which of the two documents
+/// The <b>Procedure Charts</b> sub-service tab inside the AIRAC Service screen: which of the two documents
 /// and the FAA Chart Recall alias file are on (set on the General tab), the area the documents cover
 /// (the facilities ticked, an ROI, every airport, or none), the airports and procedures added to it,
 /// the chart types a whole included airport is limited to, and the optional <c>Procedures.json</c>
@@ -38,14 +38,14 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// Like Telephony, Procedures writes no GeoJSON and has no FE-Buddy properties - it still derives
 /// from <see cref="GeojsonSubServiceViewModel"/> for the alias file and the area plumbing, but never
-/// shows the What Files Do You Want?, FE-Buddy Properties or CRC ERAM Defaults cards:
+/// shows the What Files Do You Want?, FE-Buddy Helper Properties or CRC ERAM Defaults cards:
 /// <see cref="EmitKeys"/> is <c>(null, null, null)</c>, and <see cref="OutputFiles"/> offers only
 /// the alias file.
 /// </para>
 /// <para>
 /// The alias file covers every airport in the d-TPP Metafile; the area, airport, procedure and
 /// chart type choices pick what the two documents cover, so they are only checked while a document
-/// is on. The Airports, Procedures at Any Airport and Airport + Procedure cards add to the area,
+/// is on. The Airports, Additional Airport-Specific Procedures to Include and Additional Procedures to Include cards add to the area,
 /// even outside it, except while it is everything (<see cref="AreListsUsed"/>).
 /// </para>
 /// <para>
@@ -155,7 +155,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	public override string NodePath => Node;
 
 	/// <inheritdoc />
-	public override string Title => "Procedures";
+	public override string Title => "Procedure Charts";
 
 	// ================= outputs =================
 
@@ -206,7 +206,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= what the cards that add to the area say =================
 
 	/// <summary>
-	/// Whether the Airports, Procedures at Any Airport and Airport + Procedure cards are used: not
+	/// Whether the Airports, Additional Airport-Specific Procedures to Include and Additional Procedures to Include cards are used: not
 	/// while the area is everything, which already has every airport. Their lists are kept.
 	/// </summary>
 	public bool AreListsUsed => Area != SubServiceArea.Everything;
@@ -236,11 +236,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <summary>The Airports card's first line: that its airports are added, even outside the area, and to which documents.</summary>
 	public string AirportsIntro => AddedEvenIfOutside("airports");
 
-	/// <summary>The Procedures at Any Airport card's first line.</summary>
+	/// <summary>The Additional Procedures to Include card's first line.</summary>
 	public string ProcedureNamesIntro => AddedEvenIfOutside("procedures");
 
-	/// <summary>The Airport + Procedure card's first line.</summary>
-	public string AirportProceduresIntro => AddedEvenIfOutside("Airport + Procedure pairs");
+	/// <summary>The Additional Airport-Specific Procedures to Include card's first line.</summary>
+	public string AirportProceduresIntro => AddedEvenIfOutside("airport-specific procedures");
 
 	/// <summary>
 	/// The Chart Types card's text: which documents the types narrow, then - while the cards that add
@@ -249,7 +249,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	public string ChartTypesIntro =>
 		$"Select the following chart types to be included in {DocumentsNamed("file", "files")}."
 		+ (AreListsUsed
-			? "\nNote: The procedures you list in Procedures at Any Airport and Airport + Procedure are always included, whatever their type."
+			? "\nNote: The procedures you list in Additional Airport-Specific Procedures to Include and Additional Procedures to Include are always included, whatever their type."
 			: string.Empty);
 
 	/// <summary>
@@ -351,7 +351,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <summary>
 	/// Called by the AIRAC Service screen whenever the selected cycle's d-TPP Metafile has been
 	/// (re)loaded, to report whether it is available and build the airport/procedure lookups the
-	/// Airports, Procedures at Any Airport and Airport + Procedure cards need.
+	/// Airports, Additional Airport-Specific Procedures to Include and Additional Procedures to Include cards need.
 	/// </summary>
 	/// <param name="cycleId">The selected cycle's ID.</param>
 	/// <param name="dtpp">The selected cycle's parsed metafile, or <see langword="null"/> when it has not downloaded yet.</param>
@@ -416,7 +416,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		_dtppStatus = dtpp is not null
 			? $"Cycle {cycleId}: {airportCount:N0} airports, {procedureCount:N0} procedures, downloaded {downloadedLocal:d MMM yyyy}."
-			: $"Cycle {cycleId}'s metafile isn't out yet, or couldn't be downloaded. FE-Buddy checks again at each launch. Until then, Procedures writes none of its files.";
+			: $"Cycle {cycleId}'s metafile isn't out yet, or couldn't be downloaded. FE-Buddy checks again at each launch. Until then, Procedure Charts writes none of its files.";
 
 		_previousDtppAvailable = previousAvailable;
 		_dtppPreviousStatus = previousAvailable
@@ -501,13 +501,13 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	// ================= procedures at any airport =================
 
-	/// <summary>The procedure base names (canonical spelling) added to the Procedures at Any Airport card, in the order they were added.</summary>
+	/// <summary>The procedure base names (canonical spelling) added to the Additional Procedures to Include card, in the order they were added.</summary>
 	public ObservableCollection<string> ProcedureNames { get; } = [];
 
 	/// <summary>Whether any procedure name has been added.</summary>
 	public bool HasProcedureNames => ProcedureNames.Count > 0;
 
-	/// <summary>The text typed into (or picked in) the Procedures at Any Airport card's combo box.</summary>
+	/// <summary>The text typed into (or picked in) the Additional Procedures to Include card's combo box.</summary>
 	public string NewProcedureText
 	{
 		get => _newProcedureText;
@@ -555,7 +555,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	// ================= airport + procedure =================
 
-	/// <summary>The airport + procedure pairs added to the Airport + Procedure card, in the order they were added.</summary>
+	/// <summary>The airport + procedure pairs added to the Additional Airport-Specific Procedures to Include card, in the order they were added.</summary>
 	public ObservableCollection<ProcedureAirportPickItem> AirportProcedures { get; } = [];
 
 	/// <summary>Whether any pair has been added.</summary>
@@ -793,7 +793,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		rows.Add(new ServicePreviewRow("Facilities listed first", DescribePrimaryFacility()));
 		rows.Add(new ServicePreviewRow("d-TPP data", DtppStatus));
 
-		return [new ServicePreviewSection("Procedures", rows) { WhatYoullGet = WhatYoullGet }];
+		return [new ServicePreviewSection(Title, rows) { WhatYoullGet = WhatYoullGet }];
 	}
 
 	/// <inheritdoc />

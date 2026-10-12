@@ -489,7 +489,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		{
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
-				"Neither Symbols nor Text is selected. Turn at least one back on, or untick Fixes under Include on the General tab.");
+				"Neither Symbols nor Text is selected. Turn at least one back on, or untick Fixes under Include in the General tab.");
 		}
 
 		if (_outputBy == FixOutputBy.FixUse && FixUses.Count > 0 && FixUses.All(t => !t.IsSelected))

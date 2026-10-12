@@ -475,14 +475,14 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 			return
 				$"Cycle {cycle.AiracCycleId}'s NASR data is ready, but its d-TPP Metafile isn't. The metafile is the FAA's index of " +
-				"charts (approach plates, SIDs, STARs, airport diagrams); the Procedures sub-service is built from it." +
+				"charts (approach plates, SIDs, STARs, airport diagrams); the Procedure Charts sub-service is built from it." +
 				Environment.NewLine + Environment.NewLine +
 				when +
 				Environment.NewLine + Environment.NewLine +
 				"Until then, with this cycle selected:" + Environment.NewLine +
-				"• Procedures writes none of its files: Procedure_Changes.md, Procedures.json and Faa_Chart_Recall.txt " +
+				"• Procedure Charts writes none of its files: Procedure_Changes.md, Procedures.json and Faa_Chart_Recall.txt " +
 				"(so Combined_Alias.txt has no chart recall commands)." + Environment.NewLine +
-				"• On the Procedures tab you can't add procedures or airport + procedure pairs." + Environment.NewLine +
+				"• In the Procedure Charts tab, you can't add procedures or airport-specific procedures." + Environment.NewLine +
 				"Every other sub-service runs as normal.";
 		}
 	}

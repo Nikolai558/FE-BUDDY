@@ -80,8 +80,8 @@ public static class ProcedureSettingsParser
 		if (!generateChangesDocument && !generateProceduresJson && !generateAliasFile)
 		{
 			throw new ArgumentException(
-				"'GenerateChangesDocument', 'GenerateProceduresJson' and 'GenerateAliasFile' are all \"N\", so the Procedures " +
-				"sub-service would produce nothing. Turn at least one back on, or leave Procedures out of the run.");
+				"'GenerateChangesDocument', 'GenerateProceduresJson' and 'GenerateAliasFile' are all \"N\", so the Procedure Charts " +
+				"sub-service would produce nothing. Turn at least one back on, or leave Procedure Charts out of the run.");
 		}
 
 		// The selection settings below pick what the two documents cover; the alias file covers every
@@ -95,7 +95,7 @@ public static class ProcedureSettingsParser
 		if (SettingsValueReader.YesNo(procedureSettings, "IncludeFebCustomProperties", defaultValue: false))
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				"'IncludeFebCustomProperties' is \"Y\", but Procedures has no FE-Buddy GeoJSON properties to add " +
+				"'IncludeFebCustomProperties' is \"Y\", but Procedure Charts has no FE-Buddy GeoJSON properties to add " +
 				"(see 'JsonFields' for Procedures.json's optional fields instead), so it was ignored."));
 		}
 
@@ -127,7 +127,7 @@ public static class ProcedureSettingsParser
 
 		messages.AddRange(SubServiceSettingsReader.UnknownKeyWarnings(
 			procedureSettings, OwnKeys, CrcKindsByClass, LogSource,
-			labelSource: "Procedures writes no GeoJSON, so it has no per-feature CRC output"));
+			labelSource: "Procedure Charts writes no GeoJSON, so it has no per-feature CRC output"));
 
 		ProcedureSettings settings = new()
 		{

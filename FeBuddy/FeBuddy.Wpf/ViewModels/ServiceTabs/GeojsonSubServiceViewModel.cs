@@ -27,7 +27,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// Also the base for Procedures and Telephony, which write no GeoJSON at all: they still want the
 /// shared alias file and outputs plumbing (and Procedures the area), so they derive from this class
 /// too, with <see cref="EmitKeys"/> <c>(null, null, null)</c> and <see cref="OutputFiles"/> listing
-/// only the alias file - they never show the What Files Do You Want?, FE-Buddy Properties or CRC
+/// only the alias file - they never show the What Files Do You Want?, FE-Buddy Helper Properties or CRC
 /// ERAM Defaults cards.
 /// </para>
 /// <para>
@@ -148,7 +148,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// whose outputs are not these, override it.
 	/// </remarks>
 	public override string? WhatYoullGetFooter =>
-		$"Turn {(HasAliasFile ? "GeoJSON and Alias" : "GeoJSON")} output on or off on the General tab, to the left.";
+		$"Turn {(HasAliasFile ? "GeoJSON and Alias" : "GeoJSON")} output on or off in the General tab.";
 
 	/// <summary>The most files What You'll Get lists one by one; a layout that writes more lists one group's as an example.</summary>
 	protected const int MaxSummaryFiles = 6;
@@ -752,7 +752,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		if (IncludeFebCustomProperties && FebProperties.All(p => !p.IsSelected))
 		{
-			validation.AddArea(ServiceAreas.FebProperties, "FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
+			validation.AddArea(ServiceAreas.FebProperties, "FE-Buddy helper properties are on but none are selected. Pick at least one, or switch them off.");
 		}
 
 		if (IsCrcDefaultsSpecific && HasGeojsonFiles && !CrcFiles().Any())
@@ -795,7 +795,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		if (HasGeojsonFiles)
 		{
 			rows.AddRange(geojsonRows);
-			rows.Add(new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()));
+			rows.Add(new ServicePreviewRow("FE-Buddy helper properties", DescribeFebProperties()));
 			rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeFiles(CrcFiles())));
 		}
 

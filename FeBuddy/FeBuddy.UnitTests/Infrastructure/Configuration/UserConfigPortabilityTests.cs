@@ -26,6 +26,7 @@ public sealed class UserConfigPortabilityTests
 	[InlineData(UserConfigKeys.NewsLastOpen, ConfigKeyScope.Local)]
 	[InlineData(UserConfigKeys.FeBuddyGitHubCredentialId, ConfigKeyScope.Local)]
 	[InlineData(UserConfigKeys.LegacyGitHubTokenNoticeShown, ConfigKeyScope.Local)]
+	[InlineData(UserConfigKeys.WelcomeShown, ConfigKeyScope.Local)]
 	[InlineData("Services.AiracService.AiracCycleId", ConfigKeyScope.Shared)]
 	[InlineData(UserConfigKeys.MapOutputGeojson, ConfigKeyScope.Shared)]
 	[InlineData("Services.MapService.AiracLayers", ConfigKeyScope.Shared)]

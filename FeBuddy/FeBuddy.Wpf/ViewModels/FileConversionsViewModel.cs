@@ -78,11 +78,11 @@ public sealed class FileConversionsViewModel : ObservableObject, IOpensAtStart
 			{
 				Files =
 				[
-					new("Geomaps.xml", "The export's video maps. With `ConsoleCommandControl.xml` beside it, its brightness and filter menus too.")
+					new("Geomaps.xml", "The ERAM Adaptation map sets.\nNote: `ConsoleCommandControl.xml` defines the Brightness Control Group (BCG) and Filter menus.")
 					{
 						Outputs =
 						[
-							new(GeojsonOutput, "Each map, in the layout you pick, and `ConsoleCommandControl.txt` listing the menus.")
+							new(GeojsonOutput, "Geomap sets in GeoJSON format, readable by CRC.\nNote: If `ConsoleCommandControl.xml` is found in the same directory, you will also be provided a list of BCG/Filter menus.")
 							{
 								Conversion = eram,
 							},

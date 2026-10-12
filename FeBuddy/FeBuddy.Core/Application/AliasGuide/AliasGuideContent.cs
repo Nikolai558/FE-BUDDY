@@ -202,7 +202,7 @@ public static class AliasGuideContent
 					"An instrument approach. The approach type codes are below.",
 					[],
 					[],
-					[".{a:dtw}{t:I}{r:22L}c", ".{a:dtw}{t:L}{v:Z}{r:04L}c", ".{a:lax}{t:R}{v:Y}{r:24L}c"]),
+					[".{a:dtw}{t:I}{r:22L}c", ".{a:dtw}{t:L}{v:Z}{r:4L}c", ".{a:lax}{t:R}{v:Y}{r:24L}c"]),
 				new GuideCommand(
 					[".[a:airport ID]", "v", "[i:visual name]", "[r:runway]", "c"],
 					"A charted visual approach: a lower-case `v` (for \"Visual\"), then the approach's name with spaces "
@@ -237,7 +237,7 @@ public static class AliasGuideContent
 			new GuideTable(
 				["Approach", "Code", "Example"],
 				[
-					["RNAV (GPS), RNAV (RNP)", "`{t:R}`", "`.{a:lax}{t:R}{v:Z}{r:07R}c`"],
+					["RNAV (GPS), RNAV (RNP)", "`{t:R}`", "`.{a:lax}{t:R}{v:Z}{r:7R}c`"],
 					["ILS", "`{t:I}`", "`.{a:dtw}{t:I}{r:22L}c`"],
 					["LOC", "`{t:L}`", "`.{a:dtw}{t:L}{r:22L}c`"],
 					["VOR", "`{t:O}`", "`.{a:cdb}{t:O}{r:15}c`"],
@@ -246,7 +246,7 @@ public static class AliasGuideContent
 					["GPS", "`{t:G}`", "`.{a:fot}{t:G}{r:11}c`"],
 					["TACAN", "`{t:T}`", "`.{a:pdx}{t:T}{r:28L}c`"],
 					["LOC/DME", "`{t:LD}`", "`.{a:ful}{t:LD}{r:24}c`"],
-					["VOR/DME", "`{t:OD}`", "`.{a:tal}{t:OD}{r:07}c`"],
+					["VOR/DME", "`{t:OD}`", "`.{a:tal}{t:OD}{r:7}c`"],
 					["NDB/DME", "`{t:ND}`", "`.{a:adk}{t:ND}{r:23}c`"],
 					["LDA/DME", "`{t:DD}`", "`.{a:eko}{t:DD}{r:24}c`"],
 					["LOC BC", "`{t:LBC}`", "`.{a:cdb}{t:LBC}{r:33}c`"],
@@ -266,11 +266,12 @@ public static class AliasGuideContent
 					Item("If the FAA indicates the variant on only one of the approaches on the same chart, the command "
 						+ "applies the variant to both:",
 						Item("ILS Z OR LOC RWY 04L is both:",
-							Item("`.{a:dtw}{t:I}{v:Z}{r:04L}c`"),
-							Item("`.{a:dtw}{t:L}{v:Z}{r:04L}c`")))),
-				Item("**Runways** are written exactly as the chart's name prints them",
+							Item("`.{a:dtw}{t:I}{v:Z}{r:4L}c`"),
+							Item("`.{a:dtw}{t:L}{v:Z}{r:4L}c`")))),
+				Item("**Runways** are written without a leading zero",
 					Item("RNAV (RNP) Z RWY 07R at LAX is:",
-						Item("`.{a:lax}{t:R}{v:Z}{r:07R}c`")),
+						Item("`.{a:lax}{t:R}{v:Z}{r:7R}c`")),
+					Item("The FAA prints some runways both ways, such as RWY 06 and RWY 6; either way the runway is `{r:6}`."),
 					Item("A chart for two runways has a command for each",
 						Item("TIPP TOE VISUAL RWY 28L/R at SFO is both:",
 							Item("`.{a:sfo}v{i:TIPPTOE}{r:28L}c`"),

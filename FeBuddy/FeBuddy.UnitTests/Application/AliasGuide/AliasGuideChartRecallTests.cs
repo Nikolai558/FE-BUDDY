@@ -30,9 +30,9 @@ public sealed class AliasGuideChartRecallTests
 	public static TheoryData<string, string, string?, string, string, string> Examples => new()
 	{
 		{ ProcedureChartTypes.Iap, "ILS OR LOC RWY 22L", null, AnyAirport, "dtw", ".dtwI22Lc,.dtwL22Lc" },
-		{ ProcedureChartTypes.Iap, "ILS Z OR LOC RWY 04L", null, AnyAirport, "dtw", ".dtwIZ04Lc,.dtwLZ04Lc" },
+		{ ProcedureChartTypes.Iap, "ILS Z OR LOC RWY 04L", null, AnyAirport, "dtw", ".dtwIZ4Lc,.dtwLZ4Lc" },
 		{ ProcedureChartTypes.Iap, "RNAV (GPS) Y RWY 24L", null, AnyAirport, "lax", ".laxRY24Lc" },
-		{ ProcedureChartTypes.Iap, "RNAV (RNP) Z RWY 07R", null, AnyAirport, "lax", ".laxRZ07Rc" },
+		{ ProcedureChartTypes.Iap, "RNAV (RNP) Z RWY 07R", null, AnyAirport, "lax", ".laxRZ7Rc" },
 		{ ProcedureChartTypes.Iap, "QUIET BRIDGE VISUAL RWY 28R", null, AnyAirport, "sfo", ".sfovQUIETBRIDGE28Rc" },
 		{ ProcedureChartTypes.Iap, "RACEWAY VISUAL RWY 28L", null, AnyAirport, "mry", ".mryvRACEWAY28Lc" },
 		{ ProcedureChartTypes.Iap, "LA RIVER VISUAL RWY 12", null, AnyAirport, "lgb", ".lgbvLARIVER12c" },
@@ -44,7 +44,7 @@ public sealed class AliasGuideChartRecallTests
 		{ ProcedureChartTypes.Iap, "GPS RWY 11", null, AnyAirport, "fot", ".fotG11c" },
 		{ ProcedureChartTypes.Iap, "TACAN RWY 28L", null, AnyAirport, "pdx", ".pdxT28Lc" },
 		{ ProcedureChartTypes.Iap, "LOC/DME RWY 24", null, AnyAirport, "ful", ".fulLD24c" },
-		{ ProcedureChartTypes.Iap, "VOR/DME RWY 07", null, AnyAirport, "tal", ".talOD07c" },
+		{ ProcedureChartTypes.Iap, "VOR/DME RWY 07", null, AnyAirport, "tal", ".talOD7c" },
 		{ ProcedureChartTypes.Iap, "NDB/DME RWY 23", null, AnyAirport, "adk", ".adkND23c" },
 		{ ProcedureChartTypes.Iap, "LDA/DME RWY 24", null, AnyAirport, "eko", ".ekoDD24c" },
 		{ ProcedureChartTypes.Iap, "LOC BC RWY 33", null, AnyAirport, "cdb", ".cdbLBC33c" },

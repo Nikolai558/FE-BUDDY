@@ -18,6 +18,15 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### AIRAC Service
+- Bug #361 - FAA Chart Recall: an approach's runway no longer keeps a leading zero, so a runway the
+  FAA prints as both `RWY 06` and `RWY 6` gets one command, `.aaaI6c`, instead of `.aaaI06c` and
+  `.aaaI6c`. `ILS Z OR LOC RWY 04L` at DTW is now `.dtwIZ4Lc`.
+
+### Info
+- Bug #361 - **What's New**, the **Alias Command Guide** (and its Markdown and HTML exports) and the
+  **Alias Command Practice** show runways without a leading zero, and the practice now hints to
+  leave the zero out.
 
 ---
 

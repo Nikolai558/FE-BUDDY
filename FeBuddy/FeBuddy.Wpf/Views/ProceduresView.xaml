@@ -44,7 +44,7 @@
             <ctl:Card Header="Outputs">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
-                               Text="Turn these on or off on the General tab, to the left." />
+                               Text="Turn these on or off in the General tab." />
                     <cards:OutputStatusRow Kind="ProcedureChanges" Label="Procedure_Changes.md" IsOn="{Binding GenerateChangesDocument}"
                                            Description="A Discord-post-ready Markdown document of the procedures added, changed, or deleted this cycle at the selected airports. Grouped by facility and airspace class, with links to the FAA's comparison PDFs for most." />
                     <cards:OutputStatusRow Margin="0,12,0,0" Kind="ProceduresJson" Label="Procedures.json" IsOn="{Binding GenerateProceduresJson}"
@@ -159,77 +159,8 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ procedures at any airport ============ -->
-            <ctl:Card Header="Procedures at Any Airport" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}"
-                      IsEnabled="{Binding AreListsUsed}">
-                <StackPanel>
-                    <DockPanel Margin="0,0,0,10" Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-                        <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Info}" FontFamily="{StaticResource Font.Icon}"
-                                   Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Top" Margin="0,2,8,0" />
-                        <TextBlock Text="{x:Static vm:ProceduresViewModel.ListsUnusedNote}" Style="{StaticResource Text.Caption}"
-                                   Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
-                    </DockPanel>
-                    <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" bhv:InlineCode.Text="{Binding ProcedureNamesIntro}" />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0" Text="Type or pick a procedure, and press ENTER or ADD." />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
-                                   Text="You will then get data for that procedure, whatever airports it serves." />
-                    </StackPanel>
-
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Procedure names appear once the cycle's d-TPP metafile is available."
-                               Visibility="{Binding HasDtppData, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-
-                    <ItemsControl ItemsSource="{Binding ProcedureNames}" Margin="0,0,0,8">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="0,3" Padding="8,6" CornerRadius="{StaticResource Radius.Chip}"
-                                        Background="{StaticResource Brush.Bg.Sunken}">
-                                    <DockPanel>
-                                        <Button DockPanel.Dock="Right" Content="Delete" Style="{StaticResource Button.Ghost}"
-                                                Command="{Binding DataContext.DeleteProcedureCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}" />
-                                        <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
-                                    </DockPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <StackPanel Orientation="Horizontal" IsEnabled="{Binding HasDtppData}">
-                        <ComboBox MinWidth="240" IsEditable="True" IsTextSearchEnabled="True"
-                                  Tag="Type or pick a procedure"
-                                  ItemsSource="{Binding ProcedureNameOptions}"
-                                  Text="{Binding NewProcedureText, UpdateSourceTrigger=PropertyChanged}"
-                                  VirtualizingPanel.IsVirtualizing="True"
-                                  VirtualizingPanel.VirtualizationMode="Recycling"
-                                  ScrollViewer.CanContentScroll="True">
-                            <ComboBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding AddProcedureCommand}" />
-                            </ComboBox.InputBindings>
-                            <ComboBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <VirtualizingStackPanel />
-                                </ItemsPanelTemplate>
-                            </ComboBox.ItemsPanel>
-                        </ComboBox>
-                        <Button Content="Add" Style="{StaticResource Button.Primary}" Margin="10,0,0,0"
-                                Command="{Binding AddProcedureCommand}" />
-                        <Button Content="Cancel" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
-                                Command="{Binding CancelProcedureCommand}" />
-                    </StackPanel>
-                    <TextBlock Text="{Binding NewProcedureHint}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
-                               Foreground="{StaticResource Brush.Danger}"
-                               Visibility="{Binding NewProcedureHint, Converter={StaticResource StringToVis}}" />
-                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
-                               bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
-                               Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
-                </StackPanel>
-            </ctl:Card>
-
-            <!-- ============ airport + procedure ============ -->
-            <ctl:Card Header="Airport + Procedure" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}"
+            <!-- ============ additional airport-specific procedures ============ -->
+            <ctl:Card Header="Additional Airport-Specific Procedures to Include" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}"
                       IsEnabled="{Binding AreListsUsed}">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,10" Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
@@ -243,16 +174,16 @@
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
                                    Text="Press ADD PROCEDURE, type an airport first, then pick a procedure for that airport, and press ADD." />
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
-                                   Text="You will then get data for that airport-specific procedure." />
+                                   Text="If a procedure serves multiple airports, only the version for the specified airport is included." />
                     </StackPanel>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Airport + procedure pairs need the cycle's d-TPP metafile, which isn't available yet."
+                               Text="Airport-specific procedures need the cycle's d-TPP metafile, which isn't available yet."
                                Visibility="{Binding HasDtppData, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
                     <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8"
-                               Text="No pairs yet."
+                               Text="No airport-specific procedures yet."
                                Visibility="{Binding HasAirportProcedures, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
                     <ItemsControl ItemsSource="{Binding AirportProcedures}">
@@ -304,6 +235,75 @@
                     <Button Content="Add procedure" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                             Margin="0,10,0,0" Command="{Binding AddPairCommand}"
                             Visibility="{Binding IsEditingPair, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
+                               bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
+                               Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ additional procedures ============ -->
+            <ctl:Card Header="Additional Procedures to Include" Outputs="ProcedureChanges, ProceduresJson" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}"
+                      IsEnabled="{Binding AreListsUsed}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,10" Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                        <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Info}" FontFamily="{StaticResource Font.Icon}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Top" Margin="0,2,8,0" />
+                        <TextBlock Text="{x:Static vm:ProceduresViewModel.ListsUnusedNote}" Style="{StaticResource Text.Caption}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
+                    </DockPanel>
+                    <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" bhv:InlineCode.Text="{Binding ProcedureNamesIntro}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0" Text="Type or pick a procedure, and press ENTER or ADD." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
+                                   Text="If a procedure serves multiple airports, all versions of the procedure are included." />
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Procedure names appear once the cycle's d-TPP metafile is available."
+                               Visibility="{Binding HasDtppData, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                    <ItemsControl ItemsSource="{Binding ProcedureNames}" Margin="0,0,0,8">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,3" Padding="8,6" CornerRadius="{StaticResource Radius.Chip}"
+                                        Background="{StaticResource Brush.Bg.Sunken}">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="Delete" Style="{StaticResource Button.Ghost}"
+                                                Command="{Binding DataContext.DeleteProcedureCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Orientation="Horizontal" IsEnabled="{Binding HasDtppData}">
+                        <ComboBox MinWidth="240" IsEditable="True" IsTextSearchEnabled="True"
+                                  Tag="Type or pick a procedure"
+                                  ItemsSource="{Binding ProcedureNameOptions}"
+                                  Text="{Binding NewProcedureText, UpdateSourceTrigger=PropertyChanged}"
+                                  VirtualizingPanel.IsVirtualizing="True"
+                                  VirtualizingPanel.VirtualizationMode="Recycling"
+                                  ScrollViewer.CanContentScroll="True">
+                            <ComboBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding AddProcedureCommand}" />
+                            </ComboBox.InputBindings>
+                            <ComboBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel />
+                                </ItemsPanelTemplate>
+                            </ComboBox.ItemsPanel>
+                        </ComboBox>
+                        <Button Content="Add" Style="{StaticResource Button.Primary}" Margin="10,0,0,0"
+                                Command="{Binding AddProcedureCommand}" />
+                        <Button Content="Cancel" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
+                                Command="{Binding CancelProcedureCommand}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding NewProcedureHint}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
+                               Foreground="{StaticResource Brush.Danger}"
+                               Visibility="{Binding NewProcedureHint, Converter={StaticResource StringToVis}}" />
                     <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
                                bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
                                Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />

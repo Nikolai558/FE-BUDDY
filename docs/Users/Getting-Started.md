@@ -17,8 +17,6 @@ You choose what to make and how it looks, and a **Region of Interest** keeps the
 It also converts FAA `.dat` video maps, VRC sector files and ERAM GeoMaps to GeoJSON, and has a map
 for checking GeoJSON files.
 
-Some 2.x tools aren't in 3.0 yet; see [Do I still need FE-Buddy 2.x?](FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)
-
 ## 1. Install
 
 Download `FE-BUDDY-Setup.msi` from the newest release on
@@ -32,6 +30,9 @@ You need Windows 10 or 11 (64-bit) and an internet connection; FE-Buddy brings e
 The first launch downloads the FAA data for the previous, current and next AIRAC cycles (the next
 once the FAA has published it), which can take a few minutes. The top of the window says what it's
 doing. Later launches reuse the download and are much quicker.
+
+A welcome window opens once, the first time FE-Buddy 3 starts on your PC. **Go to Info** takes you
+to what's new and everything FE-Buddy can do, and it has a link to the Discord.
 
 ## 3. Settings - once
 

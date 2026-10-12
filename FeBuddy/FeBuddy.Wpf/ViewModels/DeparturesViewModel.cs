@@ -366,7 +366,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			files.Add(new(DepartureOutputFiles.Alias,
 				"A command for each departure at each airport that draws its waypoints on a CRC STARS or ERAM window.\n"
-				+ "Example: `.laxDOTSSf`\n"
+				+ "Example: `.laxGMNf .FF GMN VNY COREZ AVE EHF`\n"
 				+ "See the Alias Command Guide, under Info, for more examples and exceptions."));
 		}
 
@@ -458,7 +458,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols, or Text, "
-				+ "or turn GeoJSON off for Departures on the General tab.");
+				+ "or turn GeoJSON off for Departures in the General tab.");
 		}
 
 		ValidateAmendmentFilter(validation);

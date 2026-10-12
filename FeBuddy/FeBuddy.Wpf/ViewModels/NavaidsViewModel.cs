@@ -339,7 +339,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but neither Symbols nor Text is selected. Turn at least one back on, "
-				+ "or turn GeoJSON off for NAVAIDs on the General tab.");
+				+ "or turn GeoJSON off for NAVAIDs in the General tab.");
 		}
 
 		// The types narrow the GeoJSON only, so ticking none matters only while it is written.
@@ -347,7 +347,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			validation.AddArea(
 				ServiceAreas.NavaidTypes,
-				"No NAVAID types are ticked. Tick at least one, or turn GeoJSON off for NAVAIDs on the General tab.");
+				"No NAVAID types are ticked. Tick at least one, or turn GeoJSON off for NAVAIDs in the General tab.");
 		}
 
 		if (ShowFanMarkerStyle && string.IsNullOrWhiteSpace(FanMarkerStyle))

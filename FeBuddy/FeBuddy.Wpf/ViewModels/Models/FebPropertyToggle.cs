@@ -7,7 +7,7 @@ using FeBuddy.Core.Application.Airac;
 namespace FeBuddy.Wpf.ViewModels.Models;
 
 /// <summary>
-/// One selectable FE-Buddy custom property on a sub-service tab's FE-Buddy Properties card.
+/// One selectable FE-Buddy custom property on a sub-service tab's FE-Buddy Helper Properties card.
 /// </summary>
 /// <remarks>
 /// Every sub-service uses this one type; what differs is the list it is built from

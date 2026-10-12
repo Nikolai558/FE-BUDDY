@@ -88,7 +88,7 @@ public sealed class ProceduresViewModelTests : IDisposable
 
 		procedures.NewAirportText = "CAK ORD";
 
-		Assert.Equal("Already included by the ROI specific to the Procedures sub-service: CAK", procedures.NewAirportHint);
+		Assert.Equal("Already included by the ROI specific to the Procedure Charts sub-service: CAK", procedures.NewAirportHint);
 	}
 
 	/// <summary>Only the area chosen counts: a facility ticked while the area is the ROI includes nothing.</summary>

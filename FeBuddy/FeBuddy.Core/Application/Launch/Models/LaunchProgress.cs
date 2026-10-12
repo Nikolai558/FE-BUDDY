@@ -9,7 +9,10 @@ public enum LaunchStep
 	/// <summary>Wipe <c>%TEMP%\FE-Buddy</c>.</summary>
 	ClearTempWorkspace = 0,
 
-	/// <summary>Read the settings profile in use into memory, and save the update channel if none is saved yet.</summary>
+	/// <summary>
+	/// Read the settings profile in use into memory, note whether this is FE-Buddy 3's first launch
+	/// (for the welcome), and save the update channel if none is saved yet.
+	/// </summary>
 	ReadUserConfig = 1,
 
 	/// <summary>

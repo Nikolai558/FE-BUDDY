@@ -163,9 +163,9 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			Files =
 			[
 				new(AirportOutputFiles.Alias,
-					"An ISR command, `.apt` and the FAA or ICAO ID, for every operational airport in the NAS. It has details "
-					+ "such as the airport's name, tower status, responsible ARTCC, longest runway, and more.\n"
-					+ "Example: `.aptDTW` or `.aptKDTW`"),
+					"An ISR command, `.apt` and the `FAA or ICAO ID`, for every operational airport in the NAS.\n"
+					+ "It describes the given airport by name, facility type, responsible ARTCC, longest runway, and more.\n"
+					+ "Example for Detroit Metro Airport: `.aptDTW` or `.aptKDTW`"),
 			],
 		};
 	}
@@ -190,7 +190,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols, or Text, "
-				+ "or turn GeoJSON off for Airports on the General tab.");
+				+ "or turn GeoJSON off for Airports in the General tab.");
 		}
 
 		ValidateSharedSettings(validation);

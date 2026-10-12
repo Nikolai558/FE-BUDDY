@@ -63,6 +63,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		TempWorkspace.ConfigureForTesting(Path.Combine(_root, "temp"));
 		UserConfigFile.ConfigureForTesting(Path.Combine(_root, "config"));
 		AppEnvironment.ResetForTesting();
+		WelcomeNotice.ResetForTesting();
 		LegacyGitHubTokenNotice.ConfigureForTesting(() => []);
 		LegacySquirrelShortcuts.ConfigureForTesting([Path.Combine(_root, "desktop")], Path.Combine(_root, "squirrel", "FE-BUDDY.exe"));
 		LegacySquirrelInstall.ConfigureForTesting(
@@ -87,6 +88,7 @@ public sealed class LaunchSequenceTests : IDisposable
 	{
 		AppEnvironment.HttpClientForTesting?.Dispose();
 		AppEnvironment.ResetForTesting();
+		WelcomeNotice.ResetForTesting();
 		LegacyGitHubTokenNotice.ConfigureForTesting(null);
 		LegacySquirrelShortcuts.ConfigureForTesting(null, null);
 		LegacySquirrelInstall.ConfigureForTesting(null, null, null);
@@ -186,6 +188,52 @@ public sealed class LaunchSequenceTests : IDisposable
 
 		Assert.Equal(forUser, LegacyGitHubTokenNotice.Take());
 		Assert.True(LegacyGitHubTokenNotice.HasBeenShown);
+	}
+
+	/// <summary>Issue #351: the first launch leaves the welcome for the shell; a launch after it doesn't.</summary>
+	[Fact]
+	public async Task the_first_launch_leaves_the_welcome_for_the_shell_once()
+	{
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+
+		await LaunchSequence.RunAsync("3.0.0");
+		Assert.True(WelcomeNotice.Take());
+
+		await LaunchSequence.RunAsync("3.0.0");
+		Assert.False(WelcomeNotice.Take());
+	}
+
+	/// <summary>
+	/// A dev build saves nothing at launch, so the welcome stays due until it is shown - and showing it
+	/// is what saves the settings file.
+	/// </summary>
+	[Fact]
+	public async Task a_dev_build_welcomes_until_the_welcome_is_shown()
+	{
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+
+		await LaunchSequence.RunAsync("3.1.0-dev");
+		Assert.False(File.Exists(UserConfigFile.ConfigFilePath));
+
+		await LaunchSequence.RunAsync("3.1.0-dev");
+		Assert.True(WelcomeNotice.Take());
+		Assert.True(File.Exists(UserConfigFile.ConfigFilePath));
+
+		await LaunchSequence.RunAsync("3.1.0-dev");
+		Assert.False(WelcomeNotice.Take());
+	}
+
+	/// <summary>Someone who already has FE-Buddy 3 settings isn't welcomed.</summary>
+	[Fact]
+	public async Task existing_settings_mean_no_welcome()
+	{
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+		Directory.CreateDirectory(UserConfigFile.Directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, """{ "General": { "UpdateChannel": "Beta" } }""");
+
+		await LaunchSequence.RunAsync("3.0.0-beta.7");
+
+		Assert.False(WelcomeNotice.Take());
 	}
 
 	/// <summary>Launch runs the uninstaller of a copy of FE-Buddy 2.x that Squirrel left, and does nothing without one.</summary>

@@ -117,11 +117,11 @@ public sealed class SubServiceRow(SubServiceDescriptor descriptor, Action onChan
 	/// <summary>The GeoJSON files in detail, or that there are none.</summary>
 	public string GeojsonToolTip => OutputToolTip(OffersGeojson, Descriptor.Help?.Geojson, "GeoJSON files");
 
-	/// <summary><c>Procedure_Changes.md</c> in detail, or that only Procedures writes it.</summary>
-	public string ProcedureChangesToolTip => OutputToolTip(OffersProcedureChanges, Descriptor.Help?.ProcedureChanges, "Procedure_Changes.md; only Procedures does");
+	/// <summary><c>Procedure_Changes.md</c> in detail, or that only Procedure Charts writes it.</summary>
+	public string ProcedureChangesToolTip => OutputToolTip(OffersProcedureChanges, Descriptor.Help?.ProcedureChanges, "Procedure_Changes.md; only Procedure Charts does");
 
-	/// <summary><c>Procedures.json</c> in detail, or that only Procedures writes it.</summary>
-	public string ProceduresJsonToolTip => OutputToolTip(OffersProceduresJson, Descriptor.Help?.ProceduresJson, "Procedures.json; only Procedures does");
+	/// <summary><c>Procedures.json</c> in detail, or that only Procedure Charts writes it.</summary>
+	public string ProceduresJsonToolTip => OutputToolTip(OffersProceduresJson, Descriptor.Help?.ProceduresJson, "Procedures.json; only Procedure Charts does");
 
 	private string WhereSettingsAre => $"Its settings are on the {DisplayName} tab, in the list to the left.";
 

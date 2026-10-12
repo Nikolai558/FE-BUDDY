@@ -27,7 +27,9 @@ needs it; launch never stops.
 
 1. Clear `%TEMP%\FE-Buddy`, read the settings profile in use and, at the first launch, save the update
    channel (`UpdateChannelSetting.SaveDefaultIfUnset`;
-   [Versioning](VERSIONING.md#pre-releases-and-channels)).
+   [Versioning](VERSIONING.md#pre-releases-and-channels)). No settings to read is FE-Buddy 3's first
+   launch on the PC: the shell then shows a one-time welcome (`WelcomeNotice`), before the notice in
+   step 2.
 2. Look for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` variable - its name only, never its value - and,
    if it is set, show a one-time notice (`LegacyGitHubTokenNotice`).
 3. Uninstall a copy of FE-Buddy 2.x that Squirrel installed in `%LOCALAPPDATA%\FE-BUDDY`, by running
@@ -58,8 +60,8 @@ the Systems box turns green, and the AIRAC Service screen unlocks.
 
 | Readiness | When | AIRAC Service |
 |---|---|---|
-| `Waiting` | a required cycle is still in progress | locked |
-| `Ready` | current ready, previous and next settled | open |
+| `Waiting` | any of the three cycles is still downloading or parsing | locked |
+| `Ready` | current and previous ready, next ready or not yet published | open |
 | `Degraded` | current ready, previous or next failed | open; the failed cycle shows *failed* |
 | `Unavailable` | the current cycle failed | locked |
 
@@ -73,7 +75,7 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
 | Telephony's ICAO register and U.S. special call signs | FAA Order JO 7340.2, Chapter 3 | `Telephony\telephony_register.html`, `us_special_call_signs.html` | every run that includes Telephony |
 | The virtual airline list, part 1 | GNG's fictional airlines (`gng.aero-nav.com`, `icao_fhairlines`) | `Telephony\gng_fhairlines.json` | runs whose Telephony block includes it, at most once a day |
 | The virtual airline list, part 2 | VATSIM-Radar's own list on GitHub (`VATSIM-Radar/data`, `custom-data/airlines.json`) | `Telephony\vatsim_radar_custom_airlines.json` | runs whose Telephony block includes it, at most once a day |
-| The d-TPP Metafile (Procedures) | the FAA, one per cycle | `d-tpp_Metafile.xml` in the cycle's folder | at launch, once per cycle |
+| The d-TPP Metafile (Procedure Charts) | the FAA, one per cycle | `d-tpp_Metafile.xml` in the cycle's folder | at launch, once per cycle |
 
 - **Wx Stations and Telephony** aren't published per cycle, so one copy is kept under
   `%APPDATA%\FE-Buddy` and refreshed by every run that needs it (`AiracSharedDataLoader`, through
@@ -88,23 +90,23 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
   or added at the end. Each part is kept, checked (GNG: `rows` numbers `records`, at least 100; GitHub:
   an array with a virtual airline) and fallen back on by itself, so one part failing never cuts the
   other short. A run uses a copy under 24 hours old without downloading (`SharedDataRefreshResult.Reused`);
-  the Telephony tab's button always downloads. 3.0.0-beta.4's single `vatsim_radar_airlines.json`
-  (from `data.vatsim-radar.com`, which only takes TLS 1.3 - Windows 10 can't) is read only while
-  neither part has a copy, and deleted once both have one.
+  the Telephony tab's button always downloads. The single `vatsim_radar_airlines.json` that
+  3.0.0-beta.4 and earlier kept (beta.4's from `data.vatsim-radar.com`, which only takes TLS 1.3 -
+  Windows 10 can't) is read only while neither part has a copy, and deleted once both have one.
 - **`Telephony.txt` writes only the first operator for each 3LD and telephony** (`TelephonyBuilder`):
   the FAA's, then the user's virtual airlines, then the list's. The rest are named in Info messages.
 - **The d-TPP Metafile** is keyed by cycle, so each cycle folder gets its own
   (`DtppDownloader.EnsureCycleHasMetafileAsync`). The FAA posts it only 15-18 days before the cycle
   starts; a 404 is `NotYetPublished`, retried at the next launch, and the General tab shows the
   cycle as *partial*. `AiracCycleDataCache.GetDtppAsync` returns `null` when there is no copy, and
-  Procedures treats that as an advisory, not an error.
+  Procedure Charts treats that as an advisory, not an error.
 
 ## A run
 
 ```
 Preview Settings ▸ Run AIRAC Service
   save any unsaved tab (the user confirms); stop if any tab is invalid
-  each tab's BuildSettingsBlock() → Dictionary<string,string>
+  each tab's BuildSettingsBlock() → IReadOnlyDictionary<string,string>
   the File Names tab's new names
   AIRAC_<cycle> has files? ask: Overwrite / Delete all / Cancel
         │  AiracServiceSettings
@@ -137,12 +139,12 @@ Not every sub-service has all four steps:
 | ARTCC Boundaries | NASR | Lines | no |
 | Fixes | NASR | Symbols and Text | no |
 | Wx Stations | aviationweather.gov | Symbols and Text | no |
-| Procedures | d-TPP Metafile, joined to NASR | no - writes `Procedure_Changes.md` and `Procedures.json` | `Faa_Chart_Recall.txt`, for every airport in the metafile |
+| Procedure Charts | d-TPP Metafile, joined to NASR | no - writes `Procedure_Changes.md` and `Procedures.json` | `Faa_Chart_Recall.txt`, for every airport in the metafile |
 | Telephony | FAA telephony pages (and virtual airlines) | no | `Telephony.txt` |
 | Add Custom Aliases | the user's custom alias files | no | adds them to `Combined_Alias.txt` |
 
 - **The settings block is the contract.** Every tab, and the harness, hands Core a flat
-  `Dictionary<string, string>` ([Settings reference](Settings-Reference.md)). Core never sees a
+  `IReadOnlyDictionary<string, string>` ([Settings reference](Settings-Reference.md)). Core never sees a
   view-model; the app never sees typed settings.
 - **Problems don't lose the run.** A missing or invalid required setting throws `ArgumentException`
   (the tab's own validation normally prevents it). Anything else - a waypoint that can't be found, a

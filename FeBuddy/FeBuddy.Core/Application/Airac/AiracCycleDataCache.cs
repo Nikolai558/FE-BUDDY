@@ -472,7 +472,7 @@ public sealed class AiracCycleDataCache(
 		catch (Exception ex)
 		{
 			AppLog.Warning(LogSource,
-				$"d-TPP Metafile could not be downloaded for cycle {entry.Cycle.AiracCycleId}; the Procedures sub-service " +
+				$"d-TPP Metafile could not be downloaded for cycle {entry.Cycle.AiracCycleId}; the Procedure Charts sub-service " +
 				$"can't run on it until it is (FE-Buddy retries at the next launch). {ex.Message}");
 		}
 	}

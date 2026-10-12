@@ -21,6 +21,7 @@
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AiracGeneralTabViewModel}"
              d:DesignWidth="820" d:DesignHeight="700">
@@ -117,7 +118,7 @@
         <ctl:Card Header="Sub-Services">
             <StackPanel Grid.IsSharedSizeScope="True">
                 <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,12"
-                           Text="Tick the sub-services to run and the files each one makes. Each sub-service's settings are on its own tab, in the list to the left. Hover a box to see what it makes." />
+                           Text="What do you want from this AIRAC Run? - Configure the run below.&#xA;&#xA;Hover over an option for a quick description.&#xA;Further control of each option may be configured in the corresponding tabs to the left.&#xA;" />
 
                 <!-- the headings -->
                 <Grid Margin="0,0,0,6">
@@ -164,9 +165,19 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap"
-                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="Untick all of a sub-service's files and it's left out. Tick one and it's back in. A sub-service that's left out is greyed out on the left and keeps its settings. Whenever an alias file is ticked, every run writes Combined_Alias.txt for vNAS, and Add Custom Aliases is included to add your facility's own aliases to it." />
+                <!-- the footer notes; a note's follow-up line is indented under it -->
+                <StackPanel Margin="0,10,0,0" MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               Text="Deselecting options here will usually grey-out that menu option in the tabs to the left." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
+                               bhv:InlineCode.Text="Alias files will be output separately per-type, along with a single combined alias file `Combined_Alias.txt` for vNAS upload." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="16,2,0,0"
+                               Text="- Custom alias files may be added to this file, if you so choose." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Text="All settings/preferences are saved to this profile." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="16,2,0,0"
+                               Text="- Change or create multiple profiles in the SETTINGS menu." />
+                </StackPanel>
             </StackPanel>
         </ctl:Card>
     </StackPanel>

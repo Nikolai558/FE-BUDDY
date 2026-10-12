@@ -40,7 +40,7 @@ The tag decides a release's **channel** (`ProductVersion.Channel`):
 | `-beta.N` | Beta |
 | `-alpha.N`, or any other tag (`-dev`, `-preview`, …) | Alpha |
 
-The user's channel (Settings ▸ Updates, `General.UpdateChannel`) is the least stable they accept:
+The user's channel (Settings ▸ Updates / Update Channel, `General.UpdateChannel`) is the least stable they accept:
 Stable gets only stable releases, Release Candidate adds `-rc`, Beta adds `-beta`, Alpha gets
 everything. GitHub's pre-release checkbox is never consulted. The first launch saves the running
 build's channel (`UpdateChannelSetting.SaveDefaultIfUnset`): an alpha is on Alpha, a beta on Beta,
@@ -104,8 +104,8 @@ for this. A 2.x MSI doesn't, so FE-Buddy's own **Go back now** passes it on the 
 hand, run `msiexec /i FE-BUDDY-2.9.0.msi REINSTALLMODE=amus`, or uninstall 3.x first; a plain
 `msiexec /i` of a 2.x MSI over 3.x leaves no `FE-BUDDY.exe`.
 
-The rule is in `FeBuddy.Versioning` (netstandard2.0), shared by the app and the custom action
-(net472, the only kind WiX's custom-action host loads). Its tests are in
+The rule (`UpdatePolicy`) is in `FeBuddy.Versioning` (netstandard2.0), the library the app and the
+custom action share (net472, the only kind WiX's custom-action host loads). Its tests are in
 `FeBuddy.UnitTests/Versioning`, and it is part of the coverage gate.
 
 ## The MSI's own version number
@@ -136,8 +136,8 @@ so every 3.x release must fit it:
 
 - **Tag** - strict SemVer (a leading `v` is fine); 2.x skips any tag it can't parse.
 - **Asset** - an `.msi` attached (`FE-BUDDY-Setup.msi`); 2.x offers only a release that has one.
-- **Channel** - from the tag, so 2.x users on Alpha get `3.0.0-alpha.N` and Stable users only
-  `3.0.0`, which outranks any later `2.9.x`.
+- **Channel** - from the tag, so 2.x users get the 3.0.0 pre-releases their channel takes (Alpha
+  and Beta now get `3.0.0-beta.N`), and Stable users only `3.0.0`, which outranks any later `2.9.x`.
 
 The 3.x MSI replaces 2.x in place because it keeps 2.x's `UpgradeCode`, package identity,
 `HKLM\Software\FE-BUDDY` values, install folder and `FE-BUDDY.exe` name, so 2.x's shortcuts still

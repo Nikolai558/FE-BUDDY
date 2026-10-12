@@ -335,7 +335,7 @@ public static class AiracService
 			result => $"{result.StationCount} station(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		ProcedureServiceResult? proceduresResult = await RunSubServiceAsync(
-			settings.Procedures, "Procedures", "Building procedure publication documents",
+			settings.Procedures, "Procedure Charts", "Building procedure publication documents",
 			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block, fileNames),
 			result => $"{result.AirportCount} airport(s), {result.NewCount + result.ChangedCount + result.DeletedCount} change(s), {result.FilesWritten.Count} document(s)"
 				+ (result.AliasFilePath is not null ? $", {result.AliasCommandCount} FAA Chart Recall command(s)" : string.Empty)).ConfigureAwait(false);

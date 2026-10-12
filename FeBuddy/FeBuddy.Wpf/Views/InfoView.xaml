@@ -75,8 +75,10 @@
                                         </Style>
                                     </ctl:Card.Style>
                                     <DockPanel>
+                                        <!-- the padding gives the hover highlight room around the text (#349); the
+                                             negative margin keeps the text lined up with the title -->
                                         <Button DockPanel.Dock="Bottom" HorizontalAlignment="Left"
-                                                Style="{StaticResource Button.Subtle}" Padding="0,4,0,0"
+                                                Style="{StaticResource Button.Subtle}" Padding="8,4" Margin="-8,0,0,-4"
                                                 Foreground="{StaticResource Brush.Accent}"
                                                 Content="Open →"
                                                 Command="{Binding Open}" />

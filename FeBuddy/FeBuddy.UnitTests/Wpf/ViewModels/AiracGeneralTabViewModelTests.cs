@@ -86,7 +86,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.False(fixes.Alias);
 		Assert.False(fixes.OffersAlias);
 		Assert.Equal("Fixes doesn't make an alias file.", fixes.AliasToolTip);
-		Assert.Equal("Fixes doesn't make Procedure_Changes.md; only Procedures does.", fixes.ProcedureChangesToolTip);
+		Assert.Equal("Fixes doesn't make Procedure_Changes.md; only Procedure Charts does.", fixes.ProcedureChangesToolTip);
 		Assert.EndsWith("Its settings are on the Fixes tab, in the list to the left.", fixes.GeojsonToolTip);
 	}
 
@@ -207,7 +207,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		string subServices = general.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Sub-services").Value;
 
-		Assert.Equal("Airports (Alias, GeoJSON)\nProcedures (Procedure Changes, Procedures JSON)", subServices);
+		Assert.Equal("Airports (Alias, GeoJSON)\nProcedure Charts (Procedure Changes, Procedures JSON)", subServices);
 	}
 
 	/// <summary>A tab reads its outputs from its row and follows it, without being marked unsaved.</summary>
@@ -271,7 +271,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		Assert.Contains($"expect it between {from:dd MMM} and {to:dd MMM yyyy}", tip, StringComparison.Ordinal);
 		Assert.Contains("Procedure_Changes.md, Procedures.json and Faa_Chart_Recall.txt", tip, StringComparison.Ordinal);
-		Assert.Contains("you can't add procedures or airport + procedure pairs", tip, StringComparison.Ordinal);
+		Assert.Contains("you can't add procedures or airport-specific procedures", tip, StringComparison.Ordinal);
 		Assert.DoesNotContain("should be out by now", tip, StringComparison.Ordinal);
 	}
 

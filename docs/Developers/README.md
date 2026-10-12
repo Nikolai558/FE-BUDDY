@@ -12,7 +12,8 @@ package it. Paths are relative to the repository root; the solution is `FeBuddy/
    options. Each tab turns its options into a flat `key = value` dictionary: the **settings block**.
 3. **The library builds.** For each sub-service it parses the block, turns FAA rows into objects (an
    airway with its waypoints in order), and writes GeoJSON and alias files, every one ready for vNAS.
-   The alias files are combined, with the facility's own, into one `Combined_Alias.txt`.
+   The alias files are combined into one `Combined_Alias.txt`, with the facility's own added unless
+   the user says no (Add Custom Aliases).
 4. **A result comes back** - files written, warnings, what was skipped and why - and the app shows
    it on the Review tab.
 
@@ -65,7 +66,7 @@ while working on the library.
 
 1. Point `NasrSourceDirectory` in `FeBuddy.Harness/HarnessSettings.cs` at an unzipped NASR CSV set
    (`https://nfdc.faa.gov/webContent/28DaySub/extra/<date>_CSV.zip`, or a cycle folder copied out of
-   `%APPDATA%\FE-Buddy\AiracCycles`), and set `OutputDirectory`. Wx Stations and Procedures also
+   `%APPDATA%\FE-Buddy\AiracCycles`), and set `OutputDirectory`. Wx Stations and Procedure Charts also
    need `WxStationsSourceFile` and `DtppMetafileFile`.
 2. Edit the settings blocks there ([Settings reference](Settings-Reference.md)), and comment or
    uncomment runners in `Program.cs`.

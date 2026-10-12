@@ -53,10 +53,10 @@ Settings**: what its files will hold, under each file's tag, one filter per line
 bottom, chips and all, it's one sentence: "Every arrival **for** airports in ZOB **and only** those
 amended in cycle 2610". **for** and **in** say where, **but only** and **and only** narrow the lines
 above, and **along with** adds to them. Where its files get different things, each file has its own
-lines, and **Outputs include** lists what narrows one file further (Procedures:
+lines, and **Outputs include** lists what narrows one file further (Procedure Charts:
 `Procedure_Changes.md` keeps only what changed). Under **outputs** are the files it writes, each with
 what goes in it, then any **note** on them. Its last line says where those outputs are turned on and
-off: the General tab. Procedures and Telephony list their files on an **Outputs** card instead.
+off: the General tab. Procedure Charts and Telephony list their files on an **Outputs** card instead.
 
 ### Saving
 
@@ -68,11 +68,11 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 ### General tab
 
 - **AIRAC Cycle** - Previous, Current or Next, with its effective date and status: *ready*, *partial*
-  (the [d-TPP Metafile](#procedures-tab) isn't out yet, so Procedures writes nothing; hover the row
+  (the [d-TPP Metafile](#procedure-charts-tab) isn't out yet, so Procedure Charts writes nothing; hover the row
   for when to expect it), *failed*, or *not yet published* (the FAA releases a cycle a few weeks
   early).
 - **Sub-Services** - tick **Include** for each sub-service to run, and the files it makes:
-  **Alias**, **GeoJSON**, and Procedures' **Changes** and **JSON**. All are on
+  **Alias**, **GeoJSON**, and Procedure Charts' **Changes** and **JSON**. All are on
   until you first save. Unticking **Include** unticks its files, and ticking it ticks them all; untick
   its last file and it's left out, tick one and it's back in. One left out is greyed out in the list
   to the left and keeps its settings. Add Custom Aliases comes in by itself while an alias file is
@@ -81,7 +81,7 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 ### The cards most tabs share
 
 The tabs that write GeoJSON share these cards (ARTCC Boundaries has no What Files Do You Want?, and
-Wx Stations no FE-Buddy Helper Properties); Procedures, Telephony and Add Custom Aliases have their
+Wx Stations no FE-Buddy Helper Properties); Procedure Charts, Telephony and Add Custom Aliases have their
 own.
 
 - **What Files Do You Want?** - which of **Lines**, **Symbols**, and **Text** to write, each with the
@@ -95,7 +95,7 @@ own.
   **Everything**. For **ROI**, pick **The default ROI** (Settings or the Map page) or **An ROI
   specific to *tab*** and type its corners or **Pick on map…**. A tab you've never saved starts on
   its ARTCCs if any are ticked, otherwise the ROI if a default ROI is set, otherwise Everything.
-  Procedures has an Area card of its own.
+  Procedure Charts has an Area card of its own.
 - **CRC ERAM Defaults** - CRC's "Map Defaults": how CRC draws a file, written as a hidden feature at
   its top ([vNAS docs](https://docs.virtualnas.net/data-admin/video-maps/#map-defaults)). At the top
   of the card, choose which GeoJSON files get them: **No CRC-ERAM defaults** (to start), **Every
@@ -195,11 +195,11 @@ A symbol and a label (its identifier) for every NASR fix. No Lines or alias file
   don't want.
 - **Area** - with **ROI**, a fix is included when it's inside the ROI.
 
-### Procedures tab
+### Procedure Charts tab
 
 Built from the FAA's **d-TPP Metafile** - its index of approach plates, SIDs, STARs, airport
 diagrams and the rest - not NASR. The FAA posts it only 15-18 days before a cycle starts; until then
-the cycle is *partial*, and the run goes ahead without Procedures' files.
+the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
 
 - **Outputs** (on or off on the General tab) - `Procedure_Changes.md` (what changed this cycle) and
   `Procedures.json` (every current chart) for the airports you pick, and `Faa_Chart_Recall.txt`

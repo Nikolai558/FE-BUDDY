@@ -28,7 +28,7 @@ using CoreFebProperties = FeBuddy.Core.Application.Airac.FebProperties;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Procedures</b> sub-service tab inside the AIRAC Service screen: which of the two documents
+/// The <b>Procedure Charts</b> sub-service tab inside the AIRAC Service screen: which of the two documents
 /// and the FAA Chart Recall alias file are on (set on the General tab), the area the documents cover
 /// (the facilities ticked, an ROI, every airport, or none), the airports and procedures added to it,
 /// the chart types a whole included airport is limited to, and the optional <c>Procedures.json</c>
@@ -155,7 +155,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	public override string NodePath => Node;
 
 	/// <inheritdoc />
-	public override string Title => "Procedures";
+	public override string Title => "Procedure Charts";
 
 	// ================= outputs =================
 
@@ -416,7 +416,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		_dtppStatus = dtpp is not null
 			? $"Cycle {cycleId}: {airportCount:N0} airports, {procedureCount:N0} procedures, downloaded {downloadedLocal:d MMM yyyy}."
-			: $"Cycle {cycleId}'s metafile isn't out yet, or couldn't be downloaded. FE-Buddy checks again at each launch. Until then, Procedures writes none of its files.";
+			: $"Cycle {cycleId}'s metafile isn't out yet, or couldn't be downloaded. FE-Buddy checks again at each launch. Until then, Procedure Charts writes none of its files.";
 
 		_previousDtppAvailable = previousAvailable;
 		_dtppPreviousStatus = previousAvailable
@@ -793,7 +793,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		rows.Add(new ServicePreviewRow("Facilities listed first", DescribePrimaryFacility()));
 		rows.Add(new ServicePreviewRow("d-TPP data", DtppStatus));
 
-		return [new ServicePreviewSection("Procedures", rows) { WhatYoullGet = WhatYoullGet }];
+		return [new ServicePreviewSection(Title, rows) { WhatYoullGet = WhatYoullGet }];
 	}
 
 	/// <inheritdoc />

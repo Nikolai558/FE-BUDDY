@@ -19,7 +19,7 @@ says so; a blank there means the same name.
 [New file names](#new-file-names) · [CRC defaults](#crc-defaults) · [Airports](#airports) ·
 [Airways](#airways) · [Departures and Arrivals](#departures-and-arrivals) · [NAVAIDs](#navaids) ·
 [ARTCC Boundaries](#artcc-boundaries) · [Fixes](#fixes) · [Wx Stations](#wx-stations) ·
-[Procedures](#procedures) · [Telephony](#telephony) · [Add Custom Aliases](#add-custom-aliases) ·
+[Procedure Charts](#procedure-charts) · [Telephony](#telephony) · [Add Custom Aliases](#add-custom-aliases) ·
 [File conversions](#file-conversions) · [Settings export and import](#settings-export-and-import) ·
 [Adding a setting](#adding-a-setting) · [Changing the layout](#changing-the-layout)
 
@@ -100,7 +100,7 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and 
 | `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
 | `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
-| `UserArtccId` | the Settings ▸ Facility ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedures until each is first saved | none |
+| `UserArtccId` | the Settings ▸ Facility ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedure Charts' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedure Charts until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
 | `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
 | `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
@@ -161,7 +161,7 @@ Saved by the Map (`MapLayersState`) the moment a choice is made, with no Save bu
 | ARTCC Boundaries | `Services.AiracService.ArtccBoundaries` |
 | Fixes | `Services.AiracService.Fixes` |
 | Wx Stations | `Services.AiracService.WxStations` |
-| Procedures | `Services.AiracService.Procedures` |
+| Procedure Charts | `Services.AiracService.Procedures` |
 | Telephony | `Services.AiracService.Telephony` |
 | Add Custom Aliases | `Services.AiracService.ConcatenateAliases` |
 | DAT to GeoJSON | `Services.FileConversions.DatToGeojson` |
@@ -180,7 +180,7 @@ none of them.
 | `IncludeFebCustomProperties` | | `Y` / `N` | `N` |
 | `FebProperties` | | list of the sub-service's `feb.*` names; **required** when the above is `Y` | none |
 | `CrcDefaultsFor` | `CrcDefaultsScope` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `CrcDefaultsFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
-| `Area` | `Area` | which one area filter the run uses (`SubServiceArea`): `Artccs` (ARTCC Boundaries, Departures, Arrivals; Procedures' facilities), `Roi`, `Everything`, or Procedures' `None`. Only that filter is read | see below |
+| `Area` | `Area` | which one area filter the run uses (`SubServiceArea`): `Artccs` (ARTCC Boundaries, Departures, Arrivals; Procedure Charts' facilities), `Roi`, `Everything`, or Procedure Charts' `None`. Only that filter is read | see below |
 | `FilterByRoi` | not saved: sent `Y` while `Area = Roi` and an ROI is set (the tab saves its own-or-default choice as `Roi.OverrideDefaultRoi`) | `Y` / `N`; **required** `Y` with `Area = Roi` | `N` |
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCorners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees; **required** with `Area = Roi` (which also needs `FilterByRoi = Y`) | none |
 | `Crc.<Class>.<Kind>.<field>` | `CrcEramPropertyDefaults.<row>.<field>` | see [CRC defaults](#crc-defaults) | none |
@@ -191,12 +191,12 @@ none of them.
 - A tab that has never saved an area starts on what its other settings mean
   (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Settings ▸ Facility ARTCC) if it has
   any, otherwise the ROI if it has its own or the default ROI is on, otherwise `Everything`
-  (Procedures: the ROI only with the old `IncludeRoiAirports`, otherwise `None`).
+  (Procedure Charts: the ROI only with the old `IncludeRoiAirports`, otherwise `None`).
 - A block without `Area` (one written by hand, or before there was a choice) means the same: its ARTCC list if it has one, otherwise the
   ROI with `FilterByRoi = Y`, otherwise everything (`SubServiceSettingsReader.ReadArea`).
 - `CrcDefaultsFiles` keeps every choice, even for files the current settings don't write, so a file
   switched off and on keeps its choice. A run sends only the files written.
-- A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedures' two documents) are
+- A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedure Charts' two documents) are
   set on the General tab and saved there, under `Services.AiracService.Outputs` - never in the
   sub-service's own node, so saving or undoing its tab can't change them.
 - Where a sub-service has both, `GenerateGeojson` and `GenerateAliasFile` can't both be `N`, and
@@ -213,7 +213,7 @@ none of them.
 | Alias file | `Aliases\` |
 | `Combined_Alias.txt` | `Aliases\`, whenever the run wrote an alias file or [Add Custom Aliases](#add-custom-aliases) is in it, unless the user stops the run at the duplicate review |
 | GeoJSON | `Geojson\` (Departures and Arrivals: `Geojson\<ARTCC>\<airport>\`) |
-| Procedures' documents | `Publication_Docs\` |
+| Procedure Charts' documents | `Publication_Docs\` |
 | `Duplicate_Alias_Commands.txt` | the cycle folder itself, whenever the run wrote an alias file |
 
 ## File keys
@@ -235,7 +235,7 @@ listed key that isn't excluded. Each sub-service's keys are in its `*OutputFiles
 | ARTCC Boundaries | `ARTCC-Boundary_High_Lines`, `_Low_Lines`, `_Unlimited_Lines`, or `ARTCC-Boundary_<ARTCC>-<ALTITUDE>_Lines`, e.g. `ARTCC-Boundary_ZOB-HIGH_Lines` | none |
 | Fixes | `Fix_Symbols`, `Fix_Text`, or `Fix_<Group>_Symbols` / `_Text`, e.g. `Fix_WYPNT_Symbols`, `Fix_ENROUTE-LOW-WYPNT_Text` | none |
 | Wx Stations | `Wx_Symbols`, `Wx_Text` | none |
-| Procedures | none | `Faa_Chart_Recall.txt` |
+| Procedure Charts | none | `Faa_Chart_Recall.txt` |
 | Telephony | none | `Telephony.txt` |
 
 ## New file names
@@ -407,9 +407,9 @@ unknown-key warning).
 
 No other keys of its own, and no `FebProperties`: `IncludeFebCustomProperties = Y` only warns.
 
-## Procedures
+## Procedure Charts
 
-Procedures writes no GeoJSON, so it has no `Emit…`, `FebProperties`, `CrcDefaultsFor` or `Crc.*` keys
+Procedure Charts writes no GeoJSON, so it has no `Emit…`, `FebProperties`, `CrcDefaultsFor` or `Crc.*` keys
 (`IncludeFebCustomProperties = Y` warns, pointing at `JsonFields`). Its `Area` is `Artccs` (the
 facilities), `Roi` (every airport inside it), `Everything` (every airport in the metafile) or `None`.
 

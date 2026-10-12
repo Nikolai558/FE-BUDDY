@@ -65,7 +65,7 @@ outlined in red.
 
 ### The cycle says "partial"
 
-The FAA hasn't posted the cycle's d-TPP Metafile yet, so Procedures writes nothing for it;
+The FAA hasn't posted the cycle's d-TPP Metafile yet, so Procedure Charts writes nothing for it;
 everything else runs. Hover the cycle for when to expect it - FE-Buddy looks for it at every launch.
 
 ### My GeoJSON files have no CRC ERAM defaults

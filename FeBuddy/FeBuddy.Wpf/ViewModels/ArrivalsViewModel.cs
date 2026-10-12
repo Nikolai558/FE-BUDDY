@@ -360,7 +360,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		{
 			files.Add(new(ArrivalOutputFiles.Alias,
 				"A command for each arrival at each airport that draws its waypoints on a CRC STARS or ERAM window.\n"
-				+ "Example: `.lasBLAIDf`\n"
+				+ "Example: `.lasBLAIDf .FF BCE HOLDM AALAN EHK PGA BLAID`\n"
 				+ "See the Alias Command Guide, under Info, for more examples and exceptions."));
 		}
 

@@ -66,7 +66,7 @@ while working on the library.
 
 1. Point `NasrSourceDirectory` in `FeBuddy.Harness/HarnessSettings.cs` at an unzipped NASR CSV set
    (`https://nfdc.faa.gov/webContent/28DaySub/extra/<date>_CSV.zip`, or a cycle folder copied out of
-   `%APPDATA%\FE-Buddy\AiracCycles`), and set `OutputDirectory`. Wx Stations and Procedures also
+   `%APPDATA%\FE-Buddy\AiracCycles`), and set `OutputDirectory`. Wx Stations and Procedure Charts also
    need `WxStationsSourceFile` and `DtppMetafileFile`.
 2. Edit the settings blocks there ([Settings reference](Settings-Reference.md)), and comment or
    uncomment runners in `Program.cs`.

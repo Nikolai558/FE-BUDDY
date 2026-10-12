@@ -73,7 +73,7 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
 | Telephony's ICAO register and U.S. special call signs | FAA Order JO 7340.2, Chapter 3 | `Telephony\telephony_register.html`, `us_special_call_signs.html` | every run that includes Telephony |
 | The virtual airline list, part 1 | GNG's fictional airlines (`gng.aero-nav.com`, `icao_fhairlines`) | `Telephony\gng_fhairlines.json` | runs whose Telephony block includes it, at most once a day |
 | The virtual airline list, part 2 | VATSIM-Radar's own list on GitHub (`VATSIM-Radar/data`, `custom-data/airlines.json`) | `Telephony\vatsim_radar_custom_airlines.json` | runs whose Telephony block includes it, at most once a day |
-| The d-TPP Metafile (Procedures) | the FAA, one per cycle | `d-tpp_Metafile.xml` in the cycle's folder | at launch, once per cycle |
+| The d-TPP Metafile (Procedure Charts) | the FAA, one per cycle | `d-tpp_Metafile.xml` in the cycle's folder | at launch, once per cycle |
 
 - **Wx Stations and Telephony** aren't published per cycle, so one copy is kept under
   `%APPDATA%\FE-Buddy` and refreshed by every run that needs it (`AiracSharedDataLoader`, through
@@ -97,7 +97,7 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
   (`DtppDownloader.EnsureCycleHasMetafileAsync`). The FAA posts it only 15-18 days before the cycle
   starts; a 404 is `NotYetPublished`, retried at the next launch, and the General tab shows the
   cycle as *partial*. `AiracCycleDataCache.GetDtppAsync` returns `null` when there is no copy, and
-  Procedures treats that as an advisory, not an error.
+  Procedure Charts treats that as an advisory, not an error.
 
 ## A run
 
@@ -137,7 +137,7 @@ Not every sub-service has all four steps:
 | ARTCC Boundaries | NASR | Lines | no |
 | Fixes | NASR | Symbols and Text | no |
 | Wx Stations | aviationweather.gov | Symbols and Text | no |
-| Procedures | d-TPP Metafile, joined to NASR | no - writes `Procedure_Changes.md` and `Procedures.json` | `Faa_Chart_Recall.txt`, for every airport in the metafile |
+| Procedure Charts | d-TPP Metafile, joined to NASR | no - writes `Procedure_Changes.md` and `Procedures.json` | `Faa_Chart_Recall.txt`, for every airport in the metafile |
 | Telephony | FAA telephony pages (and virtual airlines) | no | `Telephony.txt` |
 | Add Custom Aliases | the user's custom alias files | no | adds them to `Combined_Alias.txt` |
 

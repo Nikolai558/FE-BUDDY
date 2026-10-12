@@ -42,7 +42,7 @@ FE-Buddy 3.0 is a from-scratch rewrite. It makes:
 | **Departures** | SIDs (and ODPs if you want them), per airport | `Departures.txt` |
 | **NAVAIDs** | VOR, NDB, TACAN and every other NASR NAVAID type | `Navaids.txt` |
 | **Fixes** | Every NASR fix, in one file, by fix use, by chart, or by chart and fix use | - |
-| **Procedures** | - (`Procedure_Changes.md` and `Procedures.json` instead, from the FAA's d-TPP Metafile) | `Faa_Chart_Recall.txt` |
+| **Procedure Charts** | - (`Procedure_Changes.md` and `Procedures.json` instead, from the FAA's d-TPP Metafile) | `Faa_Chart_Recall.txt` |
 | **Telephony** | - | `Telephony.txt` - operators by designator and by spoken telephony, plus virtual airlines |
 | **Wx Stations** | Every US and US-territory station that reports METAR, from aviationweather.gov | - |
 | **Add Custom Aliases** | - | Adds your facility's own alias files to `Combined_Alias.txt` - every alias file the run makes, as one file for vNAS |

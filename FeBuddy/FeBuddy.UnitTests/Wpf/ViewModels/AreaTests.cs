@@ -395,8 +395,8 @@ public sealed class AreaTests : IDisposable
 		tab.OverrideRoi = true;
 
 		Assert.Contains(nameof(ProceduresViewModel.AirportsIntro), changed);
-		Assert.StartsWith("Even if outside the ROI specific to Procedures you selected,", tab.AirportsIntro, StringComparison.Ordinal);
-		Assert.EndsWith("outside the ROI specific to Procedures you have set.", tab.AreaNote, StringComparison.Ordinal);
+		Assert.StartsWith("Even if outside the ROI specific to Procedure Charts you selected,", tab.AirportsIntro, StringComparison.Ordinal);
+		Assert.EndsWith("outside the ROI specific to Procedure Charts you have set.", tab.AreaNote, StringComparison.Ordinal);
 
 		tab.Area = SubServiceArea.None;
 

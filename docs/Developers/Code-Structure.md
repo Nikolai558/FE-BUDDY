@@ -148,7 +148,7 @@ FeBuddy.Wpf/
                          Files, Run);
                          CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
                          Defaults; OutputStatusRow, an output's On/Off line (the Outputs
-                         cards of Procedures and Telephony); CrcDefaultsPanel; and
+                         cards of Procedure Charts and Telephony); CrcDefaultsPanel; and
                          DuplicateAliasesCard, the AIRAC Service's Duplicate Alias Commands
                          run option
 ```

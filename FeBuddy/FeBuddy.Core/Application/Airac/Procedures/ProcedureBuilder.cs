@@ -46,13 +46,13 @@ public static class ProcedureBuilder
 		if (nasr.Apt is null)
 		{
 			throw new InvalidOperationException(
-				"Airport data (APT) has not been parsed. The Procedures sub-service cannot run without it.");
+				"Airport data (APT) has not been parsed. The Procedure Charts sub-service cannot run without it.");
 		}
 
 		if (nasr.ClsArsp is null)
 		{
 			throw new InvalidOperationException(
-				"Class airspace data (CLS_ARSP) has not been parsed. The Procedures sub-service cannot run without it.");
+				"Class airspace data (CLS_ARSP) has not been parsed. The Procedure Charts sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];

@@ -366,7 +366,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			files.Add(new(DepartureOutputFiles.Alias,
 				"A command for each departure at each airport that draws its waypoints on a CRC STARS or ERAM window.\n"
-				+ "Example: `.laxDOTSSf`\n"
+				+ "Example: `.laxGMNf .FF GMN VNY COREZ AVE EHF`\n"
 				+ "See the Alias Command Guide, under Info, for more examples and exceptions."));
 		}
 

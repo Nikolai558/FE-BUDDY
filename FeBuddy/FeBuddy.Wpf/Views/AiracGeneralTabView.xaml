@@ -118,7 +118,7 @@
         <ctl:Card Header="Sub-Services">
             <StackPanel Grid.IsSharedSizeScope="True">
                 <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,12"
-                           Text="What do you want from this AIRAC Run? - Configure the run below.&#xA;Hover over an option for a quick description.&#xA;&#xA;Further control of each option may be configured in the corresponding tabs to the left." />
+                           Text="What do you want from this AIRAC Run? - Configure the run below.&#xA;&#xA;Hover over an option for a quick description.&#xA;Further control of each option may be configured in the corresponding tabs to the left.&#xA;" />
 
                 <!-- the headings -->
                 <Grid Margin="0,0,0,6">

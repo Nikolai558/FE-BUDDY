@@ -1,0 +1,74 @@
+<!--
+    PromptWindow  -  a question from Windows Installer, in the app's look.
+    ===========================================================================
+    Stands in for the message boxes Windows Installer would show: an error with Retry / Cancel,
+    a warning, the applications holding files that need replacing. The app's ConfirmWindow
+    layout: the app's chrome, an icon badge coloured by the prompt's kind, the heading, the text,
+    an optional list, and the buttons on the right with the main one last.
+-->
+<Window x:Class="FeBuddy.Installer.UI.Views.PromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="FE-BUDDY Setup"
+        Width="600" SizeToContent="Height"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Ideal"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="40" ResizeBorderThickness="0" CornerRadius="0"
+                            GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Border Background="{StaticResource Brush.Bg.Base}" BorderBrush="{StaticResource Brush.Stroke.Strong}" BorderThickness="1">
+        <StackPanel>
+            <!-- titlebar, as the app's ChromeWindow -->
+            <Grid Height="40" Background="{StaticResource Brush.Panel}">
+                <TextBlock Text="FE-BUDDY Setup" Margin="16,0,0,0" VerticalAlignment="Center"
+                           FontFamily="{StaticResource Font.Display}" FontSize="13" FontWeight="Bold"
+                           Foreground="{StaticResource Brush.Text.Primary}" />
+                <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+            </Grid>
+
+            <Grid Margin="24,22,24,22">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border x:Name="Badge" Width="36" Height="36" CornerRadius="11" VerticalAlignment="Top">
+                    <TextBlock x:Name="Glyph" FontFamily="{StaticResource Font.Icon}" FontSize="16"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                    <TextBlock x:Name="Heading" FontFamily="{StaticResource Font.Display}" FontSize="17.5" FontWeight="SemiBold"
+                               Foreground="{StaticResource Brush.Text.Primary}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                    <ScrollViewer MaxHeight="260" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <TextBox x:Name="Message" IsReadOnly="True" TextWrapping="Wrap" Background="Transparent" BorderThickness="0"
+                                 Padding="0" Margin="-2,0,0,0" FontFamily="{StaticResource Font.Body}" FontSize="14.5"
+                                 Foreground="{StaticResource Brush.Text.Secondary}" SelectionBrush="{StaticResource Brush.Accent}" />
+                    </ScrollViewer>
+
+                    <Border x:Name="ItemsPanel" Style="{StaticResource Panel.Inset}" Margin="0,14,0,0" Visibility="Collapsed">
+                        <ItemsControl x:Name="Items" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Style="{StaticResource Text.Body.Strong}" Margin="0,2" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <StackPanel x:Name="Buttons" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0" />
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

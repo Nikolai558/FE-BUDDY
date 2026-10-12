@@ -108,6 +108,11 @@ The rule (`UpdatePolicy`) is in `FeBuddy.Versioning` (netstandard2.0), the libra
 custom action share (net472, the only kind WiX's custom-action host loads). Its tests are in
 `FeBuddy.UnitTests/Versioning`, and it is part of the coverage gate.
 
+The MSI's setup window (`FeBuddy.Installer.UI`) applies the same rule before anything starts, so a
+blocked install says why on its first page, and an allowed rollback reads "Go back to …". It reads
+the installed `ProductSemVer` from the registry itself, since Windows Installer opens the window
+before its own AppSearch runs. The custom action and the launch condition still enforce the rule.
+
 ## The MSI's own version number
 
 Windows Settings ▸ Apps shows a different version for FE-Buddy than the real one, on purpose.

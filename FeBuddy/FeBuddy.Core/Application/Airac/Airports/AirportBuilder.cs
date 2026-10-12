@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airports.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
+using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Core.Application.Airac.Airports;
@@ -39,8 +40,7 @@ public static class AirportBuilder
 
 		if (allNasrCsvData.Apt is null)
 		{
-			throw new InvalidOperationException(
-				"Airport data (APT) has not been parsed. The Airports sub-service cannot run without it.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.Apt, "The Airports sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];
@@ -81,11 +81,11 @@ public static class AirportBuilder
 		ILookup<string, AptCsvDataModel.AptAtt> attendanceByAirport = allNasrCsvData.Apt.AptAtt
 			.ToLookup(a => a.ArptId?.Trim() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
-		ILookup<string, FrqCsvDataModel.Frq> frequenciesByAirport = BuildFrequencyLookup(allNasrCsvData.Frq?.Frq ?? []);
+		ILookup<string, FrqCsvDataModel.Frq> frequenciesByAirport = BuildFrequencyLookup(allNasrCsvData.RequireFrq().Frq);
 
 		Dictionary<string, ClsArspCsvDataModel.ClsArsp> airspaceByAirport = new(StringComparer.OrdinalIgnoreCase);
 
-		foreach (ClsArspCsvDataModel.ClsArsp row in allNasrCsvData.ClsArsp?.ClsArsp ?? [])
+		foreach (ClsArspCsvDataModel.ClsArsp row in allNasrCsvData.RequireClsArsp().ClsArsp)
 		{
 			airspaceByAirport.TryAdd(row.ArptId?.Trim() ?? string.Empty, row);
 		}

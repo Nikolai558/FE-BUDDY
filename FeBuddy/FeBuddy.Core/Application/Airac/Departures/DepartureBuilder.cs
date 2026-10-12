@@ -52,8 +52,7 @@ public static class DepartureBuilder
 
 		if (allNasrCsvData.Dp is null)
 		{
-			throw new InvalidOperationException(
-				"Departure procedure data (DP) has not been parsed. The Departures sub-service cannot run without it.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.Dp, "The Departures sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];

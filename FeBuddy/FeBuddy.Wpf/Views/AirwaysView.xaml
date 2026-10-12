@@ -78,7 +78,7 @@
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Toggle the airway types you wish to include in your output files." />
                     <TextBlock Style="{StaticResource Text.Caption}"
-                               Text="Waiting for AIRAC data…"
+                               Text="{Binding CycleWaitingText}"
                                Visibility="{Binding IsCycleReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     <ItemsControl ItemsSource="{Binding Designations}" IsEnabled="{Binding IsCycleReady}">
                         <ItemsControl.ItemsPanel>

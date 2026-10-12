@@ -1,8 +1,8 @@
 <!--
     ImportSettingsWindow  -  Settings ▸ Import… asks here where a file's settings go: a new profile
     (the default, named in the box under it), added to the profile in use, or in place of its
-    settings. What the choice does shows under them and scrolls on a short screen, so the buttons
-    always stay on it. Backs onto ImportSettingsViewModel.
+    settings. Each choice explains itself in a tooltip. What the choice does shows under them and
+    scrolls on a short screen, so the buttons always stay on it. Backs onto ImportSettingsViewModel.
 -->
 <ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.ImportSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -44,9 +44,8 @@
             <StackPanel Grid.Row="1">
                 <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Where They Go" Margin="0,16,0,6" />
 
-                <ctl:Option Description="{Binding NewProfileDescription}">
-                    <RadioButton GroupName="ImportDestination" Content="Into a new profile" IsChecked="{Binding IsNewProfile, Mode=TwoWay}" />
-                </ctl:Option>
+                <RadioButton GroupName="ImportDestination" Content="Into a new profile" IsChecked="{Binding IsNewProfile, Mode=TwoWay}"
+                             HorizontalAlignment="Left" ToolTip="{x:Static vm:ImportSettingsViewModel.NewProfileToolTip}" />
                 <StackPanel Margin="26,8,0,0" Visibility="{Binding IsNewProfile, Converter={StaticResource BoolToVis}}">
                     <TextBox x:Name="NameBox" Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}"
                              MaxLength="80" Width="300" HorizontalAlignment="Left"
@@ -56,12 +55,10 @@
                                Visibility="{Binding HasNameProblem, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
-                <ctl:Option Margin="0,12,0,0" Description="{Binding MergeDescription}">
-                    <RadioButton GroupName="ImportDestination" Content="{Binding MergeLabel}" IsChecked="{Binding IsMerge, Mode=TwoWay}" />
-                </ctl:Option>
-                <ctl:Option Margin="0,12,0,0" Description="{Binding ReplaceDescription}">
-                    <RadioButton GroupName="ImportDestination" Content="{Binding ReplaceLabel}" IsChecked="{Binding IsReplace, Mode=TwoWay}" />
-                </ctl:Option>
+                <RadioButton GroupName="ImportDestination" Content="{Binding MergeLabel}" IsChecked="{Binding IsMerge, Mode=TwoWay}"
+                             Margin="0,12,0,0" HorizontalAlignment="Left" ToolTip="{Binding MergeToolTip}" />
+                <RadioButton GroupName="ImportDestination" Content="{Binding ReplaceLabel}" IsChecked="{Binding IsReplace, Mode=TwoWay}"
+                             Margin="0,12,0,0" HorizontalAlignment="Left" ToolTip="{Binding ReplaceToolTip}" />
 
                 <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="What Happens" Margin="0,18,0,6" />
             </StackPanel>

@@ -102,6 +102,22 @@
       Id="FE_BUDDY_InstallDir"
       InstallDirectory="INSTALLFOLDER" />
 
+    <!--
+      FE-Buddy's own setup window (FeBuddy.Installer.UI): Windows Installer shows it in place of the
+      stock dialogs above whenever the MSI runs with a UI - a double-click, the app's "Update now",
+      "msiexec /x" - and, with SupportBasicUI, as a progress-only window under /qb and /passive. It
+      decides the run's mode itself and sets the same properties the stock dialogs' Publish events
+      do (CREATE_*/SAVED_*_SHORTCUT, INSTALLFOLDER, REMOVE, REINSTALL). The stock dialogs stay:
+      Windows Installer uses them on a PC with the MsiDisableEmbeddedUI machine policy. If the
+      window fails to load, DTF's host carries on with Windows Installer's basic progress UI.
+      Silent installs (/qn) never load it.
+    -->
+    <UI>
+      <EmbeddedUI Id="FeBuddySetupUI"
+                  SourceFile="!(bindpath.EmbeddedUIDir)\FeBuddy.Installer.UI.CA.dll"
+                  SupportBasicUI="yes" />
+    </UI>
+
     <Feature Id="Main">
       <ComponentGroupRef Id="ApplicationFiles" />
       <ComponentRef Id="StartMenuShortcutComponent" />

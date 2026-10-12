@@ -21,6 +21,41 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ---
 
+## 3.0.0-beta.9
+### AIRAC Service
+- Feature #346 - A faster start: the AIRAC Service opens as soon as the current cycle is ready, about
+  3 seconds after FE-Buddy starts instead of 9, while the next and previous cycles finish loading.
+  Picking one that's still loading waits for it. All three now load in about 6 seconds instead of 9.
+- Procedure Charts: **Additional Procedures to Include** and **Additional Airport-Specific Procedures
+  to Include** now take departures (SIDs and ODPs) and arrivals (STARs) only, and keep each by its
+  name without its number, so it stays included when the FAA renumbers it: `BRWNZ FOUR (RNAV)` is
+  listed as `BRWNZ`, which brings in `BRWNZ FIVE (RNAV)`. Each listed name shows what it brings in
+  this cycle, or that it brings in nothing.
+
+### Settings
+- Bug #354 - The **Reset FE-Buddy** window keeps its size when **Delete my settings** is picked, and
+  scrolls instead of running off the bottom of the screen.
+- **Import Settings**: each choice of where the settings go now explains itself in a tooltip
+  instead of the text under it.
+
+### Installing and uninstalling
+- A new setup window in FE-Buddy's own look replaces the old grey installer dialogs. It says up front
+  whether it will install, update, go back from a pre-release, repair or uninstall, and why a version
+  can't be installed.
+
+### Dev notes
+- Launch parses only the 9 NASR groups FE-Buddy reads (`NasrCsvGroups.InUse`) instead of all 24,
+  with `NasrCsvParser.ParseAsync(directory, groups)`. Reading a group that wasn't parsed names it in
+  the error. The log says how long each cycle's parse took.
+- Feature #346 - Dev launch: a Debug build started with `--dev` (the **FE-Buddy (Dev launch)**
+  profile) runs only the launch steps ticked on Settings' Developer card, shows **DEV LAUNCH** in the
+  status bar, and loads a cycle it skipped when something needs it.
+- The MSI's setup window is a new project, `FeBuddy.Installer.UI`: WPF on net472, run as the MSI's
+  embedded UI. It links the app's theme files, so it follows the app's look. The stock WixUI dialogs
+  stay as the fallback for PCs that disable embedded UIs.
+
+---
+
 ## 3.0.0-beta.8
 ### Updates
 - Bug #332 - In the update window, **Installed**, **Latest** and **Channel** now sit on the same

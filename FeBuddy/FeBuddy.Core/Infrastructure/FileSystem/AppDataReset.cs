@@ -12,8 +12,8 @@ namespace FeBuddy.Core.Infrastructure.FileSystem;
 /// <summary>
 /// Resets FE-Buddy like new: deletes everything it keeps in <c>%APPDATA%\FE-Buddy</c> -
 /// downloaded AIRAC cycles, Telephony and Wx Station data, logs and, unless they are kept, the
-/// settings (every profile in <c>User Configurations</c>) - and, when asked, its credentials in
-/// Windows Credential Manager.
+/// settings (every profile in <c>User Configurations</c>, and the steps a dev launch runs) - and,
+/// when asked, its credentials in Windows Credential Manager.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,6 +32,9 @@ public static class AppDataReset
 {
 	private const string LogSource = "Reset";
 	private const string RequestFileName = "Reset.pending.json";
+
+	/// <summary>The file a dev launch's chosen steps are kept in: kept with the settings.</summary>
+	internal const string DevLaunchSettingsFileName = "DevLaunch.json";
 
 	private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
@@ -77,8 +80,9 @@ public static class AppDataReset
 
 		WaitForExit(request.WaitForProcessId, waitForExit);
 
-		// Every settings profile, Shared.json, and an older FE-Buddy's one file not yet moved in.
-		string[] settings = [UserConfigFile.ProfilesFolderName, UserConfigFile.LegacyConfigFileName];
+		// Every settings profile, Shared.json, an older FE-Buddy's one file not yet moved in, and the
+		// steps a dev launch runs (Application.Launch.DevLaunchSettings).
+		string[] settings = [UserConfigFile.ProfilesFolderName, UserConfigFile.LegacyConfigFileName, DevLaunchSettingsFileName];
 		List<string> notDeleted = [];
 
 		foreach (string entry in Entries(RootDirectory))

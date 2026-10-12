@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "FE-Buddy": {
+      "commandName": "Project"
+    },
+    "FE-Buddy (Dev launch)": {
+      "commandName": "Project",
+      "commandLineArgs": "--dev"
+    }
+  }
+}

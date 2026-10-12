@@ -244,7 +244,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	{
 		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
 
-		string[] artccs = [.. (data.Dp?.DpBase ?? [])
+		string[] artccs = [.. data.RequireDp().DpBase
 			.Select(d => d.Artcc?.Trim().ToUpperInvariant() ?? string.Empty)
 			.Where(a => a.Length > 0)
 			.Distinct(StringComparer.OrdinalIgnoreCase)

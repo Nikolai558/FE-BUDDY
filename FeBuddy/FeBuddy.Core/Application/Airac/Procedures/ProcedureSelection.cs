@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
@@ -13,11 +14,20 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// every built <see cref="ProcedureAirport"/>.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Inclusion is decided per (airport, procedure): a whole-airport match (the area, or an explicit
 /// <c>Airports</c> pick) includes every procedure of that airport whose chart type is one of
 /// <see cref="ProcedureSettings.ChartTypes"/>; a <c>Procedures</c> or <c>AirportProcedures</c>
-/// pick includes that one procedure regardless of chart type or whole-airport inclusion. An airport
+/// pick includes that procedure regardless of chart type or whole-airport inclusion. An airport
 /// left with no included procedure is dropped.
+/// </para>
+/// <para>
+/// <c>Procedures</c> and <c>AirportProcedures</c> picks take departures and arrivals only
+/// (<see cref="ProcedureChartTypes.DeparturesAndArrivals"/>), matched by root name
+/// (<see cref="ProcedureNaming.RootName"/>): a pick of <c>BRWNZ</c> - or the
+/// <c>BRWNZ FOUR (RNAV)</c> it was made from - includes <c>BRWNZ FIVE (RNAV)</c> once the FAA
+/// renumbers it. A pick naming another kind of chart (an approach, say) is left out, and says so.
+/// </para>
 /// </remarks>
 public static class ProcedureSelection
 {
@@ -49,10 +59,14 @@ public static class ProcedureSelection
 		bool[] airportPickMatched = new bool[airportPicks.Count];
 
 		List<string> procedurePicks = [.. settings.Procedures];
+		string[] procedurePickRoots = [.. procedurePicks.Select(ProcedureNaming.RootName)];
 		bool[] procedurePickMatched = new bool[procedurePicks.Count];
+		bool[] procedurePickIsOtherChart = new bool[procedurePicks.Count];
 
 		List<ProcedureAirportPick> airportProcedurePicks = [.. settings.AirportProcedures];
+		string[] airportProcedurePickRoots = [.. airportProcedurePicks.Select(pick => ProcedureNaming.RootName(pick.ProcedureName))];
 		bool[] airportProcedurePickMatched = new bool[airportProcedurePicks.Count];
+		bool[] airportProcedurePickIsOtherChart = new bool[airportProcedurePicks.Count];
 
 		List<ProcedureAirport> result = [];
 
@@ -92,14 +106,18 @@ public static class ProcedureSelection
 				}
 			}
 
-			foreach (Procedure procedure in airport.Procedures)
+			// Each departure or arrival's root name, worked out once; null for any other chart.
+			string?[] roots = [.. airport.Procedures.Select(procedure =>
+				ProcedureChartTypes.IsDepartureOrArrival(procedure.ChartCode) ? ProcedureNaming.RootName(procedure.Name) : null)];
+
+			for (int p = 0; p < airport.Procedures.Count; p++)
 			{
 				for (int i = 0; i < procedurePicks.Count; i++)
 				{
-					if (procedure.Name.Equals(procedurePicks[i], StringComparison.OrdinalIgnoreCase))
+					if (Matches(airport.Procedures[p], roots[p], procedurePicks[i], procedurePickRoots[i], ref procedurePickIsOtherChart[i]))
 					{
 						procedurePickMatched[i] = true;
-						included.Add(procedure);
+						included.Add(airport.Procedures[p]);
 					}
 				}
 			}
@@ -113,13 +131,13 @@ public static class ProcedureSelection
 					continue;
 				}
 
-				Procedure? procedure = airport.Procedures.FirstOrDefault(
-					p => p.Name.Equals(pick.ProcedureName, StringComparison.OrdinalIgnoreCase));
-
-				if (procedure is not null)
+				for (int p = 0; p < airport.Procedures.Count; p++)
 				{
-					airportProcedurePickMatched[i] = true;
-					included.Add(procedure);
+					if (Matches(airport.Procedures[p], roots[p], pick.ProcedureName, airportProcedurePickRoots[i], ref airportProcedurePickIsOtherChart[i]))
+					{
+						airportProcedurePickMatched[i] = true;
+						included.Add(airport.Procedures[p]);
+					}
 				}
 			}
 
@@ -142,8 +160,9 @@ public static class ProcedureSelection
 		{
 			if (!procedurePickMatched[i])
 			{
-				messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-					$"Procedure '{procedurePicks[i]}' is not in this cycle's d-TPP metafile."));
+				messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, procedurePickIsOtherChart[i]
+					? $"'{procedurePicks[i]}' isn't a departure or arrival, so it's left out: Additional Procedures to Include takes departures and arrivals only."
+					: $"No departure or arrival named '{procedurePicks[i]}' is in this cycle's d-TPP metafile."));
 			}
 		}
 
@@ -152,12 +171,39 @@ public static class ProcedureSelection
 			if (!airportProcedurePickMatched[i])
 			{
 				ProcedureAirportPick pick = airportProcedurePicks[i];
-				messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-					$"Airport '{pick.Airport}' has no procedure '{pick.ProcedureName}' in this cycle's d-TPP metafile."));
+				messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, airportProcedurePickIsOtherChart[i]
+					? $"'{pick.ProcedureName}' at {pick.Airport} isn't a departure or arrival, so it's left out: Additional Airport-Specific Procedures to Include takes departures and arrivals only."
+					: $"Airport '{pick.Airport}' has no departure or arrival named '{pick.ProcedureName}' in this cycle's d-TPP metafile."));
 			}
 		}
 
 		return result;
+	}
+
+	/// <summary>
+	/// Whether a pick names this procedure: a departure or arrival whose root name is the pick's.
+	/// Another kind of chart is never matched; when it bears the pick's exact name,
+	/// <paramref name="isOtherChart"/> is set, so the warning can say why.
+	/// </summary>
+	/// <param name="procedure">The procedure.</param>
+	/// <param name="root">Its root name, or <see langword="null"/> when it isn't a departure or arrival.</param>
+	/// <param name="pick">The name the user listed.</param>
+	/// <param name="pickRoot">That name's root.</param>
+	/// <param name="isOtherChart">Set when the pick names a chart that isn't a departure or arrival.</param>
+	/// <returns><see langword="true"/> when the pick includes the procedure.</returns>
+	private static bool Matches(Procedure procedure, string? root, string pick, string pickRoot, ref bool isOtherChart)
+	{
+		if (root is not null)
+		{
+			return root.Equals(pickRoot, StringComparison.OrdinalIgnoreCase);
+		}
+
+		if (procedure.Name.Equals(ProcedureNaming.BaseName(pick), StringComparison.OrdinalIgnoreCase))
+		{
+			isOtherChart = true;
+		}
+
+		return false;
 	}
 
 	/// <summary>Whether a user-typed identifier names this airport, matching its FAA or ICAO identifier ignoring case.</summary>

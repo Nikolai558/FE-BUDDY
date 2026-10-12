@@ -172,9 +172,11 @@
                     <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" bhv:InlineCode.Text="{Binding AirportProceduresIntro}" />
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
-                                   Text="Press ADD PROCEDURE, type an airport first, then pick a procedure for that airport, and press ADD." />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
+                                   Text="Press ADD PROCEDURE, type an airport first, then pick a departure or arrival for that airport, and press ADD." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
                                    Text="If a procedure serves multiple airports, only the version for the specified airport is included." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
+                                   Text="{x:Static vm:ProceduresViewModel.RenumberNote}" />
                     </StackPanel>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
@@ -200,7 +202,22 @@
                                                     Command="{Binding DataContext.DeletePairCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                     CommandParameter="{Binding}" />
                                         </StackPanel>
-                                        <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Body}" />
+                                            <!-- What it brings in from the cycle picked, or that it brings in nothing. -->
+                                            <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                       Visibility="{Binding Detail, Converter={StaticResource StringToVis}}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                                                <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
                                     </DockPanel>
                                 </Border>
                             </DataTemplate>
@@ -253,9 +270,11 @@
                     </DockPanel>
                     <StackPanel Visibility="{Binding AreListsUsed, Converter={StaticResource BoolToVis}}">
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" bhv:InlineCode.Text="{Binding ProcedureNamesIntro}" />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0" Text="Type or pick a procedure, and press ENTER or ADD." />
-                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0" Text="Type or pick a departure or arrival, and press ENTER or ADD." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
                                    Text="If a procedure serves multiple airports, all versions of the procedure are included." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,10"
+                                   Text="{x:Static vm:ProceduresViewModel.RenumberNote}" />
                     </StackPanel>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
@@ -263,16 +282,31 @@
                                Text="Procedure names appear once the cycle's d-TPP metafile is available."
                                Visibility="{Binding HasDtppData, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
-                    <ItemsControl ItemsSource="{Binding ProcedureNames}" Margin="0,0,0,8">
+                    <ItemsControl ItemsSource="{Binding ProcedureNameRows}" Margin="0,0,0,8">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate DataType="{x:Type m:ProcedureNameRow}">
                                 <Border Margin="0,3" Padding="8,6" CornerRadius="{StaticResource Radius.Chip}"
                                         Background="{StaticResource Brush.Bg.Sunken}">
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Content="Delete" Style="{StaticResource Button.Ghost}"
                                                 Command="{Binding DataContext.DeleteProcedureCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}" />
-                                        <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                                CommandParameter="{Binding Name}" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body}" />
+                                            <!-- What it brings in from the cycle picked, or that it brings in nothing. -->
+                                            <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                       Visibility="{Binding Detail, Converter={StaticResource StringToVis}}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                                                <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
                                     </DockPanel>
                                 </Border>
                             </DataTemplate>

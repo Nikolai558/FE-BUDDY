@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Application.News.Models;
 using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
@@ -74,6 +75,13 @@ public static class AppEnvironment
 	public static bool LaunchCompleted { get; internal set; }
 
 	/// <summary>
+	/// How FE-Buddy was started: a normal launch, or a dev launch and the steps it runs. Set by
+	/// <see cref="LaunchSequence.UseOptions"/> before the window is built, so everything that reads it
+	/// sees the same answer.
+	/// </summary>
+	public static LaunchOptions LaunchOptions { get; internal set; } = LaunchOptions.Normal;
+
+	/// <summary>
 	/// Raised whenever any property here changes. The GUI subscribes and marshals to its
 	/// dispatcher.
 	/// </summary>
@@ -139,6 +147,7 @@ public static class AppEnvironment
 		Version = null;
 		News = null;
 		LaunchCompleted = false;
+		LaunchOptions = LaunchOptions.Normal;
 		Changed = null;
 		HttpClientForTesting = null;
 	}

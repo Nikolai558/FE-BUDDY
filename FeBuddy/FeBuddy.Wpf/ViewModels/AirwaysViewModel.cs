@@ -210,7 +210,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		HashSet<string> excluded = ParseExcludedFromConfig();
 
-		string[] designations = [.. (data.Awy?.AwyBase ?? [])
+		string[] designations = [.. data.RequireAwy().AwyBase
 			.Select(a => AirwayClassifier.DeriveDesignation(a.AwyId))
 			.Where(d => !string.IsNullOrWhiteSpace(d))
 			.Distinct(StringComparer.OrdinalIgnoreCase)

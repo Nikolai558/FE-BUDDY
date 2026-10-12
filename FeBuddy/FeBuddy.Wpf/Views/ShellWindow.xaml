@@ -523,7 +523,15 @@
                                Style="{StaticResource Text.Caption}"
                                VerticalAlignment="Center" />
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Passive: only says this is a dev launch (Debug builds started with dash-dash dev). -->
+                        <Border Style="{StaticResource Chip.Warn}" Margin="0,0,12,0" Padding="8,1" VerticalAlignment="Center"
+                                ToolTip="{Binding DevLaunchToolTip}"
+                                Visibility="{Binding IsDevLaunch, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="DEV LAUNCH" Style="{StaticResource Chip.Text}"
+                                       Foreground="{StaticResource Brush.Warn}" />
+                        </Border>
                         <TextBlock Text="{Binding ZuluClock}" Style="{StaticResource Text.Caption}"
+                                   VerticalAlignment="Center"
                                    FontFamily="{StaticResource Font.Mono}"
                                    Foreground="{StaticResource Brush.Text.Secondary}" />
                     </StackPanel>

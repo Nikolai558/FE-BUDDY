@@ -150,7 +150,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		_savedExcludedTypes = ParseList(Get("ExcludedTypes"));
 
-		string[] types = [.. (data.Nav?.NavBase ?? [])
+		string[] types = [.. data.RequireNav().NavBase
 			.Where(n => !(n.NavStatus?.Trim() ?? string.Empty).Equals(ShutdownStatus, StringComparison.OrdinalIgnoreCase))
 			.Select(n => (n.NavType ?? string.Empty).Trim().ToUpperInvariant())
 			.Where(t => t.Length > 0)

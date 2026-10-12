@@ -241,7 +241,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		_savedExcludedFixUses = ParseList(Get("ExcludedFixUses"));
 		_savedExcludedCharts = ParseList(Get("ExcludedCharts"));
 
-		string[] fixUseNames = [.. (data.Fix?.FixBase ?? [])
+		string[] fixUseNames = [.. data.RequireFix().FixBase
 			.Select(f => DomainFixUses.Name(f.FixUseCode))
 			.Distinct(StringComparer.OrdinalIgnoreCase)
 			.OrderBy(KnownFixUseOrder)
@@ -265,7 +265,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		Dictionary<string, string> chartNameByToken = new(StringComparer.OrdinalIgnoreCase);
 		bool hasNoChartFix = false;
 
-		foreach (var row in data.Fix?.FixBase ?? [])
+		foreach (var row in data.RequireFix().FixBase)
 		{
 			IReadOnlyList<string> charts = FixCharts.Parse(row.Charts);
 

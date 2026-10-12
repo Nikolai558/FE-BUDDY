@@ -28,82 +28,72 @@ using static FeBuddy.Core.Infrastructure.Nasr.Models.WxlCsvDataModel;
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
 /// <summary>
-/// Parses a whole NASR CSV cycle into one <see cref="NasrCsvDataCollection"/>.
+/// Parses a NASR CSV cycle, or the groups of it asked for, into one <see cref="NasrCsvDataCollection"/>.
 /// </summary>
 public class NasrCsvParser
 {
 	/// <summary>
-	/// Parses all NASR CSV file groups concurrently and combines them into a single collection.
-	/// Each top-level group (APT, ATC, AWY, ...) runs in parallel, and within a group each
-	/// individual file is also parsed in parallel, since none of the files depend on
-	/// one another's output.
+	/// Parses every NASR CSV file group: <see cref="ParseAsync"/> with <see cref="NasrCsvGroups.All"/>.
 	/// </summary>
 	/// <param name="sourceDirectory">The folder holding one cycle's extracted NASR CSV files.</param>
 	/// <returns>Every group's parsed data.</returns>
-	public static async Task<NasrCsvDataCollection> ParseAllAsync(string sourceDirectory)
+	public static Task<NasrCsvDataCollection> ParseAllAsync(string sourceDirectory) =>
+		ParseAsync(sourceDirectory, NasrCsvGroups.All);
+
+	/// <summary>
+	/// Parses the NASR CSV file groups asked for, concurrently, into a single collection; the others
+	/// stay <see langword="null"/> in it. Each group runs in parallel, and within a group each file
+	/// is also parsed in parallel, since none of the files depend on one another's output.
+	/// </summary>
+	/// <param name="sourceDirectory">The folder holding one cycle's extracted NASR CSV files.</param>
+	/// <param name="groups">The groups to parse, such as <see cref="NasrCsvGroups.InUse"/>.</param>
+	/// <returns>The parsed groups.</returns>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="groups"/> holds a value that isn't a group.</exception>
+	public static async Task<NasrCsvDataCollection> ParseAsync(string sourceDirectory, IEnumerable<NasrCsvGroup> groups)
 	{
-		// Start every group before awaiting any, so they all run at once.
-		Task<AptCsvDataCollection> aptTask = ParseAptAsync(sourceDirectory);
-		Task<AtcCsvDataCollection> atcTask = ParseAtcAsync(sourceDirectory);
-		Task<AwyCsvDataCollection> awyTask = ParseAwyAsync(sourceDirectory);
-		Task<ArbCsvDataCollection> arbTask = ParseArbAsync(sourceDirectory);
-		Task<AwosCsvDataCollection> awosTask = ParseAwosAsync(sourceDirectory);
-		Task<ClsArspCsvDataCollection> clsArspTask = ParseClsArspAsync(sourceDirectory);
-		Task<CdrCsvDataCollection> cdrTask = ParseCdrAsync(sourceDirectory);
-		Task<ComCsvDataCollection> comTask = ParseComAsync(sourceDirectory);
-		Task<DpCsvDataCollection> dpTask = ParseDpAsync(sourceDirectory);
-		Task<FixCsvDataCollection> fixTask = ParseFixAsync(sourceDirectory);
-		Task<FssCsvDataCollection> fssTask = ParseFssAsync(sourceDirectory);
-		Task<FrqCsvDataCollection> frqTask = ParseFrqAsync(sourceDirectory);
-		Task<HpfCsvDataCollection> hpfTask = ParseHpfAsync(sourceDirectory);
-		Task<IlsCsvDataCollection> ilsTask = ParseIlsAsync(sourceDirectory);
-		Task<LidCsvDataCollection> lidTask = ParseLidAsync(sourceDirectory);
-		Task<MilOpsCsvDataCollection> milTask = ParseMilOpsAsync(sourceDirectory);
-		Task<MtrCsvDataCollection> mtrTask = ParseMtrAsync(sourceDirectory);
-		Task<MaaCsvDataCollection> maaTask = ParseMaaAsync(sourceDirectory);
-		Task<NavCsvDataCollection> navTask = ParseNavAsync(sourceDirectory);
-		Task<PjaCsvDataCollection> pjaTask = ParsePjaAsync(sourceDirectory);
-		Task<PfrCsvDataCollection> pfrTask = ParsePfrAsync(sourceDirectory);
-		Task<RdrCsvDataCollection> rdrTask = ParseRdrAsync(sourceDirectory);
-		Task<StarCsvDataCollection> starTask = ParseStarAsync(sourceDirectory);
-		Task<WxlCsvDataCollection> wxlTask = ParseWxlAsync(sourceDirectory);
+		ArgumentNullException.ThrowIfNull(groups);
 
-		await Task.WhenAll(
-			aptTask, atcTask, awyTask, arbTask, awosTask, clsArspTask, cdrTask, comTask,
-			dpTask, fixTask, fssTask, frqTask, hpfTask, ilsTask, lidTask, milTask,
-			mtrTask, maaTask, navTask, pjaTask, pfrTask, rdrTask, starTask, wxlTask
-		);
+		NasrCsvDataCollection data = new();
 
-		NasrCsvDataCollection allNasrCsvData = new()
-		{
-			Apt = aptTask.Result,
-			Atc = atcTask.Result,
-			Awy = awyTask.Result,
-			Arb = arbTask.Result,
-			Awos = awosTask.Result,
-			ClsArsp = clsArspTask.Result,
-			Cdr = cdrTask.Result,
-			Com = comTask.Result,
-			Dp = dpTask.Result,
-			Fix = fixTask.Result,
-			Fss = fssTask.Result,
-			Frq = frqTask.Result,
-			Hpf = hpfTask.Result,
-			Ils = ilsTask.Result,
-			Lid = lidTask.Result,
-			MilOps = milTask.Result,
-			Mtr = mtrTask.Result,
-			Maa = maaTask.Result,
-			Nav = navTask.Result,
-			Pja = pjaTask.Result,
-			Pfr = pfrTask.Result,
-			Rdr = rdrTask.Result,
-			Star = starTask.Result,
-			Wxl = wxlTask.Result
-		};
+		// Start every group before awaiting any, so they all run at once. Each sets its own
+		// property; awaiting them all makes every one visible here.
+		await Task.WhenAll(groups.Distinct().Select(group => ParseGroupAsync(sourceDirectory, group, data)));
 
-		return allNasrCsvData;
+		return data;
 	}
+
+	/// <summary>Parses one group into its property of <paramref name="data"/>.</summary>
+	private static Task ParseGroupAsync(string sourceDirectory, NasrCsvGroup group, NasrCsvDataCollection data) => group switch
+	{
+		NasrCsvGroup.Apt => Into(ParseAptAsync(sourceDirectory), parsed => data.Apt = parsed),
+		NasrCsvGroup.Arb => Into(ParseArbAsync(sourceDirectory), parsed => data.Arb = parsed),
+		NasrCsvGroup.Atc => Into(ParseAtcAsync(sourceDirectory), parsed => data.Atc = parsed),
+		NasrCsvGroup.Awos => Into(ParseAwosAsync(sourceDirectory), parsed => data.Awos = parsed),
+		NasrCsvGroup.Awy => Into(ParseAwyAsync(sourceDirectory), parsed => data.Awy = parsed),
+		NasrCsvGroup.Cdr => Into(ParseCdrAsync(sourceDirectory), parsed => data.Cdr = parsed),
+		NasrCsvGroup.ClsArsp => Into(ParseClsArspAsync(sourceDirectory), parsed => data.ClsArsp = parsed),
+		NasrCsvGroup.Com => Into(ParseComAsync(sourceDirectory), parsed => data.Com = parsed),
+		NasrCsvGroup.Dp => Into(ParseDpAsync(sourceDirectory), parsed => data.Dp = parsed),
+		NasrCsvGroup.Fix => Into(ParseFixAsync(sourceDirectory), parsed => data.Fix = parsed),
+		NasrCsvGroup.Frq => Into(ParseFrqAsync(sourceDirectory), parsed => data.Frq = parsed),
+		NasrCsvGroup.Fss => Into(ParseFssAsync(sourceDirectory), parsed => data.Fss = parsed),
+		NasrCsvGroup.Hpf => Into(ParseHpfAsync(sourceDirectory), parsed => data.Hpf = parsed),
+		NasrCsvGroup.Ils => Into(ParseIlsAsync(sourceDirectory), parsed => data.Ils = parsed),
+		NasrCsvGroup.Lid => Into(ParseLidAsync(sourceDirectory), parsed => data.Lid = parsed),
+		NasrCsvGroup.Maa => Into(ParseMaaAsync(sourceDirectory), parsed => data.Maa = parsed),
+		NasrCsvGroup.MilOps => Into(ParseMilOpsAsync(sourceDirectory), parsed => data.MilOps = parsed),
+		NasrCsvGroup.Mtr => Into(ParseMtrAsync(sourceDirectory), parsed => data.Mtr = parsed),
+		NasrCsvGroup.Nav => Into(ParseNavAsync(sourceDirectory), parsed => data.Nav = parsed),
+		NasrCsvGroup.Pfr => Into(ParsePfrAsync(sourceDirectory), parsed => data.Pfr = parsed),
+		NasrCsvGroup.Pja => Into(ParsePjaAsync(sourceDirectory), parsed => data.Pja = parsed),
+		NasrCsvGroup.Rdr => Into(ParseRdrAsync(sourceDirectory), parsed => data.Rdr = parsed),
+		NasrCsvGroup.Star => Into(ParseStarAsync(sourceDirectory), parsed => data.Star = parsed),
+		NasrCsvGroup.Wxl => Into(ParseWxlAsync(sourceDirectory), parsed => data.Wxl = parsed),
+		_ => throw new ArgumentOutOfRangeException(nameof(group), group, "Not a NASR CSV group."),
+	};
+
+	/// <summary>Waits for a group's parse, then hands its result to <paramref name="store"/>.</summary>
+	private static async Task Into<T>(Task<T> parse, Action<T> store) => store(await parse);
 
 	// Each group parses its files in parallel, then assembles the group once all are done. Every
 	// file gets its own parser instance, so no parser is ever shared between threads.

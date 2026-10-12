@@ -6,6 +6,7 @@ using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Dtpp;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
+using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using DtppAirport = FeBuddy.Core.Infrastructure.Dtpp.Models.DtppMetafileXmlDataModel.Airport;
@@ -45,14 +46,12 @@ public static class ProcedureBuilder
 
 		if (nasr.Apt is null)
 		{
-			throw new InvalidOperationException(
-				"Airport data (APT) has not been parsed. The Procedure Charts sub-service cannot run without it.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.Apt, "The Procedure Charts sub-service cannot run without it.");
 		}
 
 		if (nasr.ClsArsp is null)
 		{
-			throw new InvalidOperationException(
-				"Class airspace data (CLS_ARSP) has not been parsed. The Procedure Charts sub-service cannot run without it.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.ClsArsp, "The Procedure Charts sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];

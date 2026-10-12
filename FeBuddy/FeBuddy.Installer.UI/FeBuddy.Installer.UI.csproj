@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    FeBuddy.Installer.UI  -  the MSI's own setup window, in FE-Buddy's theme.
+    ===========================================================================
+    Windows Installer shows this WPF window instead of the stock dialogs: it is the package's
+    "embedded UI" (the MsiEmbeddedUI table; FeBuddy.Installer/Package.wxs). The installer is still
+    FE-BUDDY-Setup.msi - the updater, the release workflow and 2.x's updater are unchanged.
+
+    Two hard constraints, both from WiX's DTF host (SfxCA), which loads this assembly inside
+    msiexec.exe:
+      * net472 - SfxCA hosts the CLR through the classic shim, which loads only .NET Framework
+        (see FeBuddy.Installer.CustomActions.csproj).
+      * its own assembly - MakeSfxCA refuses to pack custom-action entry points and an embedded
+        UI together.
+
+    The look comes from FeBuddy.Wpf's theme: Palette, Typography, Icons and Controls.Chrome are
+    linked in as they are, so a colour changed there changes here. FeBuddy.Wpf's control styles
+    use the app's own controls, so Theme/Controls.xaml re-states the few this window needs, with
+    the same values. Not unit tested and outside the coverage report, like the custom actions:
+    it needs a live MSI session.
+  -->
+
+  <PropertyGroup>
+    <AcceptEula>wix7</AcceptEula>
+    <TargetFramework>net472</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <!-- Every public member must be documented (CS1591), and unused usings are reported (IDE0005). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+
+    <!-- PackCustomAction picks the SfxCA stub from $(Platform), and falls back to the 32-bit one
+         when none is passed - see FeBuddy.Installer.CustomActions.csproj. -->
+    <Platform>x64</Platform>
+
+    <!-- FeBuddy.Installer's BindPath expects bin\$(Configuration)\net472\. -->
+    <BaseOutputPath>bin\</BaseOutputPath>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Dtf.CustomAction" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The version rule the version-policy custom action enforces, so the window can say up front
+         when an install would be refused. -->
+    <ProjectReference Include="..\FeBuddy.Versioning\FeBuddy.Versioning.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Packed into the .CA.dll by PackCustomAction (it takes every Content item). -->
+    <Content Include="EmbeddedUI.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- FeBuddy.Wpf's theme tokens, shared as they are. -->
+    <Page Include="..\FeBuddy.Wpf\Theme\Palette.xaml" Link="Theme\Palette.xaml" />
+    <Page Include="..\FeBuddy.Wpf\Theme\Typography.xaml" Link="Theme\Typography.xaml" />
+    <Page Include="..\FeBuddy.Wpf\Theme\Icons.xaml" Link="Theme\Icons.xaml" />
+    <Page Include="..\FeBuddy.Wpf\Theme\Controls.Chrome.xaml" Link="Theme\Controls.Chrome.xaml" />
+
+    <!-- The FEB mark and the window icon. -->
+    <Resource Include="..\FeBuddy.Wpf\Assets\Brand\FEB_*.png" Link="Assets\Brand\%(Filename)%(Extension)" />
+    <Resource Include="..\FeBuddy.Wpf\Assets\FE-BUDDY.ico" Link="Assets\FE-BUDDY.ico" />
+
+    <!-- The license page shows the repository's own LICENSE.md. -->
+    <EmbeddedResource Include="..\..\LICENSE.md" Link="Assets\LICENSE.md" LogicalName="FeBuddy.Installer.UI.LICENSE.md" />
+  </ItemGroup>
+
+</Project>

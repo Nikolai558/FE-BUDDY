@@ -154,23 +154,22 @@ public sealed class ImportSettingsViewModel : ObservableObject
 	/// <summary>Whether <see cref="NameProblem"/> is shown.</summary>
 	public bool HasNameProblem => NameProblem is not null;
 
-	/// <summary>Under the new-profile choice.</summary>
-	public string NewProfileDescription => $"FE-Buddy switches to it. {ActiveProfile} stays as it is.";
+	/// <summary>The new-profile choice's tooltip.</summary>
+	public const string NewProfileToolTip = "This makes a new profile with the imported profile data.\nName it as you see fit.";
 
 	/// <summary>The second choice's label.</summary>
 	public string MergeLabel => $"Add them to {ActiveProfile}";
 
-	/// <summary>Under it.</summary>
-	public string MergeDescription =>
-		$"Where both have a setting, the file's is used; {ActiveProfile}'s other settings stay. A list in the file, " +
-		$"such as the custom alias files, replaces {ActiveProfile}'s whole list.";
+	/// <summary>Its tooltip.</summary>
+	public string MergeToolTip =>
+		$"Where both the Import and {ActiveProfile} have settings, the Import wins.\nOtherwise, {ActiveProfile} fills in the empty settings.";
 
 	/// <summary>The third choice's label.</summary>
 	public string ReplaceLabel => $"Replace {ActiveProfile}'s settings with them";
 
-	/// <summary>Under it.</summary>
-	public string ReplaceDescription =>
-		$"{ActiveProfile} gets the file's settings and nothing else: a setting the file doesn't have goes back to its default.";
+	/// <summary>Its tooltip.</summary>
+	public string ReplaceToolTip =>
+		$"Similar to \"{MergeLabel}\", except empty settings in the Import are left empty and not filled with those in {ActiveProfile}.";
 
 	/// <summary>The import <see cref="Destination"/> does: the replacing one for a new profile.</summary>
 	public UserConfigImportPlan Plan => IsMerge ? _merge : _replace;

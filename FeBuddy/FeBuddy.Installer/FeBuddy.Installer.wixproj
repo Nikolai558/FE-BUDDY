@@ -31,6 +31,9 @@
     <BindPath Include="$(MSBuildProjectDirectory)\..\FeBuddy.Installer.CustomActions\bin\$(Configuration)\net472">
       <BindName>CustomActionsDir</BindName>
     </BindPath>
+    <BindPath Include="$(MSBuildProjectDirectory)\..\FeBuddy.Installer.UI\bin\$(Configuration)\net472">
+      <BindName>EmbeddedUIDir</BindName>
+    </BindPath>
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +49,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FeBuddy.Installer.CustomActions\FeBuddy.Installer.CustomActions.csproj" />
+    <ProjectReference Include="..\FeBuddy.Installer.UI\FeBuddy.Installer.UI.csproj" />
   </ItemGroup>
 
 </Project>

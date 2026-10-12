@@ -430,18 +430,24 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 			// The metafile is fetched before a cycle is parsed, so once the cycle is ready, a
 			// missing metafile stays missing until the next launch.
-			AiracCycleDataCacheEntry? entry = AiracCycleDataCache.Instance.GetEntry(info.AiracCycleId);
+			AiracCycleDataCache cache = AiracCycleDataCache.Instance;
+			AiracCycleDataCacheEntry? entry = cache.GetEntry(info.AiracCycleId);
 			bool missingDtpp = entry?.State == CycleDataState.Ready
-				&& AiracCycleDataCache.Instance.FindDtppFile(info.AiracCycleId) is null;
+				&& cache.FindDtppFile(info.AiracCycleId) is null;
+
+			// A dev launch can leave a cycle unloaded until something asks for it: say so, rather
+			// than that it's on its way. A normal launch never does.
+			bool leftUnloaded = entry is not null && cache.LoadsOnDemand && !cache.IsLoading(entry);
 
 			State = entry?.State switch
 			{
 				CycleDataState.Ready => missingDtpp ? "partial" : "ready",
 				CycleDataState.Parsing => "parsing…",
 				CycleDataState.Downloading => "downloading…",
-				CycleDataState.Downloaded => "parsing…",
+				CycleDataState.Downloaded => leftUnloaded ? "downloaded, not parsed (dev launch)" : "parsing…",
 				CycleDataState.Failed => "failed",
 				CycleDataState.NotYetPublished => "not yet published",
+				CycleDataState.NotDownloaded when leftUnloaded => "not loaded (dev launch)",
 				_ => "preparing…",
 			};
 

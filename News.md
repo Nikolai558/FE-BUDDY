@@ -15,6 +15,25 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ## 2026-10-12
 <!--
+PostId: 2026-10-12.2
+-->
+
+**Version 3.0.0-beta.9 Compiled!**
+
+A faster start, and a new installer
+
+- **Faster start**: the AIRAC Service is ready about 3 seconds after FE-Buddy opens instead of 9. The next and previous cycles finish loading behind it
+- **New setup window** in FE-Buddy's own look replaces the old grey installer. It tells you up front whether it will install, update, repair or uninstall
+- **Procedure Charts**: the two **Additional ... to Include** cards take departures and arrivals only, and keep each by name without its number, so `BRWNZ` stays included when the FAA renumbers it. Each shows what it brings in this cycle
+- **Import Settings**: each choice now explains itself in a tooltip
+- **Fix**: the **Reset FE-Buddy** window no longer runs off the bottom of the screen
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.9)!!!
+
+---
+
+## 2026-10-12
+<!--
 PostId: 2026-10-12.1
 -->
 

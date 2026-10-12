@@ -54,9 +54,13 @@ public sealed class ImportSettingsViewModelTests
 		Assert.True(choice.CanImport);
 		Assert.Equal("ZOB gets the file's settings.", choice.Summary);
 		Assert.Equal("zob.json, exported from FE-Buddy v3.1.0 on 7 Oct 2026.", choice.FromFile);
-		Assert.Equal("FE-Buddy switches to it. Default stays as it is.", choice.NewProfileDescription);
+		Assert.Equal("This makes a new profile with the imported profile data.\nName it as you see fit.", ImportSettingsViewModel.NewProfileToolTip);
 		Assert.Equal("Add them to Default", choice.MergeLabel);
+		Assert.Equal("Where both the Import and Default have settings, the Import wins.\nOtherwise, Default fills in the empty settings.", choice.MergeToolTip);
 		Assert.Equal("Replace Default's settings with them", choice.ReplaceLabel);
+		Assert.Equal(
+			"Similar to \"Add them to Default\", except empty settings in the Import are left empty and not filled with those in Default.",
+			choice.ReplaceToolTip);
 	}
 
 	/// <summary>A facility a profile already has, or none, leaves the name to the user; Import waits for one.</summary>

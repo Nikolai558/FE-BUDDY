@@ -1,6 +1,7 @@
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
 using FeBuddy.UnitTests.Application.Airac.Procedures.Fixtures;
 
@@ -126,11 +127,21 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	}
 
 	[Fact]
-	public void missing_nasr_airport_data_leaves_every_line_without_an_artcc()
+	public void airport_data_that_was_not_parsed_is_named_in_the_error()
 	{
 		AliasFileWritten file = AliasFile("Faa_Chart_Recall.txt", ".edwAPDc .OPENURL a", ".edwAPDc .OPENURL b");
 
-		DuplicateAliasCommand duplicate = Assert.Single(DuplicateAliasReport.Find([file], new NasrCsvDataCollection()));
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => DuplicateAliasReport.Find([file], new NasrCsvDataCollection()));
+
+		Assert.Contains("NASR APT data has not been parsed", ex.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void an_airport_nasr_does_not_list_leaves_its_lines_without_an_artcc()
+	{
+		AliasFileWritten file = AliasFile("Faa_Chart_Recall.txt", ".edwAPDc .OPENURL a", ".edwAPDc .OPENURL b");
+
+		DuplicateAliasCommand duplicate = Assert.Single(DuplicateAliasReport.Find([file], new NasrCsvDataCollection { Apt = new AptCsvDataCollection() }));
 
 		Assert.All(duplicate.Lines, line => Assert.Null(line.ArtccId));
 	}

@@ -64,8 +64,9 @@ FeBuddy.Core/
 │   ├── Http/ Logging/ Markdown/   FeBuddyHttp, AppLog, MarkdownParser
 │   ├── Platform/         AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable,
 │   │                     LegacySquirrelInstall, LegacySquirrelShortcuts
-│   ├── Nasr/             NasrCycleDownloader, AiracCycleAvailability, NasrCsvReader, WaypointLocator;
-│   │                     Models/ and Parsers/ hold one row model and one parser per NASR CSV group
+│   ├── Nasr/             NasrCycleDownloader, AiracCycleAvailability, NasrCsvReader, WaypointLocator,
+│   │                     NasrCsvGroups (the groups in use); Models/ and Parsers/ hold one row model
+│   │                     and one parser per NASR CSV group
 │   ├── SharedData/       SharedDataDownload: download, check and swap in data kept outside the
 │   │                     cycle folders
 │   ├── WxStations/       aviationweather.gov's station list (WxStationDownloader, WxStationXmlParser)
@@ -88,7 +89,8 @@ FeBuddy.Core/
     │                     (AliasPracticeContent, AliasPracticeWriter, AliasPractice.js, built in)
     ├── Conversions/      ConversionSettingsReader, ConversionFiles, then DatToGeojson/,
     │                     SctToGeojson/ and EramToGeojson/
-    ├── Launch/           LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice
+    ├── Launch/           LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice, WelcomeNotice, and a
+    │                     dev launch's choices (OptionalLaunchSteps, DevLaunchSettings)
     ├── News/             NewsService
     ├── Settings/         SubServiceSettingsReader, CrcDefaultsReader, SettingsValueReader
     ├── Updates/          VersionCheck, UpdateInstaller, UpdateChannelSetting, AppUninstall
@@ -132,7 +134,7 @@ FeBuddy.Wpf/
 ├── Map/                 GeoJsonReader, WebMercator, ProjectedLayer, AiracMapLayers, BaseMap
 ├── Mvvm/                ObservableObject, RelayCommand
 ├── Shell/               app-wide services: Toast, Links, BrowserLauncher, DefaultRoiStore,
-│                        OutputPreferences, AppRestart
+│                        OutputPreferences, AppRestart, DevLaunchArgs
 ├── ViewModels/          ShellViewModel and one per screen or tab; AiracSubServices (the sub-service
 │   │                    catalogue); the map's MapViewModel and MapLayersState
 │   ├── Models/          small rows and records
@@ -216,7 +218,11 @@ FeBuddy.Wpf/
 
 - **A new aviation or geometry rule:** `Core/Domain/<Feature>/`.
 - **A new NASR CSV group:** its row model in `Infrastructure/Nasr/Models/`, its parser in
-  `Infrastructure/Nasr/Parsers/`, wired into `NasrCsvParser`.
+  `Infrastructure/Nasr/Parsers/`, a `NasrCsvGroup` value, a `NasrCsvDataCollection` property and
+  `Require…` method, and a line in `NasrCsvParser.ParseGroupAsync`. The cycle cache parses it once
+  it's in `NasrCsvGroups.InUse`.
+- **Reading a group the cache doesn't parse yet:** add it to `NasrCsvGroups.InUse`, and read it
+  through its `Require…` method.
 - **A new config key:** see [Adding a setting](Settings-Reference.md#adding-a-setting).
 - **Something two features share:** the lowest layer both can see. Never copy it.
 - **A reusable control:** `Wpf/Controls/`, its look in a `Theme/Controls.*.xaml` style. An attached

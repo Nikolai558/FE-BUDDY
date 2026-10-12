@@ -241,7 +241,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	{
 		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
 
-		string[] artccs = [.. (data.Star?.StarBase ?? [])
+		string[] artccs = [.. data.RequireStar().StarBase
 			.SelectMany(s => (s.Artcc ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
 			.Select(a => a.Trim().ToUpperInvariant())
 			.Where(a => a.Length > 0)

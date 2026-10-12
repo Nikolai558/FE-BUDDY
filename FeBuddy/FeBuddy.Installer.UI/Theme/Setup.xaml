@@ -1,0 +1,30 @@
+<!--
+    Setup.xaml  -  the one dictionary the setup window merges.
+    ===========================================================================
+    Tokens first (FeBuddy.Wpf's own Palette, Typography and Icons, linked in by the project),
+    then the scrollbar and tooltip styles (FeBuddy.Wpf's Controls.Chrome, also linked), then this
+    assembly's control styles.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:ctl="clr-namespace:FeBuddy.Installer.UI.Controls">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/FeBuddy.Installer.UI;component/Theme/Palette.xaml" />
+        <ResourceDictionary Source="/FeBuddy.Installer.UI;component/Theme/Typography.xaml" />
+        <ResourceDictionary Source="/FeBuddy.Installer.UI;component/Theme/Icons.xaml" />
+        <ResourceDictionary Source="/FeBuddy.Installer.UI;component/Theme/Controls.Chrome.xaml" />
+        <ResourceDictionary Source="/FeBuddy.Installer.UI;component/Theme/Controls.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Segoe Fluent glyphs the app has no use for, so they are not in its Icons.xaml. -->
+    <sys:String x:Key="Icon.Repair">&#xE90F;</sys:String>
+    <sys:String x:Key="Icon.Delete">&#xE74D;</sys:String>
+    <sys:String x:Key="Icon.ArrowRight">&#xE72A;</sys:String>
+    <sys:String x:Key="Icon.Blocked">&#xE733;</sys:String>
+
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <ctl:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+
+</ResourceDictionary>

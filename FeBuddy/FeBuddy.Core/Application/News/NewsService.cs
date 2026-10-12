@@ -93,7 +93,9 @@ public static class NewsService
 			newCount = posts.Count(p => p.Id.CompareTo(lastSeen) > 0);
 		}
 
-		string source = fromNetwork ? "GitHub" : "the bundled copy (GitHub unreachable)";
+		// Why it's the bundled copy - offline, a failed fetch, or a dev launch that left News out - is
+		// logged where that was decided.
+		string source = fromNetwork ? "GitHub" : "the bundled copy";
 		AppLog.Info(LogSource, newCount > 0
 			? $"{newCount} unread News post(s) from {source}; newest is {latest}."
 			: $"News is up to date (newest {latest}) - from {source}.");

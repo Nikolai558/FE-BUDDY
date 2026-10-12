@@ -29,6 +29,7 @@ harness and the tests all drive it the same way.
 | `FeBuddy.Versioning` | The version number and the upgrade rule, shared by Core and the installer (netstandard2.0). |
 | `FeBuddy.Installer` | The MSI (WiX). |
 | `FeBuddy.Installer.CustomActions` | The MSI's code: enforce the upgrade rule, and remove saved credentials on uninstall (net472). |
+| `FeBuddy.Installer.UI` | The MSI's setup window, in the app's theme: install, update, roll back, repair and uninstall (WPF, net472, an MSI embedded UI). |
 | `FeBuddy.Harness` | A console app that runs the services with settings written in code. |
 | `FeBuddy.UnitTests` | xUnit tests for Core, Versioning and the app's view-models and controls. |
 
@@ -58,6 +59,49 @@ A development build uses `%APPDATA%\FE-Buddy` like an installed copy: the settin
 **Developer mode** is `DevModeEnabled` in `FeBuddy.Wpf/App.xaml.cs`, a code constant. Turn it on
 for a troubleshooting build: GeoJSON is pretty printed and Debug log entries are kept. Keep it off
 in a release; the release checks fail if it's on.
+
+### Dev launch
+
+A dev launch skips the launch steps you aren't testing, so FE-Buddy is ready in moments.
+
+- **Start it** by choosing **FE-Buddy (Dev launch)** from Visual Studio's Start drop-down
+  (`Properties/launchSettings.json`), or with `--dev` or `--devmode` in any case:
+
+  ```bash
+  dotnet run --project FeBuddy/FeBuddy.Wpf -- --dev
+  ```
+
+- **Debug builds only.** A Release build ignores the argument and logs that it did.
+- A dev launch also turns on developer mode, and shows **DEV LAUNCH** in the status bar; hover it for
+  the steps it skipped. The log's first lines name them too.
+- **Settings ▸ Developer: Launch Steps**, shown only in a dev launch, has a box for each step it can
+  skip. All are off to start. Each change is saved at once to `%APPDATA%\FE-Buddy\DevLaunch.json` and
+  **takes effect from the next dev launch**. **Restart in DevMode with these settings** restarts into
+  one now. A normal launch, and any Release build, always runs every step.
+
+| Step | Off means |
+|---|---|
+| Check the clock and internet connection | The PC's clock, and online assumed. Systems says "not checked". |
+| Download AIRAC data | Nothing AIRAC-related uses the network at launch. |
+| Parse AIRAC data | Nothing is parsed at launch. |
+| Remove old AIRAC cycles from disk | Old cycles stay. |
+| Check for a newer version | No update badge. Systems says "not checked". |
+| Download News | The copy built into FE-Buddy. |
+| Check GitHub tokens | Not checked at launch; adding or editing a credential still checks it. |
+| FE-Buddy 2.x GitHub token notice | Not looked for, and not shown. |
+| First-launch welcome window | Not looked for, and not shown. |
+| Remove FE-Buddy 2.x's old install and dead shortcuts | Left alone. |
+
+Always run: a reset asked for in Settings, the log, clearing the temporary folder, and reading the
+settings.
+
+The previous, current and next cycles are always tracked. With downloading off, only the cycles
+already on disk can be parsed. A cycle the launch didn't load shows as "not loaded (dev launch)" or
+"downloaded, not parsed (dev launch)", and loads when something needs it: a run, the Map, or opening
+the AIRAC Service or Settings. Only a dev launch loads a cycle on opening a page.
+
+The choices are kept outside every settings profile, so Import and Export never see them. A reset
+that keeps the settings keeps them too. A restart after a reset is a normal launch.
 
 ## The harness
 

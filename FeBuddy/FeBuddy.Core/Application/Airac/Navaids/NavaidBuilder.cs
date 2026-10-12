@@ -3,6 +3,7 @@ using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Navaids;
 using FeBuddy.Core.Domain.Navaids.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
+using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using static FeBuddy.Core.Infrastructure.Nasr.Models.NavCsvDataModel;
@@ -45,8 +46,7 @@ public static class NavaidBuilder
 
 		if (allNasrCsvData.Nav is null)
 		{
-			throw new InvalidOperationException(
-				"NAVAID data (NAV) has not been parsed. The NAVAIDs sub-service cannot run without it.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.Nav, "The NAVAIDs sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];

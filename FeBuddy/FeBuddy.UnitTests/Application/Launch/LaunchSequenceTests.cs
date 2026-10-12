@@ -22,10 +22,12 @@ using FeBuddy.Core.Infrastructure.Telephony.Models;
 
 using FeBuddy.Versioning.Models;
 
+using FeBuddy.Wpf.ViewModels;
+
 namespace FeBuddy.UnitTests.Application.Launch;
 
 /// <summary>
-/// Runs <see cref="LaunchSequence.RunAsync"/> end to end with every outside dependency stubbed:
+/// Runs <see cref="LaunchSequence.RunAsync(string, LaunchOptions, IProgress{LaunchProgress}?, CancellationToken)"/> end to end with every outside dependency stubbed:
 /// HTTP through <see cref="AppEnvironment.HttpClientForTesting"/>, the AIRAC cache through
 /// <see cref="AiracCycleDataCache.ConfigureForTesting"/>, and config, temp and log folders
 /// redirected to a throwaway directory.
@@ -82,10 +84,12 @@ public sealed class LaunchSequenceTests : IDisposable
 				return Task.FromResult(cycle.AiracCycleId);
 			},
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection())));
+		DevLaunchSettings.ConfigureForTesting(_root);
 	}
 
 	public void Dispose()
 	{
+		DevLaunchSettings.ConfigureForTesting(null);
 		AppEnvironment.HttpClientForTesting?.Dispose();
 		AppEnvironment.ResetForTesting();
 		WelcomeNotice.ResetForTesting();
@@ -174,6 +178,182 @@ public sealed class LaunchSequenceTests : IDisposable
 
 		Assert.DoesNotContain(progress.Reports, r => r.Status == LaunchStepStatus.Failed);
 		Assert.Equal(new LaunchProgress(LaunchStep.Complete, LaunchStepStatus.Succeeded, "Launch complete"), progress.Reports[^1]);
+	}
+
+	// ---- Dev launch ----
+
+	/// <summary>What one launch did, step by step, as seen from outside.</summary>
+	private sealed class DevLaunchRun
+	{
+		public int Requests;
+		public int Probes;
+		public int Downloads;
+		public int Parses;
+		public int Prunes;
+	}
+
+	/// <summary>
+	/// Wires every outside dependency so each optional step leaves a trace: HTTP and the AIRAC steps are
+	/// counted, the cycles are already on disk (so parsing alone has something to parse), there are no
+	/// settings yet (a first launch, for the welcome), FE-Buddy 2.x's token variable is set, and
+	/// Squirrel's 2.x is installed.
+	/// </summary>
+	private DevLaunchRun WireDevLaunch()
+	{
+		DevLaunchRun run = new();
+
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(request =>
+		{
+			Interlocked.Increment(ref run.Requests);
+			return Online(request);
+		}));
+
+		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
+			probe: (_, _) =>
+			{
+				Interlocked.Increment(ref run.Probes);
+				return Task.FromResult(AiracCyclePublicationState.Published);
+			},
+			download: (cycle, _) =>
+			{
+				Interlocked.Increment(ref run.Downloads);
+				return Task.FromResult(cycle.AiracCycleId);
+			},
+			parse: (_, _) =>
+			{
+				Interlocked.Increment(ref run.Parses);
+				return Task.FromResult(new NasrCsvDataCollection());
+			},
+			isLocallyAvailable: _ => true,
+			pruneAllBut: _ => Interlocked.Increment(ref run.Prunes),
+			cycleDirectory: cycle => cycle.AiracCycleId));
+
+		LegacyGitHubTokenNotice.ConfigureForTesting(() => [EnvironmentVariableTarget.User]);
+		File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(_root, "squirrel")).FullName, "Update.exe"), "exe");
+
+		return run;
+	}
+
+	/// <summary>Which optional steps a launch ran, from the traces <see cref="WireDevLaunch"/> sets up.</summary>
+	private Dictionary<OptionalLaunchStep, bool> StepsThatRan(DevLaunchRun run, RecordingProgress progress) => new()
+	{
+		[OptionalLaunchStep.CheckClockAndInternet] = AppEnvironment.LaunchUtcSource is not null,
+		[OptionalLaunchStep.DownloadAiracData] = run.Probes + run.Downloads > 0,
+		[OptionalLaunchStep.ParseAiracData] = run.Parses > 0,
+		[OptionalLaunchStep.RemoveOldAiracCycles] = run.Prunes > 0,
+		[OptionalLaunchStep.CheckForNewerVersion] = AppEnvironment.Version is { WasSkipped: false },
+		[OptionalLaunchStep.DownloadNews] = AppEnvironment.News is { FromNetwork: true },
+		[OptionalLaunchStep.CheckGitHubTokens] = ShellViewModel.ChecksGitHubTokensAtLaunch(AppEnvironment.LaunchOptions),
+		[OptionalLaunchStep.LegacyGitHubTokenNotice] = LegacyGitHubTokenNotice.Take().Count > 0,
+		[OptionalLaunchStep.WelcomeWindow] = WelcomeNotice.Take(),
+		[OptionalLaunchStep.RemoveLegacyInstall] = _squirrelRuns.Count > 0
+			&& !progress.Reports.Any(r => r.Step == LaunchStep.RemoveLegacyShortcuts && r.Status == LaunchStepStatus.Skipped),
+	};
+
+	[Fact]
+	public async Task a_dev_launch_with_every_step_off_touches_no_network_tracks_the_cycles_and_completes()
+	{
+		DevLaunchRun run = WireDevLaunch();
+		RecordingProgress progress = new();
+
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(OptionalLaunchStep.None), progress);
+
+		Assert.Equal(0, run.Requests);
+		Assert.Equal(0, run.Probes + run.Downloads + run.Parses + run.Prunes);
+		Assert.All(StepsThatRan(run, progress), step => Assert.False(step.Value, $"{step.Key} ran."));
+
+		// The PC's clock, online until found otherwise, and nothing claimed about updates.
+		Assert.True(AppEnvironment.HasInternetConnection);
+		Assert.Null(AppEnvironment.LaunchUtcNow);
+		Assert.Equal("Not checked: a dev launch left out the check for a newer version.", AppEnvironment.Version!.Message);
+		Assert.True(AppEnvironment.News!.ParseSucceeded);
+		Assert.False(WelcomeNotice.HasBeenShown);
+
+		// The three cycles are tracked, none loaded - and the launch is done.
+		Assert.Equal(3, AiracCycleDataCache.Instance.Entries.Count);
+		Assert.Equal(AiracCycleReadiness.NotLoaded, AiracCycleDataCache.Instance.ComputeReadiness());
+		Assert.True(AppEnvironment.LaunchCompleted);
+		Assert.True(AppEnvironment.LaunchOptions.IsDevLaunch);
+
+		LaunchStep[] skipped = [.. progress.Reports.Where(r => r.Status == LaunchStepStatus.Skipped).Select(r => r.Step).Order()];
+		Assert.Equal(
+			new[]
+			{
+				LaunchStep.CheckLegacyGitHubToken, LaunchStep.RemoveLegacySquirrelInstall, LaunchStep.RemoveLegacyShortcuts,
+				LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion,
+			}.Order(),
+			skipped);
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Dev launch. Running: none. Skipping: Check the clock", StringComparison.Ordinal));
+		Assert.Contains(AppLog.Entries, e => e.Message == "Checking for a newer version: skipped (dev launch).");
+
+		// A cycle the launch left alone loads when something asks for it.
+		await AiracCycleDataCache.Instance.GetAsync(AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId);
+		Assert.Equal(1, run.Parses);
+		Assert.Equal(AiracCycleReadiness.Ready, AiracCycleDataCache.Instance.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task a_dev_launch_with_every_step_on_runs_like_a_normal_launch()
+	{
+		DevLaunchRun run = WireDevLaunch();
+		RecordingProgress progress = new();
+
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(OptionalLaunchStep.All), progress);
+
+		Assert.All(StepsThatRan(run, progress), step => Assert.True(step.Value, $"{step.Key} didn't run."));
+		Assert.DoesNotContain(progress.Reports, r => r.Status == LaunchStepStatus.Skipped);
+		Assert.Equal(3, run.Parses);
+		Assert.Equal(AiracCycleReadiness.Ready, AiracCycleDataCache.Instance.ComputeReadiness());
+		Assert.True(AppEnvironment.LaunchCompleted);
+	}
+
+	/// <summary>Each box on the Developer card runs its step, and only its step.</summary>
+	[Theory]
+	[InlineData(OptionalLaunchStep.CheckClockAndInternet)]
+	[InlineData(OptionalLaunchStep.DownloadAiracData)]
+	[InlineData(OptionalLaunchStep.ParseAiracData)]
+	[InlineData(OptionalLaunchStep.RemoveOldAiracCycles)]
+	[InlineData(OptionalLaunchStep.CheckForNewerVersion)]
+	[InlineData(OptionalLaunchStep.DownloadNews)]
+	[InlineData(OptionalLaunchStep.CheckGitHubTokens)]
+	[InlineData(OptionalLaunchStep.LegacyGitHubTokenNotice)]
+	[InlineData(OptionalLaunchStep.WelcomeWindow)]
+	[InlineData(OptionalLaunchStep.RemoveLegacyInstall)]
+	public async Task a_dev_launch_runs_just_the_step_chosen(OptionalLaunchStep chosen)
+	{
+		DevLaunchRun run = WireDevLaunch();
+		RecordingProgress progress = new();
+
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(chosen), progress);
+
+		Assert.All(StepsThatRan(run, progress), step => Assert.Equal(step.Key == chosen, step.Value));
+		Assert.True(AppEnvironment.LaunchCompleted);
+	}
+
+	/// <summary>The Developer card's choices apply to a dev launch only: a normal one runs everything.</summary>
+	[Fact]
+	public async Task a_normal_launch_runs_every_step_whatever_the_saved_dev_choices_are()
+	{
+		DevLaunchSettings.Save(OptionalLaunchStep.None);
+		DevLaunchRun run = WireDevLaunch();
+		RecordingProgress progress = new();
+
+		await LaunchSequence.RunAsync("3.0.0", progress);
+
+		Assert.False(AppEnvironment.LaunchOptions.IsDevLaunch);
+		Assert.All(StepsThatRan(run, progress), step => Assert.True(step.Value, $"{step.Key} didn't run."));
+		Assert.DoesNotContain(AppLog.Entries, e => e.Message.StartsWith("Dev launch.", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public void the_options_are_published_before_the_launch_runs()
+	{
+		LaunchOptions dev = LaunchOptions.DevLaunch(OptionalLaunchStep.ParseAiracData);
+
+		LaunchSequence.UseOptions(dev);
+
+		Assert.Same(dev, AppEnvironment.LaunchOptions);
+		Assert.Throws<ArgumentNullException>(() => LaunchSequence.UseOptions(null!));
 	}
 
 	/// <summary>Launch looks for FE-Buddy 2.x's GitHub token variable and leaves the one-time notice for the shell.</summary>
@@ -410,6 +590,99 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Equal(new[] { current.AiracCycleId, previousOfCurrent.AiracCycleId }.Order(), loadedForCycles.Order());
 		Assert.Contains(reports, r => r.Message == $"Loading d-TPP Metafile data for cycle {current.AiracCycleId}");
 		Assert.Contains(reports, r => r.Message == $"Loading d-TPP Metafile data for cycle {previousOfCurrent.AiracCycleId}");
+	}
+
+	/// <summary>
+	/// The service opens once the current cycle is ready, so a run can pick the next cycle while it
+	/// is still parsing: the run says it's loading it, waits, then goes ahead.
+	/// </summary>
+	[Fact]
+	public async Task a_run_on_a_cycle_still_loading_waits_for_it_then_runs()
+	{
+		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
+		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
+		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
+		TaskCompletionSource releaseNext = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
+			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
+			parse: async (cycleDirectory, _) =>
+			{
+				if (cycleDirectory == next.AiracCycleId)
+				{
+					await releaseNext.Task;
+				}
+
+				return new NasrCsvDataCollection();
+			}));
+
+		Task prepare = AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+		await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).WaitAsync(TimeSpan.FromSeconds(5));
+		Assert.Equal(AiracCycleReadiness.Ready, AiracCycleDataCache.Instance.ComputeReadiness());
+
+		List<AiracServiceProgress> reports = [];
+		Task<AiracServiceResult> run = AiracService.RunAsync(
+			new AiracServiceSettings { SelectedCycle = next, OutputDirectory = Path.Combine(_root, "output") },
+			new SynchronousProgress<AiracServiceProgress>(reports.Add));
+
+		await Task.Delay(50);
+		Assert.False(run.IsCompleted);
+		Assert.Equal("Loading AIRAC 2610…", Assert.Single(reports).Message);
+
+		releaseNext.SetResult();
+		AiracServiceResult result = await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Contains(result.Warnings, w => w.Contains("no sub-service", StringComparison.OrdinalIgnoreCase));
+		await prepare.WaitAsync(TimeSpan.FromSeconds(5));
+	}
+
+	/// <summary>
+	/// Procedure Charts' changes report needs the previous cycle's metafile: a run started before
+	/// that cycle has downloaded waits for it rather than leaving the report without it.
+	/// </summary>
+	[Fact]
+	public async Task a_procedure_charts_run_waits_for_the_previous_cycles_metafile()
+	{
+		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
+		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
+		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
+		TaskCompletionSource<string> previousDownload = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		List<string> loadedForCycles = [];
+
+		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
+			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
+			download: (cycle, _) => cycle.AiracCycleId == previous.AiracCycleId ? previousDownload.Task : Task.FromResult(cycle.AiracCycleId),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection
+			{
+				Apt = new AptCsvDataCollection(),
+				ClsArsp = new ClsArspCsvDataCollection(),
+			}),
+			loadDtpp: (cycleDirectory, _) =>
+			{
+				lock (loadedForCycles) { loadedForCycles.Add(cycleDirectory); }
+				return Task.FromResult<DtppMetafileDataCollection?>(new DtppMetafileDataCollection { Cycle = cycleDirectory });
+			}));
+
+		Task prepare = AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+		await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).WaitAsync(TimeSpan.FromSeconds(5));
+
+		Task<AiracServiceResult> run = AiracService.RunAsync(new AiracServiceSettings
+		{
+			SelectedCycle = current,
+			OutputDirectory = Path.Combine(_root, "output"),
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		});
+
+		await Task.Delay(50);
+		Assert.False(run.IsCompleted);
+		Assert.DoesNotContain(previous.AiracCycleId, loadedForCycles);
+
+		previousDownload.SetResult(previous.AiracCycleId);
+		await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Contains(previous.AiracCycleId, loadedForCycles);
+		await prepare.WaitAsync(TimeSpan.FromSeconds(5));
 	}
 
 	[Fact]

@@ -381,8 +381,8 @@ public sealed class AreaTests : IDisposable
 		Assert.Contains(nameof(ProceduresViewModel.AirportsIntro), changed);
 		Assert.Contains(nameof(ProceduresViewModel.AreaNote), changed);
 		Assert.Equal($"Even if outside the facilities you selected, the airports you list here will be included in {Both}.", tab.AirportsIntro);
-		Assert.Equal($"Even if outside the facilities you selected, the procedures you list here will be included in {Both}.", tab.ProcedureNamesIntro);
-		Assert.Equal($"Even if outside the facilities you selected, the airport-specific procedures you list here will be included in {Both}.", tab.AirportProceduresIntro);
+		Assert.Equal($"Even if outside the facilities you selected, the departures and arrivals you list here will be included in {Both}.", tab.ProcedureNamesIntro);
+		Assert.Equal($"Even if outside the facilities you selected, the airport-specific departures and arrivals you list here will be included in {Both}.", tab.AirportProceduresIntro);
 		Assert.StartsWith("Select the following chart types to be included in the `Procedure_Changes.md` and `Procedures.json` files.\nNote:", tab.ChartTypesIntro, StringComparison.Ordinal);
 		Assert.EndsWith("outside the facilities you have chosen.", tab.AreaNote, StringComparison.Ordinal);
 
@@ -430,6 +430,47 @@ public sealed class AreaTests : IDisposable
 		tab.SetDtppData("2611", new DtppMetafileDataCollection(), "2610", previousAvailable: true, downloadedLocal: DateTime.Now);
 
 		Assert.Null(tab.DtppWarning);
+	}
+
+	/// <summary>
+	/// Before the cycle's facility list has loaded (the cycle picked can still be loading when the
+	/// screen opens), Procedure Charts counts the facilities the list will tick - the Settings facility
+	/// when it has never saved any - so the Area card isn't flagged in the meantime.
+	/// </summary>
+	[Fact]
+	public void procedures_count_the_facilities_the_list_will_tick_before_it_loads()
+	{
+		UserConfigFile.TrySetValue(UserConfigAreas.FacilityKey, "ZOB");
+		ProceduresViewModel tab = new() { Area = SubServiceArea.Artccs };
+
+		Assert.False(tab.HasFacilities);
+		Assert.DoesNotContain("Tick at least one facility on the Area card, or pick another area.", tab.ValidationErrors);
+		Assert.Equal("ZOB", tab.BuildSettingsBlock()["Facilities"]);
+
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", "ZNY,ZDC");
+		ProceduresViewModel saved = new() { Area = SubServiceArea.Artccs };
+
+		Assert.Equal("ZDC,ZNY", saved.BuildSettingsBlock()["Facilities"]);
+
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", string.Empty);
+		ProceduresViewModel none = new() { Area = SubServiceArea.Artccs };
+
+		Assert.Contains("Tick at least one facility on the Area card, or pick another area.", none.ValidationErrors);
+	}
+
+	/// <summary>
+	/// Just after launch the previous cycle can still be on its way: that's said, not warned about,
+	/// since a run waits for it.
+	/// </summary>
+	[Fact]
+	public void procedures_say_the_previous_cycle_is_still_loading_without_warning()
+	{
+		ProceduresViewModel tab = Procedures();
+
+		tab.SetDtppData("2611", new DtppMetafileDataCollection(), "2610", previousAvailable: false, downloadedLocal: DateTime.Now, previousLoading: true);
+
+		Assert.Null(tab.DtppWarning);
+		Assert.Equal("Cycle 2610 is still loading. Once it has, deleted procedures link to its charts.", tab.DtppPreviousStatus);
 	}
 
 	/// <summary>The cards name only the documents that are on, and the chart recall note is for the alias file.</summary>

@@ -13,12 +13,20 @@ public sealed class FileEncodingTests
 		".git", ".vs", "bin", "obj", "TestResults",
 	};
 
+	/// <summary>
+	/// Visual Studio's own per-user files, such as <c>FeBuddy.Wpf.csproj.user</c>, which keeps the
+	/// launch profile picked in its Start drop-down: git ignores them (<c>*.user</c>), and Visual
+	/// Studio writes them with a byte-order mark every time, so they are not the repository's.
+	/// </summary>
+	private static bool IsVisualStudioUserFile(string path) => path.EndsWith(".user", StringComparison.OrdinalIgnoreCase);
+
 	[Fact]
 	public void no_file_in_the_repository_starts_with_a_byte_order_mark()
 	{
 		string root = FindRepositoryRoot();
 
 		string[] withBom = [.. FilesUnder(root)
+			.Where(path => !IsVisualStudioUserFile(path))
 			.Where(StartsWithByteOrderMark)
 			.Select(path => Path.GetRelativePath(root, path))
 			.Order(StringComparer.OrdinalIgnoreCase)];

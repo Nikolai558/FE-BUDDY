@@ -31,6 +31,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ### Settings
 - Bug #354 - The **Reset FE-Buddy** window keeps its size when **Delete my settings** is picked, and
   scrolls instead of running off the bottom of the screen.
+- **Import Settings**: each choice of where the settings go now explains itself in a tooltip
+  instead of the text under it.
 
 ### Dev notes
 - Launch parses only the 9 NASR groups FE-Buddy reads (`NasrCsvGroups.InUse`) instead of all 24,

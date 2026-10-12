@@ -27,6 +27,24 @@
                        Visibility="{Binding ReleasesBehind, Converter={StaticResource StringToVis}}" />
 
             <Grid Margin="0,14,0,0">
+                <!-- Each row's label is smaller than its value, so both take the same block line height:
+                     their baselines then line up instead of their tops (#332). -->
+                <Grid.Resources>
+                    <Style x:Key="RowLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                        <Setter Property="LineHeight" Value="22" />
+                        <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+                        <Setter Property="Margin" Value="0,0,16,4" />
+                    </Style>
+                    <Style x:Key="RowValue" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+                        <Setter Property="LineHeight" Value="22" />
+                        <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+                        <Setter Property="Margin" Value="0,0,0,4" />
+                    </Style>
+                    <Style x:Key="RowValue.Strong" TargetType="TextBlock" BasedOn="{StaticResource RowValue}">
+                        <Setter Property="FontWeight" Value="SemiBold" />
+                        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+                    </Style>
+                </Grid.Resources>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -37,14 +55,14 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Installed" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentVersion, StringFormat=v{0}}" Style="{StaticResource Text.Body}" Margin="0,0,0,4" />
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Installed" Style="{StaticResource RowLabel}" />
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentVersion, StringFormat=v{0}}" Style="{StaticResource RowValue}" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding LatestLabel}" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion, StringFormat=v{0}}" Style="{StaticResource Text.Body.Strong}" Margin="0,0,0,4" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding LatestLabel}" Style="{StaticResource RowLabel}" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion, StringFormat=v{0}}" Style="{StaticResource RowValue.Strong}" />
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Channel" Style="{StaticResource Text.Caption}" Margin="0,0,16,0" />
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Channel}" Style="{StaticResource Text.Body}" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Channel" Style="{StaticResource RowLabel}" Margin="0,0,16,0" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Channel}" Style="{StaticResource RowValue}" Margin="0" />
             </Grid>
 
             <Border Style="{StaticResource Divider}" Margin="0,16" />

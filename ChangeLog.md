@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### Updates
+- Bug #332 - In the update window, **Installed**, **Latest** and **Channel** now sit on the same
+  line as their values instead of a little above them.
+
 ### AIRAC Service
 - Clearer wording on the General tab, the What You'll Get footer ("in the General tab"), and the
   Airports and Airways alias lines.

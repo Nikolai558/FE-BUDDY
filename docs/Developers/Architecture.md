@@ -12,10 +12,14 @@ For where the code lives, see [Code structure](Code-Structure.md).
 FeBuddy.Wpf (FE-BUDDY.exe)   FeBuddy.Harness   FeBuddy.UnitTests
             └──────────────────────┼──────────────────┘
                                    ▼
-                             FeBuddy.Core ──────► FeBuddy.Versioning ◄── FeBuddy.Installer.CustomActions
-                                                                                   ▲
-                                                        FeBuddy.Installer (WiX) ───┘
+                             FeBuddy.Core ──────► FeBuddy.Versioning ◄── FeBuddy.Installer.CustomActions ◄──┐
+                                                          ▲                                                   │
+                                                          └───── FeBuddy.Installer.UI ◄──── FeBuddy.Installer (WiX)
 ```
+
+`FeBuddy.Installer.UI` is the MSI's setup window. It uses the app's theme files (`Palette`,
+`Typography`, `Icons`, `Controls.Chrome`) as they are, linked into the project, so the installer
+changes when the app's look does.
 
 `FeBuddy.UnitTests` also references `FeBuddy.Wpf`, to test the app's view-models and controls.
 

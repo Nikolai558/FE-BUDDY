@@ -1,0 +1,482 @@
+<!--
+    SetupWindow  -  FE-Buddy's setup, in the app's own look.
+    ===========================================================================
+    The frame is the app's: custom chrome (WindowChrome, no AllowsTransparency), the FEB mark and
+    name in the caption with a version chip, and a step rail down the left styled like the app's
+    nav rail. The body is one page at a time (SetupViewModel.Page): Welcome (its wording follows
+    the run's mode - install, update, go back, blocked, repair or remove, uninstall), License,
+    Options, Progress and Finish. The footer holds Cancel on the left and Back / the main button
+    on the right, as the app's dialogs do.
+-->
+<Window x:Class="FeBuddy.Installer.UI.Views.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:vm="clr-namespace:FeBuddy.Installer.UI.ViewModels"
+        xmlns:ctl="clr-namespace:FeBuddy.Installer.UI.Controls"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:SetupViewModel}"
+        Title="FE-BUDDY Setup"
+        Width="880" Height="600"
+        WindowStyle="None"
+        ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterScreen"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Ideal"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}"
+        Icon="pack://application:,,,/FeBuddy.Installer.UI;component/Assets/FE-BUDDY.ico">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="46"
+                            ResizeBorderThickness="0"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- A label / value row in a card ("Installed", "This setup"). -->
+        <Style x:Key="Row.Label" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,16,0" />
+        </Style>
+
+        <!-- A page's big heading: the app's dialog heading, one size up. -->
+        <Style x:Key="Page.Heading" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Font.Display}" />
+            <Setter Property="FontSize" Value="26" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LineHeight" Value="32" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+        </Style>
+
+        <!-- The round icon badge that heads the finish page and the blocked notice. -->
+        <Style x:Key="Badge" TargetType="Border">
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="48" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+        </Style>
+        <Style x:Key="Badge.Glyph" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Font.Icon}" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{StaticResource Brush.Bg.Base}" BorderBrush="{StaticResource Brush.Stroke.Strong}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ============================ CAPTION =========================== -->
+            <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+                <StackPanel Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <ctl:BrandMark Width="24" Height="24" />
+                    <TextBlock Text="FE-BUDDY" Margin="10,0,0,0" VerticalAlignment="Center"
+                               FontFamily="{StaticResource Font.Display}" FontSize="14.5" FontWeight="Bold"
+                               Foreground="{StaticResource Brush.Text.Primary}" />
+                    <TextBlock Text="Setup" Margin="6,0,0,0" VerticalAlignment="Center"
+                               FontFamily="{StaticResource Font.Display}" FontSize="14.5"
+                               Foreground="{StaticResource Brush.Text.Secondary}" />
+                    <Border Style="{StaticResource Chip}" Margin="12,0,0,0">
+                        <TextBlock Style="{StaticResource Chip.Text}" Foreground="{StaticResource Brush.Accent.Text}"
+                                   Text="{Binding VersionChip}" />
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0">
+                    <Button Style="{StaticResource Caption.Button}" Content="{StaticResource Icon.Minimize}"
+                            Click="OnMinimize" ToolTip="Minimize"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True" />
+                    <Button Style="{StaticResource Caption.Close}" Content="{StaticResource Icon.Close}"
+                            Click="OnClose" ToolTip="Close"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True" />
+                </StackPanel>
+
+                <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+            </Grid>
+
+            <!-- ============================= BODY ============================ -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="232" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- step rail: the app's nav rail surface -->
+                <Border Grid.Column="0" Background="{StaticResource Brush.Panel}"
+                        BorderBrush="{StaticResource Brush.Stroke}" BorderThickness="0,0,1,0">
+                    <DockPanel Margin="12,20,12,16">
+                        <TextBlock DockPanel.Dock="Top" Text="SETUP" Style="{StaticResource Text.Label}" Margin="14,0,0,10" />
+
+                        <StackPanel DockPanel.Dock="Bottom" Margin="14,0,0,0">
+                            <TextBlock Text="Free and open source" Style="{StaticResource Text.Caption}" />
+                            <TextBlock Text="GNU GPL v3" Style="{StaticResource Text.Caption}" />
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding Steps}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:StepItem}">
+                                    <ContentControl Style="{StaticResource Step}" Content="{Binding}" Tag="{Binding State}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+                </Border>
+
+                <!-- page + footer -->
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="40,34,40,0">
+
+                        <!-- ========================= WELCOME ========================= -->
+                        <StackPanel Visibility="{Binding IsWelcomePage, Converter={StaticResource BoolToVis}}">
+
+                            <!-- fresh install -->
+                            <StackPanel Visibility="{Binding IsInstallWelcome, Converter={StaticResource BoolToVis}}">
+                                <ctl:BrandMark Width="64" Height="64" HorizontalAlignment="Left" />
+                                <TextBlock Style="{StaticResource Page.Heading}" Margin="0,22,0,0" Text="{Binding WelcomeHeading}" />
+                                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,12,0,0" Text="{Binding WelcomeBody}" />
+
+                                <Border Style="{StaticResource Card}" Margin="0,24,0,0">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource Card.Title}" Text="THIS SETUP" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0" Text="Version" Style="{StaticResource Row.Label}" />
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Version}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
+                                                <Border Style="{StaticResource Chip}" Margin="10,0,0,0" Background="{StaticResource Brush.Warn.Soft}"
+                                                        Visibility="{Binding IsPrerelease, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="PRE-RELEASE" Style="{StaticResource Chip.Text}" Foreground="{StaticResource Brush.Warn}" />
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Grid.Row="1" Text="Installs to" Style="{StaticResource Row.Label}" Margin="0,8,16,0" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding InstallFolder}" Style="{StaticResource Text.Body}"
+                                                       Margin="0,8,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,14,0,0" Text="{Binding WelcomeNote}" />
+                            </StackPanel>
+
+                            <!-- update / go back -->
+                            <StackPanel Visibility="{Binding IsChangeWelcome, Converter={StaticResource BoolToVis}}">
+                                <ctl:BrandMark Width="64" Height="64" HorizontalAlignment="Left" />
+                                <TextBlock Style="{StaticResource Page.Heading}" Margin="0,22,0,0" Text="{Binding WelcomeHeading}" />
+                                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,12,0,0" Text="{Binding WelcomeBody}" />
+
+                                <Border Style="{StaticResource Card}" Margin="0,24,0,0">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource Card.Title}" Text="VERSION" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <!-- installed -->
+                                            <Border Style="{StaticResource Panel.Inset}" Padding="14,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="INSTALLED" Style="{StaticResource Text.Label}" />
+                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                        <TextBlock Text="{Binding InstalledVersion}" Style="{StaticResource Text.Body}" FontSize="16.5" />
+                                                        <Border Style="{StaticResource Chip}" Margin="8,0,0,0" Background="{StaticResource Brush.Warn.Soft}"
+                                                                Visibility="{Binding InstalledIsPrerelease, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="PRE" Style="{StaticResource Chip.Text}" Foreground="{StaticResource Brush.Warn}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <TextBlock Text="{StaticResource Icon.ArrowRight}" FontFamily="{StaticResource Font.Icon}" FontSize="16"
+                                                       Foreground="{StaticResource Brush.Accent}" VerticalAlignment="Center" Margin="16,0" />
+
+                                            <!-- this setup -->
+                                            <Border Style="{StaticResource Panel.Inset}" Padding="14,10"
+                                                    Background="{StaticResource Brush.Accent.Soft}" BorderBrush="{StaticResource Brush.Accent.Line}">
+                                                <StackPanel>
+                                                    <TextBlock Text="THIS SETUP" Style="{StaticResource Text.Label}" Foreground="{StaticResource Brush.Accent.Text}" />
+                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                        <TextBlock Text="{Binding Version}" Style="{StaticResource Text.Body.Strong}" FontSize="16.5" />
+                                                        <Border Style="{StaticResource Chip}" Margin="8,0,0,0" Background="{StaticResource Brush.Warn.Soft}"
+                                                                Visibility="{Binding IsPrerelease, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="PRE" Style="{StaticResource Chip.Text}" Foreground="{StaticResource Brush.Warn}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,14,0,0" Text="{Binding WelcomeNote}" />
+                            </StackPanel>
+
+                            <!-- blocked -->
+                            <StackPanel Visibility="{Binding IsBlockedWelcome, Converter={StaticResource BoolToVis}}">
+                                <Border Style="{StaticResource Badge}" Background="{StaticResource Brush.Danger.Soft}">
+                                    <TextBlock Style="{StaticResource Badge.Glyph}" Text="{StaticResource Icon.Blocked}" Foreground="{StaticResource Brush.Danger}" />
+                                </Border>
+                                <TextBlock Style="{StaticResource Page.Heading}" Margin="0,22,0,0" Text="{Binding WelcomeHeading}" />
+                                <Border Style="{StaticResource Card.Danger}" Margin="0,20,0,0">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource Card.Title}" Text="A NEWER VERSION IS INSTALLED" Foreground="{StaticResource Brush.Danger}" />
+                                        <TextBlock Style="{StaticResource Text.Body}" Text="{Binding WelcomeBody}" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,16,0,0" Text="{Binding WelcomeNote}" />
+                            </StackPanel>
+
+                            <!-- repair or remove -->
+                            <StackPanel Visibility="{Binding IsMaintenanceWelcome, Converter={StaticResource BoolToVis}}">
+                                <ctl:BrandMark Width="64" Height="64" HorizontalAlignment="Left" />
+                                <TextBlock Style="{StaticResource Page.Heading}" Margin="0,22,0,0" Text="{Binding WelcomeHeading}" />
+                                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,12,0,0" Text="{Binding WelcomeBody}" />
+
+                                <RadioButton Style="{StaticResource Option.Card}" GroupName="Maintenance" Margin="0,22,0,0"
+                                             IsChecked="{Binding RepairChosen}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{StaticResource Icon.Repair}" FontFamily="{StaticResource Font.Icon}" FontSize="14.5"
+                                                       Foreground="{StaticResource Brush.Accent}" VerticalAlignment="Center" />
+                                            <TextBlock Text="REPAIR" Style="{StaticResource Card.Title}" Margin="8,0,0,0" />
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,2,0,0"
+                                                   Text="Put back any missing or damaged FE-BUDDY files. Your settings stay as they are." />
+                                    </StackPanel>
+                                </RadioButton>
+
+                                <RadioButton Style="{StaticResource Option.Card}" GroupName="Maintenance" Margin="0,12,0,0"
+                                             IsChecked="{Binding RemoveChosen}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{StaticResource Icon.Delete}" FontFamily="{StaticResource Font.Icon}" FontSize="14.5"
+                                                       Foreground="{StaticResource Brush.Danger}" VerticalAlignment="Center" />
+                                            <TextBlock Text="UNINSTALL" Style="{StaticResource Card.Title}" Margin="8,0,0,0" />
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,2,0,0"
+                                                   Text="Remove FE-BUDDY from this PC, with its settings, downloaded data and saved credentials." />
+                                    </StackPanel>
+                                </RadioButton>
+                            </StackPanel>
+
+                            <!-- uninstall -->
+                            <StackPanel Visibility="{Binding IsUninstallWelcome, Converter={StaticResource BoolToVis}}">
+                                <ctl:BrandMark Width="64" Height="64" HorizontalAlignment="Left" />
+                                <TextBlock Style="{StaticResource Page.Heading}" Margin="0,22,0,0" Text="{Binding WelcomeHeading}" />
+                                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,12,0,0" Text="{Binding WelcomeBody}" />
+
+                                <Border Style="{StaticResource Card.Warn}" Margin="0,24,0,0">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource Card.Title}" Text="ALSO REMOVED" Foreground="{StaticResource Brush.Warn}" />
+                                        <ItemsControl Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,0,0,6">
+                                                        <Ellipse DockPanel.Dock="Left" Width="5" Height="5" Margin="2,9,12,0" VerticalAlignment="Top"
+                                                                 Fill="{StaticResource Brush.Warn}" />
+                                                        <TextBlock Style="{StaticResource Text.Body}" Text="{Binding}" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                            <sys:String>Your settings and profiles, logs and downloaded AIRAC data</sys:String>
+                                            <sys:String>The credentials FE-BUDDY saved in Windows Credential Manager</sys:String>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,14,0,0"
+                                           Text="Files FE-BUDDY made for you - video maps, alias files - stay where you saved them." />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- ========================= LICENSE ========================= -->
+                        <DockPanel Visibility="{Binding IsLicensePage, Converter={StaticResource BoolToVis}}" Margin="0,0,0,4">
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource Page.Heading}" Text="License" />
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource Text.Prose}" Margin="0,10,0,0">
+                                <Run Text="FE-BUDDY is free, open-source software under the" />
+                                <Run Text="GNU General Public License v3" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Primary}" /><Run Text=": you're free to use it, share it and change it under its terms." />
+                            </TextBlock>
+
+                            <Border Style="{StaticResource Panel.Inset}" Margin="0,18,0,0" Padding="0">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                              Padding="20,16" Focusable="True">
+                                    <ItemsControl ItemsSource="{Binding License}" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock x:Name="Para" Text="{Binding Text}" Style="{StaticResource Text.Body}"
+                                                           FontSize="13" LineHeight="20" Margin="0,0,0,10" />
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsHeading}" Value="True">
+                                                        <Setter TargetName="Para" Property="FontWeight" Value="SemiBold" />
+                                                        <Setter TargetName="Para" Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+                                                        <Setter TargetName="Para" Property="Margin" Value="0,6,0,8" />
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </DockPanel>
+
+                        <!-- ========================= OPTIONS ========================= -->
+                        <StackPanel Visibility="{Binding IsOptionsPage, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Style="{StaticResource Page.Heading}" Text="Install options" />
+                            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
+                                       Text="The defaults suit almost everyone." />
+
+                            <Border Style="{StaticResource Card}" Margin="0,22,0,0">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Card.Title}" Text="INSTALL LOCATION" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="FolderBox" Style="{StaticResource Field}"
+                                                 Text="{Binding InstallFolder, UpdateSourceTrigger=PropertyChanged}" />
+                                        <Button Grid.Column="1" Style="{StaticResource Button.Ghost}" Margin="10,0,0,0"
+                                                Command="{Binding BrowseCommand}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{StaticResource Icon.FolderOpen}" FontFamily="{StaticResource Font.Icon}"
+                                                           FontSize="14" VerticalAlignment="Center" />
+                                                <TextBlock Text="Browse…" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
+                                               Text="FE-BUDDY and everything it needs go in this folder." />
+                                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" Foreground="{StaticResource Brush.Danger}"
+                                               Text="{Binding FolderError}"
+                                               Visibility="{Binding HasFolderError, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Card.Title}" Text="SHORTCUTS" />
+                                    <CheckBox Content="Start Menu shortcut" IsChecked="{Binding StartMenuShortcut}" />
+                                    <CheckBox Content="Desktop shortcut" IsChecked="{Binding DesktopShortcut}" Margin="0,12,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- ========================= PROGRESS ======================== -->
+                        <StackPanel Visibility="{Binding IsProgressPage, Converter={StaticResource BoolToVis}}">
+                            <ctl:BrandMark Width="64" Height="64" HorizontalAlignment="Left" />
+                            <TextBlock Style="{StaticResource Page.Heading}" Margin="0,22,0,0" Text="{Binding ProgressHeading}" />
+                            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0" Text="{Binding ProgressBody}" />
+
+                            <Border Style="{StaticResource Card}" Margin="0,28,0,0" Padding="22,20">
+                                <StackPanel>
+                                    <Grid>
+                                        <TextBlock Style="{StaticResource Card.Title}" Text="PROGRESS" VerticalAlignment="Bottom" Margin="0" />
+                                        <TextBlock Text="{Binding ProgressPercentText}" HorizontalAlignment="Right"
+                                                   FontFamily="{StaticResource Font.Display}" FontSize="30" FontWeight="Bold"
+                                                   Foreground="{StaticResource Brush.Accent}" />
+                                    </Grid>
+                                    <ProgressBar Style="{StaticResource Progress.Large}" Margin="0,12,0,0"
+                                                 Value="{Binding ProgressPercent, Mode=OneWay}" />
+                                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
+                                               Text="{Binding ProgressDetail}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- ========================== FINISH ========================= -->
+                        <StackPanel Visibility="{Binding IsFinishPage, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Border Style="{StaticResource Badge}" Background="{StaticResource Brush.Positive.Soft}"
+                                        Visibility="{Binding Succeeded, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Style="{StaticResource Badge.Glyph}" Text="{StaticResource Icon.Check}" Foreground="{StaticResource Brush.Positive}" />
+                                </Border>
+                                <Border Style="{StaticResource Badge}" Background="{StaticResource Brush.Warn.Soft}"
+                                        Visibility="{Binding WasCancelled, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Style="{StaticResource Badge.Glyph}" Text="{StaticResource Icon.Info}" Foreground="{StaticResource Brush.Warn}" />
+                                </Border>
+                                <Border Style="{StaticResource Badge}" Background="{StaticResource Brush.Danger.Soft}"
+                                        Visibility="{Binding Failed, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Style="{StaticResource Badge.Glyph}" Text="{StaticResource Icon.Error}" Foreground="{StaticResource Brush.Danger}" />
+                                </Border>
+                            </Grid>
+
+                            <TextBlock Style="{StaticResource Page.Heading}" Margin="0,22,0,0" Text="{Binding FinishHeading}" />
+                            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,12,0,0" Text="{Binding FinishBody}" />
+
+                            <Border Style="{StaticResource Card}" Margin="0,24,0,0"
+                                    Visibility="{Binding ShowLaunch, Converter={StaticResource BoolToVis}}">
+                                <CheckBox Content="Launch FE-BUDDY now" IsChecked="{Binding LaunchApp}" />
+                            </Border>
+
+                            <Border Style="{StaticResource Card.Danger}" Margin="0,22,0,0"
+                                    Visibility="{Binding Failed, Converter={StaticResource BoolToVis}}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Card.Title}" Text="WHAT WENT WRONG" Foreground="{StaticResource Brush.Danger}" />
+                                    <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <TextBox Text="{Binding ErrorDetails, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                                                 Background="Transparent" BorderThickness="0" Padding="0" Margin="-2,0,0,0"
+                                                 FontFamily="{StaticResource Font.Body}" FontSize="13"
+                                                 Foreground="{StaticResource Brush.Text.Primary}"
+                                                 SelectionBrush="{StaticResource Brush.Accent}" />
+                                    </ScrollViewer>
+                                    <StackPanel Margin="0,12,0,0" Visibility="{Binding HasLogFile, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Style="{StaticResource Text.Caption}" Text="The full log:" />
+                                        <DockPanel Margin="0,4,0,0">
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Open log"
+                                                    Command="{Binding OpenLogCommand}" Margin="10,0,0,0" />
+                                            <TextBlock Text="{Binding LogFile}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" FontFamily="{StaticResource Font.Mono}" />
+                                        </DockPanel>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0" TextWrapping="Wrap"
+                                               Visibility="{Binding HasLogFile, Converter={StaticResource InverseBoolToVis}}">
+                                        <Run Text="For a full log, run it again from a command prompt:" />
+                                        <Run Text="msiexec /i FE-BUDDY-Setup.msi /l*v setup.log" FontFamily="{StaticResource Font.Mono}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ========================== FOOTER ========================== -->
+                    <Grid Grid.Row="1" Margin="40,18,40,26">
+                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                                Content="{Binding CancelText}" Command="{Binding CancelCommand}"
+                                Visibility="{Binding ShowCancel, Converter={StaticResource BoolToVis}}" />
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource Button.Ghost}" Content="Back" Command="{Binding BackCommand}" Margin="0,0,10,0"
+                                    Visibility="{Binding ShowBack, Converter={StaticResource BoolToVis}}" />
+                            <Grid Visibility="{Binding ShowPrimary, Converter={StaticResource BoolToVis}}">
+                                <Button x:Name="PrimaryButton" Style="{StaticResource Button.Primary}"
+                                        Content="{Binding PrimaryText}" Command="{Binding PrimaryCommand}" IsDefault="True"
+                                        Visibility="{Binding PrimaryIsDanger, Converter={StaticResource InverseBoolToVis}}" />
+                                <Button Style="{StaticResource Button.Danger}"
+                                        Content="{Binding PrimaryText}" Command="{Binding PrimaryCommand}"
+                                        Visibility="{Binding PrimaryIsDanger, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

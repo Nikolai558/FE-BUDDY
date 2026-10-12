@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeBuddy.Installer.CustomAct
 EndProject
 Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "FeBuddy.Installer", "FeBuddy.Installer\FeBuddy.Installer.wixproj", "{AB0A4F55-7C43-4B8A-AED4-5D666AD994AC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeBuddy.Installer.UI", "FeBuddy.Installer.UI\FeBuddy.Installer.UI.csproj", "{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -105,6 +107,18 @@ Global
 		{AB0A4F55-7C43-4B8A-AED4-5D666AD994AC}.Release|Any CPU.ActiveCfg = Release|x64
 		{AB0A4F55-7C43-4B8A-AED4-5D666AD994AC}.Release|x64.ActiveCfg = Release|x64
 		{AB0A4F55-7C43-4B8A-AED4-5D666AD994AC}.Release|x86.ActiveCfg = Release|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Debug|Any CPU.Build.0 = Debug|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Debug|x64.ActiveCfg = Debug|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Debug|x64.Build.0 = Debug|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Debug|x86.ActiveCfg = Debug|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Debug|x86.Build.0 = Debug|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Release|Any CPU.ActiveCfg = Release|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Release|Any CPU.Build.0 = Release|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Release|x64.ActiveCfg = Release|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Release|x64.Build.0 = Release|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Release|x86.ActiveCfg = Release|x64
+		{C4DBEF83-F3B4-4BA0-A82C-C12307F6654F}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

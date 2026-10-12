@@ -81,13 +81,14 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
 ### The cards most tabs share
 
 The tabs that write GeoJSON share these cards (ARTCC Boundaries has no What Files Do You Want?, and
-Wx Stations no FE-Buddy Properties); Procedures, Telephony and Add Custom Aliases have their own.
+Wx Stations no FE-Buddy Helper Properties); Procedures, Telephony and Add Custom Aliases have their
+own.
 
 - **What Files Do You Want?** - which of **Lines**, **Symbols**, and **Text** to write, each with the
   files it makes. Symbols with exactly the same properties are written as one feature (a MultiPoint),
   so Symbols files stay small; labels are always one feature each.
-- **FE-Buddy Properties** - optional `feb.*` fields that tell you what each object is in a GeoJSON
-  viewer. CRC ignores them. One that differs from point to point, such as an ID, keeps each symbol a
+- **FE-Buddy Helper Properties** - optional `feb.*` fields that tell you what each object is in a
+  GeoJSON viewer. CRC ignores them. One that differs from point to point, such as an ID, keeps each symbol a
   feature of its own.
 - **Area** - near the top: which part of the cycle the tab covers. Pick one; only it applies.
   **ARTCCs** (ARTCC Boundaries, Departures and Arrivals: the ones you tick), **ROI**, or
@@ -210,13 +211,14 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
   tick), **ROI** (every airport inside it), **Everything** (every airport in the metafile), or
   **None**. Nothing is clipped.
 - **What the cards add** - even outside the area: the **Airports** you list (FAA or ICAO ID),
-  **Procedures at Any Airport**, by name, and **Airport + Procedure** pairs. With **Everything** they
+  **Additional Airport-Specific Procedures to Include** (one airport's version of a procedure), and
+  **Additional Procedures to Include**, by name (every version of it). With **Everything** they
   aren't used, and keep their lists. **Chart Types** sets which kinds of chart a whole airport adds;
   a procedure picked by name is always included.
 - **Airports** takes a list: type or paste up to 100 IDs, separated by spaces, commas, or new lines,
   and press Enter or **Add**. Any it can't add stay in the box, with why underneath: not an airport
-  this cycle, already listed, or already included by the area. **Procedures at Any Airport** takes
-  Enter or **Add** too.
+  this cycle, already listed, or already included by the area. **Additional Procedures to Include**
+  takes Enter or **Add** too.
 - **Procedures.json Fields** - the optional fields the JSON carries.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
@@ -381,7 +383,7 @@ export, into an `ERAM_TO_GEOJSON` folder. Each map is named after its `GeomapId`
 - **CRC ERAM Defaults Source** - **From the XML**, **From the XML, filling gaps from the card** (what
   gives SAA objects, which have no BCG or filters, a look) or **From the card only**. Hover each for
   an example. The CRC ERAM Defaults card shows only when the card is a source.
-- **FE-Buddy Properties** - optional `feb.*` fields saying where each feature came from.
+- **FE-Buddy Helper Properties** - optional `feb.*` fields saying where each feature came from.
 - With the export's `ConsoleCommandControl.xml` beside `Geomaps.xml`, it also writes
   `ConsoleCommandControl.txt`: the console's brightness and filter menus, and the maps on each.
 - **Each run empties `ERAM_TO_GEOJSON` first** (it asks before it does). Move out anything you want

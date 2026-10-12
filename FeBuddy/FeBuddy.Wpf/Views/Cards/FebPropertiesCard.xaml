@@ -1,5 +1,5 @@
 <!--
-    FebPropertiesCard  -  the FE-Buddy Properties card on the GeoJSON sub-service tabs (all but Wx
+    FebPropertiesCard  -  the FE-Buddy Helper Properties card on the GeoJSON sub-service tabs (all but Wx
     Stations, which has no feb.* properties) and ERAM to GeoJSON: the master switch, then one box
     per feb.* property it can write. Binds to the tab's or page's view model through
     IFebPropertySettings; the property list is the only thing that differs.
@@ -19,11 +19,11 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:IFebPropertySettings}"
              d:DesignWidth="820">
-    <ctl:Card Header="FE-Buddy Properties" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[FebProperties]}">
+    <ctl:Card Header="FE-Buddy Helper Properties" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[FebProperties]}">
         <StackPanel>
             <ctl:Option Margin="0,4,0,0"
-                        Description="Extra fields on each map object, such as its ID or name, so you can tell what it is in a GeoJSON viewer. CRC ignores them. They make the files bigger. Each one starts with &quot;feb.&quot; so it can't clash with CRC's own fields.">
-                <CheckBox Content="Include FE-Buddy properties" IsChecked="{Binding IncludeFebCustomProperties}" />
+                        Description="Extra fields on each map object, such as its name or ID, to make identifying and manipulating it easier in a GeoJSON viewer.&#xA;Each item is prefixed with `feb.` to prevent conflict with external properties.&#xA;These properties are ignored by CRC and may increase file size.">
+                <CheckBox Content="Include FE-Buddy helper properties" IsChecked="{Binding IncludeFebCustomProperties}" />
             </ctl:Option>
             <!-- Under the option's description, one step past its label (as ctl:Option indents it). -->
             <ItemsControl Margin="42,8,0,0" ItemsSource="{Binding FebProperties}"

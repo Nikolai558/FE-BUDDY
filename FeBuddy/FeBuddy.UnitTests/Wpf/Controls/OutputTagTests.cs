@@ -39,7 +39,7 @@ public sealed class OutputTagTests
 	public void a_tag_says_what_it_affects_and_whether_that_is_off()
 	{
 		Assert.Equal("Affects the GeoJSON files.", new OutputTag(Geojson, true).ToolTip);
-		Assert.Equal("Affects the alias file, which is off on the General tab.", new OutputTag(Alias, false).ToolTip);
+		Assert.Equal("Affects the alias file, which is off in the General tab.", new OutputTag(Alias, false).ToolTip);
 		Assert.Equal("Whether each sub-service writes Procedures.json.", OutputTag.JsonHeading.ToolTip);
 	}
 

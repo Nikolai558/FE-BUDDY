@@ -9,7 +9,7 @@ namespace FeBuddy.Wpf.Controls;
 /// Theme/Controls.Inputs.xaml. Spacing between rows is layout, so it stays on the Option's Margin.
 /// <code>
 /// &lt;ctl:Option Description="Every FE-Buddy property is prefixed with feb. ..."&gt;
-///     &lt;CheckBox Content="Include FE-Buddy Properties, when available." IsChecked="{Binding IncludeFebCustomProperties}" /&gt;
+///     &lt;CheckBox Content="Include FE-Buddy Helper Properties, when available." IsChecked="{Binding IncludeFebCustomProperties}" /&gt;
 /// &lt;/ctl:Option&gt;
 /// </code>
 /// </summary>

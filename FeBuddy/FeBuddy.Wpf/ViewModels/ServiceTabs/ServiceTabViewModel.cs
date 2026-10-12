@@ -56,7 +56,7 @@ public abstract class ServiceTabViewModel : ObservableObject
 
 	/// <summary>
 	/// The line at the foot of the tab's What You'll Get card, e.g. <c>Turn GeoJSON and Alias output
-	/// on or off on the General tab, to the left.</c>; <see langword="null"/> for none (the base).
+	/// on or off in the General tab.</c>; <see langword="null"/> for none (the base).
 	/// </summary>
 	public virtual string? WhatYoullGetFooter => null;
 

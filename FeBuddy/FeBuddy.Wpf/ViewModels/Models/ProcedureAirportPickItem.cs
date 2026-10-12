@@ -3,7 +3,7 @@ using FeBuddy.Wpf.Mvvm;
 namespace FeBuddy.Wpf.ViewModels.Models;
 
 /// <summary>
-/// One airport + procedure pair listed on the Procedures tab's Airport + Procedure card, e.g.
+/// One airport + procedure pair listed on the Procedures tab's Additional Airport-Specific Procedures to Include card, e.g.
 /// <c>PIT — ILS OR LOC RWY 28C</c>.
 /// </summary>
 /// <param name="airport">The airport's FAA identifier.</param>

@@ -18,6 +18,16 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### AIRAC Service
+- Clearer wording on the General tab, the What You'll Get footer ("in the General tab"), and the
+  Airports and Airways alias lines.
+- FE-Buddy Properties is now **FE-Buddy Helper Properties**, with a clearer description.
+- Procedures: **Procedures at Any Airport** is now **Additional Procedures to Include**, and
+  **Airport + Procedure** is now **Additional Airport-Specific Procedures to Include**, which now
+  comes first. Each says which versions of a procedure it includes.
+
+### File Conversions
+- ERAM to GeoJSON: clearer descriptions of `Geomaps.xml` and its output in the picker.
 
 ---
 

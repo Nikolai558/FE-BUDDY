@@ -55,7 +55,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 		ServiceTabViewModel fixes = TabTitled(screen, "Fixes");
 		Assert.False(fixes.IsAvailable);
 		Assert.StartsWith("A symbol and a label for every fix", fixes.UnavailableToolTip);
-		Assert.EndsWith("To include it, tick Fixes under Include on the General tab.", fixes.UnavailableToolTip);
+		Assert.EndsWith("To include it, tick Fixes under Include in the General tab.", fixes.UnavailableToolTip);
 
 		// Every sub-service is in the rail, in order, with File Names and Preview Settings after them.
 		Assert.Equal(
@@ -107,7 +107,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 		ServiceTabViewModel concatenate = TabTitled(screen, "Add Custom Aliases");
 		Assert.False(concatenate.IsAvailable);
 		Assert.StartsWith("Adds your facility's own alias files to Combined_Alias.txt", concatenate.UnavailableToolTip, StringComparison.Ordinal);
-		Assert.EndsWith("To make one, tick a sub-service and its Alias box on the General tab.", concatenate.UnavailableToolTip, StringComparison.Ordinal);
+		Assert.EndsWith("To make one, tick a sub-service and its Alias box in the General tab.", concatenate.UnavailableToolTip, StringComparison.Ordinal);
 
 		AiracGeneralTabViewModel general = Assert.IsType<AiracGeneralTabViewModel>(screen.Tabs[0]);
 		SubServiceRow airports = general.RowFor(AiracSubServices.AirportsKey)!;

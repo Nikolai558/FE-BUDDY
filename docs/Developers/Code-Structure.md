@@ -144,7 +144,8 @@ FeBuddy.Wpf/
 └── Views/               ShellWindow, TabbedServiceView (AIRAC Service), FileConversionsView, one view
     │                    per tab or conversion page, MapWorkspace (every map), the dialog windows
     └── Cards/           the shared cards (Attention, What You'll Get, Area, What Files Do
-                         You Want?, FE-Buddy Properties, CRC ERAM Defaults, Source Files, Run);
+                         You Want?, FE-Buddy Helper Properties, CRC ERAM Defaults, Source
+                         Files, Run);
                          CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
                          Defaults; OutputStatusRow, an output's On/Off line (the Outputs
                          cards of Procedures and Telephony); CrcDefaultsPanel; and

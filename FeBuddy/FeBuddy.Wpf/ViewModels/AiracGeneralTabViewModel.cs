@@ -482,7 +482,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 				"Until then, with this cycle selected:" + Environment.NewLine +
 				"• Procedures writes none of its files: Procedure_Changes.md, Procedures.json and Faa_Chart_Recall.txt " +
 				"(so Combined_Alias.txt has no chart recall commands)." + Environment.NewLine +
-				"• On the Procedures tab you can't add procedures or airport + procedure pairs." + Environment.NewLine +
+				"• On the Procedures tab you can't add procedures or airport-specific procedures." + Environment.NewLine +
 				"Every other sub-service runs as normal.";
 		}
 	}

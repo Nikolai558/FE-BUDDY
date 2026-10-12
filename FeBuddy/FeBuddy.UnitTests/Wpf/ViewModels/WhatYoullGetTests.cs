@@ -384,8 +384,8 @@ public sealed class WhatYoullGetTests : IDisposable
 	[Fact]
 	public void the_footer_names_the_outputs_the_general_tab_turns_on_and_off()
 	{
-		Assert.Equal("Turn GeoJSON and Alias output on or off on the General tab, to the left.", new AirportsViewModel().WhatYoullGetFooter);
-		Assert.Equal("Turn GeoJSON output on or off on the General tab, to the left.", new ArtccBoundariesViewModel().WhatYoullGetFooter);
+		Assert.Equal("Turn GeoJSON and Alias output on or off in the General tab.", new AirportsViewModel().WhatYoullGetFooter);
+		Assert.Equal("Turn GeoJSON output on or off in the General tab.", new ArtccBoundariesViewModel().WhatYoullGetFooter);
 		Assert.Null(new TelephonyViewModel().WhatYoullGetFooter);
 	}
 
@@ -469,7 +469,7 @@ public sealed class WhatYoullGetTests : IDisposable
 			["Maps of every airway type selected below (J and V)", "but only the portions inside the ROI specific to the Airways sub-service"],
 			Lines(tab.WhatYoullGet[0]));
 		Assert.Equal(
-			["Every airway type selected below (J and V)", "but only those that cross the ROI specific to the Airways sub-service, each with all of its waypoints"],
+			["Every airway type selected below (J and V)", "but only those that cross the ROI specific to the Airways sub-service"],
 			Lines(tab.WhatYoullGet[1]));
 
 		tab.AliasRoiAirwaysOnly = false;

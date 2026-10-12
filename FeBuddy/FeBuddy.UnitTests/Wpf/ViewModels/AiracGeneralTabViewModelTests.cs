@@ -271,7 +271,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		Assert.Contains($"expect it between {from:dd MMM} and {to:dd MMM yyyy}", tip, StringComparison.Ordinal);
 		Assert.Contains("Procedure_Changes.md, Procedures.json and Faa_Chart_Recall.txt", tip, StringComparison.Ordinal);
-		Assert.Contains("you can't add procedures or airport + procedure pairs", tip, StringComparison.Ordinal);
+		Assert.Contains("you can't add procedures or airport-specific procedures", tip, StringComparison.Ordinal);
 		Assert.DoesNotContain("should be out by now", tip, StringComparison.Ordinal);
 	}
 

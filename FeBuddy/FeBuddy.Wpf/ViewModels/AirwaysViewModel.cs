@@ -370,7 +370,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
-				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols, or Text, or turn GeoJSON off for Airways on the General tab.");
+				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols, or Text, or turn GeoJSON off for Airways in the General tab.");
 		}
 
 		bool needsStrata = GenerateGeojson && OutputBy == AirwayGeojsonOutputBy.HighLow;
@@ -465,7 +465,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		yield return new SummaryBlock(SubServiceOutputKinds.Alias, new SummaryLines()
 			.Add(SummaryJoin.First, none ? NoAirways : $"Every airway type selected below{types}")
-			.Add(SummaryJoin.AndOnly, aliasUsesRoi ? $"those that cross {RoiName}, each with all of its waypoints" : null)
+			.Add(SummaryJoin.AndOnly, aliasUsesRoi ? $"those that cross {RoiName}" : null)
 			.ToList())
 		{
 			Files = none

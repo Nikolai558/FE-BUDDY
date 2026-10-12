@@ -458,7 +458,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			validation.AddArea(
 				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols, or Text, "
-				+ "or turn GeoJSON off for Departures on the General tab.");
+				+ "or turn GeoJSON off for Departures in the General tab.");
 		}
 
 		ValidateAmendmentFilter(validation);

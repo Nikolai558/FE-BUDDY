@@ -43,7 +43,7 @@ public sealed record OutputTag(SubServiceOutputKinds Kind, bool IsOn)
 		? $"Whether each sub-service writes {Name(Kind)}."
 		: IsOn
 			? $"Affects {Name(Kind)}."
-			: $"Affects {Name(Kind)}, which is off on the General tab.";
+			: $"Affects {Name(Kind)}, which is off in the General tab.";
 
 	/// <summary>The tags for a card: one per output it affects, in the General tab's column order.</summary>
 	/// <param name="outputs">The outputs the card affects.</param>

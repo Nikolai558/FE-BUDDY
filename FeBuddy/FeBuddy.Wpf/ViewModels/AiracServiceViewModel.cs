@@ -57,6 +57,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	private bool _runReviewShown;
 	private NasrCsvDataCollection? _parsedForSelectedCycle;
 	private string? _parsedCycleId;
+	private string? _loadingCycleId;
 
 	/// <summary>Builds the screen, restores the saved tabs, and starts loading the selected cycle.</summary>
 	public AiracServiceViewModel()
@@ -71,6 +72,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		{
 			_fileNames.RefreshFiles();
 			PushSelectedCycle();
+			PushTabReadiness();
 			_ = LoadCycleDataAsync();
 		};
 
@@ -87,6 +89,22 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			() => AiracOutputPaths.CycleFolderName(AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).AiracCycleId));
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
+
+		// The Procedure Charts tab says whether deleted procedures can link to the previous cycle's
+		// charts, which can still be on their way when the screen opens.
+		AiracCycleDataCache.Instance.StateChanged += (_, entry) =>
+		{
+			if (entry.State is CycleDataState.Downloaded or CycleDataState.Failed or CycleDataState.NotYetPublished)
+			{
+				_dispatcher.BeginInvoke(() =>
+				{
+					if (entry.Cycle.AiracCycleId == PreviousOfSelectedCycleId)
+					{
+						RefreshProceduresData();
+					}
+				});
+			}
+		};
 		AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 
 		// The File Names tab lists every file the other tabs write, and a new one needs a name. Re-read
@@ -187,7 +205,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	private string WaitingMessage => Readiness switch
 	{
 		AiracCycleReadiness.Unavailable => "The current AIRAC cycle failed to download or parse. The AIRAC Service is unavailable — see the Dashboard activity log.",
-		_ => "Waiting for AIRAC data to finish downloading and parsing. This service will be available in a moment.",
+		_ => "Waiting for the current AIRAC cycle to finish downloading and parsing. This service will be available in a moment.",
 	};
 
 	/// <summary>
@@ -213,7 +231,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 			if (tab is ISubServiceRunTarget target)
 			{
-				target.SetReadiness(IsReady);
+				target.SetReadiness(IsSelectedCycleLoaded);
 			}
 		}
 	}
@@ -320,17 +338,35 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		OnPropertyChanged(nameof(IsReady));
 
 		_general.SetReadiness(IsReady, WaitingMessage);
-
-		foreach (ISubServiceRunTarget target in RunTargets)
-		{
-			target.SetReadiness(IsReady);
-		}
+		PushTabReadiness();
 
 		CommandManager.InvalidateRequerySuggested();
 
 		_ = LoadCycleDataAsync();
 	}
 
+	/// <summary>The cycle picked on the General tab.</summary>
+	private string SelectedCycleId => AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).AiracCycleId;
+
+	/// <summary>
+	/// Whether the tabs have the selected cycle's data. The service opens once the current cycle is
+	/// ready, so the next or previous cycle can still be loading when it's picked.
+	/// </summary>
+	private bool IsSelectedCycleLoaded => IsReady && _parsedCycleId == SelectedCycleId && _parsedForSelectedCycle is not null;
+
+	/// <summary>Tells every sub-service tab whether its lists can use the selected cycle yet.</summary>
+	private void PushTabReadiness()
+	{
+		foreach (ISubServiceRunTarget target in RunTargets)
+		{
+			target.SetReadiness(IsSelectedCycleLoaded);
+		}
+	}
+
+	/// <summary>
+	/// Hands the selected cycle's parsed data to every tab, waiting for it while it is still loading
+	/// (the tabs say <c>Loading AIRAC 2611…</c> meanwhile).
+	/// </summary>
 	private async Task LoadCycleDataAsync()
 	{
 		if (!IsReady)
@@ -338,31 +374,44 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		string cycleId = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).AiracCycleId;
+		string cycleId = SelectedCycleId;
 
-		if (_parsedCycleId == cycleId && _parsedForSelectedCycle is not null)
+		if ((_parsedCycleId == cycleId && _parsedForSelectedCycle is not null) || _loadingCycleId == cycleId)
 		{
 			return;
 		}
 
+		_loadingCycleId = cycleId;
+
 		try
 		{
 			NasrCsvDataCollection data = await AiracCycleDataCache.Instance.GetAsync(cycleId).ConfigureAwait(false);
-			_parsedForSelectedCycle = data;
-			_parsedCycleId = cycleId;
 
 			await _dispatcher.BeginInvoke(() =>
 			{
+				_loadingCycleId = null;
+
+				// Another cycle may have been picked while this one loaded: its own load hands it over.
+				if (SelectedCycleId != cycleId)
+				{
+					return;
+				}
+
+				_parsedForSelectedCycle = data;
+				_parsedCycleId = cycleId;
+
 				foreach (ISubServiceRunTarget target in RunTargets)
 				{
 					target.LoadCycleDependentLists(data);
 				}
 
+				PushTabReadiness();
 				RefreshProceduresData();
 			});
 		}
 		catch (Exception ex)
 		{
+			_ = _dispatcher.BeginInvoke(() => _loadingCycleId = null);
 			AppLog.Warning("AiracService", $"Could not load parsed data for cycle {cycleId}: {ex.Message}");
 		}
 	}
@@ -393,11 +442,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		AiracCycleInfo selectedCycle = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition);
-		string previousCycleId = AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, selectedCycle.EffectiveDateUtc).AiracCycleId;
-
-		_ = LoadProceduresDataAsync(tab, cycleId, previousCycleId);
+		_ = LoadProceduresDataAsync(tab, cycleId, PreviousOfSelectedCycleId);
 	}
+
+	/// <summary>The cycle before the one picked on the General tab, whose metafile the changes report links to.</summary>
+	private string PreviousOfSelectedCycleId =>
+		AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).EffectiveDateUtc).AiracCycleId;
 
 	private async Task LoadProceduresDataAsync(ProceduresViewModel tab, string cycleId, string previousCycleId)
 	{
@@ -406,6 +456,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			DtppMetafileDataCollection? dtpp = await AiracCycleDataCache.Instance.GetDtppAsync(cycleId).ConfigureAwait(false);
 
 			bool previousAvailable = AiracCycleDataCache.Instance.FindDtppFile(previousCycleId) is not null;
+
+			// Not on disk yet, but on its way: the tab says so rather than that it's missing.
+			bool previousLoading = !previousAvailable
+				&& AiracCycleDataCache.Instance.GetEntry(previousCycleId) is { CycleDirectory: null } previous
+				&& !AiracCycleDataCache.IsSettled(previous);
 
 			DateTime? downloadedLocal = AiracCycleDataCache.Instance.FindDtppFile(cycleId) is { } file
 				? File.GetLastWriteTime(file)
@@ -417,7 +472,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				// reports in separately, so a stale result must not overwrite it.
 				if (_parsedCycleId == cycleId)
 				{
-					tab.SetDtppData(cycleId, dtpp, previousCycleId, previousAvailable, downloadedLocal);
+					tab.SetDtppData(cycleId, dtpp, previousCycleId, previousAvailable, downloadedLocal, previousLoading);
 				}
 			});
 		}

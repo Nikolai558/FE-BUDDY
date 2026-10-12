@@ -65,6 +65,7 @@ internal static class WaypointLocator
 	/// </returns>
 	/// <exception cref="ArgumentNullException">Thrown when <paramref name="allNasrCsvData"/> is null.</exception>
 	/// <exception cref="ArgumentException">Thrown when <paramref name="waypointId"/> is blank.</exception>
+	/// <exception cref="InvalidOperationException">Thrown when a group the search needs (FIX, NAV or APT) wasn't parsed.</exception>
 	internal static (double waypointLat, double waypointLon, string foundIn)? Find(
 		NasrCsvDataCollection allNasrCsvData,
 		string waypointId,
@@ -179,10 +180,7 @@ internal static class WaypointLocator
 	{
 		Dictionary<string, CoordinateEntry> index = new(StringComparer.OrdinalIgnoreCase);
 
-		if (allNasrCsvData.Fix?.FixBase is null)
-			return index;
-
-		foreach (var fix in allNasrCsvData.Fix.FixBase)
+		foreach (var fix in allNasrCsvData.RequireFix().FixBase)
 		{
 			if (string.IsNullOrWhiteSpace(fix.FixId))
 				continue;
@@ -204,10 +202,7 @@ internal static class WaypointLocator
 	{
 		Dictionary<string, CoordinateEntry> index = new(StringComparer.OrdinalIgnoreCase);
 
-		if (allNasrCsvData.Nav?.NavBase is null)
-			return index;
-
-		foreach (var navaid in allNasrCsvData.Nav.NavBase)
+		foreach (var navaid in allNasrCsvData.RequireNav().NavBase)
 		{
 			if (string.IsNullOrWhiteSpace(navaid.NavId))
 				continue;
@@ -230,10 +225,7 @@ internal static class WaypointLocator
 	{
 		Dictionary<string, CoordinateEntry> index = new(StringComparer.OrdinalIgnoreCase);
 
-		if (allNasrCsvData.Apt?.AptBase is null)
-			return index;
-
-		foreach (var airport in allNasrCsvData.Apt.AptBase)
+		foreach (var airport in allNasrCsvData.RequireApt().AptBase)
 		{
 			CoordinateEntry entry = new(
 				airport.BaseLatDecimal,

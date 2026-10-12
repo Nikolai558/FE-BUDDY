@@ -522,16 +522,15 @@ public sealed class ArrivalBuilderTests
 	}
 
 	[Fact]
-	public void apt_base_not_parsed_leaves_artcc_by_airport_empty()
+	public void apt_not_parsed_is_named_in_the_error()
 	{
 		NasrCsvDataCollection data = ArrivalTestData.Build(
 			bases: [ArrivalTestData.Base(TestName, "ZDC ZNY", TestCode, servedArpt: "DOV ILG")]);
 		data.Apt = null;
 
-		ArrivalProcedure procedure = Assert.Single(ArrivalBuilder.ReadProcedures(data).Procedures);
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => ArrivalBuilder.ReadProcedures(data));
 
-		Assert.Empty(procedure.ArtccByAirport);
-		Assert.Equal("ZDC", procedure.ArtccFor("DOV"));
+		Assert.Contains("NASR APT data has not been parsed", ex.Message, StringComparison.Ordinal);
 	}
 
 	[Fact]

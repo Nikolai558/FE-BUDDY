@@ -206,12 +206,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		set { if (SetProperty(ref _selectedFacility, value)) MarkDirty(); }
 	}
 
-	/// <summary>Whether the AIRAC data is ready, so <see cref="Facilities"/> can be filled.</summary>
+	/// <summary>Whether the current cycle is ready, so <see cref="Facilities"/> can be filled from it.</summary>
 	public bool FacilitiesReady { get; private set; }
 
 	/// <summary>Shown in place of the facility list until <see cref="FacilitiesReady"/>.</summary>
 	public string FacilityWaitingMessage =>
-		"Waiting for AIRAC data to finish downloading and parsing. The facility list will be available in a moment.";
+		"Waiting for the current AIRAC cycle to finish downloading and parsing. The facility list will be available in a moment.";
 
 	/// <summary>
 	/// Where every service writes its output; the Desktop until one is saved. An AIRAC Service run
@@ -1073,7 +1073,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			AiracCycleInfo current = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current);
 			var data = await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).ConfigureAwait(false);
 
-			var options = (data.Apt?.AptBase ?? [])
+			var options = data.RequireApt().AptBase
 				.Where(a => !string.IsNullOrWhiteSpace(a.RespArtccId))
 				.Select(a => new FacilityOption(a.RespArtccId.Trim(), string.IsNullOrWhiteSpace(a.ArtccName) ? a.RespArtccId.Trim() : a.ArtccName.Trim()))
 				.DistinctBy(o => o.ArtccId, StringComparer.OrdinalIgnoreCase)

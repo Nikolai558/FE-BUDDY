@@ -39,7 +39,7 @@ public static class AirwayBuilder
 
 		if (allNasrCsvData.Awy is null)
 		{
-			throw new InvalidOperationException("AWY NASR CSV data has not been parsed.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.Awy, "The Airways sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];

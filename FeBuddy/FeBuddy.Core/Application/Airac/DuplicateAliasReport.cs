@@ -282,7 +282,7 @@ public static class DuplicateAliasReport
 
 		public ArtccLookup(NasrCsvDataCollection nasr)
 		{
-			foreach (AptCsvDataModel.AptBase airport in nasr.Apt?.AptBase ?? [])
+			foreach (AptCsvDataModel.AptBase airport in nasr.RequireApt().AptBase)
 			{
 				string artcc = (airport.RespArtccId ?? string.Empty).Trim().ToUpperInvariant();
 

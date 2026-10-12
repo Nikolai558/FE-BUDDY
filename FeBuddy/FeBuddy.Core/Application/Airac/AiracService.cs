@@ -121,7 +121,12 @@ public static class AiracService
 	{
 		ArgumentNullException.ThrowIfNull(settings);
 
-		progress?.Report(new AiracServiceProgress("AIRAC", $"Loading parsed data for cycle {settings.SelectedCycle.AiracCycleId}"));
+		// The service opens once the current cycle is ready, so the cycle picked can still be loading:
+		// the run waits for it, and says so.
+		string cycleId = settings.SelectedCycle.AiracCycleId;
+		progress?.Report(new AiracServiceProgress("AIRAC", AiracCycleDataCache.Instance.GetEntry(cycleId) is { State: not CycleDataState.Ready }
+			? $"Loading AIRAC {cycleId}…"
+			: $"Loading parsed data for cycle {cycleId}"));
 		NasrCsvDataCollection nasrData = await AiracCycleDataCache.Instance
 			.GetAsync(settings.SelectedCycle.AiracCycleId, cancellationToken)
 			.ConfigureAwait(false);
@@ -167,6 +172,7 @@ public static class AiracService
 			// The previous cycle's metafile is what links a procedure the selected cycle deletes
 			// back to the chart it last had (see AiracSupplementalData.PreviousDtpp) - it may not be
 			// one of the three cycles the cache tracks, in which case GetDtppAsync just answers null.
+			// Just after launch the previous cycle can still be downloading: GetDtppAsync waits for it.
 			AiracCycleInfo previousCycle = AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, asOfUtc: settings.SelectedCycle.EffectiveDateUtc);
 
 			progress?.Report(new AiracServiceProgress("AIRAC", $"Loading d-TPP Metafile data for cycle {previousCycle.AiracCycleId}"));

@@ -42,7 +42,7 @@ needs it; launch never stops.
 
 Results land on `AppEnvironment`, and the AIRAC cache raises `StateChanged` as each cycle moves on.
 The view-models listen, so the window fills in as launch goes: the status narrates the downloads,
-the Systems box turns green, and the AIRAC Service screen unlocks.
+the Systems box turns green, and the AIRAC Service screen unlocks once the current cycle is ready.
 
 ## The AIRAC data
 
@@ -54,18 +54,28 @@ the Systems box turns green, and the AIRAC Service screen unlocks.
 3. **Probe.** An HTTP HEAD on `https://nfdc.faa.gov/webContent/28DaySub/extra/<date>_CSV.zip` says
    whether the FAA has published the cycle. The next cycle often isn't yet: that is
    `NotYetPublished`, not an error.
-4. **Download and parse**, current first, then previous, then next. One download and one parse run
-   at a time, overlapping - two parses at once would double the peak memory. A cycle already on disk
-   isn't downloaded again; a failed download gets one retry.
+4. **Download and parse**, current first, then next, then previous: users mostly want the current
+   and next cycles. One download and one parse run at a time, overlapping - two parses at once would
+   double the peak memory. A cycle already on disk isn't downloaded again; a failed download gets one
+   retry. Each cycle's d-TPP Metafile is downloaded with it.
+5. **Only the NASR groups FE-Buddy reads** are parsed: `NasrCsvGroups.InUse`, 9 of the 24. The
+   others stay `null` in the `NasrCsvDataCollection`, and reading one through its `Require…` method
+   (`RequireIls()`) throws an error that names it. To use another group, add it to `InUse`: its
+   parser and models are already there. `NasrCsvParser.ParseAllAsync` still parses all 24, for the
+   Harness and tests. The log says how long each cycle's parse took and how many groups it parsed.
 
 | Readiness | When | AIRAC Service |
 |---|---|---|
-| `Waiting` | any of the three cycles is still downloading or parsing | locked |
-| `Ready` | current and previous ready, next ready or not yet published | open |
-| `Degraded` | current ready, previous or next failed | open; the failed cycle shows *failed* |
+| `Waiting` | the current cycle is still downloading or parsing | locked |
+| `Ready` | the current cycle is ready, and neither other cycle has failed | open |
+| `Degraded` | the current cycle is ready, and previous or next failed | open; the failed cycle shows *failed* |
 | `Unavailable` | the current cycle failed | locked |
 
-Asking for a cycle while it parses waits for that parse rather than starting another.
+The next and previous cycles go on loading while the service is open. Asking for a cycle that's
+still loading waits for it rather than starting another download or parse: a run says
+"Loading AIRAC 2611…", the tabs' lists wait for the cycle picked on the General tab, and a run with
+Procedure Charts waits for the previous cycle's d-TPP Metafile, which its changes report needs
+(`GetDtppAsync`).
 
 ### Data that isn't NASR
 

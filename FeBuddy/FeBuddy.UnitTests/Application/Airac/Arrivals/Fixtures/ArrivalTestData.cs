@@ -109,12 +109,16 @@ internal static class ArrivalTestData
 		AptCsvDataCollection aptCollection = new();
 		aptCollection.AptBase.AddRange(airports ?? []);
 
+		// FRQ and CLS_ARSP are empty but there, as a cycle the cache parses has them: a run that
+		// also builds airports from this data reads them.
 		return new NasrCsvDataCollection
 		{
 			Star = starCollection,
 			Fix = fixCollection,
 			Nav = navCollection,
-			Apt = aptCollection
+			Apt = aptCollection,
+			Frq = new FrqCsvDataCollection(),
+			ClsArsp = new ClsArspCsvDataCollection(),
 		};
 	}
 

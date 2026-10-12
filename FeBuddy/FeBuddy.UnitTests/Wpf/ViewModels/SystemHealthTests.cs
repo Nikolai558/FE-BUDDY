@@ -44,6 +44,22 @@ public sealed class SystemHealthTests
 		Assert.Equal(StatusKind.Ok, row.Kind);
 	}
 
+	/// <summary>The service opens once the current cycle is ready; the others still loading are named and the row stays green.</summary>
+	[Fact]
+	public void cycles_still_loading_after_the_current_one_is_ready_are_named_and_stay_green()
+	{
+		HealthRow row = Airac(AiracCycleReadiness.Ready,
+			(Previous, CycleDataState.NotDownloaded, false), (Current, Ready, true), (Next, CycleDataState.Parsing, false));
+
+		Assert.Equal(new HealthRow("AIRAC data", "current ready, previous / next loading…", StatusKind.Ok), row);
+		Assert.Equal("All systems nominal", ShellViewModel.SummarizeHealth([Internet, row, Updates]));
+
+		HealthRow degraded = Airac(AiracCycleReadiness.Degraded,
+			(Previous, CycleDataState.Downloading, false), (Current, Ready, true), (Next, CycleDataState.Failed, false));
+
+		Assert.Equal("ready — a best-effort cycle failed, previous loading…", degraded.Detail);
+	}
+
 	[Fact]
 	public void a_missing_next_metafile_turns_the_drawer_amber_and_names_it_in_the_heading()
 	{

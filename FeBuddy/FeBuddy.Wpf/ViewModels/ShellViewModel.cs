@@ -331,9 +331,15 @@ public sealed class ShellViewModel : ObservableObject
 		string[] notPublished = [.. cycles.Where(c => c.State == CycleDataState.NotYetPublished).Select(c => Named(c.Position))];
 		string[] noMetafile = [.. cycles.Where(c => c.State == CycleDataState.Ready && !c.HasMetafile).Select(c => Named(c.Position))];
 
+		// The service opens once the current cycle is ready; the others may still be on their way.
+		string[] loading = [.. cycles
+			.Where(c => c.State is not (CycleDataState.Ready or CycleDataState.Failed or CycleDataState.NotYetPublished))
+			.Select(c => Named(c.Position))];
+		string stillLoading = loading.Length > 0 ? $", {string.Join(" / ", loading)} loading…" : string.Empty;
+
 		string detail = readiness == AiracCycleReadiness.Degraded
-			? "ready — a best-effort cycle failed"
-			: $"{string.Join(" / ", ready)} ready" + (notPublished.Length > 0 ? $", {string.Join(" / ", notPublished)} not published yet" : string.Empty);
+			? "ready — a best-effort cycle failed" + stillLoading
+			: $"{string.Join(" / ", ready)} ready" + stillLoading + (notPublished.Length > 0 ? $", {string.Join(" / ", notPublished)} not published yet" : string.Empty);
 
 		if (noMetafile.Length == 0)
 		{
@@ -609,32 +615,37 @@ public sealed class ShellViewModel : ObservableObject
 			return;
 		}
 
+		AiracCycleReadiness readiness = AiracCycleDataCache.Instance.ComputeReadiness();
+		AiracCycleDataCacheEntry? current = entries.FirstOrDefault(x => x.Position == AiracCyclePosition.Current);
 		AiracCycleDataCacheEntry? downloading = entries.FirstOrDefault(x => x.State == CycleDataState.Downloading);
+		AiracCycleDataCacheEntry? parsing = entries.FirstOrDefault(x => x.State == CycleDataState.Parsing);
+
+		// Once the current cycle is ready the service is open: say so, and name a cycle still on its way.
+		if (readiness is (AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded) && current is not null)
+		{
+			AiracCycleDataCacheEntry? loading = parsing ?? downloading ?? entries.FirstOrDefault(x => !AiracCycleDataCache.IsSettled(x));
+
+			AiracStatus = $"AIRAC {current.Cycle.AiracCycleId}  ·  eff {current.Cycle.EffectiveDateUtc:dd MMM yyyy}"
+				+ (readiness == AiracCycleReadiness.Degraded ? "  ·  degraded" : string.Empty)
+				+ (loading is not null ? $"  ·  loading {loading.Cycle.AiracCycleId}…" : string.Empty);
+			return;
+		}
+
 		if (downloading is not null)
 		{
 			AiracStatus = $"Downloading cycle {downloading.Cycle.AiracCycleId}…";
 			return;
 		}
 
-		AiracCycleDataCacheEntry? parsing = entries.FirstOrDefault(x => x.State == CycleDataState.Parsing);
 		if (parsing is not null)
 		{
 			AiracStatus = $"Parsing cycle {parsing.Cycle.AiracCycleId}…";
 			return;
 		}
 
-		AiracCycleReadiness readiness = AiracCycleDataCache.Instance.ComputeReadiness();
-		AiracCycleDataCacheEntry? current = entries.FirstOrDefault(x => x.Position == AiracCyclePosition.Current);
-
-		AiracStatus = readiness switch
-		{
-			AiracCycleReadiness.Unavailable => "AIRAC data unavailable — current cycle failed",
-			AiracCycleReadiness.Waiting => "Waiting for AIRAC data…",
-			_ when current is not null =>
-				$"AIRAC {current.Cycle.AiracCycleId}  ·  eff {current.Cycle.EffectiveDateUtc:dd MMM yyyy}"
-				+ (readiness == AiracCycleReadiness.Degraded ? "  ·  degraded" : string.Empty),
-			_ => "Waiting for AIRAC data…",
-		};
+		AiracStatus = readiness == AiracCycleReadiness.Unavailable
+			? "AIRAC data unavailable — current cycle failed"
+			: "Waiting for AIRAC data…";
 	}
 
 	private void RefreshSystemHealth()

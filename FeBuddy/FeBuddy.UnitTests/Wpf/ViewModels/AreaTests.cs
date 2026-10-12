@@ -432,6 +432,21 @@ public sealed class AreaTests : IDisposable
 		Assert.Null(tab.DtppWarning);
 	}
 
+	/// <summary>
+	/// Just after launch the previous cycle can still be on its way: that's said, not warned about,
+	/// since a run waits for it.
+	/// </summary>
+	[Fact]
+	public void procedures_say_the_previous_cycle_is_still_loading_without_warning()
+	{
+		ProceduresViewModel tab = Procedures();
+
+		tab.SetDtppData("2611", new DtppMetafileDataCollection(), "2610", previousAvailable: false, downloadedLocal: DateTime.Now, previousLoading: true);
+
+		Assert.Null(tab.DtppWarning);
+		Assert.Equal("Cycle 2610 is still loading. Once it has, deleted procedures link to its charts.", tab.DtppPreviousStatus);
+	}
+
 	/// <summary>The cards name only the documents that are on, and the chart recall note is for the alias file.</summary>
 	[Fact]
 	public void procedures_cards_name_the_documents_that_are_on()

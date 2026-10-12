@@ -18,6 +18,7 @@ namespace FeBuddy.Core.Domain.Procedures.ChartRecall;
 ///   <item><term><c>ILS Y OR LOC Y RWY 22L</c></term><description><c>IY22L</c>, <c>LY22L</c></description></item>
 ///   <item><term><c>ILS Z OR LOC RWY 23</c></term><description><c>IZ23</c>, <c>LZ23</c> - a variant on one part applies to every part</description></item>
 ///   <item><term><c>LOC/DME BC RWY 18</c></term><description><c>LDBC18</c></description></item>
+///   <item><term><c>RNAV (GPS) RWY 06</c></term><description><c>R6</c> - the same code as <c>RNAV (GPS) RWY 6</c></description></item>
 ///   <item><term><c>VOR RWY 26L/R</c></term><description><c>O26L</c>, <c>O26R</c> - one code per runway</description></item>
 ///   <item><term><c>VOR OR GPS-A</c></term><description><c>OA</c>, <c>GA</c> - a circling approach keeps its letter</description></item>
 ///   <item><term><c>RIVER VISUAL RWY 19</c></term><description><c>vRIVER19</c> - a charted visual is a lower-case <c>v</c>, its name and its runway</description></item>
@@ -233,11 +234,12 @@ internal static partial class ApproachCodes
 	}
 
 	/// <summary>
-	/// Expands a chart's runway text into one runway per code, exactly as printed: <c>22L</c> to
-	/// <c>[22L]</c>, <c>30L/R</c> to <c>[30L, 30R]</c>, <c>16 R/C/L</c> to <c>[16R, 16C, 16L]</c>,
-	/// <c>12/30</c> to <c>[12, 30]</c>, and no runway at all (a circling approach) to <c>[""]</c>.
+	/// Expands a chart's runway text into one runway per code, without a leading zero: <c>22L</c> to
+	/// <c>[22L]</c>, <c>04L</c> to <c>[4L]</c>, <c>30L/R</c> to <c>[30L, 30R]</c>, <c>16 R/C/L</c> to
+	/// <c>[16R, 16C, 16L]</c>, <c>12/30</c> to <c>[12, 30]</c>, and no runway at all (a circling
+	/// approach) to <c>[""]</c>.
 	/// </summary>
-	/// <returns>The runways, or <see langword="null"/> when the text is not in a form FE-Buddy can read.</returns>
+	/// <returns>The runways, or <see langword="null"/> when the text is not in a form FE-Buddy can read (runway <c>0</c> included).</returns>
 	internal static IReadOnlyList<string>? ExpandRunways(string runwayText)
 	{
 		string compact = runwayText.Replace(" ", string.Empty, StringComparison.Ordinal);
@@ -260,9 +262,10 @@ internal static partial class ApproachCodes
 			}
 
 			// "30L/R": the R has no number of its own, so it takes the one before it.
+			// The FAA prints both "RWY 06" and "RWY 6" for the same runway: both are 6.
 			if (match.Groups["number"].Success)
 			{
-				number = match.Groups["number"].Value;
+				number = match.Groups["number"].Value.TrimStart('0');
 			}
 
 			if (number.Length == 0)

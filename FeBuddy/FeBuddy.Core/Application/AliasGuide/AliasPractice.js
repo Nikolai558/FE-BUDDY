@@ -138,7 +138,9 @@
       for (let b = k - 1; b >= 0; b--) if (ops[b].op !== '+') { prev = ops[b].i; break; }
       for (let f = end; f < ops.length; f++) if (ops[f].op !== '+') { next = ops[f].i; break; }
 
-      got[missing.length ? runOwner(run, missing, prev, next) : ownerOf(prev, next)] += run;
+      // Digits just ahead of the runway (a leading zero) are part of the runway, not the part before it.
+      const leadsRunway = next < whole.length && parts[owner[next]].k === 'runway' && /^\d+$/.test(run);
+      got[missing.length ? runOwner(run, missing, prev, next) : leadsRunway ? owner[next] : ownerOf(prev, next)] += run;
       k = end;
     }
 
@@ -255,13 +257,13 @@
           }
 
           if (rest) {
-            hints.push(`The runway is ${show(shown, 'runway')}, exactly as the chart prints it.`);
+            hints.push(`The runway is ${show(shown, 'runway')}.`);
             break;
           }
 
           if (typedNumber !== number) {
             const lost = typedNumber && number.endsWith(typedNumber) ? number.slice(0, number.length - typedNumber.length) : null;
-            if (lost !== null && /^0+$/.test(lost)) hints.push(`Keep the runway's leading zero: ${show(shown, 'runway')}, as the chart prints it.`);
+            if (/^0+\d/.test(typedNumber) && typedNumber.replace(/^0+/, '') === number) hints.push(`Leave out the runway's leading zero: ${show(shown, 'runway')}.`);
             else if (lost !== null) forgot.push(`the full runway number ${show(number, 'runway')}`);
             else if (!typedNumber) forgot.push(`the runway number ${show(number, 'runway')}`);
             else {

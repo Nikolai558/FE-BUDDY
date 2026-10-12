@@ -243,7 +243,8 @@ One `.OPENURL` command per page of every current chart:
 
 A command is `.`, the airport's FAA ID in lower case, the chart's code, then `c`; page 2 onwards adds
 the page number (`.dtwHHOWEc2`). An approach's code is its type, variant and runway, one command per
-"OR" part (`ILS Y OR LOC Y RWY 22L` is `.dtwIY22Lc` and `.dtwLY22Lc`); a departure's or STAR's is its
+"OR" part (`ILS Y OR LOC Y RWY 22L` is `.dtwIY22Lc` and `.dtwLY22Lc`), with no leading zero on the
+runway (`RWY 06` and `RWY 6` are both `6`); a departure's or STAR's is its
 name without the version (`JALEX3.JALEX` is `JALEX`); the airport diagram is `APD`. **Info ▸ Alias
 Command Guide** has every code, with examples for your controllers.
 

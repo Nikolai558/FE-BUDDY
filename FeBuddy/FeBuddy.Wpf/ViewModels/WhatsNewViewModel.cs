@@ -117,9 +117,10 @@ public sealed class WhatsNewViewModel(Action back, Action openGuide) : Observabl
 			new("SOUTH RIVER VISUAL RWY 19 (fictional AAA airport)", ".aaavSOUTH19c", ".aaavSOUTHRIVER19c"),
 			new("TURNAGAIN EIGHT (ANC)", ".ancTURNAc", ".ancTURNAGAINc"),
 		]),
-		new("Instrument approaches", "Runway numbers are no longer shortened.",
+		new("Instrument approaches", "Runway numbers are no longer shortened, and never have a leading zero, so RWY 06 and RWY 6 get the same command.",
 		[
 			new("ILS RWY 16R", "I6R", "I16R"),
+			new("ILS RWY 06", "I06", "I6"),
 		]),
 	];
 
@@ -148,10 +149,10 @@ public sealed class WhatsNewViewModel(Action back, Action openGuide) : Observabl
 	/// <summary>Real charts and their new commands.</summary>
 	public IReadOnlyList<CommandExample> Examples { get; } =
 	[
-		new("DTW", "ILS Z OR LOC RWY 04L", "`.dtwIZ04Lc` or `.dtwLZ04Lc`", "The `Z` variant carries over to the LOC approach, even when the FAA doesn't label it that way."),
-		new("LAX", "RNAV (RNP) Z RWY 07R", "`.laxRZ07Rc`", "Whether it says (RNP) or (GPS) doesn't matter; it is still an RNAV approach, so its IAP type code is `R`."),
+		new("DTW", "ILS Z OR LOC RWY 04L", "`.dtwIZ4Lc` or `.dtwLZ4Lc`", "The `Z` variant carries over to the LOC approach, even when the FAA doesn't label it that way. The runway's leading zero is left out."),
+		new("LAX", "RNAV (RNP) Z RWY 07R", "`.laxRZ7Rc`", "Whether it says (RNP) or (GPS) doesn't matter; it is still an RNAV approach, so its IAP type code is `R`."),
 		new("LAX", "RNAV (RNP) Z RWY 24L", "`.laxRZ24Lc`", null),
-		new("LAX", "RNAV (GPS) Y RWY 07R", "`.laxRY07Rc`", null),
+		new("LAX", "RNAV (GPS) Y RWY 07R", "`.laxRY7Rc`", null),
 		new("LAX", "RNAV (GPS) Y RWY 24L", "`.laxRY24Lc`", null),
 		new("MRY", "RACEWAY *charted* VISUAL RWY 28L", "`.mryvRACEWAY28Lc`", "`RACEWAY` is spelled out in full."),
 		new("LGB", "LA RIVER *charted* VISUAL RWY 12", "`.lgbvLARIVER12c`", "`LA RIVER` is spelled out in full, with spaces (and any special characters) removed."),

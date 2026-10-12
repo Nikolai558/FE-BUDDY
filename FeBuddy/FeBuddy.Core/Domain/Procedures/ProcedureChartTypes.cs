@@ -43,6 +43,17 @@ public static class ProcedureChartTypes
 	/// </summary>
 	public static IReadOnlyList<string> Default { get; } = [Iap, Star, Dp, Odp, Dau, Apd];
 
+	/// <summary>
+	/// The departures (<see cref="Dp"/> - SIDs - and <see cref="Odp"/>) and arrivals (<see cref="Star"/>):
+	/// the only chart types the Procedure Charts cards that list procedures by name take.
+	/// </summary>
+	public static IReadOnlyList<string> DeparturesAndArrivals { get; } = [Dp, Odp, Star];
+
+	/// <summary>Whether <paramref name="chartType"/> is a departure or an arrival (<see cref="DeparturesAndArrivals"/>), ignoring case.</summary>
+	/// <param name="chartType">The chart type to check.</param>
+	/// <returns><see langword="true"/> for a DP, ODP or STAR.</returns>
+	public static bool IsDepartureOrArrival(string chartType) => DeparturesAndArrivals.Contains(chartType, StringComparer.OrdinalIgnoreCase);
+
 	/// <summary>Whether <paramref name="chartType"/> is one of <see cref="All"/>, ignoring case.</summary>
 	/// <param name="chartType">The chart type to check.</param>
 	/// <returns><see langword="true"/> when it is a known chart type.</returns>

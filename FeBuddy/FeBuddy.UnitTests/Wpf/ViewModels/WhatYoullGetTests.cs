@@ -724,7 +724,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", "ZOB");
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW");
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ");
 		ProceduresViewModel tab = ProceduresTab(Alias | Changes | Json);
 
 		Assert.Equal(SubServiceArea.Artccs, tab.Area);
@@ -733,7 +733,7 @@ public sealed class WhatYoullGetTests : IDisposable
 			[
 				"Charts for airports within ZOB",
 				"along with CLE and DTW",
-				"along with BRWNZ FIVE, wherever it's published",
+				"along with BRWNZ, wherever it's published",
 			],
 			Lines(tab.WhatYoullGet[0]));
 		Assert.Equal(
@@ -767,7 +767,8 @@ public sealed class WhatYoullGetTests : IDisposable
 	public void procedures_counts_a_long_airport_list_and_flags_no_chart_type()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW,CAK,PIT,ORD,MDW,BUF");
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE,CLVLD TWO");
+		// Saved by an earlier FE-Buddy as full names: they read as their root names.
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE,CLVLD TWO (RNAV)");
 		ProceduresViewModel tab = ProceduresTab(Json);
 
 		foreach (ProcedureOptionToggle type in tab.ChartTypeToggles)
@@ -779,7 +780,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		Assert.Equal(
 			[
 				"Charts for the 7 airports you listed",
-				"along with BRWNZ FIVE and CLVLD TWO, wherever they're published",
+				"along with BRWNZ and CLVLD, wherever they're published",
 			],
 			Lines(block));
 		Assert.Equal(["with only these types: none yet, so tick one under Chart Types"], Includes(block));
@@ -829,11 +830,11 @@ public sealed class WhatYoullGetTests : IDisposable
 	[Fact]
 	public void procedures_picked_one_by_one_need_no_chart_types()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.AirportProcedures", "CLE|ILS OR LOC RWY 06L");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.AirportProcedures", "CLE|CLVLD TWO (RNAV)");
 		ProceduresViewModel tab = ProceduresTab(Changes | Json);
 
 		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
-		Assert.Equal(["CLE — ILS OR LOC RWY 06L"], Lines(block));
+		Assert.Equal(["CLE — CLVLD"], Lines(block));
 		Assert.Equal(["`Procedure_Changes.md`: only those that were added, changed, or deleted this cycle"], Includes(block));
 	}
 

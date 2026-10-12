@@ -504,8 +504,8 @@ internal static class HarnessSettings
 			{ "RoiNeLon", "" },              // e.g. "-78.0"
 
 			{ "Airports", "GRR,CID" },
-			{ "Procedures", "" },            // e.g. "GRUUB ONE (RNAV)" to always include that chart wherever it is served
-			{ "AirportProcedures", "" },     // e.g. "PIT|ILS OR LOC RWY 28C"
+			{ "Procedures", "" },            // departures and arrivals by root name, e.g. "GRUUB" to always include GRUUB ONE (RNAV), or whatever the FAA renumbers it to, wherever it is served
+			{ "AirportProcedures", "" },     // e.g. "PIT|GRUUB" (departures and arrivals only)
 
 			{ "ChartTypes", "" },            // blank = default: IAP, STR, DP, ODP, DAU, APD
 			{ "JsonFields", "" },            // blank = default: icaoId, airportName, responsibleArtcc, airspaceClass, chartType, chartUrl, change, compareUrl

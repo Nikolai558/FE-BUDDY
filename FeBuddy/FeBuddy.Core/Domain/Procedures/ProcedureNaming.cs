@@ -5,8 +5,8 @@ namespace FeBuddy.Core.Domain.Procedures;
 
 /// <summary>
 /// Derives a procedure's base chart name - the identity <c>ProcedureBuilder</c> groups a chart's
-/// pages by, and <c>ProcedureSelection</c> matches user picks against - from its raw
-/// <c>chart_name</c> text.
+/// pages by - from its raw <c>chart_name</c> text, and a departure or arrival's root name, which
+/// <c>ProcedureSelection</c> matches the user's picks against.
 /// </summary>
 /// <remarks>
 /// A multi-page procedure's continuation pages are named e.g. <c>"GRUUB ONE (RNAV), CONT.1"</c>,
@@ -31,6 +31,26 @@ public static partial class ProcedureNaming
 
 		string withoutContinuation = ContinuationSuffix().Replace(chartName, string.Empty);
 		return CollapseWhitespace().Replace(withoutContinuation.Trim(), " ");
+	}
+
+	/// <summary>
+	/// The name a departure or arrival keeps through its amendments: <see cref="BaseName"/> without
+	/// its trailing qualifiers (<c>(RNAV)</c>, <c>(OBSTACLE)</c>) and then the number the FAA changes
+	/// at each amendment, so <c>"BRWNZ FOUR (RNAV)"</c>, <c>"BRWNZ FIVE (RNAV)"</c> and
+	/// <c>"BRWNZ FIVE"</c> are all <c>"BRWNZ"</c>. A name with no number at the end keeps its words,
+	/// less any qualifiers. The Procedure Charts cards that list departures and arrivals match by it,
+	/// so a procedure stays listed when the FAA renumbers it.
+	/// </summary>
+	/// <param name="name">A chart name, or a name the user listed.</param>
+	/// <returns>The root name, e.g. <c>BRWNZ</c>.</returns>
+	public static string RootName(string name)
+	{
+		string baseName = BaseName(name);
+		string withoutQualifiers = TrailingQualifiers().Replace(baseName, string.Empty);
+		Match number = TrailingNumber().Match(withoutQualifiers);
+		string root = number.Success ? withoutQualifiers[..number.Index] : withoutQualifiers;
+
+		return root.Length > 0 ? root : baseName;
 	}
 
 	/// <summary>Whether a chart name carries a <c>, CONT.n</c> continuation marker.</summary>
@@ -64,4 +84,16 @@ public static partial class ProcedureNaming
 
 	[GeneratedRegex(@"\s+")]
 	private static partial Regex CollapseWhitespace();
+
+	/// <summary>One or more <c>(…)</c> qualifiers at the end of a name: <c>(RNAV)</c>, <c>(OBSTACLE)</c>, <c>(VECTOR)</c>, <c>(COPTER)</c>.</summary>
+	[GeneratedRegex(@"(\s*\([^()]*\))+\s*$")]
+	private static partial Regex TrailingQualifiers();
+
+	/// <summary>
+	/// The number at the end of a departure or arrival's name, spelled out as the FAA does (it wraps
+	/// back to ONE after NINE) or, rarely, in digits (<c>LGTNG 1</c>) - but never a runway's number,
+	/// which ends an approach's name (<c>RNAV (GPS) RWY 10</c>).
+	/// </summary>
+	[GeneratedRegex(@"(?<!\bRWY)\s+(ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|ELEVEN|TWELVE|\d+)$", RegexOptions.IgnoreCase)]
+	private static partial Regex TrailingNumber();
 }

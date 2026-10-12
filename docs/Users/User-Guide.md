@@ -215,6 +215,12 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
   **Additional Procedures to Include**, by name (every version of it). With **Everything** they
   aren't used, and keep their lists. **Chart Types** sets which kinds of chart a whole airport adds;
   a procedure picked by name is always included.
+- **The two procedure cards take departures (SIDs and ODPs) and arrivals (STARs) only**, each listed
+  by its name without its number, so it stays included when the FAA renumbers it: pick
+  `BRWNZ FOUR (RNAV)` and `BRWNZ` is listed, which brings in `BRWNZ FIVE (RNAV)` once that replaces
+  it. Under each one, the card shows what it brings in from the cycle picked, or, in amber, that the
+  cycle has none by that name. A few names are shared by two procedures (`OCEAN FOUR`, a departure,
+  and `OCEAN THREE`, an arrival): listing the name brings in both.
 - **Airports** takes a list: type or paste up to 100 IDs, separated by spaces, commas, or new lines,
   and press Enter or **Add**. Any it can't add stay in the box, with why underneath: not an airport
   this cycle, already listed, or already included by the area. **Additional Procedures to Include**

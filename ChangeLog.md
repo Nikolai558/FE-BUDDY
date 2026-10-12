@@ -22,10 +22,17 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Feature #346 - A faster start: the AIRAC Service opens as soon as the current cycle is ready, about
   3 seconds after FE-Buddy starts instead of 9, while the next and previous cycles finish loading.
   Picking one that's still loading waits for it. All three now load in about 6 seconds instead of 9.
+- Procedure Charts: **Additional Procedures to Include** and **Additional Airport-Specific Procedures
+  to Include** now take departures (SIDs and ODPs) and arrivals (STARs) only, and keep each by its
+  name without its number, so it stays included when the FAA renumbers it: `BRWNZ FOUR (RNAV)` is
+  listed as `BRWNZ`, which brings in `BRWNZ FIVE (RNAV)`. Each listed name shows what it brings in
+  this cycle, or that it brings in nothing.
 
 ### Settings
 - Bug #354 - The **Reset FE-Buddy** window keeps its size when **Delete my settings** is picked, and
   scrolls instead of running off the bottom of the screen.
+- **Import Settings**: each choice of where the settings go now explains itself in a tooltip
+  instead of the text under it.
 
 ### Dev notes
 - Launch parses only the 9 NASR groups FE-Buddy reads (`NasrCsvGroups.InUse`) instead of all 24,

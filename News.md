@@ -15,6 +15,22 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ## 2026-10-12
 <!--
+PostId: 2026-10-12.3
+-->
+
+**Version 3.0.0-beta.10 Compiled!**
+
+One command per approach runway
+
+- **FAA Chart Recall**: runways no longer keep a leading zero. The FAA prints some runways as both `RWY 06` and `RWY 6`, which gave one chart two commands; now it's just `.aaaI6c`. `ILS Z OR LOC RWY 04L` at DTW is now `.dtwIZ4Lc`
+- **What's New**, the **Alias Command Guide** (and its exports) and the **Alias Command Practice** show the new runway format, and the practice hints to leave the zero out
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.10)!!!
+
+---
+
+## 2026-10-12
+<!--
 PostId: 2026-10-12.2
 -->
 

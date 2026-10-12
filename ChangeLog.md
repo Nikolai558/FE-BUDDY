@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.10
 ### AIRAC Service
 - Bug #361 - FAA Chart Recall: an approach's runway no longer keeps a leading zero, so a runway the
   FAA prints as both `RWY 06` and `RWY 6` gets one command, `.aaaI6c`, instead of `.aaaI06c` and

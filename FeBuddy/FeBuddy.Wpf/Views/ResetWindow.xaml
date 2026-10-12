@@ -1,8 +1,10 @@
 <!--
     ResetWindow  -  Settings ▸ Reset FE-Buddy: what a reset always deletes, then the user's two
     choices - keep or delete the settings (with Save a copy first while deleting), and, only when
-    any are saved, keep or delete the credentials. Keeping is selected for both. The body scrolls
-    on a short screen, so the buttons always stay on it. Backs onto ResetViewModel.
+    any are saved, keep or delete the credentials. Keeping is selected for both. The window opens at
+    the size its tallest choice needs, as far as the screen allows, and keeps it (issue #354): a
+    choice never pushes the buttons off the screen, and on a short screen the body scrolls.
+    Backs onto ResetViewModel.
 -->
 <ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.ResetWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -58,7 +60,7 @@
                                      IsChecked="{Binding KeepSettings}" />
                         <RadioButton GroupName="ResetSettings" Content="Delete my settings" Margin="0,2"
                                      IsChecked="{Binding DeleteSettings}" />
-                        <StackPanel Margin="26,6,0,0" Visibility="{Binding DeletesSettings, Converter={StaticResource BoolToVis}}">
+                        <StackPanel x:Name="SettingsLoss" Margin="26,6,0,0" Visibility="{Binding DeletesSettings, Converter={StaticResource BoolToVis}}">
                             <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                        Foreground="{StaticResource Brush.Warn}"
                                        Text="{Binding Source={x:Static vm:ResetViewModel.SettingsLoss}, StringFormat='You lose: {0}'}" />

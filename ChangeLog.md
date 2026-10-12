@@ -18,6 +18,22 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### AIRAC Service
+- Feature #346 - A faster start: the AIRAC Service opens as soon as the current cycle is ready, about
+  3 seconds after FE-Buddy starts instead of 9, while the next and previous cycles finish loading.
+  Picking one that's still loading waits for it. All three now load in about 6 seconds instead of 9.
+
+### Settings
+- Bug #354 - The **Reset FE-Buddy** window keeps its size when **Delete my settings** is picked, and
+  scrolls instead of running off the bottom of the screen.
+
+### Dev notes
+- Launch parses only the 9 NASR groups FE-Buddy reads (`NasrCsvGroups.InUse`) instead of all 24,
+  with `NasrCsvParser.ParseAsync(directory, groups)`. Reading a group that wasn't parsed names it in
+  the error. The log says how long each cycle's parse took.
+- Feature #346 - Dev launch: a Debug build started with `--dev` (the **FE-Buddy (Dev launch)**
+  profile) runs only the launch steps ticked on Settings' Developer card, shows **DEV LAUNCH** in the
+  status bar, and loads a cycle it skipped when something needs it.
 
 ---
 

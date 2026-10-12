@@ -51,8 +51,7 @@ public static class ArrivalBuilder
 
 		if (allNasrCsvData.Star is null)
 		{
-			throw new InvalidOperationException(
-				"Standard terminal arrival data (STAR) has not been parsed. The Arrivals sub-service cannot run without it.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.Star, "The Arrivals sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];
@@ -415,12 +414,7 @@ public static class ArrivalBuilder
 	{
 		Dictionary<string, string> lookup = new(StringComparer.OrdinalIgnoreCase);
 
-		if (allNasrCsvData.Apt is null)
-		{
-			return lookup;
-		}
-
-		foreach (AptCsvDataModel.AptBase row in allNasrCsvData.Apt.AptBase)
+		foreach (AptCsvDataModel.AptBase row in allNasrCsvData.RequireApt().AptBase)
 		{
 			string airportId = row.ArptId?.Trim() ?? string.Empty;
 

@@ -4,7 +4,7 @@ using FeBuddy.Core.Infrastructure.Platform.Models;
 namespace FeBuddy.Core.Application.Launch.Models;
 
 /// <summary>
-/// The result of <see cref="LaunchSequence.RunAsync"/>.
+/// The result of <see cref="LaunchSequence.RunAsync(string, LaunchOptions, IProgress{LaunchProgress}?, CancellationToken)"/>.
 /// </summary>
 /// <param name="Time">The UTC clock / connectivity check outcome.</param>
 /// <param name="Version">The version-check outcome.</param>

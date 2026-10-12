@@ -56,11 +56,18 @@ public sealed class WaypointLocatorTests
 	}
 
 	[Fact]
-	public void a_collection_that_was_never_parsed_finds_nothing()
+	public void a_group_that_was_never_parsed_is_named_in_the_error_not_found_silently()
 	{
 		NasrCsvDataCollection empty = new();
 
-		Assert.Null(Find(empty, "ALPHA"));
-		Assert.Null(Find(empty, "SEA"));
+		InvalidOperationException fix = Assert.Throws<InvalidOperationException>(() => Find(empty, "ALPHA"));
+		Assert.Contains("NASR FIX data has not been parsed", fix.Message, StringComparison.Ordinal);
+		Assert.Contains("NasrCsvGroups.InUse", fix.Message, StringComparison.Ordinal);
+
+		// A 3-letter ID is a NAVAID first, then an airport.
+		Assert.Contains("NASR NAV data", Assert.Throws<InvalidOperationException>(() => Find(empty, "SEA")).Message, StringComparison.Ordinal);
+
+		NasrCsvDataCollection navaidsOnly = new() { Nav = new NavCsvDataCollection() };
+		Assert.Contains("NASR APT data", Assert.Throws<InvalidOperationException>(() => Find(navaidsOnly, "SEA")).Message, StringComparison.Ordinal);
 	}
 }

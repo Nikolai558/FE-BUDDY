@@ -43,6 +43,7 @@ public sealed class AppDataResetTests : IDisposable
 		Write(@"Logs\FE-Buddy_2026-09-29.log", "x");
 		Write(@"Telephony\telephony.html", "x");
 		Write(@"WxStations\stations.xml", "x");
+		Write("DevLaunch.json", "{}");
 
 		_credentials.Save(new CredentialDraft(null, "ZOB GitHub", CredentialKind.GitHubToken, null, "token", CredentialHosts.GitHubDefaults));
 	}
@@ -68,7 +69,7 @@ public sealed class AppDataResetTests : IDisposable
 	{
 		Assert.Null(AppDataReset.RunPending(_credentials, NoWait));
 
-		Assert.Equal(10, Directory.EnumerateFiles(_appData, "*", SearchOption.AllDirectories).Count());
+		Assert.Equal(11, Directory.EnumerateFiles(_appData, "*", SearchOption.AllDirectories).Count());
 		Assert.Single(_credentials.List());
 	}
 
@@ -94,8 +95,9 @@ public sealed class AppDataResetTests : IDisposable
 		Assert.True(result.SettingsKept);
 		Assert.Null(result.CredentialsRemoved);
 		Assert.Empty(result.NotDeleted);
-		// Every profile, Shared.json, and an older FE-Buddy's file not yet moved in; its old backups go.
-		Assert.Equal(["User Configurations", "UserConfig.json"], Names(_appData));
+		// Every profile, Shared.json, an older FE-Buddy's file not yet moved in, and a dev launch's
+		// chosen steps; the old backups go.
+		Assert.Equal(["DevLaunch.json", "User Configurations", "UserConfig.json"], Names(_appData));
 		Assert.Equal(["Shared.json", "UserConfig.Default.json", "UserConfig.ZOB.json"], Names(Path.Combine(_appData, "User Configurations")));
 		Assert.Single(_credentials.List());
 	}

@@ -3,6 +3,7 @@ using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.ArtccBoundaries;
 using FeBuddy.Core.Domain.ArtccBoundaries.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
+using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using static FeBuddy.Core.Infrastructure.Nasr.Models.ArbCsvDataModel;
@@ -57,8 +58,7 @@ public static class ArtccBoundaryBuilder
 
 		if (allNasrCsvData.Arb is null)
 		{
-			throw new InvalidOperationException(
-				"ARTCC boundary data (ARB) has not been parsed. The ARTCC Boundaries sub-service cannot run without it.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.Arb, "The ARTCC Boundaries sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];

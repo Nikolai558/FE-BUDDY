@@ -23,8 +23,11 @@ public interface ISubServiceRunTarget
 	/// <returns>The settings block.</returns>
 	IReadOnlyDictionary<string, string> BuildSettingsBlock();
 
-	/// <summary>Tells the tab whether the AIRAC data is ready to use.</summary>
-	/// <param name="ready">Whether the cycle cache reports readiness.</param>
+	/// <summary>Tells the tab whether the selected cycle's data is ready to use.</summary>
+	/// <param name="ready">
+	/// Whether the service is ready and the selected cycle's data has been handed over
+	/// (<see cref="LoadCycleDependentLists"/>): a cycle still loading in the background isn't yet.
+	/// </param>
 	void SetReadiness(bool ready);
 
 	/// <summary>

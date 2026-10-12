@@ -376,6 +376,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		SelectedCycle = cycle;
 		OnPropertyChanged(nameof(SelectedCycle));
+		OnPropertyChanged(nameof(CycleWaitingText));
 		OnSelectedCycleChanged();
 		RaiseWhatYoullGetChanged();
 	}
@@ -385,15 +386,24 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 	}
 
-	/// <summary>Whether the AIRAC data is ready; lists built from the cycle stay disabled until it is.</summary>
+	/// <summary>
+	/// Whether the selected cycle's data has loaded; lists built from the cycle stay disabled until
+	/// it has.
+	/// </summary>
 	public bool IsCycleReady
 	{
 		get => _isCycleReady;
 		private set => SetProperty(ref _isCycleReady, value);
 	}
 
-	/// <summary>Called by the parent whenever AIRAC readiness changes (see <see cref="ISubServiceRunTarget"/>).</summary>
-	/// <param name="ready">Whether the AIRAC data is ready.</param>
+	/// <summary>What a list built from the cycle says until <see cref="IsCycleReady"/>, e.g. <c>Loading AIRAC 2611…</c>.</summary>
+	public string CycleWaitingText => SelectedCycle is { } cycle ? $"Loading AIRAC {cycle.AiracCycleId}…" : "Waiting for AIRAC data…";
+
+	/// <summary>
+	/// Called by the parent whenever the selected cycle's data is ready or not (see
+	/// <see cref="ISubServiceRunTarget"/>).
+	/// </summary>
+	/// <param name="ready">Whether the selected cycle's data has loaded.</param>
 	public void SetReadiness(bool ready) => IsCycleReady = ready;
 
 	// ================= for the derived tab =================

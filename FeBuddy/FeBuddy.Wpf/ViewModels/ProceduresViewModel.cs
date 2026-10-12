@@ -358,12 +358,16 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <param name="previousCycleId">The ID of the cycle immediately before <paramref name="cycleId"/>.</param>
 	/// <param name="previousAvailable">Whether the previous cycle's metafile is available, for linking deleted procedures back to their chart.</param>
 	/// <param name="downloadedLocal">When the selected cycle's metafile was downloaded, or <see langword="null"/> when it has none.</param>
+	/// <param name="previousLoading">
+	/// Whether the previous cycle is still on its way (FE-Buddy has just started), so its metafile
+	/// isn't missing, just not here yet; a run waits for it.
+	/// </param>
 	/// <remarks>
 	/// This card never blocks the run (a missing metafile is reported as an advisory by the Core
 	/// run itself) and is not a saved setting, so this never marks the tab dirty - it only
 	/// re-validates the airport/procedure pickers, whose Add buttons depend on this data.
 	/// </remarks>
-	public void SetDtppData(string cycleId, DtppMetafileDataCollection? dtpp, string previousCycleId, bool previousAvailable, DateTime? downloadedLocal)
+	public void SetDtppData(string cycleId, DtppMetafileDataCollection? dtpp, string previousCycleId, bool previousAvailable, DateTime? downloadedLocal, bool previousLoading = false)
 	{
 		ArgumentNullException.ThrowIfNull(cycleId);
 		ArgumentNullException.ThrowIfNull(previousCycleId);
@@ -418,10 +422,13 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			? $"Cycle {cycleId}: {airportCount:N0} airports, {procedureCount:N0} procedures, downloaded {downloadedLocal:d MMM yyyy}."
 			: $"Cycle {cycleId}'s metafile isn't out yet, or couldn't be downloaded. FE-Buddy checks again at each launch. Until then, Procedure Charts writes none of its files.";
 
-		_previousDtppAvailable = previousAvailable;
+		// One still loading isn't a problem to warn about: a run waits for it.
+		_previousDtppAvailable = previousAvailable || previousLoading;
 		_dtppPreviousStatus = previousAvailable
 			? $"Deleted procedures link to cycle {previousCycleId}'s charts."
-			: $"Cycle {previousCycleId}'s metafile isn't available, so deleted procedures are listed without a link.";
+			: previousLoading
+				? $"Cycle {previousCycleId} is still loading. Once it has, deleted procedures link to its charts."
+				: $"Cycle {previousCycleId}'s metafile isn't available, so deleted procedures are listed without a link.";
 
 		RefreshPairProcedureOptions();
 		RaiseDtppDependentProperties();
@@ -669,7 +676,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		bool hasSavedFacilities = Get("Facilities") is not null;
 		_savedFacilities = ParseList(Get("Facilities"));
 
-		string[] facilityIds = [.. (data.Apt?.AptBase ?? [])
+		string[] facilityIds = [.. data.RequireApt().AptBase
 			.Select(a => (a.RespArtccId ?? string.Empty).Trim().ToUpperInvariant())
 			.Where(id => id.Length > 0)
 			.Distinct(StringComparer.OrdinalIgnoreCase)
@@ -701,7 +708,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		_nasrAirportsByIdent.Clear();
 		_nasrAirportsByFaaId.Clear();
 
-		foreach (AptCsvDataModel.AptBase row in data.Apt?.AptBase ?? [])
+		foreach (AptCsvDataModel.AptBase row in data.RequireApt().AptBase)
 		{
 			string faaId = (row.ArptId ?? string.Empty).Trim();
 
@@ -1384,7 +1391,18 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private IEnumerable<string> SelectedFacilityIds() =>
 		Facilities.Count > 0
 			? Facilities.Where(f => f.IsSelected).Select(f => f.Artcc)
-			: _savedFacilities.OrderBy(a => a, StringComparer.OrdinalIgnoreCase);
+			: FacilitiesTheListWillTick();
+
+	/// <summary>
+	/// Before the cycle's facility list is built - the cycle picked can still be loading when the screen
+	/// opens - the ones it will tick: the saved ones, or, when the tab has never saved any, the Settings
+	/// facility (as <see cref="LoadCycleDependentLists"/> does). So the Area card isn't flagged for a
+	/// moment over a list that hasn't arrived.
+	/// </summary>
+	private IEnumerable<string> FacilitiesTheListWillTick() =>
+		Get("Facilities") is not null
+			? _savedFacilities.OrderBy(a => a, StringComparer.OrdinalIgnoreCase)
+			: NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey)) is { } facility ? [facility] : [];
 
 	private static string? NormalizeFacility(string? value) =>
 		string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToUpperInvariant();

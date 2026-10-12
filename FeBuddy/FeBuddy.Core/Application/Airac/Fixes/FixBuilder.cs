@@ -3,6 +3,7 @@ using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Fixes;
 using FeBuddy.Core.Domain.Fixes.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
+using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using static FeBuddy.Core.Infrastructure.Nasr.Models.FixCsvDataModel;
@@ -39,8 +40,7 @@ public static class FixBuilder
 
 		if (allNasrCsvData.Fix is null)
 		{
-			throw new InvalidOperationException(
-				"Fix data (FIX) has not been parsed. The Fixes sub-service cannot run without it.");
+			throw NasrCsvGroups.NotParsed(NasrCsvGroup.Fix, "The Fixes sub-service cannot run without it.");
 		}
 
 		List<ServiceMessage> messages = [];

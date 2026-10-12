@@ -37,10 +37,10 @@ public enum CycleDataState
 /// </summary>
 public enum AiracCycleReadiness
 {
-	/// <summary>At least one of the three cycles is still downloading, parsing, or not started.</summary>
+	/// <summary>The current cycle is still downloading or parsing, or hasn't started.</summary>
 	Waiting = 0,
 
-	/// <summary>Every available cycle is parsed and ready; the service unlocks.</summary>
+	/// <summary>The current cycle is parsed and ready; the service unlocks. The others may still be loading.</summary>
 	Ready = 1,
 
 	/// <summary>The service unlocks, but the previous and/or next cycle failed and is unselectable.</summary>
@@ -48,4 +48,11 @@ public enum AiracCycleReadiness
 
 	/// <summary>The current cycle failed; the service stays disabled.</summary>
 	Unavailable = 3,
+
+	/// <summary>
+	/// A dev launch didn't load the current cycle, and nothing has asked for it yet. It loads when
+	/// something needs it (the AIRAC Service and Settings ask for it when opened). Never in a normal
+	/// launch.
+	/// </summary>
+	NotLoaded = 4,
 }

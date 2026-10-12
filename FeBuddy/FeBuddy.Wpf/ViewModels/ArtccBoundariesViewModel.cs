@@ -127,7 +127,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	{
 		_savedLocationFilter = ParseArtccListOrFacility(Get("LocationFilter"));
 
-		string[] locationIds = [.. (data.Arb?.ArbSeg ?? [])
+		string[] locationIds = [.. data.RequireArb().ArbSeg
 			.Select(s => (s.LocationId ?? string.Empty).Trim().ToUpperInvariant())
 			.Where(id => id.Length > 0)
 			.Distinct(StringComparer.OrdinalIgnoreCase)
@@ -147,7 +147,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 			_suppressLocationChanges = false;
 		}
 
-		_locationAltitudePairs = [.. (data.Arb?.ArbSeg ?? [])
+		_locationAltitudePairs = [.. data.RequireArb().ArbSeg
 			.Select(s => (
 				LocationId: (s.LocationId ?? string.Empty).Trim().ToUpperInvariant(),
 				Altitude: (s.Altitude ?? string.Empty).Trim().ToUpperInvariant()))

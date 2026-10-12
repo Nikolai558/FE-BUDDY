@@ -1,7 +1,9 @@
 <!--
     SettingsView  -  Settings Profile / Facility / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub
-    Requests / Updates / Update Channel / Reset / Uninstall (Reset FE-Buddy… with Uninstall FE-Buddy… under it).
-    Everything persists to the settings profile in use but the credentials, which go to Windows Credential Manager.
+    Requests / Updates / Update Channel / Reset / Uninstall (Reset FE-Buddy… with Uninstall FE-Buddy… under it),
+    and, in a dev launch only, Developer: Launch Steps.
+    Everything persists to the settings profile in use but the credentials, which go to Windows Credential Manager,
+    and the Developer card, which goes to DevLaunch.json.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -9,6 +11,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
@@ -376,6 +379,38 @@
                         <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
                                    Text="This copy of FE-Buddy wasn't installed with its installer, so it can't uninstall itself."
                                    Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 8. DEVELOPER (dev launch only) ================= -->
+                <!-- Shown only in a dev launch (a Debug build started with dash-dash dev). Saved at once, to
+                     DevLaunch.json beside the profiles: not part of this page's Save, a profile or an export. -->
+                <ctl:Card Header="Developer: Launch Steps" DataContext="{Binding DevLaunch}"
+                          Visibility="{Binding DataContext.IsDevLaunch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                                   Text="The launch steps a dev launch runs. Unticked, it skips them. A normal launch always runs every step." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,8" FontWeight="SemiBold"
+                                   Text="Takes effect the next time FE-Buddy starts with --dev." />
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8"
+                                   Text="Changes here are saved straight away." />
+
+                        <ItemsControl ItemsSource="{Binding Steps}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type m:DevLaunchStepToggle}">
+                                    <ctl:Option Margin="0,3" Description="{Binding Description}">
+                                        <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+                                    </ctl:Option>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
+                                   Foreground="{StaticResource Brush.Danger}" Text="{Binding SaveError}"
+                                   Visibility="{Binding HasSaveError, Converter={StaticResource BoolToVis}}" />
+
+                        <Button Style="{StaticResource Button.Primary}" Content="Restart in DevMode with these settings"
+                                HorizontalAlignment="Left" Margin="0,12,0,0" Command="{Binding RestartCommand}" />
                     </StackPanel>
                 </ctl:Card>
             </StackPanel>

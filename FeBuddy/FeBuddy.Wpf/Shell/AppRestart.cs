@@ -8,7 +8,10 @@ using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Wpf.Shell;
 
-/// <summary>Closes FE-Buddy and starts it again: how a reset from Settings is carried out.</summary>
+/// <summary>
+/// Closes FE-Buddy and starts it again: how a reset from Settings is carried out, and how the
+/// Developer card starts a dev launch.
+/// </summary>
 public static class AppRestart
 {
 	private const string LogSource = "Restart";
@@ -20,12 +23,16 @@ public static class AppRestart
 	/// </summary>
 	/// <param name="owner">The window to centre the "start it again" message on, if one is needed.</param>
 	/// <param name="purpose">What starting again finishes, for that message, e.g. <c>the reset</c>.</param>
-	public static void Restart(Window? owner, string purpose)
+	/// <param name="arguments">
+	/// The new FE-Buddy's command line, e.g. <see cref="DevLaunchArgs.Argument"/> for a dev launch; none
+	/// for a normal launch.
+	/// </param>
+	public static void Restart(Window? owner, string purpose, string? arguments = null)
 	{
 		try
 		{
 			string path = Environment.ProcessPath ?? throw new InvalidOperationException("This program's path is not known.");
-			Process.Start(new ProcessStartInfo(path) { UseShellExecute = false })?.Dispose();
+			Process.Start(new ProcessStartInfo(path, arguments ?? string.Empty) { UseShellExecute = false })?.Dispose();
 			AppLog.Info(LogSource, $"Restarting FE-Buddy to finish {purpose}.");
 		}
 		catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)

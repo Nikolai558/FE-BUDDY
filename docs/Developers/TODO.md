@@ -2,12 +2,6 @@
 
 Open work only. When an item is done, delete it - the commit is the record.
 
-## Performance
-
-- **Parse only the NASR groups the sub-services read.** `AiracCycleDataCache` parses every NASR CSV
-  group, but the sub-services only read APT, ARB, AWY, CLS_ARSP, DP, FIX, FRQ, NAV and STAR. Parsing
-  just those would cut memory and launch time (`TODO (perf)` in `AiracCycleDataCache.cs`).
-
 ## Standards
 
 - **Bring `FeBuddy.Harness` up to the standard.** It doesn't require XML docs yet, and still has

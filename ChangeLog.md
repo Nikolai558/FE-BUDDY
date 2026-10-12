@@ -27,6 +27,11 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Bug #354 - The **Reset FE-Buddy** window keeps its size when **Delete my settings** is picked, and
   scrolls instead of running off the bottom of the screen.
 
+### Installing and uninstalling
+- A new setup window in FE-Buddy's own look replaces the old grey installer dialogs. It says up front
+  whether it will install, update, go back from a pre-release, repair or uninstall, and why a version
+  can't be installed.
+
 ### Dev notes
 - Launch parses only the 9 NASR groups FE-Buddy reads (`NasrCsvGroups.InUse`) instead of all 24,
   with `NasrCsvParser.ParseAsync(directory, groups)`. Reading a group that wasn't parsed names it in
@@ -34,6 +39,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Feature #346 - Dev launch: a Debug build started with `--dev` (the **FE-Buddy (Dev launch)**
   profile) runs only the launch steps ticked on Settings' Developer card, shows **DEV LAUNCH** in the
   status bar, and loads a cycle it skipped when something needs it.
+- The MSI's setup window is a new project, `FeBuddy.Installer.UI`: WPF on net472, run as the MSI's
+  embedded UI. It links the app's theme files, so it follows the app's look. The stock WixUI dialogs
+  stay as the fallback for PCs that disable embedded UIs.
 
 ---
 

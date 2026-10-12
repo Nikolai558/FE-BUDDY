@@ -224,32 +224,106 @@ public sealed class ProcedureSelectionTests
 		Assert.Single(result);
 	}
 
-	// ---- Procedures picks ----
+	// ---- Procedures picks: departures and arrivals, by root name ----
 
 	[Fact]
-	public void a_procedures_pick_includes_that_procedure_at_any_airport_regardless_of_chart_type()
+	public void a_procedures_pick_includes_that_departure_or_arrival_at_every_airport_regardless_of_chart_type()
 	{
-		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
-		[
-			ProcedureTestData.BuiltProcedure("HOT SPOTS", chartCode: "HOT"), // not in the default ChartTypes
-		]);
+		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", procedures: [ProcedureTestData.BuiltProcedure("BRWNZ FOUR (RNAV)", chartCode: "STR")]);
+		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", procedures: [ProcedureTestData.BuiltProcedure("BRWNZ FOUR (RNAV)", chartCode: "STR")]);
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[airport], Settings(procedures: ["HOT SPOTS"]), []);
+			[aaa, bbb], Settings(procedures: ["BRWNZ"], chartTypes: ["IAP"]), messages);
 
-		ProcedureAirport included = Assert.Single(result);
-		Assert.Equal(["HOT SPOTS"], included.Procedures.Select(p => p.Name));
+		Assert.Equal(["AAA", "BBB"], result.Select(airport => airport.AptIdent));
+		Assert.All(result, airport => Assert.Equal(["BRWNZ FOUR (RNAV)"], airport.Procedures.Select(p => p.Name)));
+		Assert.Empty(messages);
 	}
 
 	[Fact]
 	public void a_procedures_pick_matches_ignoring_case()
 	{
-		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures: [ProcedureTestData.BuiltProcedure("ILS RWY 1")]);
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures: [ProcedureTestData.BuiltProcedure("DOTSS TWO (RNAV)", chartCode: "DP")]);
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[airport], Settings(procedures: ["ils rwy 1"]), []);
+			[airport], Settings(procedures: ["dotss"]), []);
 
 		Assert.Single(result);
+	}
+
+	/// <summary>
+	/// The FAA renumbers a departure or arrival at each amendment, and can add or drop its (RNAV): a
+	/// pick by root name - or the full name an earlier FE-Buddy saved - still finds it.
+	/// </summary>
+	[Theory]
+	[InlineData("BRWNZ", "BRWNZ FIVE (RNAV)")]
+	[InlineData("BRWNZ FOUR (RNAV)", "BRWNZ FIVE (RNAV)")]
+	[InlineData("BRWNZ FOUR (RNAV)", "BRWNZ FIVE")]
+	[InlineData("BRWNZ FOUR", "BRWNZ ONE (RNAV)")]
+	public void a_procedures_pick_follows_the_procedure_through_renumbering(string pick, string renumbered)
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures: [ProcedureTestData.BuiltProcedure(renumbered, chartCode: "STR")]);
+		List<ServiceMessage> messages = [];
+
+		ProcedureAirport included = Assert.Single(ProcedureSelection.Select([airport], Settings(procedures: [pick]), messages));
+
+		Assert.Equal([renumbered], included.Procedures.Select(p => p.Name));
+		Assert.Empty(messages);
+	}
+
+	[Fact]
+	public void a_procedures_pick_takes_sids_odps_and_stars()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("DELTA EIGHT", chartCode: "DP"),
+			ProcedureTestData.BuiltProcedure("CAPTAIN ONE (OBSTACLE)", chartCode: "ODP"),
+			ProcedureTestData.BuiltProcedure("JAYSN THREE (RNAV)", chartCode: "STR"),
+		]);
+
+		ProcedureAirport included = Assert.Single(ProcedureSelection.Select(
+			[airport], Settings(procedures: ["DELTA", "CAPTAIN", "JAYSN"]), []));
+
+		Assert.Equal(3, included.Procedures.Count);
+	}
+
+	/// <summary>
+	/// Two procedures can share a root name - a few do, like OCEAN FOUR (a departure) and OCEAN THREE
+	/// (an arrival): a pick of it brings in both.
+	/// </summary>
+	[Fact]
+	public void a_procedures_pick_brings_in_every_departure_and_arrival_sharing_its_root()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("OCEAN FOUR", chartCode: "DP"),
+			ProcedureTestData.BuiltProcedure("OCEAN THREE", chartCode: "STR"),
+			ProcedureTestData.BuiltProcedure("OCEANA TWO", chartCode: "STR"),
+		]);
+
+		ProcedureAirport included = Assert.Single(ProcedureSelection.Select([airport], Settings(procedures: ["OCEAN"]), []));
+
+		Assert.Equal(["OCEAN FOUR", "OCEAN THREE"], included.Procedures.Select(p => p.Name));
+	}
+
+	/// <summary>An approach, or any chart but a departure or arrival, is never brought in by a pick, and the run says why.</summary>
+	[Fact]
+	public void a_procedures_pick_naming_an_approach_is_left_out_and_says_why()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("ILS RWY 1", chartCode: "IAP"),
+			ProcedureTestData.BuiltProcedure("HOT SPOTS", chartCode: "HOT"),
+		]);
+		List<ServiceMessage> messages = [];
+
+		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select([airport], Settings(procedures: ["ILS RWY 1"]), messages);
+
+		Assert.Empty(result);
+		Assert.Equal(
+			"'ILS RWY 1' isn't a departure or arrival, so it's left out: Additional Procedures to Include takes departures and arrivals only.",
+			Assert.Single(messages).Text);
 	}
 
 	// ---- AirportProcedures picks ----
@@ -259,11 +333,11 @@ public sealed class ProcedureSelectionTests
 	{
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
 		[
-			ProcedureTestData.BuiltProcedure("HOT SPOTS", chartCode: "HOT"),
+			ProcedureTestData.BuiltProcedure("DOTSS TWO (RNAV)", chartCode: "DP"),
 		]);
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[airport], Settings(airportProcedures: [new ProcedureAirportPick("AAA", "HOT SPOTS")]), []);
+			[airport], Settings(airportProcedures: [new ProcedureAirportPick("AAA", "DOTSS")], chartTypes: ["IAP"]), []);
 
 		Assert.Single(result);
 	}
@@ -271,11 +345,11 @@ public sealed class ProcedureSelectionTests
 	[Fact]
 	public void an_airport_procedures_pick_does_not_apply_to_airports_it_does_not_name()
 	{
-		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", procedures: [ProcedureTestData.BuiltProcedure("ONE", chartCode: "HOT")]);
-		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", procedures: [ProcedureTestData.BuiltProcedure("ONE", chartCode: "HOT")]);
+		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", procedures: [ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", chartCode: "STR")]);
+		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", procedures: [ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", chartCode: "STR")]);
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[aaa, bbb], Settings(airportProcedures: [new ProcedureAirportPick("BBB", "ONE")]), []);
+			[aaa, bbb], Settings(airportProcedures: [new ProcedureAirportPick("BBB", "GRUUB")]), []);
 
 		ProcedureAirport included = Assert.Single(result);
 		Assert.Equal("BBB", included.AptIdent);
@@ -285,12 +359,40 @@ public sealed class ProcedureSelectionTests
 	public void an_airport_procedures_pick_matches_the_airport_by_icao_identifier_too()
 	{
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport(
-			"AAA", icaoIdent: "KAAA", procedures: [ProcedureTestData.BuiltProcedure("ILS RWY 1")]);
+			"AAA", icaoIdent: "KAAA", procedures: [ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", chartCode: "STR")]);
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
-			[airport], Settings(airportProcedures: [new ProcedureAirportPick("KAAA", "ILS RWY 1")]), []);
+			[airport], Settings(airportProcedures: [new ProcedureAirportPick("KAAA", "GRUUB")]), []);
 
 		Assert.Single(result);
+	}
+
+	[Fact]
+	public void an_airport_procedures_pick_follows_the_procedure_through_renumbering()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("LAS", procedures: [ProcedureTestData.BuiltProcedure("BRWNZ FIVE", chartCode: "STR")]);
+		List<ServiceMessage> messages = [];
+
+		ProcedureAirport included = Assert.Single(ProcedureSelection.Select(
+			[airport], Settings(airportProcedures: [new ProcedureAirportPick("LAS", "BRWNZ FOUR (RNAV)")]), messages));
+
+		Assert.Equal(["BRWNZ FIVE"], included.Procedures.Select(p => p.Name));
+		Assert.Empty(messages);
+	}
+
+	[Fact]
+	public void an_airport_procedures_pick_naming_an_approach_is_left_out_and_says_why()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("PIT", procedures: [ProcedureTestData.BuiltProcedure("ILS OR LOC RWY 28C", chartCode: "IAP")]);
+		List<ServiceMessage> messages = [];
+
+		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
+			[airport], Settings(airportProcedures: [new ProcedureAirportPick("PIT", "ILS OR LOC RWY 28C")]), messages);
+
+		Assert.Empty(result);
+		Assert.Equal(
+			"'ILS OR LOC RWY 28C' at PIT isn't a departure or arrival, so it's left out: Additional Airport-Specific Procedures to Include takes departures and arrivals only.",
+			Assert.Single(messages).Text);
 	}
 
 	// ---- union and dropping ----
@@ -303,7 +405,7 @@ public sealed class ProcedureSelectionTests
 		ProcedureAirport pickedAirport = ProcedureTestData.BuiltAirport(
 			"BBB", procedures: [ProcedureTestData.BuiltProcedure("TWO")]);
 		ProcedureAirport procedurePickAirport = ProcedureTestData.BuiltAirport(
-			"CCC", procedures: [ProcedureTestData.BuiltProcedure("THREE", chartCode: "HOT")]);
+			"CCC", procedures: [ProcedureTestData.BuiltProcedure("THREE", chartCode: "STR")]);
 
 		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
 			[facilityAirport, pickedAirport, procedurePickAirport],
@@ -363,7 +465,7 @@ public sealed class ProcedureSelectionTests
 		ProcedureSelection.Select([], Settings(procedures: ["MISSING PROC"]), messages);
 
 		ServiceMessage message = Assert.Single(messages);
-		Assert.Contains("MISSING PROC", message.Text);
+		Assert.Equal("No departure or arrival named 'MISSING PROC' is in this cycle's d-TPP metafile.", message.Text);
 	}
 
 	[Fact]
@@ -375,8 +477,7 @@ public sealed class ProcedureSelectionTests
 		ProcedureSelection.Select([airport], Settings(airportProcedures: [new ProcedureAirportPick("AAA", "MISSING")]), messages);
 
 		ServiceMessage message = Assert.Single(messages);
-		Assert.Contains("AAA", message.Text);
-		Assert.Contains("MISSING", message.Text);
+		Assert.Equal("Airport 'AAA' has no departure or arrival named 'MISSING' in this cycle's d-TPP metafile.", message.Text);
 	}
 
 	[Fact]

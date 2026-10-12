@@ -381,8 +381,8 @@ public sealed class AreaTests : IDisposable
 		Assert.Contains(nameof(ProceduresViewModel.AirportsIntro), changed);
 		Assert.Contains(nameof(ProceduresViewModel.AreaNote), changed);
 		Assert.Equal($"Even if outside the facilities you selected, the airports you list here will be included in {Both}.", tab.AirportsIntro);
-		Assert.Equal($"Even if outside the facilities you selected, the procedures you list here will be included in {Both}.", tab.ProcedureNamesIntro);
-		Assert.Equal($"Even if outside the facilities you selected, the airport-specific procedures you list here will be included in {Both}.", tab.AirportProceduresIntro);
+		Assert.Equal($"Even if outside the facilities you selected, the departures and arrivals you list here will be included in {Both}.", tab.ProcedureNamesIntro);
+		Assert.Equal($"Even if outside the facilities you selected, the airport-specific departures and arrivals you list here will be included in {Both}.", tab.AirportProceduresIntro);
 		Assert.StartsWith("Select the following chart types to be included in the `Procedure_Changes.md` and `Procedures.json` files.\nNote:", tab.ChartTypesIntro, StringComparison.Ordinal);
 		Assert.EndsWith("outside the facilities you have chosen.", tab.AreaNote, StringComparison.Ordinal);
 

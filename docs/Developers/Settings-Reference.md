@@ -425,12 +425,17 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
-| `Procedures` | | list of procedure names, included wherever charted | none |
-| `AirportProcedures` | | list of `<airport>\|<procedure>`, e.g. `PIT\|ILS OR LOC RWY 28C` | none |
+| `Procedures` | | list of departure and arrival root names, included wherever charted, e.g. `BRWNZ` | none |
+| `AirportProcedures` | | list of `<airport>\|<departure or arrival root name>`, e.g. `PIT\|GRUUB` | none |
 | `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH` | `IAP,STR,DP,ODP,DAU,APD` |
 | `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`) | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
 
 - The three `Generate…` keys can't all be `N`.
+- `Procedures` and `AirportProcedures` take departures and arrivals only (d-TPP `DP`, `ODP`, `STR`),
+  matched by root name (`ProcedureNaming.RootName`: the name without its trailing qualifiers, then
+  its number), so `BRWNZ` matches `BRWNZ FOUR (RNAV)` and `BRWNZ FIVE`. A full name matches the same
+  way, so lists saved before 3.0.0-beta.9 still work; the tab reads them as root names and saves
+  them so. A name of any other chart (an approach) is left out with a warning.
 - `Airports`, `Procedures` and `AirportProcedures` add to the area, even outside it; with
   `Everything` they aren't read. With `None`, at least one of them is required. The area's own
   checks (a facility, a ROI) and that one apply only when a document is on. The alias file ignores

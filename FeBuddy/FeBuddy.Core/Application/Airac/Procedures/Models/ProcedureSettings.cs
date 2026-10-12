@@ -83,16 +83,18 @@ public sealed record ProcedureSettings
 	public IReadOnlyCollection<string> Airports { get; init; } = [];
 
 	/// <summary>
-	/// Procedure base chart names to include at every airport that has one, regardless of
-	/// <see cref="ChartTypes"/> or whether the airport itself is otherwise included. None with
+	/// Departures and arrivals to include at every airport that has one, regardless of
+	/// <see cref="ChartTypes"/> or whether the airport itself is otherwise included, by root name
+	/// (<c>BRWNZ</c>, which also matches <c>BRWNZ FOUR (RNAV)</c> and whatever the FAA renumbers it
+	/// to; see <see cref="Domain.Procedures.ProcedureNaming.RootName"/>). None with
 	/// <see cref="SubServiceArea.Everything"/>. Default: none.
 	/// </summary>
 	public IReadOnlyCollection<string> Procedures { get; init; } = [];
 
 	/// <summary>
-	/// Specific airport + procedure pairs to include, regardless of <see cref="ChartTypes"/> or
-	/// whether the airport itself is otherwise included. None with <see cref="SubServiceArea.Everything"/>.
-	/// Default: none.
+	/// Specific airport + departure or arrival pairs to include, regardless of <see cref="ChartTypes"/>
+	/// or whether the airport itself is otherwise included, matched by root name as
+	/// <see cref="Procedures"/> is. None with <see cref="SubServiceArea.Everything"/>. Default: none.
 	/// </summary>
 	public IReadOnlyList<ProcedureAirportPick> AirportProcedures { get; init; } = [];
 

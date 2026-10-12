@@ -60,4 +60,51 @@ public sealed class ProcedureNamingTests
 	[Fact]
 	public void page_number_rejects_a_null_argument() =>
 		Assert.Throws<ArgumentNullException>(() => ProcedureNaming.PageNumber(null!));
+
+	/// <summary>
+	/// A departure or arrival's root name drops its qualifiers and then its number - the parts the FAA
+	/// changes as it amends one - so every version of a procedure has the same root.
+	/// </summary>
+	[Theory]
+	[InlineData("BRWNZ FOUR (RNAV)", "BRWNZ")]
+	[InlineData("BRWNZ FIVE (RNAV)", "BRWNZ")]
+	[InlineData("BRWNZ FIVE", "BRWNZ")]
+	[InlineData("LAKE ERIE TWO", "LAKE ERIE")]
+	[InlineData("CAPTAIN ONE (OBSTACLE)", "CAPTAIN")]
+	[InlineData("HUBRD TWO (RNAV) (COPTER)", "HUBRD")]
+	[InlineData("LGTNG 1", "LGTNG")]
+	[InlineData("OAKLAND TWELVE", "OAKLAND")]
+	[InlineData("gruub one (rnav), CONT.1", "gruub")]
+	[InlineData("  BRWNZ   FOUR (RNAV)  ", "BRWNZ")]
+	public void root_name_drops_the_qualifiers_then_the_number(string name, string expected) =>
+		Assert.Equal(expected, ProcedureNaming.RootName(name));
+
+	/// <summary>A name without a number at the end - an approach, or a root already - keeps its words, less any qualifiers.</summary>
+	[Theory]
+	[InlineData("BRWNZ", "BRWNZ")]
+	[InlineData("ILS OR LOC RWY 28C", "ILS OR LOC RWY 28C")]
+	[InlineData("RNAV (GPS) RWY 10", "RNAV (GPS) RWY 10")]
+	[InlineData("NDB RWY 4", "NDB RWY 4")]
+	[InlineData("BIGGS DEPARTURE (OBSTACLE)", "BIGGS DEPARTURE")]
+	[InlineData("ONE", "ONE")]
+	[InlineData("(RNAV)", "(RNAV)")]
+	[InlineData("", "")]
+	public void root_name_keeps_a_name_without_a_number(string name, string expected) =>
+		Assert.Equal(expected, ProcedureNaming.RootName(name));
+
+	[Fact]
+	public void root_name_rejects_a_null_argument() =>
+		Assert.Throws<ArgumentNullException>(() => ProcedureNaming.RootName(null!));
+
+	[Theory]
+	[InlineData("DP", true)]
+	[InlineData("ODP", true)]
+	[InlineData("STR", true)]
+	[InlineData("str", true)]
+	[InlineData("IAP", false)]
+	[InlineData("APD", false)]
+	[InlineData("DAU", false)]
+	[InlineData("MIN", false)]
+	public void only_dps_odps_and_stars_are_departures_or_arrivals(string chartType, bool expected) =>
+		Assert.Equal(expected, ProcedureChartTypes.IsDepartureOrArrival(chartType));
 }

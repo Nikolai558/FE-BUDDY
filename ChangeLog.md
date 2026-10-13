@@ -22,6 +22,7 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Procedure Charts: `Faa_Chart_Recall.txt`, and its part of `Combined_Alias.txt`, now starts with
   `.helpCHARTRECALL`, a `.note` command that shows how a chart recall command is put together. The
   new **Chart Recall Help Command** card turns it off or renames it.
+- Bug #365 - `Procedure_Changes.md` links every page of a multi-page chart, not just the first.
 
 ### Info
 - The **Alias Command Guide** (and its Markdown and HTML exports) lists `.helpCHARTRECALL` under

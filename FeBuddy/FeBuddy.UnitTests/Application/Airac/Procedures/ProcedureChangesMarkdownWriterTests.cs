@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Domain.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Procedures.Fixtures;
 
@@ -10,8 +11,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 /// <summary>
 /// Covers <see cref="ProcedureChangesMarkdownWriter.Generate"/>: the exact title, note and
 /// "no changes" text, the per-facility sections (flat list vs. grouped Changed/Deleted/New),
-/// every entry's exact link format, the shared-chart de-duplication rule, and the CRLF/UTF-8
-/// (no BOM) output.
+/// every entry's exact link format, every page of a multi-page procedure (Bug #365), the
+/// shared-chart de-duplication rule, and the CRLF/UTF-8 (no BOM) output.
 /// </summary>
 public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 {
@@ -115,7 +116,7 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 	{
 		ProcedureAirport zobAirport = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
 		[
-			ProcedureTestData.BuiltProcedure("ILS RWY 1", change: ProcedureChange.New, reportedPdfName: "00100ILS1.PDF"),
+			ProcedureTestData.BuiltProcedure("ILS RWY 1", change: ProcedureChange.New, pdfName: "00100ILS1.PDF"),
 		]);
 		ProcedureAirport znyAirport = ProcedureTestData.BuiltAirport("BBB", responsibleArtcc: "ZNY", procedures:
 		[
@@ -145,8 +146,8 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 	{
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
 		[
-			ProcedureTestData.BuiltProcedure("PROC A", change: ProcedureChange.Changed, reportedPdfName: "00100A.PDF"),
-			ProcedureTestData.BuiltProcedure("PROC B", change: ProcedureChange.Changed, reportedPdfName: "00100B.PDF"),
+			ProcedureTestData.BuiltProcedure("PROC A", change: ProcedureChange.Changed, pdfName: "00100A.PDF"),
+			ProcedureTestData.BuiltProcedure("PROC B", change: ProcedureChange.Changed, pdfName: "00100B.PDF"),
 		]);
 
 		string content = Generate([airport], ProcedureTestData.Dtpp("2609"));
@@ -163,9 +164,9 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 	{
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
 		[
-			ProcedureTestData.BuiltProcedure("NEW PROC", chartSeq: 10, change: ProcedureChange.New, reportedPdfName: "00100NEW.PDF"),
-			ProcedureTestData.BuiltProcedure("DELETED PROC", chartSeq: 20, change: ProcedureChange.Deleted, reportedPdfName: "DELETED_JOB.PDF"),
-			ProcedureTestData.BuiltProcedure("CHANGED PROC", chartSeq: 30, change: ProcedureChange.Changed, reportedPdfName: "00100CHG.PDF"),
+			ProcedureTestData.BuiltProcedure("NEW PROC", chartSeq: 10, change: ProcedureChange.New, pdfName: "00100NEW.PDF"),
+			ProcedureTestData.BuiltProcedure("DELETED PROC", chartSeq: 20, change: ProcedureChange.Deleted),
+			ProcedureTestData.BuiltProcedure("CHANGED PROC", chartSeq: 30, change: ProcedureChange.Changed, pdfName: "00100CHG.PDF"),
 		]);
 
 		string content = Generate([airport], ProcedureTestData.Dtpp("2609"));
@@ -234,7 +235,7 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 		[
 			ProcedureTestData.BuiltProcedure(
 				"ILS RWY 1", change: ProcedureChange.ReAdded,
-				previousPdfName: "00100OLD.PDF", currentPdfName: "00100NEW.PDF"),
+				previousPdfName: "00100OLD.PDF", pdfName: "00100NEW.PDF"),
 		]);
 
 		string content = Generate([airport], ProcedureTestData.Dtpp("2609"), ProcedureTestData.Dtpp("2608"));
@@ -252,7 +253,7 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
 		[
 			ProcedureTestData.BuiltProcedure(
-				"ILS RWY 1", change: ProcedureChange.ReAdded, previousPdfName: null, currentPdfName: "00100NEW.PDF"),
+				"ILS RWY 1", change: ProcedureChange.ReAdded, previousPdfName: null, pdfName: "00100NEW.PDF"),
 		]);
 
 		string content = Generate([airport], ProcedureTestData.Dtpp("2609"));
@@ -266,12 +267,251 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
 		[
 			ProcedureTestData.BuiltProcedure(
-				"ILS RWY 1", change: ProcedureChange.ReAdded, previousPdfName: null, currentPdfName: null),
+				"ILS RWY 1", change: ProcedureChange.ReAdded, previousPdfName: null,
+				pages: [new("ILS RWY 1", "DELETED_JOB.PDF", "D")]),
 		]);
 
 		string content = Generate([airport], ProcedureTestData.Dtpp("2609"));
 
 		Assert.Contains("  - ILS RWY 1 [New](chart not available)\r\n", content);
+	}
+
+	// ---- every page of a multi-page procedure (Bug #365) ----
+
+	/// <summary>Writes one airport, under ZOB, with one procedure, for cycle 2611 (previous 2610).</summary>
+	private string GenerateOne(string aptIdent, Procedure procedure) =>
+		Generate(
+			[ProcedureTestData.BuiltAirport(aptIdent, responsibleArtcc: "ZOB", procedures: [procedure])],
+			ProcedureTestData.Dtpp("2611"),
+			ProcedureTestData.Dtpp("2610"));
+
+	/// <summary>Builds the airports from metafile records, as the sub-service does, and writes them.</summary>
+	private string GenerateBuilt(
+		string aptIdent,
+		IEnumerable<DtppMetafileXmlDataModel.Record> records,
+		IEnumerable<DtppMetafileXmlDataModel.Record> previousRecords)
+	{
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611", airports: [ProcedureTestData.AirportRow(aptIdent)], records: records);
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2610", records: previousRecords);
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr([ProcedureTestData.AptBaseRow(aptIdent, respArtccId: "ZOB")]);
+
+		return Generate(ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports, dtpp, previousDtpp);
+	}
+
+	[Fact]
+	public void every_changed_page_links_to_its_compare_pdf_in_page_order()
+	{
+		string content = GenerateOne("SLC", ProcedureTestData.BuiltProcedure("CARTR TWO (RNAV)", chartCode: "STR", change: ProcedureChange.Changed, pages:
+		[
+			new("CARTR TWO (RNAV)", "00365CARTR.PDF", "C"),
+			new("CARTR TWO (RNAV), CONT.1", "00365CARTR_C.PDF", "C"),
+		]));
+
+		Assert.Contains(
+			"- SLC\r\n" +
+			"  - [CARTR TWO (RNAV)](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00365CARTR_cmp.pdf)\r\n" +
+			"    - More pages: [Page 2](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00365CARTR_C_cmp.pdf)\r\n",
+			content);
+	}
+
+	[Fact]
+	public void an_unchanged_page_links_to_its_chart()
+	{
+		string content = GenerateOne("ORD", ProcedureTestData.BuiltProcedure("OHARE NINE", chartCode: "DP", change: ProcedureChange.Changed, pages:
+		[
+			new("OHARE NINE", "00166OHARE.PDF", "C"),
+			new("OHARE NINE, CONT.1", "00166OHARE_C.PDF", null),
+		]));
+
+		Assert.Contains(
+			"  - [OHARE NINE](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00166OHARE_cmp.pdf)\r\n" +
+			"    - More pages: [Page 2 (unchanged)](https://aeronav.faa.gov/d-tpp/2611/00166OHARE_C.PDF)\r\n",
+			content);
+	}
+
+	[Fact]
+	public void a_page_added_to_a_changed_procedure_is_a_new_page()
+	{
+		string content = GenerateOne("OAK", ProcedureTestData.BuiltProcedure("CNDEL SIX (RNAV)", chartCode: "DP", change: ProcedureChange.Changed, pages:
+		[
+			new("CNDEL SIX (RNAV)", "00227CNDEL.PDF", "C"),
+			new("CNDEL SIX (RNAV), CONT.1", "00227CNDEL_C.PDF", "A"),
+		]));
+
+		Assert.Contains(
+			"  - [CNDEL SIX (RNAV)](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00227CNDEL_cmp.pdf)\r\n" +
+			"    - More pages: [Page 2 (new page)](https://aeronav.faa.gov/d-tpp/2611/00227CNDEL_C.PDF)\r\n",
+			content);
+	}
+
+	[Fact]
+	public void a_new_procedures_changed_page_links_to_its_compare_pdf()
+	{
+		string content = GenerateOne("GGE", ProcedureTestData.BuiltProcedure("BRDWK ONE (RNAV)", chartCode: "STR", change: ProcedureChange.New, pages:
+		[
+			new("BRDWK ONE (RNAV)", "05214BRDWK.PDF", "A"),
+			new("BRDWK ONE (RNAV), CONT.1", "05214BRDWK_C.PDF", "C"),
+		]));
+
+		Assert.Contains(
+			"  - New:\r\n" +
+			"    - [BRDWK ONE (RNAV)](https://aeronav.faa.gov/d-tpp/2611/05214BRDWK.PDF)\r\n" +
+			"      - More pages: [Page 2](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/05214BRDWK_C_cmp.pdf)\r\n",
+			content);
+	}
+
+	[Fact]
+	public void a_new_procedures_added_pages_are_not_called_new_pages()
+	{
+		string content = GenerateOne("AAA", ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", chartCode: "STR", change: ProcedureChange.New, pages:
+		[
+			new("GRUUB ONE (RNAV)", "GRUUB1.PDF", "A"),
+			new("GRUUB ONE (RNAV), CONT.1", "GRUUB1_C.PDF", "A"),
+		]));
+
+		Assert.Contains("      - More pages: [Page 2](https://aeronav.faa.gov/d-tpp/2611/GRUUB1_C.PDF)\r\n", content);
+	}
+
+	[Fact]
+	public void pages_are_listed_in_page_order_whatever_order_they_come_in()
+	{
+		string content = GenerateOne("AAA", ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", chartCode: "STR", change: ProcedureChange.Changed, pages:
+		[
+			new("GRUUB ONE (RNAV), CONT.2", "GRUUB1_C2.PDF", "C"),
+			new("GRUUB ONE (RNAV)", "GRUUB1.PDF", "C"),
+			new("GRUUB ONE (RNAV), CONT.1", "GRUUB1_C.PDF", null),
+		]));
+
+		Assert.Contains(
+			"  - [GRUUB ONE (RNAV)](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/GRUUB1_cmp.pdf)\r\n" +
+			"    - More pages: [Page 2 (unchanged)](https://aeronav.faa.gov/d-tpp/2611/GRUUB1_C.PDF), " +
+			"[Page 3](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/GRUUB1_C2_cmp.pdf)\r\n",
+			content);
+	}
+
+	/// <summary>Only page 2 changed (THRNE FOUR at BUR in 2609): the entry is the procedure's own name, its first page unchanged.</summary>
+	[Fact]
+	public void when_only_a_continuation_page_changed_the_entry_is_the_procedures_name()
+	{
+		string content = GenerateOne("BUR", ProcedureTestData.BuiltProcedure("THRNE FOUR (RNAV)", chartCode: "STR", change: ProcedureChange.Changed, pages:
+		[
+			new("THRNE FOUR (RNAV)", "00228THRNE.PDF", null),
+			new("THRNE FOUR (RNAV), CONT.1", "00228THRNE_C.PDF", "C"),
+		]));
+
+		Assert.Contains(
+			"  - [THRNE FOUR (RNAV)](https://aeronav.faa.gov/d-tpp/2611/00228THRNE.PDF) (unchanged)\r\n" +
+			"    - More pages: [Page 2](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00228THRNE_C_cmp.pdf)\r\n",
+			content);
+		Assert.DoesNotContain("CONT.1", content);
+	}
+
+	[Fact]
+	public void every_page_of_a_deleted_procedure_links_to_the_previous_cycle()
+	{
+		string content = GenerateOne("NKX", ProcedureTestData.BuiltProcedure(
+			"LAKEE THREE", chartCode: "DP", change: ProcedureChange.Deleted, previousPdfName: "00903LAKEE.PDF",
+			pages:
+			[
+				new("LAKEE THREE", "DELETED_JOB.PDF", "D"),
+				new("LAKEE THREE, CONT.1", "DELETED_JOB.PDF", "D"),
+				new("LAKEE THREE, CONT.2", "DELETED_JOB.PDF", "D"),
+			],
+			previousPages:
+			[
+				new("LAKEE THREE", "00903LAKEE.PDF", null),
+				new("LAKEE THREE, CONT.1", "00903LAKEE_C.PDF", null),
+			]));
+
+		Assert.Contains(
+			"  - Deleted:\r\n" +
+			"    - [LAKEE THREE](https://aeronav.faa.gov/d-tpp/2610/00903LAKEE.PDF)\r\n" +
+			"      - More pages: [Page 2](https://aeronav.faa.gov/d-tpp/2610/00903LAKEE_C.PDF), Page 3 (previous chart not available)\r\n",
+			content);
+	}
+
+	[Fact]
+	public void every_page_of_a_readded_procedure_shows_old_and_new()
+	{
+		string content = GenerateOne("AAA", ProcedureTestData.BuiltProcedure(
+			"GRUUB ONE (RNAV)", chartCode: "STR", change: ProcedureChange.ReAdded, previousPdfName: "GRUUB1.PDF",
+			pages:
+			[
+				new("GRUUB ONE (RNAV)", "DELETED_JOB.PDF", "D"),
+				new("GRUUB ONE (RNAV)", "NEWGRUUB1.PDF", "A"),
+				new("GRUUB ONE (RNAV), CONT.1", "DELETED_JOB.PDF", "D"),
+				new("GRUUB ONE (RNAV), CONT.1", "NEWGRUUB1_C.PDF", "A"),
+				new("GRUUB ONE (RNAV), CONT.2", "NEWGRUUB1_C2.PDF", null),
+			],
+			previousPages:
+			[
+				new("GRUUB ONE (RNAV)", "GRUUB1.PDF", null),
+				new("GRUUB ONE (RNAV), CONT.1", "GRUUB1_C.PDF", null),
+			]));
+
+		Assert.Contains(
+			"  - GRUUB ONE (RNAV) [Old](https://aeronav.faa.gov/d-tpp/2610/GRUUB1.PDF) -> [New](https://aeronav.faa.gov/d-tpp/2611/NEWGRUUB1.PDF)\r\n" +
+			"    - More pages: Page 2 [Old](https://aeronav.faa.gov/d-tpp/2610/GRUUB1_C.PDF) -> [New](https://aeronav.faa.gov/d-tpp/2611/NEWGRUUB1_C.PDF), " +
+			"Page 3 [New](https://aeronav.faa.gov/d-tpp/2611/NEWGRUUB1_C2.PDF)\r\n" +
+			"    - Info: This procedure was initially listed by the FAA as \"Deleted\"",
+			content);
+	}
+
+	[Fact]
+	public void a_removed_page_without_a_previous_chart_says_so()
+	{
+		string content = GenerateOne("AAA", ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", chartCode: "STR", change: ProcedureChange.Changed, pages:
+		[
+			new("GRUUB ONE (RNAV)", "GRUUB1.PDF", "C"),
+			new("GRUUB ONE (RNAV), CONT.1", "DELETED_JOB.PDF", "D"),
+		]));
+
+		Assert.Contains("    - More pages: Page 2 (removed, previous chart not available)\r\n", content);
+	}
+
+	/// <summary>
+	/// MSP in 2611: the deleted "MINNEAPOLIS NINE, CONT.1" is MINNEAPOLIS ONE's removed second page,
+	/// linked to the previous cycle's page 2 - not listed on its own, and never linked to page 1.
+	/// </summary>
+	[Fact]
+	public void an_orphan_continuation_page_is_listed_as_a_removed_page_of_the_procedure_with_its_proc_uid()
+	{
+		string content = GenerateBuilt(
+			"MSP",
+			[
+				ProcedureTestData.RecordRow("MSP", 1, "DP", "MINNEAPOLIS NINE, CONT.1", "DELETED_JOB.PDF", userAction: "D", procUid: 1300),
+				ProcedureTestData.RecordRow("MSP", 2, "DP", "MINNEAPOLIS ONE", "00264MINNEAPOLIS.PDF", userAction: "C", procUid: 1300),
+			],
+			[
+				ProcedureTestData.RecordRow("MSP", 1, "DP", "MINNEAPOLIS NINE", "00264MINNEAPOLIS.PDF", procUid: 1300),
+				ProcedureTestData.RecordRow("MSP", 2, "DP", "MINNEAPOLIS NINE, CONT.1", "00264MINNEAPOLIS_C.PDF", procUid: 1300),
+			]);
+
+		Assert.Contains(
+			"- MSP\r\n" +
+			"  - [MINNEAPOLIS ONE](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00264MINNEAPOLIS_cmp.pdf)\r\n" +
+			"    - More pages: [Page 2 (removed)](https://aeronav.faa.gov/d-tpp/2610/00264MINNEAPOLIS_C.PDF)\r\n",
+			content);
+		Assert.DoesNotContain("MINNEAPOLIS NINE", content);
+	}
+
+	[Fact]
+	public void an_orphan_continuation_page_with_no_procedure_is_listed_under_its_base_name()
+	{
+		string content = GenerateBuilt(
+			"AAA",
+			[ProcedureTestData.RecordRow("AAA", 1, "STR", "GRUUB ONE (RNAV), CONT.1", "DELETED_JOB.PDF", userAction: "D", procUid: 7)],
+			[
+				ProcedureTestData.RecordRow("AAA", 1, "STR", "GRUUB ONE (RNAV)", "GRUUB1.PDF", procUid: 7),
+				ProcedureTestData.RecordRow("AAA", 2, "STR", "GRUUB ONE (RNAV), CONT.1", "GRUUB1_C.PDF", procUid: 7),
+			]);
+
+		Assert.Contains(
+			"- AAA\r\n" +
+			"  - Deleted:\r\n" +
+			"    - GRUUB ONE (RNAV)\r\n" +
+			"      - Pages: [Page 2](https://aeronav.faa.gov/d-tpp/2610/GRUUB1_C.PDF)\r\n",
+			content);
 	}
 
 	// ---- a chart shared by several airports ----
@@ -285,11 +525,11 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 	{
 		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", alnum: 100, procedures:
 		[
-			ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", change: ProcedureChange.Changed, reportedPdfName: "00200SHARED.PDF"),
+			ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", change: ProcedureChange.Changed, pdfName: "00200SHARED.PDF"),
 		]);
 		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", responsibleArtcc: "ZOB", alnum: 200, procedures:
 		[
-			ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", change: ProcedureChange.Changed, reportedPdfName: "00200SHARED.PDF"),
+			ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", change: ProcedureChange.Changed, pdfName: "00200SHARED.PDF"),
 		]);
 
 		string content = Generate([aaa, bbb], ProcedureTestData.Dtpp("2609"));
@@ -316,13 +556,13 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 	{
 		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
 		[
-			ProcedureTestData.BuiltProcedure("TAKEOFF MINIMUMS", change: ProcedureChange.Changed, reportedPdfName: "SE4TO.PDF"),
-			ProcedureTestData.BuiltProcedure("DIVERSE VECTOR AREA", change: ProcedureChange.Changed, reportedPdfName: "SE4TO.PDF"),
+			ProcedureTestData.BuiltProcedure("TAKEOFF MINIMUMS", change: ProcedureChange.Changed, pdfName: "SE4TO.PDF"),
+			ProcedureTestData.BuiltProcedure("DIVERSE VECTOR AREA", change: ProcedureChange.Changed, pdfName: "SE4TO.PDF"),
 		]);
 		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", responsibleArtcc: "ZOB", procedures:
 		[
-			ProcedureTestData.BuiltProcedure("TAKEOFF MINIMUMS", change: ProcedureChange.Changed, reportedPdfName: "SE4TO.PDF"),
-			ProcedureTestData.BuiltProcedure("DIVERSE VECTOR AREA", change: ProcedureChange.Changed, reportedPdfName: "SE4TO.PDF"),
+			ProcedureTestData.BuiltProcedure("TAKEOFF MINIMUMS", change: ProcedureChange.Changed, pdfName: "SE4TO.PDF"),
+			ProcedureTestData.BuiltProcedure("DIVERSE VECTOR AREA", change: ProcedureChange.Changed, pdfName: "SE4TO.PDF"),
 		]);
 
 		string content = Generate([aaa, bbb], ProcedureTestData.Dtpp("2609"));
@@ -340,7 +580,7 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 		ProcedureAirport[] airports = [.. Enumerable.Range(1, 13).Select(i =>
 			ProcedureTestData.BuiltAirport($"A{i:D2}", responsibleArtcc: "ZOB", procedures:
 			[
-				ProcedureTestData.BuiltProcedure("ALTERNATE MINIMUMS", change: ProcedureChange.Changed, reportedPdfName: "SW3ALT.PDF"),
+				ProcedureTestData.BuiltProcedure("ALTERNATE MINIMUMS", change: ProcedureChange.Changed, pdfName: "SW3ALT.PDF"),
 			]))];
 
 		string content = Generate(airports, ProcedureTestData.Dtpp("2609"));

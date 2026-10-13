@@ -1,4 +1,6 @@
+using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.Models;
+using FeBuddy.Core.Infrastructure.Dtpp;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
@@ -168,15 +170,19 @@ internal static class ProcedureTestData
 			Procedures = procedures ?? [],
 		};
 
-	/// <summary>Builds an already-assembled <see cref="Procedure"/>, bypassing d-TPP Metafile classification.</summary>
+	/// <summary>
+	/// Builds an already-assembled <see cref="Procedure"/>, bypassing d-TPP Metafile classification.
+	/// Unless <paramref name="pages"/> is given, it has one page, <paramref name="pdfName"/>, marked
+	/// as <paramref name="change"/> says (a re-added one has a deleted and an added first page), and
+	/// its current PDF is its first page's. Unless <paramref name="previousPages"/> is given, its
+	/// previous pages are <paramref name="previousPdfName"/>'s, if any.
+	/// </summary>
 	public static Procedure BuiltProcedure(
 		string name,
 		string chartCode = "IAP",
 		int chartSeq = 50750,
 		ProcedureChange change = ProcedureChange.None,
-		string? reportedName = null,
-		string reportedPdfName = "00100TEST.PDF",
-		string? currentPdfName = "00100TEST.PDF",
+		string pdfName = "00100TEST.PDF",
 		string? previousPdfName = null,
 		bool isRemovedFromAirportOnly = false,
 		int? procUid = null,
@@ -184,18 +190,30 @@ internal static class ProcedureTestData
 		DateOnly? amdtDate = null,
 		string? computerCode = null,
 		string? civil = null,
-		IReadOnlyList<ProcedurePage>? pages = null) =>
-		new()
+		IReadOnlyList<ProcedurePage>? pages = null,
+		IReadOnlyList<ProcedurePage>? previousPages = null)
+	{
+		pages ??= change switch
+		{
+			ProcedureChange.Changed => [new ProcedurePage(name, pdfName, "C")],
+			ProcedureChange.New => [new ProcedurePage(name, pdfName, "A")],
+			ProcedureChange.Deleted => [new ProcedurePage(name, DtppFiles.DeletedChartPdfName, "D")],
+			ProcedureChange.ReAdded => [new ProcedurePage(name, DtppFiles.DeletedChartPdfName, "D"), new ProcedurePage(name, pdfName, "A")],
+			_ => [new ProcedurePage(name, pdfName, null)],
+		};
+
+		return new()
 		{
 			Name = name,
 			ChartCode = chartCode,
 			ChartSeq = chartSeq,
-			Pages = pages ?? [new ProcedurePage(reportedName ?? name, reportedPdfName, null)],
+			Pages = pages,
 			Change = change,
-			ReportedName = reportedName ?? name,
-			ReportedPdfName = reportedPdfName,
-			CurrentPdfName = currentPdfName,
+			CurrentPdfName = change == ProcedureChange.Deleted
+				? null
+				: pages.LastOrDefault(page => !ProcedureNaming.IsContinuation(page.ChartName) && page.UserAction != "D")?.PdfName,
 			PreviousPdfName = previousPdfName,
+			PreviousPages = previousPages ?? (previousPdfName is null ? [] : [new ProcedurePage(name, previousPdfName, null)]),
 			IsRemovedFromAirportOnly = isRemovedFromAirportOnly,
 			ProcUid = procUid,
 			AmdtNum = amdtNum,
@@ -203,4 +221,5 @@ internal static class ProcedureTestData
 			ComputerCode = computerCode,
 			Civil = civil,
 		};
+	}
 }

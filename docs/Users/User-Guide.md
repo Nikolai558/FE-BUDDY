@@ -232,8 +232,11 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
 then "Other". Each lists the airports that changed, Class B first. A changed chart links to the FAA's
-comparison PDF, a new one to its chart, and a deleted one to its last chart. A STAR at several
-airports is listed under each, with "Also serves" naming the others. **`Procedures.json`** lists the
+comparison PDF, a new one to its chart, and a deleted one to its last chart. A chart with more than
+one page links each page the same way, the rest on a "More pages" line, and says when a page is
+different from its chart: "(unchanged)" links to a page that didn't change, "(new page)" to one
+added to a chart that isn't new, and "(removed)" to the last version of one taken off a chart that's
+still in use. A STAR at several airports is listed under each, with "Also serves" naming the others. **`Procedures.json`** lists the
 same airports' current charts.
 
 #### FAA Chart Recall commands

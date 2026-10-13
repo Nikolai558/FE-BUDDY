@@ -449,7 +449,10 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 - `JsonFields`: `icaoId`, `airportName`, `city`, `state`, `responsibleArtcc`, `airspaceClass`,
   `military`, `chartType`, `chartUrl`, `change`, `compareUrl`, `amendment`, `amendmentDate`,
   `procedureUid`, `computerCode`, `producer`. An airport's `airportId` and a procedure's `name` are
-  always written; a field with no value is left out.
+  always written; a field with no value is left out. `chartUrl` also writes `continuationUrls`, the
+  other pages' charts. `compareUrl` is the first page's, only when that page changed, and it also
+  writes `continuationCompareUrls`, the changed continuation pages' (the FAA publishes a compare
+  PDF only for a page it marks changed).
 - The chart recall rules are in the XML docs of `ChartRecallCodes`, `ApproachCodes`, `SidStarCodes`,
   `ChartRecallSkipReason` and `ChartRecallAliasBuilder`.
 - The help command (`ChartRecallHelpCommand`) is a `.note` line written before the chart commands,

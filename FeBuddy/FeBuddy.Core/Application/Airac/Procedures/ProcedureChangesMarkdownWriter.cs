@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 
 using FeBuddy.Core.Application.Airac.Procedures.Models;
+using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Dtpp;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
@@ -10,7 +11,8 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 
 /// <summary>
 /// Writes <c>Procedure_Changes.md</c>: a human-readable, facility-by-facility list of every
-/// included procedure that changed this cycle, with links to the FAA's chart and compare PDFs.
+/// included procedure that changed this cycle, with links to the FAA's chart and compare PDFs -
+/// one for each page, by what happened to that page.
 /// </summary>
 /// <remarks>
 /// A chart shared by more than one included airport (chiefly a STAR) is listed under each of them,
@@ -35,8 +37,8 @@ public static class ProcedureChangesMarkdownWriter
 	/// <param name="dtpp">The selected cycle's parsed FAA d-TPP Metafile (its <c>Cycle</c> and effective date).</param>
 	/// <param name="previousDtpp">
 	/// The previous cycle's parsed FAA d-TPP Metafile, or <see langword="null"/> when it is not
-	/// available - only its <c>Cycle</c> is read, and only when a procedure actually carries a
-	/// <see cref="Procedure.PreviousPdfName"/> (which cannot happen when this is <see langword="null"/>).
+	/// available - only its <c>Cycle</c> is read, and only when a procedure actually carries
+	/// <see cref="Procedure.PreviousPages"/> (which cannot happen when this is <see langword="null"/>).
 	/// </param>
 	/// <returns>The path written, plus any messages collected.</returns>
 	public static ProcedureChangesWriteResult Generate(
@@ -153,23 +155,30 @@ public static class ProcedureChangesMarkdownWriter
 		("New:", [ProcedureChange.New]),
 	];
 
+	/// <summary>
+	/// Writes one procedure: its name linked by its first page, then a child line linking every
+	/// other page, then any notes.
+	/// </summary>
 	private static void WriteEntry(StringBuilder builder, RenderEntry entry, string cycle, string previousCycle, string indent)
 	{
 		Procedure procedure = entry.Procedure;
 		string childIndent = indent + "  ";
 
-		string line = procedure.Change switch
-		{
-			ProcedureChange.Changed => $"[{procedure.ReportedName}]({DtppFiles.CompareUrl(cycle, procedure.ReportedPdfName)})",
-			ProcedureChange.New => $"[{procedure.ReportedName}]({DtppFiles.ChartUrl(cycle, procedure.ReportedPdfName)})",
-			ProcedureChange.Deleted => procedure.PreviousPdfName is { Length: > 0 } previousPdf
-				? $"[{procedure.ReportedName}]({DtppFiles.ChartUrl(previousCycle, previousPdf)})"
-				: $"{procedure.ReportedName} (previous chart not available)",
-			ProcedureChange.ReAdded => ReAddedLine(procedure, cycle, previousCycle),
-			_ => procedure.ReportedName,
-		};
+		// Page order, and one entry per page number: a re-added page is listed twice, deleted and added.
+		List<IGrouping<int, ProcedurePage>> pages = [.. procedure.Pages
+			.GroupBy(page => ProcedureNaming.PageNumber(page.ChartName))
+			.OrderBy(page => page.Key)];
 
-		builder.AppendLine($"{indent}- {line}");
+		IGrouping<int, ProcedurePage>? firstPage = pages.FirstOrDefault(page => page.Key == 1);
+		string[] otherPages = [.. pages.Where(page => page.Key != 1).SelectMany(page => OtherPageLinks(procedure, page, cycle, previousCycle))];
+
+		builder.AppendLine($"{indent}- {FirstLine(procedure, firstPage, cycle, previousCycle)}");
+
+		if (otherPages.Length > 0)
+		{
+			// A continuation page whose procedure has no first page this cycle lists "Pages", not "More pages".
+			builder.AppendLine($"{childIndent}- {(firstPage is null ? "Pages" : "More pages")}: {string.Join(", ", otherPages)}");
+		}
 
 		if (procedure.Change == ProcedureChange.ReAdded)
 		{
@@ -194,18 +203,100 @@ public static class ProcedureChangesMarkdownWriter
 			? string.Join(", ", airports)
 			: $"{string.Join(", ", airports.Take(AlsoServesNamed))} and {airports.Count - AlsoServesNamed} more";
 
-	private static string ReAddedLine(Procedure procedure, string cycle, string previousCycle)
+	/// <summary>
+	/// The procedure's name, linked by its first page: e.g. <c>[CARTR TWO (RNAV)](…_cmp.pdf)</c>,
+	/// <c>[THRNE FOUR (RNAV)](…) (unchanged)</c>, or a re-added procedure's <c>NAME [Old](…) -> [New](…)</c>.
+	/// A procedure with no first page this cycle is just its name.
+	/// </summary>
+	private static string FirstLine(Procedure procedure, IGrouping<int, ProcedurePage>? firstPage, string cycle, string previousCycle)
 	{
-		string oldToNew = procedure.PreviousPdfName is { Length: > 0 } previousPdf
+		if (firstPage is null)
+		{
+			return procedure.Name;
+		}
+
+		if (procedure.Change == ProcedureChange.ReAdded)
+		{
+			return $"{procedure.Name} {OldToNew(procedure, firstPage, cycle, previousCycle)}";
+		}
+
+		(string? url, string? note) = PageTarget(procedure, firstPage.First(), cycle, previousCycle);
+		string name = url is null ? procedure.Name : $"[{procedure.Name}]({url})";
+
+		return note is null ? name : $"{name} ({note})";
+	}
+
+	/// <summary>
+	/// One continuation page's links, e.g. <c>[Page 2](…_cmp.pdf)</c>, <c>[Page 3 (unchanged)](…)</c>,
+	/// or a re-added procedure's <c>Page 2 [Old](…) -> [New](…)</c>. Page 2 is <c>CONT.1</c>.
+	/// </summary>
+	private static IEnumerable<string> OtherPageLinks(Procedure procedure, IGrouping<int, ProcedurePage> page, string cycle, string previousCycle)
+	{
+		string label = $"Page {page.Key}";
+
+		if (procedure.Change == ProcedureChange.ReAdded)
+		{
+			return [$"{label} {OldToNew(procedure, page, cycle, previousCycle)}"];
+		}
+
+		// Normally one record; two when a joined orphan page shares its number with the procedure's own page.
+		return page.Select(record =>
+		{
+			(string? url, string? note) = PageTarget(procedure, record, cycle, previousCycle);
+			string text = note is null ? label : $"{label} ({note})";
+
+			return url is null ? text : $"[{text}]({url})";
+		});
+	}
+
+	/// <summary>
+	/// Where one page links, by its own <c>useraction</c>, and what to note about it: a changed page
+	/// links to its compare PDF; an added one to its chart (a "new page" unless the whole procedure
+	/// is new); a deleted one to its chart in the previous cycle ("removed" unless the whole
+	/// procedure was deleted); and an unchanged one to its chart ("unchanged").
+	/// </summary>
+	/// <returns>The URL, or <see langword="null"/> when the page has none; and the note, if any.</returns>
+	private static (string? Url, string? Note) PageTarget(Procedure procedure, ProcedurePage page, string cycle, string previousCycle) =>
+		page.UserAction?.Trim().ToUpperInvariant() switch
+		{
+			"C" => (DtppFiles.CompareUrl(cycle, page.PdfName), null),
+			"A" => (DtppFiles.ChartUrl(cycle, page.PdfName), procedure.Change == ProcedureChange.New ? null : "new page"),
+			"D" => RemovedPageTarget(procedure, page, previousCycle),
+			_ => (DtppFiles.ChartUrl(cycle, page.PdfName), "unchanged"),
+		};
+
+	private static (string? Url, string? Note) RemovedPageTarget(Procedure procedure, ProcedurePage page, string previousCycle)
+	{
+		bool isProcedureDeleted = procedure.Change == ProcedureChange.Deleted;
+
+		return PreviousPdf(procedure, ProcedureNaming.PageNumber(page.ChartName)) is { } previousPdf
+			? (DtppFiles.ChartUrl(previousCycle, previousPdf), isProcedureDeleted ? null : "removed")
+			: (null, isProcedureDeleted ? "previous chart not available" : "removed, previous chart not available");
+	}
+
+	/// <summary>
+	/// A re-added procedure's page: <c>[Old](…) -> [New](…)</c>, the old chart being the previous
+	/// cycle's (left out when it cannot be found).
+	/// </summary>
+	private static string OldToNew(Procedure procedure, IGrouping<int, ProcedurePage> page, string cycle, string previousCycle)
+	{
+		string oldLink = PreviousPdf(procedure, page.Key) is { } previousPdf
 			? $"[Old]({DtppFiles.ChartUrl(previousCycle, previousPdf)}) -> "
 			: string.Empty;
 
-		string newLink = procedure.CurrentPdfName is { Length: > 0 } currentPdf
-			? $"[New]({DtppFiles.ChartUrl(cycle, currentPdf)})"
+		ProcedurePage? current = page.FirstOrDefault(record =>
+			!string.Equals(record.UserAction?.Trim(), "D", StringComparison.OrdinalIgnoreCase));
+
+		string newLink = current is { PdfName.Length: > 0 }
+			? $"[New]({DtppFiles.ChartUrl(cycle, current.PdfName)})"
 			: "[New](chart not available)";
 
-		return $"{procedure.Name} {oldToNew}{newLink}";
+		return oldLink + newLink;
 	}
+
+	/// <summary>The page's PDF name in the previous cycle, or <see langword="null"/> when it was not found.</summary>
+	private static string? PreviousPdf(Procedure procedure, int pageNumber) =>
+		procedure.PreviousPages.FirstOrDefault(page => ProcedureNaming.PageNumber(page.ChartName) == pageNumber)?.PdfName;
 
 	/// <summary>
 	/// Walks every included airport's included, changed procedures in document order. Each is listed
@@ -268,15 +359,15 @@ public static class ProcedureChangesMarkdownWriter
 	}
 
 	/// <summary>
-	/// A changed chart's identity: its reported PDF name (New/Changed), or the previous cycle's PDF
-	/// name (Deleted/ReAdded); falling back to chart code + procedure UID + base name when that PDF
-	/// name is not available.
+	/// A changed chart's identity: its main page's PDF name (New/Changed), or the previous cycle's
+	/// (Deleted/ReAdded); falling back to chart code + procedure UID + base name when that PDF name
+	/// is not available.
 	/// </summary>
 	private static string Identity(Procedure procedure)
 	{
 		string? pdfName = procedure.Change is ProcedureChange.Deleted or ProcedureChange.ReAdded
 			? procedure.PreviousPdfName
-			: procedure.ReportedPdfName;
+			: procedure.CurrentPdfName;
 
 		return pdfName is { Length: > 0 }
 			? pdfName

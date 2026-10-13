@@ -155,9 +155,25 @@ public static class ProceduresJsonWriter
 			}
 		}
 
-		if (fields.Contains(ProcedureJsonField.CompareUrl) && procedure.Change == ProcedureChange.Changed)
+		if (fields.Contains(ProcedureJsonField.CompareUrl))
 		{
-			procedureObject["compareUrl"] = DtppFiles.CompareUrl(cycle, procedure.ReportedPdfName);
+			// The FAA publishes a compare PDF only for a page it marks changed: compareUrl is always
+			// the first page's, and continuationCompareUrls the changed continuation pages', in order.
+			ProcedurePage? firstPage = procedure.Pages.FirstOrDefault(page => !ProcedureNaming.IsContinuation(page.ChartName));
+
+			if (firstPage is not null && IsChanged(firstPage))
+			{
+				procedureObject["compareUrl"] = DtppFiles.CompareUrl(cycle, firstPage.PdfName);
+			}
+
+			JsonNode[] continuationCompareUrls = [.. procedure.Pages
+				.Where(page => ProcedureNaming.IsContinuation(page.ChartName) && IsChanged(page))
+				.Select(page => (JsonNode)DtppFiles.CompareUrl(cycle, page.PdfName))];
+
+			if (continuationCompareUrls.Length > 0)
+			{
+				procedureObject["continuationCompareUrls"] = new JsonArray(continuationCompareUrls);
+			}
 		}
 
 		AddIfSelected(procedureObject, fields, ProcedureJsonField.Amendment, "amendment", procedure.AmdtNum);
@@ -181,6 +197,8 @@ public static class ProceduresJsonWriter
 
 		return procedureObject;
 	}
+
+	private static bool IsChanged(ProcedurePage page) => string.Equals(page.UserAction?.Trim(), "C", StringComparison.OrdinalIgnoreCase);
 
 	private static void AddIfSelected(
 		JsonObject target,

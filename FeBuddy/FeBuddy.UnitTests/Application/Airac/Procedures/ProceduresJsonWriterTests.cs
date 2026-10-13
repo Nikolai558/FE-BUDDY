@@ -12,7 +12,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 /// <summary>
 /// Covers <see cref="ProceduresJsonWriter.Generate"/>: the always-present fields, every optional
 /// field toggling on/off independently, nulls/blanks being omitted, <c>continuationUrls</c>,
-/// <c>change</c>/<c>changeNote</c>/<c>compareUrl</c> conditions, deleted procedures being excluded,
+/// <c>change</c>/<c>changeNote</c>/<c>compareUrl</c>/<c>continuationCompareUrls</c> conditions,
+/// deleted procedures being excluded,
 /// a shared chart listed under every airport (no de-duplication), facility/airport ordering
 /// matching the Markdown writer, and the producer mapping.
 /// </summary>
@@ -230,9 +231,10 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 	public void chart_url_is_written_only_when_selected_and_a_current_pdf_exists()
 	{
 		ProcedureAirport withPdf = ProcedureTestData.BuiltAirport("AAA", procedures:
-			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.New, currentPdfName: "00100A.PDF")]);
+			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.New, pdfName: "00100A.PDF")]);
+		// A continuation page whose main page is not listed this cycle: no current chart.
 		ProcedureAirport withoutPdf = ProcedureTestData.BuiltAirport("AAA", procedures:
-			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.ReAdded, currentPdfName: null)]);
+			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.Changed, pages: [new("PROC, CONT.1", "00100B.PDF", "C")])]);
 
 		Assert.Equal(
 			"https://aeronav.faa.gov/d-tpp/2609/00100A.PDF",
@@ -251,7 +253,7 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 			new("GRUUB ONE (RNAV), CONT.2", "DELETED_JOB.PDF", null),
 		];
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
-			[ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", change: ProcedureChange.New, currentPdfName: "00100A.PDF", pages: pages)]);
+			[ProcedureTestData.BuiltProcedure("GRUUB ONE (RNAV)", change: ProcedureChange.New, pages: pages)]);
 
 		JsonObject procedure = GenerateFirstProcedure(airport, Settings(ProcedureJsonField.ChartUrl));
 
@@ -264,7 +266,7 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 	public void continuation_urls_are_omitted_when_there_are_no_continuation_pages()
 	{
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
-			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.New, currentPdfName: "00100A.PDF")]);
+			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.New, pdfName: "00100A.PDF")]);
 
 		JsonObject procedure = GenerateFirstProcedure(airport, Settings(ProcedureJsonField.ChartUrl));
 
@@ -289,7 +291,7 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 	public void a_readded_procedure_is_reported_as_changed_with_a_change_note()
 	{
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
-			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.ReAdded, currentPdfName: "00100A.PDF")]);
+			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.ReAdded, pdfName: "00100A.PDF")]);
 
 		JsonObject procedure = GenerateFirstProcedure(airport, Settings(ProcedureJsonField.Change));
 
@@ -301,14 +303,117 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 	public void compare_url_is_written_only_for_changed_not_for_readded()
 	{
 		ProcedureAirport changed = ProcedureTestData.BuiltAirport("AAA", procedures:
-			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.Changed, reportedPdfName: "00100A.PDF")]);
+			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.Changed, pdfName: "00100A.PDF")]);
 		ProcedureAirport readded = ProcedureTestData.BuiltAirport("AAA", procedures:
-			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.ReAdded, reportedPdfName: "00100A.PDF", currentPdfName: "00100A.PDF")]);
+			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.ReAdded, pdfName: "00100A.PDF")]);
 
 		Assert.Equal(
 			"https://aeronav.faa.gov/d-tpp/2609/compare_pdf/00100A_cmp.pdf",
 			GenerateFirstProcedure(changed, Settings(ProcedureJsonField.CompareUrl))["compareUrl"]!.GetValue<string>());
 		Assert.False(GenerateFirstProcedure(readded, Settings(ProcedureJsonField.CompareUrl)).ContainsKey("compareUrl"));
+	}
+
+	[Fact]
+	public void continuation_compare_urls_list_only_the_changed_continuation_pages_in_page_order()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("DFW", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("WILBR ONE", change: ProcedureChange.Changed, pages:
+			[
+				new("WILBR ONE", "00135WILBR.PDF", "C"),
+				new("WILBR ONE, CONT.1", "00135WILBR_C.PDF", null),
+				new("WILBR ONE, CONT.2", "00135WILBR_C2.PDF", "C"),
+				new("WILBR ONE, CONT.3", "00135WILBR_C3.PDF", "C"),
+			]),
+		]);
+
+		JsonObject procedure = GenerateFirstProcedure(airport, Settings(ProcedureJsonField.CompareUrl));
+
+		Assert.Equal("https://aeronav.faa.gov/d-tpp/2609/compare_pdf/00135WILBR_cmp.pdf", procedure["compareUrl"]!.GetValue<string>());
+		Assert.Equal(
+			["https://aeronav.faa.gov/d-tpp/2609/compare_pdf/00135WILBR_C2_cmp.pdf", "https://aeronav.faa.gov/d-tpp/2609/compare_pdf/00135WILBR_C3_cmp.pdf"],
+			procedure["continuationCompareUrls"]!.AsArray().Select(url => url!.GetValue<string>()));
+	}
+
+	[Fact]
+	public void compare_url_is_always_the_first_pages_so_it_is_left_out_when_only_a_continuation_page_changed()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("BUR", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("THRNE FOUR (RNAV)", change: ProcedureChange.Changed, pages:
+			[
+				new("THRNE FOUR (RNAV)", "00228THRNE.PDF", null),
+				new("THRNE FOUR (RNAV), CONT.1", "00228THRNE_C.PDF", "C"),
+			]),
+		]);
+
+		JsonObject procedure = GenerateFirstProcedure(airport, Settings(ProcedureJsonField.CompareUrl));
+
+		Assert.False(procedure.ContainsKey("compareUrl"));
+		Assert.Equal(
+			"https://aeronav.faa.gov/d-tpp/2609/compare_pdf/00228THRNE_C_cmp.pdf",
+			Assert.Single(procedure["continuationCompareUrls"]!.AsArray())!.GetValue<string>());
+	}
+
+	[Fact]
+	public void a_procedure_with_no_first_page_this_cycle_has_no_compare_url()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
+			[ProcedureTestData.BuiltProcedure("PROC", change: ProcedureChange.Changed, pages: [new("PROC, CONT.1", "00100B.PDF", "C")])]);
+
+		JsonObject procedure = GenerateFirstProcedure(airport, Settings(ProcedureJsonField.CompareUrl));
+
+		Assert.False(procedure.ContainsKey("compareUrl"));
+		Assert.Single(procedure["continuationCompareUrls"]!.AsArray());
+	}
+
+	[Fact]
+	public void a_new_procedures_changed_continuation_page_has_its_compare_url()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("GGE", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("BRDWK ONE (RNAV)", change: ProcedureChange.New, pages:
+			[
+				new("BRDWK ONE (RNAV)", "05214BRDWK.PDF", "A"),
+				new("BRDWK ONE (RNAV), CONT.1", "05214BRDWK_C.PDF", "C"),
+			]),
+		]);
+
+		JsonObject procedure = GenerateFirstProcedure(airport, Settings(ProcedureJsonField.CompareUrl));
+
+		Assert.False(procedure.ContainsKey("compareUrl"));
+		Assert.Equal(
+			"https://aeronav.faa.gov/d-tpp/2609/compare_pdf/05214BRDWK_C_cmp.pdf",
+			Assert.Single(procedure["continuationCompareUrls"]!.AsArray())!.GetValue<string>());
+	}
+
+	[Fact]
+	public void continuation_compare_urls_are_omitted_when_no_continuation_page_changed_or_the_field_is_off()
+	{
+		ProcedureAirport unchangedSecondPage = ProcedureTestData.BuiltAirport("ORD", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("OHARE NINE", change: ProcedureChange.Changed, pages:
+			[
+				new("OHARE NINE", "00166OHARE.PDF", "C"),
+				new("OHARE NINE, CONT.1", "00166OHARE_C.PDF", null),
+			]),
+		]);
+		ProcedureAirport changedSecondPage = ProcedureTestData.BuiltAirport("SLC", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("CARTR TWO (RNAV)", change: ProcedureChange.Changed, pages:
+			[
+				new("CARTR TWO (RNAV)", "00365CARTR.PDF", "C"),
+				new("CARTR TWO (RNAV), CONT.1", "00365CARTR_C.PDF", "C"),
+			]),
+		]);
+
+		JsonObject unchanged = GenerateFirstProcedure(unchangedSecondPage, Settings(ProcedureJsonField.CompareUrl));
+		JsonObject fieldOff = GenerateFirstProcedure(changedSecondPage, Settings());
+
+		Assert.True(unchanged.ContainsKey("compareUrl"));
+		Assert.False(unchanged.ContainsKey("continuationCompareUrls"));
+		Assert.False(fieldOff.ContainsKey("compareUrl"));
+		Assert.False(fieldOff.ContainsKey("continuationCompareUrls"));
 	}
 
 	// ---- deleted procedures ----
@@ -319,7 +424,7 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
 		[
 			ProcedureTestData.BuiltProcedure("KEPT", change: ProcedureChange.New),
-			ProcedureTestData.BuiltProcedure("GONE", change: ProcedureChange.Deleted, currentPdfName: null),
+			ProcedureTestData.BuiltProcedure("GONE", change: ProcedureChange.Deleted),
 		]);
 
 		JsonObject airportObject = GenerateFirstAirport(airport, Settings());
@@ -332,7 +437,7 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 	public void an_airport_with_every_procedure_deleted_is_excluded_entirely()
 	{
 		ProcedureAirport airport = ProcedureTestData.BuiltAirport("AAA", procedures:
-			[ProcedureTestData.BuiltProcedure("GONE", change: ProcedureChange.Deleted, currentPdfName: null)]);
+			[ProcedureTestData.BuiltProcedure("GONE", change: ProcedureChange.Deleted)]);
 
 		JsonObject root = GenerateRoot([airport], Settings(), ProcedureTestData.Dtpp("2609"));
 
@@ -345,9 +450,9 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 	public void a_shared_chart_is_listed_under_every_airport_with_no_deduplication()
 	{
 		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
-			[ProcedureTestData.BuiltProcedure("SHARED", change: ProcedureChange.New, currentPdfName: "SHARED.PDF")]);
+			[ProcedureTestData.BuiltProcedure("SHARED", change: ProcedureChange.New, pdfName: "SHARED.PDF")]);
 		ProcedureAirport bbb = ProcedureTestData.BuiltAirport("BBB", responsibleArtcc: "ZOB", procedures:
-			[ProcedureTestData.BuiltProcedure("SHARED", change: ProcedureChange.New, currentPdfName: "SHARED.PDF")]);
+			[ProcedureTestData.BuiltProcedure("SHARED", change: ProcedureChange.New, pdfName: "SHARED.PDF")]);
 
 		JsonObject root = GenerateRoot([aaa, bbb], Settings(), ProcedureTestData.Dtpp("2609"));
 
@@ -418,7 +523,7 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 			procedures:
 			[
 				ProcedureTestData.BuiltProcedure(
-					"PROC", change: ProcedureChange.Changed, reportedPdfName: "00100A.PDF", currentPdfName: "00100A.PDF",
+					"PROC", change: ProcedureChange.Changed, pdfName: "00100A.PDF",
 					procUid: 1, amdtNum: "1A", amdtDate: new DateOnly(2020, 1, 1), computerCode: "TEST.TEST", civil: "C"),
 			]);
 

@@ -1,9 +1,9 @@
 <!--
     SettingsView  -  Settings Profile / Facility / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub
-    Requests / Updates / Update Channel / Reset / Uninstall (Reset FE-Buddy… with Uninstall FE-Buddy… under it),
-    and, in a dev launch only, Developer: Launch Steps.
+    Requests / Updates / Update Channel / Main Window / Reset / Uninstall (Reset FE-Buddy… with Uninstall FE-Buddy…
+    under it), and, in a dev launch only, Developer: Launch Steps.
     Everything persists to the settings profile in use but the credentials, which go to Windows Credential Manager,
-    and the Developer card, which goes to DevLaunch.json.
+    the Main Window card, which goes to Shared.json at once, and the Developer card, which goes to DevLaunch.json.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -361,7 +361,22 @@
                     </StackPanel>
                 </ctl:Card>
 
-                <!-- ================= 7. RESET / UNINSTALL ================= -->
+                <!-- ================= 7. MAIN WINDOW ================= -->
+                <!-- This PC's, like the update channel: kept for every profile and never exported. Saved at once:
+                     not part of this page's Save. -->
+                <ctl:Card Header="Main Window" DataContext="{Binding WindowPlacement}">
+                    <StackPanel>
+                        <ctl:Option Margin="0,4,0,0"
+                                    Description="FE-Buddy opens where you last closed it, as long as that screen is still connected. Otherwise, it opens in the middle of your main screen.">
+                            <CheckBox Content="Remember window size and position" IsChecked="{Binding RememberPlacement}" />
+                        </ctl:Option>
+                        <Button Style="{StaticResource Button.Ghost}" Content="Reset window size and position" HorizontalAlignment="Left"
+                                Margin="0,12,0,0" Command="{Binding ResetCommand}"
+                                ToolTip="Moves FE-Buddy to the middle of your main screen, at its default size, now." />
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 8. RESET / UNINSTALL ================= -->
                 <!-- Last, away from everyday settings. Each window says what goes and asks what to keep.
                      Uninstall works only in the installed copy. -->
                 <ctl:Card Header="Reset / Uninstall">
@@ -382,7 +397,7 @@
                     </StackPanel>
                 </ctl:Card>
 
-                <!-- ================= 8. DEVELOPER (dev launch only) ================= -->
+                <!-- ================= 9. DEVELOPER (dev launch only) ================= -->
                 <!-- Shown only in a dev launch (a Debug build started with dash-dash dev). Saved at once, to
                      DevLaunch.json beside the profiles: not part of this page's Save, a profile or an export. -->
                 <ctl:Card Header="Developer: Launch Steps" DataContext="{Binding DevLaunch}"

@@ -467,16 +467,18 @@ to give the map room, and leaving Map expands it again, unless you collapse or e
 
 ## Settings
 
-Press **Save** at the top to keep your changes (credentials save at once). **Export…** and
-**Import…** share your setup, leaving out this PC's own (update channel, credentials, FE-Buddy's
-GitHub token, which News you've read). An import asks where the settings go - a new profile, added to the profile in use, or
-in place of its settings - and shows what will change first.
+Press **Save** at the top to keep your changes (credentials and the Main Window card save at once).
+**Export…** and **Import…** share your setup, leaving out this PC's own (update channel,
+credentials, FE-Buddy's GitHub token, which News you've read, where the window was). An import asks
+where the settings go - a new profile, added to the profile in use, or in place of its settings -
+and shows what will change first.
 
 - **Settings Profile** - a profile is a whole set of settings: keep one for each facility, or one
   for each kind of run (say, GeoJSON every few cycles and aliases every cycle). Choose one in the
   list to switch to it; **New…** makes one (a copy of the profile in use, or every default),
   **Rename…** and **Delete…** act on the one in use. The update channel, which News you've read,
-  FE-Buddy's GitHub token and your saved credentials are the same in every profile.
+  FE-Buddy's GitHub token, your saved credentials and the Main Window card are the same in every
+  profile.
 - **Facility** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first in
   reports), and the **Default Output Directory** (the Desktop to start, with a `FE-Buddy_Output`
   folder inside unless you untick it).
@@ -493,6 +495,10 @@ in place of its settings - and shows what will change first.
 - **Updates / Update Channel** - the update channel (Stable suits almost everyone; Beta and Alpha
   are for development, not early access). It's set when FE-Buddy first starts and only changes
   here - updating never changes it. **Check for updates now** and **Open the Releases Page**.
+- **Main Window** - **Remember window size and position** (on to start): FE-Buddy opens where you
+  last closed it, maximized if it was. If that screen is gone, or its title bar would be out of
+  reach, it opens in the middle of your main screen instead; on a screen now too small for it, it
+  shrinks to fit. **Reset window size and position** moves it to the middle of your main screen now.
 - **Reset / Uninstall**:
   - **Reset FE-Buddy…** - start over as if newly installed. Downloaded data, logs and settings
     backups always go; you choose whether to keep your settings and credentials. Your output folder

@@ -431,6 +431,53 @@ public static partial class UserConfigFile
 	}
 
 	/// <summary>
+	/// One setting every profile shares, read straight from <c>Shared.json</c> rather than from memory:
+	/// for what FE-Buddy needs before its launch has read the settings (<see cref="ReadAll"/>), such as
+	/// where to open its window. Never throws.
+	/// </summary>
+	/// <param name="key">A key in <see cref="UserConfigPortability.SharedByProfiles"/>.</param>
+	/// <returns>Its value, or <see langword="null"/> when it is not set or is not a shared setting.</returns>
+	public static string? ReadSharedValue(string key)
+	{
+		if (string.IsNullOrWhiteSpace(key))
+		{
+			return null;
+		}
+
+		lock (Gate)
+		{
+			return ReadShared(out _).GetValueOrDefault(key);
+		}
+	}
+
+	/// <summary>
+	/// Persists settings every profile shares (<see cref="UserConfigPortability.SharedByProfiles"/>) to
+	/// <c>Shared.json</c> only, as they are in memory - removed when unset. Unlike
+	/// <see cref="Save(string)"/>, it leaves the profile's file and its undo snapshot alone and does not
+	/// read the files again, so a setting set but not yet saved elsewhere stays as it is; and it keeps
+	/// the active profile the file names, so it is safe before the launch has read the settings. For
+	/// the settings FE-Buddy keeps as it goes, such as where its window was when it closed.
+	/// </summary>
+	/// <param name="keys">The shared settings to write.</param>
+	/// <exception cref="ArgumentException">A key is not one every profile shares.</exception>
+	public static void SaveShared(params string[] keys)
+	{
+		ArgumentNullException.ThrowIfNull(keys);
+
+		if (keys.FirstOrDefault(key => !UserConfigPortability.SharedByProfiles.Contains(key)) is { } notShared)
+		{
+			throw new ArgumentException($"'{notShared}' is not a setting every profile shares.", nameof(keys));
+		}
+
+		lock (Gate)
+		{
+			UpdateSharedFile(keys, keepActiveProfile: true);
+		}
+
+		AppLog.Debug(LogSource, $"Saved {string.Join(", ", keys.Select(key => $"'{key}'"))} to '{SharedFileName}'.");
+	}
+
+	/// <summary>
 	/// Indicates whether <see cref="Undo(string)"/> can restore a previous value for
 	/// <paramref name="nodePath"/> - i.e. a snapshot for that exact node exists.
 	/// </summary>
@@ -634,10 +681,20 @@ public static partial class UserConfigFile
 	/// Writes <paramref name="keys"/> to <c>Shared.json</c> as they are in memory - removed when unset -
 	/// with the active profile's name, leaving every other shared setting there as it is.
 	/// </summary>
-	private static void UpdateSharedFile(IEnumerable<string> keys)
+	/// <param name="keys">The shared settings to write.</param>
+	/// <param name="keepActiveProfile">
+	/// Whether to keep the active profile's name the file already has, for a write that may come before
+	/// the settings are read, when the profile in memory is not yet the active one.
+	/// </param>
+	private static void UpdateSharedFile(IEnumerable<string> keys, bool keepActiveProfile = false)
 	{
 		JsonObject shared = LoadObjectOrEmpty(SharedFilePath);
 		shared.Remove(UserConfigVersion.FileKey);
+
+		string profile = keepActiveProfile && shared[ActiveProfileKey] is JsonValue onDisk && onDisk.TryGetValue(out string? name)
+			? name
+			: _profile;
+
 		shared.Remove(ActiveProfileKey);
 
 		foreach (string key in keys)
@@ -652,7 +709,7 @@ public static partial class UserConfigFile
 			}
 		}
 
-		JsonObject root = new() { [ActiveProfileKey] = _profile };
+		JsonObject root = new() { [ActiveProfileKey] = profile };
 
 		foreach (KeyValuePair<string, JsonNode?> entry in shared.ToList())
 		{

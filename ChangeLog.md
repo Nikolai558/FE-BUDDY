@@ -29,6 +29,12 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Chart Recall as being for instrument approaches (IAPs) only, and the **Alias Command Practice**
   asks for it.
 
+### Look and feel
+- Feature #364 - FE-Buddy opens where you last closed it, at the same size, and maximized if it was.
+  It's never out of reach: if that screen is gone, it opens in the middle of your main screen, and if
+  the screen is now smaller, it shrinks to fit. The new **Main Window** card in Settings turns this
+  off, or moves the window back to the middle of the main screen now.
+
 ---
 
 ## 3.0.0-beta.10

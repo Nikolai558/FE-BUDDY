@@ -62,12 +62,15 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 | File | Holds |
 |---|---|
 | `UserConfig.<Profile>.json` | One profile: every setting but the shared ones. The name follows Windows' rules for a file name, up to 64 characters; names differing only in case are the same profile. |
-| `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`). |
+| `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, `RememberWindowPlacement`, `MainWindowPlacement`). |
 | `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward). They move and go with it. |
 
 - In memory the two files are one dictionary, so a caller never knows which a key is in. `Save`
   writes a shared key under its node to `Shared.json`, and every other key to the profile. A shared
   key found in a profile (copied in by hand, say) moves to `Shared.json`, unless that has one already.
+  `SaveShared` writes shared keys to `Shared.json` alone, and `ReadSharedValue` reads one straight
+  from it: the main window's placement uses both, as the window opens before the launch reads the
+  settings.
 - `CreateProfile`, `SwitchProfile`, `RenameProfile` and `DeleteProfile` are in
   `UserConfigFile.Profiles.cs`. The profile in use can't be deleted; Settings switches away first.
 - After a switch or an import every page reads the settings again (`ConfigPages.ReloadEverything`).
@@ -83,8 +86,8 @@ needed.
 
 ### General
 
-Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, and the
-first `UpdateChannel`.
+Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`,
+`MainWindowPlacement` (as the main window closes), and the first `UpdateChannel`.
 
 | Key | Values | Default |
 |---|---|---|
@@ -96,6 +99,8 @@ first `UpdateChannel`.
 | `FeBuddyGitHub.CredentialId` | the id (`"N"` GUID) of the saved GitHub token credential FE-Buddy's own GitHub requests use (`GitHubAuth`); blank for none | none |
 | `LegacyGitHubTokenNoticeShown` | `Y` once the notice about 2.x's `FEBUDDY_GITHUB_TOKEN` has been shown | none |
 | `WelcomeShown` | `Y` once the first-launch welcome to FE-Buddy 3 has been shown (`WelcomeNotice`) | none |
+| `RememberWindowPlacement` | `Y` / `N` - the main window reopens where it was closed. Saved at once by Settings ▸ Main Window; `N` also removes `MainWindowPlacement` | `Y` |
+| `MainWindowPlacement` | `left,top,width,height,dpi,state` in physical screen pixels, e.g. `2120,140,1800,1170,144,Maximized` (`SavedWindowPlacement`). Checked against the screens connected at each launch (`WindowPlacementRules`); anything unreadable means the default | none: 1200 x 780, centered on the main screen |
 
 ### Services.AiracService
 
@@ -567,7 +572,7 @@ no list:
 | Scope | Keys | Export | Import |
 |---|---|---|---|
 | Secret | under `Secrets`, or ending in `Token`, `Password`, `Secret`, `ApiKey`, `Credential` or `Credentials`, or called `Pat` | never | this PC's is kept |
-| Local | `General.UpdateChannel`, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, and anything outside `General` and `Services` | never | this PC's is kept |
+| Local | `General.UpdateChannel`, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, `RememberWindowPlacement`, `MainWindowPlacement`, and anything outside `General` and `Services` | never | this PC's is kept |
 | Credential choice | ending in `CredentialId` | never | this PC's is kept only where the settings beside it are unchanged (the same custom alias file at the same address) |
 | Machine path | ending in `Folder`, `Directory` or `FilePath` (not `AddFeBuddyOutputFolder`) | your Desktop, Documents or profile become `%DESKTOP%`, `%DOCUMENTS%`, `%USERPROFILE%` | taken only where it works on this PC (below) |
 | Shared | everything else under `General` and `Services` | as it is | as it is |

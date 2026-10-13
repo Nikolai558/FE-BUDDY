@@ -38,12 +38,13 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// SYSTEM ▸ Settings. Section order: Settings Profile, Facility, Default Region of Interest,
-/// GeoJSON Files, Credentials, FE-Buddy's GitHub Requests, Updates / Update Channel, Reset /
-/// Uninstall. Every value persists to the settings profile in use
+/// GeoJSON Files, Credentials, FE-Buddy's GitHub Requests, Updates / Update Channel, Main Window,
+/// Reset / Uninstall. Every value persists to the settings profile in use
 /// (<see cref="UserConfigFile"/>), except credentials, which live in Windows Credential Manager and
 /// are saved at once (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the
 /// chosen token's id. The Settings Profile card switches, makes, renames and deletes profiles at
-/// once (<see cref="SettingsProfilesViewModel"/>).
+/// once (<see cref="SettingsProfilesViewModel"/>), and the Main Window card saves at once too
+/// (<see cref="WindowPlacementCardViewModel"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -584,6 +585,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	/// <summary>Opens the releases page, where an older version can be downloaded.</summary>
 	public ICommand RollbackCommand { get; }
+
+	// ================= 7. MAIN WINDOW =================
+
+	/// <summary>The Main Window card. Its changes take effect at once and take no part in <see cref="SaveCommand"/>.</summary>
+	public WindowPlacementCardViewModel WindowPlacement { get; } = new();
 
 	// ================= save =================
 

@@ -22,9 +22,15 @@ public partial class RoiPickerWindow : ChromeWindow
 		Title = target.Title;
 		target.Done = Close;
 		Workspace.DataContext = new MapViewModel(target);
+	}
 
-		// Big enough to work in, but never bigger than the screen it opens on.
-		Rect area = SystemParameters.WorkArea;
+	/// <summary>
+	/// Big enough to work in, but never bigger than the screen it opens on - its owner's. Before it is
+	/// shown, once the owner is set, so it is centered on its owner at this size.
+	/// </summary>
+	private void FitOwnerScreen()
+	{
+		Rect area = OwnerWorkArea();
 		Width = Math.Min(Width, area.Width * 0.94);
 		Height = Math.Min(Height, area.Height * 0.94);
 	}
@@ -41,6 +47,7 @@ public partial class RoiPickerWindow : ChromeWindow
 	public static RegionOfInterest? Pick(Window? owner, RegionOfInterest? initial, string title, RegionOfInterest? reference = null)
 	{
 		RoiPickerWindow window = new(new PickTarget(title, initial, reference)) { Owner = owner };
+		window.FitOwnerScreen();
 		window.ShowDialog();
 		return window._target.Result;
 	}

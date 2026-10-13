@@ -104,8 +104,23 @@ public sealed class AliasPracticeContentTests
 		Assert.Equal(PracticeSubject.Help, help.Subject);
 		Assert.Equal([".helpCHARTRECALL"], help.Answers.Select(Flat));
 		Assert.Equal($".{ChartRecallHelpCommand.DefaultName}", Flat(help.Answers[0]));
-		Assert.Equal("Shows the chart recall quick reference.", Meaning(help, Assert.Single(CommandMarkup.Parse(help.Answers[0])), hasRunway: false));
+		Assert.Equal(
+			"Shows the chart recall quick reference for instrument approaches (IAPs).",
+			Meaning(help, Assert.Single(CommandMarkup.Parse(help.Answers[0])), hasRunway: false));
 		Assert.Null(AliasPracticeContent.IdentifierHint(help));
+	}
+
+	/// <summary>The help command's note covers approaches only, so the practice says where every other chart's command is.</summary>
+	[Fact]
+	public void the_help_command_is_for_instrument_approaches_only()
+	{
+		PracticeQuestion help = Question(PracticeAction.ShowHelp, "Chart Recall");
+
+		Assert.Equal("How to write an instrument approach (IAP) chart recall command", help.Detail);
+		Assert.Contains(
+			"It's for instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any other chart, "
+			+ "see the Alias Command Guide or your facility's command guide.",
+			help.Notes);
 	}
 
 	[Fact]

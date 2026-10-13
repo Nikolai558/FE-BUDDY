@@ -227,8 +227,10 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
   takes Enter or **Add** too.
 - **Procedures.json Fields** - the optional fields the JSON carries.
 - **Chart Recall Help Command** - whether `Faa_Chart_Recall.txt` starts with a `.note` command that
-  shows how a chart recall command is put together (on by default), and its name: `.helpCHARTRECALL`,
-  or one you type (the dot is added for you). It greys out while `Faa_Chart_Recall.txt` is off.
+  shows how an instrument approach's (IAP's) chart recall command is put together (on by default),
+  and its name: `.helpCHARTRECALL`, or one you type (the dot is added for you). For any other chart,
+  the note points to your facility's command guide or FE-Buddy's. It greys out while
+  `Faa_Chart_Recall.txt` is off.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
 then "Other". Each lists the airports that changed, Class B first. A changed chart links to the FAA's
@@ -236,8 +238,8 @@ comparison PDF, a new one to its chart, and a deleted one to its last chart. A c
 one page links each page the same way, the rest on a "More pages" line, and says when a page is
 different from its chart: "(unchanged)" links to a page that didn't change, "(new page)" to one
 added to a chart that isn't new, and "(removed)" to the last version of one taken off a chart that's
-still in use. A STAR at several airports is listed under each, with "Also serves" naming the others. **`Procedures.json`** lists the
-same airports' current charts.
+still in use. A STAR at several airports is listed under each, with "Also serves" naming the
+others. **`Procedures.json`** lists the same airports' current charts.
 
 #### FAA Chart Recall commands
 
@@ -508,6 +510,6 @@ in place of its settings - and shows what will change first.
   - **Export Alias Command Practice** saves a web page that quizzes your controllers: they type the
     command for a chart, procedure, airway or ISR card, or the chart recall help command, and it says
     what's wrong and how the right one is built.
-  - Both show the help command by its default name, `.helpCHARTRECALL`, and say a facility may have
-    renamed it or left it out.
+  - Both show the help command by its default name, `.helpCHARTRECALL`, say it's for instrument
+    approaches (IAPs) only, and say a facility may have renamed it or left it out.
 - Links to this guide, the FAQ, the change log and the issue tracker.

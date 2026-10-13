@@ -110,7 +110,10 @@ public sealed class AliasGuideChartRecallTests
 		Assert.Equal(proven.Order(), shown.Order());
 	}
 
-	/// <summary>The help command is the section's last command, by its default name, with what it shows.</summary>
+	/// <summary>
+	/// The help command is the section's last command, by its default name, with what it shows - and,
+	/// as its note covers approaches only, where to find every other chart's command.
+	/// </summary>
 	[Fact]
 	public void the_chart_recall_section_ends_its_commands_with_the_help_command()
 	{
@@ -118,10 +121,17 @@ public sealed class AliasGuideChartRecallTests
 		GuideCommand help = section.Blocks.OfType<GuideCommandTable>().First().Commands[^1];
 
 		Assert.Equal([".helpCHARTRECALL"], help.Syntax);
-		Assert.Equal("Shows a quick reference for writing a chart recall command:", help.Description);
+		Assert.Equal("Shows a quick reference for writing an instrument approach (IAP) chart recall command:", help.Description);
 		Assert.Equal(3, help.Details.Count);
-		Assert.Equal(["Your facility may have given it another name, or left it out."], help.Notes);
+		Assert.Equal(
+			[
+				"For instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any other chart, "
+				+ "see the commands above or your facility's command guide.",
+				"Your facility may have given it another name, or left it out.",
+			],
+			help.Notes);
 		Assert.Empty(help.Examples);
 		Assert.Contains("| `.helpCHARTRECALL` |", Markdown(), StringComparison.Ordinal);
+		Assert.Contains("*For instrument approaches (IAPs) only,", Markdown(), StringComparison.Ordinal);
 	}
 }

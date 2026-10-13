@@ -2,8 +2,10 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 
 /// <summary>
 /// The FAA Chart Recall help command: a <c>.note</c> command, the first line of
-/// <c>Faa_Chart_Recall.txt</c>, that shows a quick reference for writing a chart recall command - the
-/// syntax, the approach type codes (as <c>ApproachCodes</c> makes them), and four examples.
+/// <c>Faa_Chart_Recall.txt</c>, that shows a quick reference for writing an instrument approach's (IAP's)
+/// chart recall command, the hardest kind to work out - the syntax, the approach type codes (as
+/// <c>ApproachCodes</c> makes them), and four examples - and points to the command guides for any
+/// other chart.
 /// </summary>
 /// <remarks>
 /// The note is written as CRC reads it: <c>\n</c> starts a line, <c>\t</c> is a tab and <c>\s</c> a
@@ -18,9 +20,9 @@ public static class ChartRecallHelpCommand
 	/// <summary>The note, one line of it each.</summary>
 	private static readonly string[] NoteLines =
 	[
-		@"::::::::::::::::::::::::",
-		@"\s\sHelp:\sChart\sRecall\s\s",
-		@"::::::::::::::::::::::::",
+		@":::::::::::::::::::::::::::::",
+		@"\s\sHelp:\sChart\sRecall\s(IAPs)",
+		@":::::::::::::::::::::::::::::",
 		@"",
 		@"Syntax:",
 		@"AptID\sAppTypeCode\sAppVariant\sRwyID/CircleCode\sC",
@@ -44,6 +46,11 @@ public static class ChartRecallHelpCommand
 		@"\s\sAppType\s\s\sRNAV\s\s|\tAppType\s\s\sLOC/DME\sBack\sCourse",
 		@"\s\sRwy\t\s\s\s27R\s\s\s|\tRwy\t\s\s\s27R",
 		@"\s\sVariant\s\s\sY\t\s|",
+		@"",
+		@"Note:",
+		@"For other types of Chart Recalls, consult",
+		@"your Alias Command documentation or",
+		@"the FE-Buddy Command Guide.",
 	];
 
 	/// <summary>The note the command shows, its lines joined by CRC's <c>\n</c>.</summary>

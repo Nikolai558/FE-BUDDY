@@ -96,7 +96,9 @@ public sealed class AliasPracticeWriterTests : IDisposable
 		Assert.Equal("Show the quick reference", question.GetProperty("action").GetString());
 		Assert.Equal("help", question.GetProperty("subject").GetString());
 		Assert.Equal(".helpCHARTRECALL", answer.GetProperty("parts")[0].GetProperty("t").GetString());
-		Assert.Equal("Shows the chart recall quick reference.", answer.GetProperty("breakdown")[0].GetProperty("text").GetString());
+		Assert.Equal(
+			"Shows the chart recall quick reference for instrument approaches (IAPs).",
+			answer.GetProperty("breakdown")[0].GetProperty("text").GetString());
 		Assert.Contains("'Show the quick reference': 'shows the quick reference.'", AliasPracticeWriter.Script(), StringComparison.Ordinal);
 	}
 

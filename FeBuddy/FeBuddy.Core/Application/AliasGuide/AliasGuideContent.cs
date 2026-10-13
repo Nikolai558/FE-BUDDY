@@ -26,7 +26,8 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// Every example is a real command from AIRAC 2609's files. The tests check each chart recall
 /// example against <c>ChartRecallCodes</c>, so a change to the codes that the guide does not follow
 /// fails a test. The chart recall help command is shown by its default name
-/// (<see cref="ChartRecallHelpCommand.DefaultName"/>), since a facility can rename it.
+/// (<see cref="ChartRecallHelpCommand.DefaultName"/>), since a facility can rename it, and as being
+/// for instrument approaches (IAPs) only, as its note is.
 /// </para>
 /// <para>
 /// Three things lay it out: <c>AliasGuideHtmlWriter</c> and <c>AliasGuideMarkdownWriter</c> for the
@@ -232,13 +233,17 @@ public static class AliasGuideContent
 					[".{a:dtw}{i:CLVIN}c{p:2}"]),
 				new GuideCommand(
 					[$".{ChartRecallHelpCommand.DefaultName}"],
-					"Shows a quick reference for writing a chart recall command:",
+					"Shows a quick reference for writing an instrument approach (IAP) chart recall command:",
 					[
 						"The order of a command's parts",
 						"The approach type codes, with their /DME and back course codes",
 						"Four examples, each part labeled",
 					],
-					["Your facility may have given it another name, or left it out."],
+					[
+						"For instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any "
+						+ "other chart, see the commands above or your facility's command guide.",
+						"Your facility may have given it another name, or left it out.",
+					],
 					[]),
 			]),
 

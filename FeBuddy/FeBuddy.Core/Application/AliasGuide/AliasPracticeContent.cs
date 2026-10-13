@@ -170,10 +170,12 @@ public static class AliasPracticeContent
 			"LAHSO is its own code: `{i:LAHSO}`."),
 
 		// ---- Chart Recall: the help command ----
-		new(PracticeAction.ShowHelp, PracticeSubject.Help, "Chart Recall", "How to write a chart recall command",
+		new(PracticeAction.ShowHelp, PracticeSubject.Help, "Chart Recall", "How to write an instrument approach (IAP) chart recall command",
 			[$".{ChartRecallHelpCommand.DefaultName}"],
 			[
 				"It shows the order of a command's parts, the approach type codes, and four examples.",
+				"It's for instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any other "
+				+ "chart, see the Alias Command Guide or your facility's command guide.",
 				"Your facility may have given it another name, or left it out.",
 			],
 			null),
@@ -212,7 +214,7 @@ public static class AliasPracticeContent
 
 		return part.Kind switch
 		{
-			CommandPartKind.Typed when question.Subject == PracticeSubject.Help => "Shows the chart recall quick reference.",
+			CommandPartKind.Typed when question.Subject == PracticeSubject.Help => "Shows the chart recall quick reference for instrument approaches (IAPs).",
 			CommandPartKind.Typed => part.Text.ToLowerInvariant() switch
 			{
 				"." => "Every alias command starts with a period.",

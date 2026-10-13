@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.AliasGuide;
 using FeBuddy.Core.Application.AliasGuide.Models;
 using FeBuddy.Core.Domain.Procedures;
@@ -84,7 +85,8 @@ public sealed class AliasGuideChartRecallTests
 
 	/// <summary>
 	/// Every command the Chart Recall section shows - a code span that starts with a period and has
-	/// no placeholder in it - belongs to one of the charts above (or is the paged example).
+	/// no placeholder in it - belongs to one of the charts above (or is the paged example, or the help
+	/// command by its default name, which <c>ChartRecallHelpCommandTests</c> proves).
 	/// </summary>
 	[Fact]
 	public void every_chart_recall_command_in_the_guide_has_a_chart_that_proves_it()
@@ -97,9 +99,29 @@ public sealed class AliasGuideChartRecallTests
 			.Where((_, index) => index % 2 == 1)
 			.Where(span => span.StartsWith('.') && !span.Contains('<') && !span.Contains('['))];
 
-		HashSet<string> proven = [.. Examples.SelectMany(row => ((string)row[5]!).Split(',')), PagedExample];
+		HashSet<string> proven =
+		[
+			.. Examples.SelectMany(row => ((string)row[5]!).Split(',')),
+			PagedExample,
+			$".{ChartRecallHelpCommand.DefaultName}",
+		];
 
 		Assert.NotEmpty(shown);
 		Assert.Equal(proven.Order(), shown.Order());
+	}
+
+	/// <summary>The help command is the section's last command, by its default name, with what it shows.</summary>
+	[Fact]
+	public void the_chart_recall_section_ends_its_commands_with_the_help_command()
+	{
+		GuideSection section = Assert.Single(AliasGuideContent.Build().Sections, s => s.Id == "chart-recall");
+		GuideCommand help = section.Blocks.OfType<GuideCommandTable>().First().Commands[^1];
+
+		Assert.Equal([".helpCHARTRECALL"], help.Syntax);
+		Assert.Equal("Shows a quick reference for writing a chart recall command:", help.Description);
+		Assert.Equal(3, help.Details.Count);
+		Assert.Equal(["Your facility may have given it another name, or left it out."], help.Notes);
+		Assert.Empty(help.Examples);
+		Assert.Contains("| `.helpCHARTRECALL` |", Markdown(), StringComparison.Ordinal);
 	}
 }

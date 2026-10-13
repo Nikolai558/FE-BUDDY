@@ -503,6 +503,8 @@ in place of its settings - and shows what will change first.
   - **Export FE-Buddy Alias Command Guide** saves it as a web page, Markdown or both, for your
     facility's website.
   - **Export Alias Command Practice** saves a web page that quizzes your controllers: they type the
-    command for a chart, procedure, airway or ISR card, and it says what's wrong and how the right
-    one is built.
+    command for a chart, procedure, airway or ISR card, or the chart recall help command, and it says
+    what's wrong and how the right one is built.
+  - Both show the help command by its default name, `.helpCHARTRECALL`, and say a facility may have
+    renamed it or left it out.
 - Links to this guide, the FAQ, the change log and the issue tracker.

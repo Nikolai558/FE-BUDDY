@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.AliasGuide.Models;
 using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.ChartRecall;
@@ -7,7 +8,8 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// <summary>
 /// What the Alias Command Practice asks: real charts, procedures, airports, NAVAIDs, operators and
 /// airways, each with an action - display the ISR, display the fixes, recall the chart - and every
-/// command that does it, with how each part of it is built and what is worth knowing about it.
+/// command that does it, with how each part of it is built and what is worth knowing about it; and
+/// the chart recall help command, by its default name.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -166,6 +168,15 @@ public static class AliasPracticeContent
 			"Radar minimums are `{i:RM}`, and open straight to the airport's own page of the FAA's shared document."),
 		Chart(PracticeSubject.OtherChart, ProcedureChartTypes.Lah, "BUR", "HOLLYWOOD BURBANK", "LAHSO", [".{a:bur}{i:LAHSO}c"],
 			"LAHSO is its own code: `{i:LAHSO}`."),
+
+		// ---- Chart Recall: the help command ----
+		new(PracticeAction.ShowHelp, PracticeSubject.Help, "Chart Recall", "How to write a chart recall command",
+			[$".{ChartRecallHelpCommand.DefaultName}"],
+			[
+				"It shows the order of a command's parts, the approach type codes, and four examples.",
+				"Your facility may have given it another name, or left it out.",
+			],
+			null),
 	];
 
 	/// <summary>The section a question's action belongs to, as the guide names it.</summary>
@@ -185,6 +196,7 @@ public static class AliasPracticeContent
 	{
 		PracticeAction.DisplayIsr => "Display the ISR",
 		PracticeAction.DisplayFixes => "Display the fixes",
+		PracticeAction.ShowHelp => "Show the quick reference",
 		_ => "Recall the chart",
 	};
 
@@ -200,6 +212,7 @@ public static class AliasPracticeContent
 
 		return part.Kind switch
 		{
+			CommandPartKind.Typed when question.Subject == PracticeSubject.Help => "Shows the chart recall quick reference.",
 			CommandPartKind.Typed => part.Text.ToLowerInvariant() switch
 			{
 				"." => "Every alias command starts with a period.",

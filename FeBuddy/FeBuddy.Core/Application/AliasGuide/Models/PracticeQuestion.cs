@@ -11,6 +11,9 @@ public enum PracticeAction
 
 	/// <summary>Recall a chart (Chart Recall).</summary>
 	RecallChart,
+
+	/// <summary>Show the chart recall quick reference (Chart Recall's help command).</summary>
+	ShowHelp,
 }
 
 /// <summary>What a practice question is about, which says how its command is built.</summary>
@@ -42,6 +45,9 @@ public enum PracticeSubject
 
 	/// <summary>Another of an airport's charts, such as its airport diagram.</summary>
 	OtherChart,
+
+	/// <summary>The chart recall help command, by its default name.</summary>
+	Help,
 }
 
 /// <summary>

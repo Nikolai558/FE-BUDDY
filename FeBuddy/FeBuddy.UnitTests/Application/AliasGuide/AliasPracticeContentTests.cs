@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.AliasGuide;
 using FeBuddy.Core.Application.AliasGuide.Models;
 using FeBuddy.Core.Domain.Arrivals;
@@ -88,8 +89,23 @@ public sealed class AliasPracticeContentTests
 			Assert.NotEmpty(question.Answers);
 			Assert.Equal(question.Answers.Count, question.Answers.Select(Flat).Distinct(StringComparer.OrdinalIgnoreCase).Count());
 			Assert.All(question.Notes, note => Assert.NotEmpty(GuideInline.Parse(note)));
-			Assert.Equal(question.Action != PracticeAction.DisplayIsr && question.Subject != PracticeSubject.Airway, question.Chart is not null);
+			Assert.Equal(
+				question.Action == PracticeAction.RecallChart || (question.Action == PracticeAction.DisplayFixes && question.Subject != PracticeSubject.Airway),
+				question.Chart is not null);
 		});
+	}
+
+	/// <summary>The help command is practised by the name FE-Buddy gives it, unless a facility renames it.</summary>
+	[Fact]
+	public void the_help_command_is_practised_by_its_default_name()
+	{
+		PracticeQuestion help = Question(PracticeAction.ShowHelp, "Chart Recall");
+
+		Assert.Equal(PracticeSubject.Help, help.Subject);
+		Assert.Equal([".helpCHARTRECALL"], help.Answers.Select(Flat));
+		Assert.Equal($".{ChartRecallHelpCommand.DefaultName}", Flat(help.Answers[0]));
+		Assert.Equal("Shows the chart recall quick reference.", Meaning(help, Assert.Single(CommandMarkup.Parse(help.Answers[0])), hasRunway: false));
+		Assert.Null(AliasPracticeContent.IdentifierHint(help));
 	}
 
 	[Fact]
@@ -124,6 +140,7 @@ public sealed class AliasPracticeContentTests
 	[InlineData(PracticeAction.DisplayIsr, "In-Scope Reference", "Display the ISR")]
 	[InlineData(PracticeAction.DisplayFixes, "Data Display", "Display the fixes")]
 	[InlineData(PracticeAction.RecallChart, "Chart Recall", "Recall the chart")]
+	[InlineData(PracticeAction.ShowHelp, "Chart Recall", "Show the quick reference")]
 	public void each_action_has_its_section_and_label(PracticeAction action, string section, string label)
 	{
 		Assert.Equal(section, AliasPracticeContent.SectionTitle(action));

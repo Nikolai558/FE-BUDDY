@@ -81,6 +81,23 @@ public sealed class AliasPracticeWriterTests : IDisposable
 		Assert.Contains("data-section=\"In-Scope Reference\" aria-pressed=\"false\">In-Scope Reference</button>", html);
 		Assert.Contains("data-section=\"Data Display\" aria-pressed=\"false\">Data Display</button>", html);
 		Assert.Contains("data-section=\"Chart Recall\" aria-pressed=\"false\">Chart Recall</button>", html);
+
+		// Chart Recall's two actions - a chart, and its help command - share one chip.
+		Assert.Equal(4, html.Split("class=\"chip\"").Length - 1);
+	}
+
+	[Fact]
+	public void the_help_command_is_a_chart_recall_question()
+	{
+		JsonElement question = QuestionNamed("Chart Recall");
+		JsonElement answer = Assert.Single(question.GetProperty("answers").EnumerateArray());
+
+		Assert.Equal("Chart Recall", question.GetProperty("section").GetString());
+		Assert.Equal("Show the quick reference", question.GetProperty("action").GetString());
+		Assert.Equal("help", question.GetProperty("subject").GetString());
+		Assert.Equal(".helpCHARTRECALL", answer.GetProperty("parts")[0].GetProperty("t").GetString());
+		Assert.Equal("Shows the chart recall quick reference.", answer.GetProperty("breakdown")[0].GetProperty("text").GetString());
+		Assert.Contains("'Show the quick reference': 'shows the quick reference.'", AliasPracticeWriter.Script(), StringComparison.Ordinal);
 	}
 
 	[Fact]

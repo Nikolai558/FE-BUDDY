@@ -40,10 +40,10 @@ public static class ChartRecallHelpCommand
 		@"\s\sAppType\s\s\sLOC\s\s\s|\tAppType\s\s\sNDB",
 		@"\s\sRwy\t\s\s\s27R\s\s\s|\tCircle\tA",
 		@"\t\t\t\t\s\s|\s\s",
-		@"aaaRY27Rc\t\t\s|\s\saaaOYAc",
-		@"\s\sAppType\s\s\sRNAV\s\s|\tAppType\s\s\sVOR",
-		@"\s\sRwy\t\s\s\s27R\s\s\s|\tCircle\tA",
-		@"\s\sVariant\s\s\sY\t\s|\tVariant\s\s\sY",
+		@"aaaRY27Rc\t\t\s|\s\saaaLDBC27Rc",
+		@"\s\sAppType\s\s\sRNAV\s\s|\tAppType\s\s\sLOC/DME\sBack\sCourse",
+		@"\s\sRwy\t\s\s\s27R\s\s\s|\tRwy\t\s\s\s27R",
+		@"\s\sVariant\s\s\sY\t\s|",
 	];
 
 	/// <summary>The note the command shows, its lines joined by CRC's <c>\n</c>.</summary>

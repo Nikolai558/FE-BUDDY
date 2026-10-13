@@ -23,6 +23,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   `.helpCHARTRECALL`, a `.note` command that shows how a chart recall command is put together. The
   new **Chart Recall Help Command** card turns it off or renames it.
 
+### Info
+- The **Alias Command Guide** (and its Markdown and HTML exports) lists `.helpCHARTRECALL` under
+  Chart Recall, and the **Alias Command Practice** asks for it.
+
 ---
 
 ## 3.0.0-beta.10

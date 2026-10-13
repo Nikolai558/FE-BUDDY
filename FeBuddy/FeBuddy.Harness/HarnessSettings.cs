@@ -490,6 +490,10 @@ internal static class HarnessSettings
 			{ "GenerateProceduresJson", "Y" },
 			{ "GenerateAliasFile", "Y" },
 
+			// The alias file's first line: a .note command with a quick reference for chart recall.
+			{ "IncludeHelpCommand", "Y" },
+			{ "HelpCommandName", "" },       // blank = default: helpCHARTRECALL (the dot is added)
+
 			// The area, every ZOB airport (by RESP_ARTCC_ID), plus GRR and CID from elsewhere -
 			// exercises both the whole-facility path and the explicit-airport path in one run.
 			{ "Facilities", "ZOB" },

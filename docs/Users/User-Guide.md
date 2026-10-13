@@ -226,6 +226,9 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
   this cycle, already listed, or already included by the area. **Additional Procedures to Include**
   takes Enter or **Add** too.
 - **Procedures.json Fields** - the optional fields the JSON carries.
+- **Chart Recall Help Command** - whether `Faa_Chart_Recall.txt` starts with a `.note` command that
+  shows how a chart recall command is put together (on by default), and its name: `.helpCHARTRECALL`,
+  or one you type (the dot is added for you). It greys out while `Faa_Chart_Recall.txt` is off.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
 then "Other". Each lists the airports that changed, Class B first. A changed chart links to the FAA's
@@ -235,7 +238,8 @@ same airports' current charts.
 
 #### FAA Chart Recall commands
 
-One `.OPENURL` command per page of every current chart:
+One `.OPENURL` command per page of every current chart, after the help command (`.helpCHARTRECALL`,
+unless you turned it off or renamed it):
 
 ```
 .dtwI22Lc .OPENURL https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF  ; DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L

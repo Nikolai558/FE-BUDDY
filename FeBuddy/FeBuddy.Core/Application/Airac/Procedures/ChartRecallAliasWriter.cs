@@ -11,7 +11,8 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// <remarks>
 /// The file goes in the cycle folder's <c>Aliases</c> folder (see
 /// <see cref="AiracOutputPaths.AliasDirectory"/>), like every other alias file; an AIRAC Service run
-/// also copies it into <c>Combined_Alias.txt</c>.
+/// also copies it into <c>Combined_Alias.txt</c>. The help command
+/// (<see cref="ProcedureSettings.HelpCommand"/>), when on, is its first line.
 /// </remarks>
 public static class ChartRecallAliasWriter
 {
@@ -19,8 +20,14 @@ public static class ChartRecallAliasWriter
 	/// Writes the alias file.
 	/// </summary>
 	/// <param name="lines">The command lines, in the order to write them.</param>
-	/// <param name="settings">The parsed Procedures settings; <see cref="ProcedureSettings.OutputDirectory"/> and <see cref="ProcedureSettings.FileNames"/> are read.</param>
-	/// <returns>The path written (or <see langword="null"/> when there was no line to write) and the command count.</returns>
+	/// <param name="settings">
+	/// The parsed Procedures settings; <see cref="ProcedureSettings.OutputDirectory"/>,
+	/// <see cref="ProcedureSettings.FileNames"/> and <see cref="ProcedureSettings.HelpCommand"/> are read.
+	/// </param>
+	/// <returns>
+	/// The path written (or <see langword="null"/> when there was no chart command to write, help
+	/// command or not) and the chart command count.
+	/// </returns>
 	public static ChartRecallAliasWriteResult Generate(IReadOnlyList<ChartRecallAliasLine> lines, ProcedureSettings settings)
 	{
 		ArgumentNullException.ThrowIfNull(lines);
@@ -32,6 +39,11 @@ public static class ChartRecallAliasWriter
 		}
 
 		StringBuilder builder = new();
+
+		if (settings.HelpCommand is { } helpCommand)
+		{
+			builder.Append(ChartRecallHelpCommand.Line(helpCommand)).AppendLine();
+		}
 
 		foreach (ChartRecallAliasLine line in lines)
 		{

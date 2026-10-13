@@ -7,7 +7,8 @@
     properties or CRC cards - see ProceduresViewModel's class remarks. Its Outputs card shows its
     three outputs' state (they are turned on and off on the General tab). The selection cards
     pick what the two documents cover, so they grey out while neither document is on, and say
-    they don't reach the chart recall alias file while it's on. An amber card at the top says
+    they don't reach the chart recall alias file while it's on. The last card picks the alias
+    file's help command, so it greys out while that file is off. An amber card at the top says
     when a d-TPP Metafile falls short.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ProceduresView"
@@ -381,6 +382,41 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ the chart recall help command ============
+                 Two yes/no questions: whether the alias file starts with the help command, then
+                 whether to rename it, in a box that takes the name without its dot. The card greys out
+                 while the alias file is off (Outputs="Alias"). -->
+            <ctl:Card Header="Chart Recall Help Command" Outputs="Alias">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                               bhv:InlineCode.Text="This alias is a `.note` command that provides the user a quick reference chart for how to formulate an FAA Chart Recall command." />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
+                               bhv:InlineCode.Text="The command is placed as the first line in the `Faa_Chart_Recall.txt` file." />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,2" Text="Do you want this command included?" />
+                    <RadioButton GroupName="IncludeHelpCommand" Content="No" Margin="0,6,0,0"
+                                 IsChecked="{Binding IncludeHelpCommand, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                    <RadioButton GroupName="IncludeHelpCommand" Content="Yes" Margin="0,3,0,0"
+                                 IsChecked="{Binding IncludeHelpCommand, Mode=TwoWay}" />
+
+                    <!-- Yes: the name, indented under the radio. -->
+                    <StackPanel Margin="26,10,0,0" Visibility="{Binding IncludeHelpCommand, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,2"
+                                   bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.RenameHelpCommandQuestion}" />
+                        <RadioButton GroupName="RenameHelpCommand" Content="No" Margin="0,6,0,0"
+                                     IsChecked="{Binding RenameHelpCommand, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                        <RadioButton GroupName="RenameHelpCommand" Content="Yes" Margin="0,3,0,0"
+                                     IsChecked="{Binding RenameHelpCommand, Mode=TwoWay}" />
+                        <StackPanel Orientation="Horizontal" Margin="26,8,0,0"
+                                    Visibility="{Binding RenameHelpCommand, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="." Style="{StaticResource Text.Body.Strong}" FontSize="18" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBox Width="260" MaxLength="60" Tag="{x:Static vm:ProceduresViewModel.HelpCommandPlaceholder}"
+                                     Text="{Binding HelpCommandName, UpdateSourceTrigger=PropertyChanged}"
+                                     bhv:FieldState.Error="{Binding FieldErrors[HelpCommandName]}" />
+                        </StackPanel>
+                    </StackPanel>
                 </StackPanel>
             </ctl:Card>
 

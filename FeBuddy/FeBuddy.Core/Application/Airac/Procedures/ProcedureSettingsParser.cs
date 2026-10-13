@@ -43,6 +43,7 @@ public static class ProcedureSettingsParser
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"GenerateChangesDocument", "GenerateProceduresJson", "GenerateAliasFile",
+		"IncludeHelpCommand", "HelpCommandName",
 		"Facilities", "PrimaryFacility",
 		"IncludeRoiAirports",
 		"Airports", "Procedures", "AirportProcedures",
@@ -83,6 +84,11 @@ public static class ProcedureSettingsParser
 				"'GenerateChangesDocument', 'GenerateProceduresJson' and 'GenerateAliasFile' are all \"N\", so the Procedure Charts " +
 				"sub-service would produce nothing. Turn at least one back on, or leave Procedure Charts out of the run.");
 		}
+
+		// The help command is the alias file's first line, so with no alias file it isn't read.
+		string? helpCommand = generateAliasFile && SettingsValueReader.YesNo(procedureSettings, "IncludeHelpCommand", defaultValue: true)
+			? ReadHelpCommandName(procedureSettings)
+			: null;
 
 		// The selection settings below pick what the two documents cover; the alias file covers every
 		// airport in the metafile whatever they say.
@@ -135,6 +141,7 @@ public static class ProcedureSettingsParser
 			GenerateChangesDocument = generateChangesDocument,
 			GenerateProceduresJson = generateProceduresJson,
 			GenerateAliasFile = generateAliasFile,
+			HelpCommand = helpCommand,
 			Area = area,
 			Facilities = facilities,
 			PrimaryFacility = primaryFacility,
@@ -161,6 +168,23 @@ public static class ProcedureSettingsParser
 			: SettingsValueReader.StringList(procedureSettings, "Facilities").Count > 0 ? SubServiceArea.Artccs
 			: SettingsValueReader.YesNo(procedureSettings, "IncludeRoiAirports", defaultValue: false) ? SubServiceArea.Roi
 			: SubServiceArea.None;
+
+	/// <summary>
+	/// Reads <c>HelpCommandName</c>: the help command's name, with any dot in front dropped. Absent or
+	/// blank, it is <see cref="ChartRecallHelpCommand.DefaultName"/>.
+	/// </summary>
+	private static string ReadHelpCommandName(IReadOnlyDictionary<string, string> procedureSettings)
+	{
+		string name = ChartRecallHelpCommand.CleanName(SettingsValueReader.OptionalString(procedureSettings, "HelpCommandName"));
+
+		if (ChartRecallHelpCommand.HasSpace(name))
+		{
+			throw new ArgumentException(
+				$"'HelpCommandName' \"{name}\" has a space in it. An alias command is one word, e.g. \"{ChartRecallHelpCommand.DefaultName}\".");
+		}
+
+		return name.Length > 0 ? name : ChartRecallHelpCommand.DefaultName;
+	}
 
 	/// <summary>Parses <c>AirportProcedures</c>: comma-separated <c>APT|PROCEDURE NAME</c> entries.</summary>
 	private static IReadOnlyList<ProcedureAirportPick> ParseAirportProcedures(IReadOnlyDictionary<string, string> procedureSettings)

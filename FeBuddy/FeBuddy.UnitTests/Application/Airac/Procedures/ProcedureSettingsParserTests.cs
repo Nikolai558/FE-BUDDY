@@ -37,6 +37,7 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Empty(result.Messages);
 		Assert.True(result.Settings.GenerateChangesDocument);
 		Assert.True(result.Settings.GenerateProceduresJson);
+		Assert.Equal("helpCHARTRECALL", result.Settings.HelpCommand);
 		Assert.Equal(SubServiceArea.Artccs, result.Settings.Area);
 		Assert.Equal(["ZOB"], result.Settings.Facilities);
 		Assert.Null(result.Settings.PrimaryFacility);
@@ -102,6 +103,60 @@ public sealed class ProcedureSettingsParserTests
 
 		Assert.Equal(generateChanges == "Y", parsed.GenerateChangesDocument);
 		Assert.Equal(generateJson == "Y", parsed.GenerateProceduresJson);
+	}
+
+	// ---- IncludeHelpCommand / HelpCommandName ----
+
+	[Theory]
+	[InlineData(null, "helpCHARTRECALL")]
+	[InlineData("", "helpCHARTRECALL")]
+	[InlineData("helpCR", "helpCR")]
+	[InlineData(".helpCR", "helpCR")]
+	[InlineData("  ..helpCR ", "helpCR")]
+	[InlineData(".", "helpCHARTRECALL")]
+	public void the_help_command_is_named_without_its_dot(string? name, string expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		if (name is not null)
+		{
+			settings["HelpCommandName"] = name;
+		}
+
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
+
+		Assert.Equal(expected, result.Settings.HelpCommand);
+		Assert.Empty(result.Messages);
+	}
+
+	[Fact]
+	public void the_help_command_can_be_left_out()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeHelpCommand"] = "N";
+		settings["HelpCommandName"] = "helpCR";
+
+		Assert.Null(ProcedureSettingsParser.Parse(settings).Settings.HelpCommand);
+	}
+
+	/// <summary>With no alias file there's nowhere to put it, so even a name that can't be used isn't read.</summary>
+	[Fact]
+	public void without_the_alias_file_there_is_no_help_command()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateAliasFile"] = "N";
+		settings["HelpCommandName"] = "help CR";
+
+		Assert.Null(ProcedureSettingsParser.Parse(settings).Settings.HelpCommand);
+	}
+
+	[Fact]
+	public void a_help_command_name_with_a_space_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["HelpCommandName"] = "help CR";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
+		Assert.Equal("'HelpCommandName' \"help CR\" has a space in it. An alias command is one word, e.g. \"helpCHARTRECALL\".", ex.Message);
 	}
 
 	// ---- Facilities / PrimaryFacility ----

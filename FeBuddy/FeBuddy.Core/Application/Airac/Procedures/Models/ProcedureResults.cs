@@ -60,7 +60,7 @@ public sealed record ProcedureServiceResult : ServiceResult
 	/// </summary>
 	public string? AliasFilePath { get; init; }
 
-	/// <summary>How many commands <c>Faa_Chart_Recall.txt</c> holds; 0 when it was not written.</summary>
+	/// <summary>How many chart commands <c>Faa_Chart_Recall.txt</c> holds, not counting its help command; 0 when it was not written.</summary>
 	public int AliasCommandCount { get; init; }
 
 	/// <summary>How many airports have at least one command in <c>Faa_Chart_Recall.txt</c>; 0 when it was not written.</summary>

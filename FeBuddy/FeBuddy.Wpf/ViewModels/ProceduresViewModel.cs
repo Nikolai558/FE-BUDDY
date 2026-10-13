@@ -115,6 +115,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private string? _selectedPairProcedure;
 	private IReadOnlyList<string> _pairProcedureOptions = [];
 
+	private bool _includeHelpCommand = true;
+	private bool _renameHelpCommand;
+	private string _helpCommandName = string.Empty;
+
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public ProceduresViewModel()
 	{
@@ -315,6 +319,68 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	/// <remarks>None: the Outputs card says where Procedures' outputs are turned on and off.</remarks>
 	public override string? WhatYoullGetFooter => null;
+
+	// ================= the chart recall help command =================
+
+	/// <summary>The Chart Recall Help Command card's second question, naming the default command.</summary>
+	public const string RenameHelpCommandQuestion =
+		$"The command is `.{ChartRecallHelpCommand.DefaultName}` by default. Would you like to rename it?";
+
+	/// <summary>The rename box's placeholder: an example name, without the dot the box shows in front.</summary>
+	public const string HelpCommandPlaceholder = "e.g. helpCR";
+
+	/// <summary>
+	/// Whether <c>Faa_Chart_Recall.txt</c> starts with the help command: "Yes" to the Chart Recall
+	/// Help Command card's question. On by default.
+	/// </summary>
+	public bool IncludeHelpCommand
+	{
+		get => _includeHelpCommand;
+		set
+		{
+			if (SetProperty(ref _includeHelpCommand, value))
+			{
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>"Yes" to renaming the help command: the name typed is used. Off by default.</summary>
+	public bool RenameHelpCommand
+	{
+		get => _renameHelpCommand;
+		set
+		{
+			if (SetProperty(ref _renameHelpCommand, value))
+			{
+				OnPropertyChanged(nameof(HelpCommand));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>
+	/// The help command's new name, as typed, without the dot: the box shows the dot in front, and a
+	/// dot typed or pasted there is dropped. Kept when renaming is turned off.
+	/// </summary>
+	public string HelpCommandName
+	{
+		get => _helpCommandName;
+		set
+		{
+			if (SetProperty(ref _helpCommandName, (value ?? string.Empty).TrimStart('.')))
+			{
+				OnPropertyChanged(nameof(HelpCommand));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>The help command's name, without its dot: the one typed while renaming, else the default.</summary>
+	public string HelpCommand =>
+		RenameHelpCommand && ChartRecallHelpCommand.CleanName(HelpCommandName) is { Length: > 0 } name
+			? name
+			: ChartRecallHelpCommand.DefaultName;
 
 	// ================= d-TPP data =================
 
@@ -818,7 +884,14 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			["PrimaryFacility"] = UserConfigFile.GetValue(SettingsViewModel.ArtccKey) ?? string.Empty,
 			["ChartTypes"] = string.Join(',', ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)),
 			["JsonFields"] = string.Join(',', JsonFieldToggles.Where(t => t.IsSelected).Select(t => t.Token)),
+			["IncludeHelpCommand"] = YesNo(IncludeHelpCommand),
 		};
+
+		// The name typed goes only while renaming; without it the run uses the default.
+		if (IncludeHelpCommand && RenameHelpCommand)
+		{
+			s["HelpCommandName"] = HelpCommand;
+		}
 
 		// Only what the area uses, so the parser sees exactly what the run will do: the facilities
 		// for that area, and the lists that add to it unless it's everything.
@@ -917,6 +990,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			.Add(SummaryJoin.First, documentsOn.Length == 0
 				? "Every chart at every airport in the d-TPP metafile"
 				: $"Every chart at every airport in the d-TPP metafile, not just the ones you chose for {SummaryLines.Join(documentsOn, "and")}")
+			.Add(SummaryJoin.AlongWith, IncludeHelpCommand ? $"`.{HelpCommand}` at the top: a quick reference for writing a chart recall command" : null)
 			.ToList());
 	}
 
@@ -988,11 +1062,20 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				toggle.IsSelected = savedJsonFields.Contains(toggle.Token);
 			}
 
+			_includeHelpCommand = GetBool("IncludeHelpCommand", true);
+			_renameHelpCommand = GetBool("RenameHelpCommand", false);
+			_helpCommandName = (Get("HelpCommandName") ?? string.Empty).TrimStart('.');
+
 			LoadSharedSettings();
 		}
 		finally
 		{
 			_suppressListChanges = false;
+		}
+
+		foreach (string name in new[] { nameof(IncludeHelpCommand), nameof(RenameHelpCommand), nameof(HelpCommandName), nameof(HelpCommand) })
+		{
+			OnPropertyChanged(name);
 		}
 
 		RaiseCardIntros();
@@ -1008,6 +1091,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		Set("AirportProcedures", string.Join(',', AirportProcedures.Select(p => $"{p.Airport}|{p.ProcedureName}")));
 		Set("ChartTypes", string.Join(',', ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)));
 		Set("JsonFields", string.Join(',', JsonFieldToggles.Where(t => t.IsSelected).Select(t => t.Token)));
+		Set("IncludeHelpCommand", YesNo(IncludeHelpCommand));
+		Set("RenameHelpCommand", YesNo(RenameHelpCommand));
+		Set("HelpCommandName", HelpCommandName.Trim());
 		SaveSharedSettings();
 	}
 
@@ -1024,7 +1110,29 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			ValidateDocumentSelection(validation);
 		}
 
+		// The new name is used only while the alias file, the help command and renaming are all on.
+		if (GenerateAliasFile && IncludeHelpCommand && RenameHelpCommand)
+		{
+			ValidateHelpCommandName(validation);
+		}
+
 		ValidateSharedSettings(validation);
+	}
+
+	/// <summary>Checks the help command's new name: one word, typed.</summary>
+	private void ValidateHelpCommandName(ServiceValidation validation)
+	{
+		string name = ChartRecallHelpCommand.CleanName(HelpCommandName);
+
+		if (name.Length == 0)
+		{
+			validation.AddField(nameof(HelpCommandName),
+				$"Type the command's new name, or pick No to keep .{ChartRecallHelpCommand.DefaultName}.");
+		}
+		else if (ChartRecallHelpCommand.HasSpace(name))
+		{
+			validation.AddField(nameof(HelpCommandName), "A command is one word, so it can't have a space in it.");
+		}
 	}
 
 	/// <summary>

@@ -44,6 +44,13 @@ public sealed record ProcedureSettings
 	public bool GenerateAliasFile { get; init; } = true;
 
 	/// <summary>
+	/// The name, without its dot, of the help command written as the alias file's first line (see
+	/// <see cref="ChartRecallHelpCommand"/>), or <see langword="null"/> for none. Default
+	/// <see cref="ChartRecallHelpCommand.DefaultName"/>.
+	/// </summary>
+	public string? HelpCommand { get; init; } = ChartRecallHelpCommand.DefaultName;
+
+	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
 	/// block: <see cref="ProcedureService.Run"/> takes it from the AIRAC Service. Default: none
 	/// renamed.

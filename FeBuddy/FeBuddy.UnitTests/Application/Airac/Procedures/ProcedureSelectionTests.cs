@@ -415,6 +415,27 @@ public sealed class ProcedureSelectionTests
 		Assert.Null(star.IncludedForFacilityFixes); // the built procedure itself is left as it was
 	}
 
+	/// <summary>
+	/// At one of the user's own facility's airports the label says nothing new, so the chart is added
+	/// without it; at another facility's airport it keeps it (Feature #371).
+	/// </summary>
+	[Fact]
+	public void a_chart_at_an_airport_in_the_users_facility_is_added_without_the_label()
+	{
+		Procedure ownStar = ProcedureTestData.BuiltProcedure("TRISH FIVE (RNAV)", chartCode: "STR");
+		Procedure otherStar = ProcedureTestData.BuiltProcedure("JIIMS FOUR (RNAV)", chartCode: "STR");
+		ProcedureAirport iad = ProcedureTestData.BuiltAirport("IAD", responsibleArtcc: "ZDC", procedures: [ownStar]);
+		ProcedureAirport phl = ProcedureTestData.BuiltAirport("PHL", responsibleArtcc: "ZNY", procedures: [otherStar]);
+
+		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
+			[iad, phl], Settings(primaryFacility: "zdc"), [],
+			new Dictionary<Procedure, FacilityFixMatch>(ReferenceEqualityComparer.Instance) { [ownStar] = InZdc, [otherStar] = InZdc });
+
+		Assert.Equal(["IAD", "PHL"], result.Select(airport => airport.AptIdent));
+		Assert.Null(Assert.Single(result[0].Procedures).IncludedForFacilityFixes);
+		Assert.Same(InZdc, Assert.Single(result[1].Procedures).IncludedForFacilityFixes);
+	}
+
 	[Fact]
 	public void a_chart_the_area_or_a_pick_already_includes_gets_no_label()
 	{

@@ -17,12 +17,14 @@ namespace FeBuddy.UnitTests.Application.AliasGuide;
 /// </summary>
 public sealed class AliasPracticeContentTests
 {
-	private static IReadOnlyList<PracticeQuestion> Questions => AliasPracticeContent.Questions;
+	private const string RenamedNote = "Your facility may have given it another name, or left it out.";
+
+	private static IReadOnlyList<PracticeQuestion> Questions => AliasPracticeContent.Questions(null);
 
 	private static string Flat(string markup) => CommandMarkup.Flatten(CommandMarkup.Parse(markup));
 
-	private static PracticeQuestion Question(PracticeAction action, string name) =>
-		Assert.Single(Questions, question => question.Action == action && question.Name == name);
+	private static PracticeQuestion Question(PracticeAction action, string name, string? helpCommand = null) =>
+		Assert.Single(AliasPracticeContent.Questions(helpCommand), question => question.Action == action && question.Name == name);
 
 	/// <summary>
 	/// Each Data Display procedure as NASR lists it (its name, amendment and computer code), and the
@@ -95,19 +97,37 @@ public sealed class AliasPracticeContentTests
 		});
 	}
 
-	/// <summary>The help command is practised by the name FE-Buddy gives it, unless a facility renames it.</summary>
+	/// <summary>
+	/// With no name for it (the help command or the alias file off, or not known), the help command is
+	/// practised by its default name, with a note that a facility may have renamed it or left it out.
+	/// </summary>
 	[Fact]
-	public void the_help_command_is_practised_by_its_default_name()
+	public void with_no_name_for_it_the_help_command_is_practised_by_its_default_name()
 	{
 		PracticeQuestion help = Question(PracticeAction.ShowHelp, "Chart Recall");
 
 		Assert.Equal(PracticeSubject.Help, help.Subject);
 		Assert.Equal([".helpCHARTRECALL"], help.Answers.Select(Flat));
 		Assert.Equal($".{ChartRecallHelpCommand.DefaultName}", Flat(help.Answers[0]));
+		Assert.Contains(RenamedNote, help.Notes);
 		Assert.Equal(
 			"Shows the chart recall quick reference for instrument approaches (IAPs).",
 			Meaning(help, Assert.Single(CommandMarkup.Parse(help.Answers[0])), hasRunway: false));
 		Assert.Null(AliasPracticeContent.IdentifierHint(help));
+	}
+
+	/// <summary>The help command is practised by the user's name for it, renamed or not, with no note that it may differ.</summary>
+	[Theory]
+	[InlineData("helpCR")]
+	[InlineData("helpCHARTRECALL")]
+	public void the_help_command_is_practised_by_the_users_name_for_it(string name)
+	{
+		PracticeQuestion help = Question(PracticeAction.ShowHelp, "Chart Recall", name);
+
+		Assert.Equal([$".{name}"], help.Answers.Select(Flat));
+		Assert.DoesNotContain(RenamedNote, help.Notes);
+		Assert.Equal(2, help.Notes.Count);
+		Assert.Equal(Questions.Count, AliasPracticeContent.Questions(name).Count);
 	}
 
 	/// <summary>The help command's note covers approaches only, so the practice says where every other chart's command is.</summary>

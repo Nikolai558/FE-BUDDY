@@ -25,9 +25,10 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// <para>
 /// Every example is a real command from AIRAC 2609's files. The tests check each chart recall
 /// example against <c>ChartRecallCodes</c>, so a change to the codes that the guide does not follow
-/// fails a test. The chart recall help command is shown by its default name
-/// (<see cref="ChartRecallHelpCommand.DefaultName"/>), since a facility can rename it, and as being
-/// for instrument approaches (IAPs) only, as its note is.
+/// fails a test. The chart recall help command is shown by the name the user's alias file gives it;
+/// with that off or not known, by its default name (<see cref="ChartRecallHelpCommand.DefaultName"/>)
+/// and a note that a facility may have renamed it or left it out. Either way it is for instrument
+/// approaches (IAPs) only, as its note is.
 /// </para>
 /// <para>
 /// Three things lay it out: <c>AliasGuideHtmlWriter</c> and <c>AliasGuideMarkdownWriter</c> for the
@@ -67,8 +68,12 @@ public static class AliasGuideContent
 	];
 
 	/// <summary>Builds the guide.</summary>
+	/// <param name="helpCommand">
+	/// The chart recall help command's name, without its dot, as the user's alias file writes it; or
+	/// <see langword="null"/> when it is off or not known.
+	/// </param>
 	/// <returns>The guide's content.</returns>
-	public static AliasGuideDocument Build() => new(
+	public static AliasGuideDocument Build(string? helpCommand) => new(
 		Title,
 		$"These alias commands are made by [FE-Buddy]({GitHubRepository.WebUrl}) every AIRAC cycle.",
 		[
@@ -79,7 +84,7 @@ public static class AliasGuideContent
 			Item("**Airport IDs**",
 				Item("Use the FAA ID, not the ICAO ID, unless the command says otherwise. For example, `{a:DTW}`, not `{a:KDTW}`.")),
 		],
-		[InScopeReference(), DataDisplay(), ChartRecall()]);
+		[InScopeReference(), DataDisplay(), ChartRecall(helpCommand)]);
 
 	/// <summary>The colour key's name for each kind of part a controller replaces.</summary>
 	/// <param name="kind">The kind.</param>
@@ -192,7 +197,7 @@ public static class AliasGuideContent
 			+ $"`TURNAGAIN EIGHT` at ANC is `.{{a:anc}}{{i:TURNAGAIN}}{suffix}`."),
 	]);
 
-	private static GuideSection ChartRecall() => new(
+	private static GuideSection ChartRecall(string? helpCommand) => new(
 		"chart-recall",
 		"Chart Recall",
 		"Opens an FAA chart in your web browser, straight from the FAA's d-TPP. Every airport the FAA publishes "
@@ -231,20 +236,7 @@ public static class AliasGuideContent
 					[],
 					[],
 					[".{a:dtw}{i:CLVIN}c{p:2}"]),
-				new GuideCommand(
-					[$".{ChartRecallHelpCommand.DefaultName}"],
-					"Shows a quick reference for writing an instrument approach (IAP) chart recall command:",
-					[
-						"The order of a command's parts",
-						"The approach type codes, with their /DME and back course codes",
-						"Four examples, each part labeled",
-					],
-					[
-						"For instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any "
-						+ "other chart, see the commands above or your facility's command guide.",
-						"Your facility may have given it another name, or left it out.",
-					],
-					[]),
+				HelpCommand(helpCommand),
 			]),
 
 			new GuideHeading("Approach type codes"),
@@ -347,4 +339,25 @@ public static class AliasGuideContent
 				Item("Alternate minimums"),
 			]),
 		]);
+
+	/// <summary>
+	/// The chart recall help command, by the user's name for it; with none, by its default name and a
+	/// note that a facility may have renamed it or left it out.
+	/// </summary>
+	private static GuideCommand HelpCommand(string? name)
+	{
+		const string IapsOnly = "For instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any "
+			+ "other chart, see the commands above or your facility's command guide.";
+
+		return new GuideCommand(
+			[$".{name ?? ChartRecallHelpCommand.DefaultName}"],
+			"Shows a quick reference for writing an instrument approach (IAP) chart recall command:",
+			[
+				"The order of a command's parts",
+				"The approach type codes, with their /DME and back course codes",
+				"Four examples, each part labeled",
+			],
+			name is null ? [IapsOnly, "Your facility may have given it another name, or left it out."] : [IapsOnly],
+			[]);
+	}
 }

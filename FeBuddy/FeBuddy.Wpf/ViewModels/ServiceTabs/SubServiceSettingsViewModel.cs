@@ -221,9 +221,15 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	/// <param name="key">The key under this menu's node.</param>
 	/// <param name="defaultValue">What to use when nothing is saved.</param>
 	/// <returns><see langword="true"/> for <c>Y</c> or <c>true</c> (any case), <see langword="false"/> for anything else.</returns>
-	protected bool GetBool(string key, bool defaultValue)
+	protected bool GetBool(string key, bool defaultValue) => ReadYesNo(Get(key), defaultValue);
+
+	/// <summary>Reads a saved yes/no value, for a static reader that has no tab to read through.</summary>
+	/// <param name="saved">The saved value, or <see langword="null"/> when nothing is saved.</param>
+	/// <param name="defaultValue">What to use when nothing is saved.</param>
+	/// <returns><see langword="true"/> for <c>Y</c> or <c>true</c> (any case), <see langword="false"/> for anything else.</returns>
+	protected static bool ReadYesNo(string? saved, bool defaultValue)
 	{
-		string? value = Get(key)?.Trim();
+		string? value = saved?.Trim();
 
 		return string.IsNullOrEmpty(value)
 			? defaultValue

@@ -25,7 +25,7 @@ public static class ProceduresJsonWriter
 
 	/// <summary>
 	/// <c>includedBecause</c>'s value on a procedure included only because its route has a fix in the
-	/// user's facility, beside <c>facilityFixes</c>, the fixes.
+	/// user's facility, at an airport outside it, beside <c>facilityFixes</c>, the fixes.
 	/// </summary>
 	public const string RouteFixInFacility = "routeFixInFacility";
 
@@ -201,7 +201,8 @@ public static class ProceduresJsonWriter
 			procedureObject["producer"] = producer;
 		}
 
-		// Whatever the fields: only there when nothing but its route brought it in (Feature #367).
+		// Whatever the fields: only there when nothing but its route brought it in, at an airport outside
+		// the facility (Features #367, #371).
 		if (procedure.IncludedForFacilityFixes is { } facilityFixes)
 		{
 			procedureObject["includedBecause"] = RouteFixInFacility;

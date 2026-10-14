@@ -4,7 +4,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 
 /// <summary>
 /// Covers <see cref="ChartRecallHelpCommand"/>: the line is exactly the note FE-Buddy was given, under
-/// the name it's given, and a typed name loses its dots and is checked for spaces.
+/// the name it's given, and a typed name loses its dots, is used only while renaming, and must be letters and numbers only.
 /// </summary>
 public sealed class ChartRecallHelpCommandTests
 {
@@ -49,14 +49,33 @@ public sealed class ChartRecallHelpCommandTests
 		Assert.Equal(expected, ChartRecallHelpCommand.CleanName(typed));
 
 	[Theory]
-	[InlineData("helpCR", false)]
+	[InlineData(false, "helpCR", "helpCHARTRECALL")]
+	[InlineData(true, "helpCR", "helpCR")]
+	[InlineData(true, "  .helpCR  ", "helpCR")]
+	[InlineData(true, "", "helpCHARTRECALL")]
+	[InlineData(true, ".", "helpCHARTRECALL")]
+	[InlineData(true, null, "helpCHARTRECALL")]
+	[InlineData(true, "help CR", "help CR")]
+	public void the_command_goes_by_a_new_name_only_while_renamed_and_typed(bool rename, string? typed, string expected) =>
+		Assert.Equal(expected, ChartRecallHelpCommand.Name(rename, typed));
+
+	[Theory]
+	[InlineData("helpCR", true)]
+	[InlineData("help2", true)]
+	[InlineData("HELPCHARTRECALL", true)]
+	[InlineData("", false)]
+	[InlineData("help CR", false)]
+	[InlineData("help\tCR", false)]
 	[InlineData("help.CR", false)]
-	[InlineData("help CR", true)]
-	[InlineData("help\tCR", true)]
-	public void a_name_with_a_space_in_it_cannot_be_used(string name, bool hasSpace) =>
-		Assert.Equal(hasSpace, ChartRecallHelpCommand.HasSpace(name));
+	[InlineData("help_CR", false)]
+	[InlineData("help-CR", false)]
+	[InlineData("help[CR]", false)]
+	[InlineData("help{CR}", false)]
+	[InlineData("helpé", false)]
+	public void a_name_is_letters_and_numbers_only(string name, bool valid) =>
+		Assert.Equal(valid, ChartRecallHelpCommand.IsValidName(name));
 
 	[Fact]
-	public void has_space_rejects_a_null_argument() =>
-		Assert.Throws<ArgumentNullException>(() => ChartRecallHelpCommand.HasSpace(null!));
+	public void is_valid_name_rejects_a_null_argument() =>
+		Assert.Throws<ArgumentNullException>(() => ChartRecallHelpCommand.IsValidName(null!));
 }

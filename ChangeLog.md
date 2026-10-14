@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.12
 ### AIRAC Service
 - Procedure Charts: a renamed chart recall help command must be letters and numbers only.
 - Feature #371 - Procedure Charts no longer labels a chart at one of your own facility's airports with

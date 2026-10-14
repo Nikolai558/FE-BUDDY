@@ -61,7 +61,7 @@ public static class AliasGuideExport
 		Write("alias command practice", folder, names, () => AliasPracticeWriter.Export(folder, Options()));
 	}
 
-	private static AliasGuideOptions Options() => new(AppVersion.Current, DateTime.UtcNow);
+	private static AliasGuideOptions Options() => new(AppVersion.Current, DateTime.UtcNow, ProceduresViewModel.SavedHelpCommand());
 
 	/// <summary>
 	/// The folder the user picks, once they have agreed to replace any of <paramref name="names"/>

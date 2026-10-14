@@ -195,7 +195,7 @@ public static class ProcedureChangesMarkdownWriter
 				"may still be in use elsewhere.");
 		}
 
-		// Only there when nothing but its route brought it in (Feature #367).
+		// Only there when nothing but its route brought it in, at an airport outside the facility (Features #367, #371).
 		if (procedure.IncludedForFacilityFixes is { } facilityFixes)
 		{
 			builder.AppendLine($"{childIndent}- In {facilityFixes.Facility}: its route has a fix there ({FixList(facilityFixes.Fixes)})");

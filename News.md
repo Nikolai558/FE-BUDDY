@@ -15,6 +15,23 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ## 2026-10-14
 <!--
+PostId: 2026-10-14.2
+-->
+
+**Version 3.0.0-beta.12 Compiled!**
+
+Your help command's own name, and less clutter at home
+
+- **Alias Command Guide** and **Practice**: they now use the chart recall help command name you saved on Procedure Charts
+- **Chart Recall Help Command**: a new name must be letters and numbers only
+- **Procedure Charts**: charts at your own facility's airports no longer get the "its route has a fix there" label. They're still included
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.12)!!!
+
+---
+
+## 2026-10-14
+<!--
 PostId: 2026-10-14.1
 -->
 

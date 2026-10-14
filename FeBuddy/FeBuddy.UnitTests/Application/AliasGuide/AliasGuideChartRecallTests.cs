@@ -61,8 +61,20 @@ public sealed class AliasGuideChartRecallTests
 		{ ProcedureChartTypes.Lah, "LAHSO", null, AnyAirport, "bur", ".burLAHSOc" },
 	};
 
-	private static string Markdown() =>
-		AliasGuideWriter.Write(AliasGuideFormat.Markdown, new AliasGuideOptions("3.0.0", new DateTime(2026, 10, 1, 12, 0, 0, DateTimeKind.Utc)));
+	private const string IapsOnlyNote = "For instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any other chart, "
+		+ "see the commands above or your facility's command guide.";
+
+	private const string RenamedNote = "Your facility may have given it another name, or left it out.";
+
+	private static string Markdown(string? helpCommand = null) =>
+		AliasGuideWriter.Write(AliasGuideFormat.Markdown, new AliasGuideOptions("3.0.0", new DateTime(2026, 10, 1, 12, 0, 0, DateTimeKind.Utc), helpCommand));
+
+	/// <summary>The Chart Recall section's last command: the help command.</summary>
+	private static GuideCommand HelpCommand(string? name)
+	{
+		GuideSection section = Assert.Single(AliasGuideContent.Build(name).Sections, s => s.Id == "chart-recall");
+		return section.Blocks.OfType<GuideCommandTable>().First().Commands[^1];
+	}
 
 	[Theory]
 	[MemberData(nameof(Examples))]
@@ -111,27 +123,38 @@ public sealed class AliasGuideChartRecallTests
 	}
 
 	/// <summary>
-	/// The help command is the section's last command, by its default name, with what it shows - and,
-	/// as its note covers approaches only, where to find every other chart's command.
+	/// The help command is the section's last command, with what it shows - and, as its note covers
+	/// approaches only, where to find every other chart's command. With no name for it (the help command
+	/// or the alias file off, or not known), it goes by its default name, and a facility may have renamed
+	/// it or left it out.
 	/// </summary>
 	[Fact]
 	public void the_chart_recall_section_ends_its_commands_with_the_help_command()
 	{
-		GuideSection section = Assert.Single(AliasGuideContent.Build().Sections, s => s.Id == "chart-recall");
-		GuideCommand help = section.Blocks.OfType<GuideCommandTable>().First().Commands[^1];
+		GuideCommand help = HelpCommand(null);
 
 		Assert.Equal([".helpCHARTRECALL"], help.Syntax);
 		Assert.Equal("Shows a quick reference for writing an instrument approach (IAP) chart recall command:", help.Description);
 		Assert.Equal(3, help.Details.Count);
-		Assert.Equal(
-			[
-				"For instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any other chart, "
-				+ "see the commands above or your facility's command guide.",
-				"Your facility may have given it another name, or left it out.",
-			],
-			help.Notes);
+		Assert.Equal([IapsOnlyNote, RenamedNote], help.Notes);
 		Assert.Empty(help.Examples);
 		Assert.Contains("| `.helpCHARTRECALL` |", Markdown(), StringComparison.Ordinal);
 		Assert.Contains("*For instrument approaches (IAPs) only,", Markdown(), StringComparison.Ordinal);
+		Assert.Contains("another name, or left it out.", Markdown(), StringComparison.Ordinal);
+	}
+
+	/// <summary>The help command goes by the user's name for it, renamed or not, with no note that it may differ.</summary>
+	[Theory]
+	[InlineData("helpCR")]
+	[InlineData("helpCHARTRECALL")]
+	public void the_help_command_goes_by_the_users_name_for_it(string name)
+	{
+		GuideCommand help = HelpCommand(name);
+		string markdown = Markdown(name);
+
+		Assert.Equal([$".{name}"], help.Syntax);
+		Assert.Equal([IapsOnlyNote], help.Notes);
+		Assert.Contains($"| `.{name}` |", markdown, StringComparison.Ordinal);
+		Assert.DoesNotContain("another name, or left it out", markdown, StringComparison.Ordinal);
 	}
 }

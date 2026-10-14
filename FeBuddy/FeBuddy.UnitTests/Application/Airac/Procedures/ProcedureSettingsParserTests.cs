@@ -150,14 +150,18 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Null(ProcedureSettingsParser.Parse(settings).Settings.HelpCommand);
 	}
 
-	[Fact]
-	public void a_help_command_name_with_a_space_throws()
+	[Theory]
+	[InlineData("help CR")]
+	[InlineData("help.CR")]
+	[InlineData("help_CR")]
+	[InlineData("help{CR}")]
+	public void a_help_command_name_that_is_not_letters_and_numbers_only_throws(string name)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["HelpCommandName"] = "help CR";
+		settings["HelpCommandName"] = name;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
-		Assert.Equal("'HelpCommandName' \"help CR\" has a space in it. An alias command is one word, e.g. \"helpCHARTRECALL\".", ex.Message);
+		Assert.Equal($"'HelpCommandName' \"{name}\" can't be used. Use letters and numbers only, e.g. \"helpCHARTRECALL\".", ex.Message);
 	}
 
 	// ---- Facilities / PrimaryFacility ----

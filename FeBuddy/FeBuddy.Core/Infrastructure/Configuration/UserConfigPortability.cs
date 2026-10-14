@@ -44,6 +44,8 @@ public static class UserConfigPortability
 		UserConfigKeys.FeBuddyGitHubCredentialId,
 		UserConfigKeys.LegacyGitHubTokenNoticeShown,
 		UserConfigKeys.WelcomeShown,
+		UserConfigKeys.RememberWindowPlacement,
+		UserConfigKeys.MainWindowPlacement,
 	};
 
 	private static readonly string[] SecretSuffixes = ["Token", "Password", "Secret", "ApiKey", "Credential", "Credentials"];
@@ -66,8 +68,8 @@ public static class UserConfigPortability
 
 	/// <summary>
 	/// The settings that belong to this PC rather than to a facility's setup - the update channel, which
-	/// News has been read, FE-Buddy's GitHub token and the like. They never go into an export, and every
-	/// settings profile shares them (<see cref="UserConfigFile.SharedFilePath"/>).
+	/// News has been read, FE-Buddy's GitHub token, where the main window was and the like. They never go
+	/// into an export, and every settings profile shares them (<see cref="UserConfigFile.SharedFilePath"/>).
 	/// </summary>
 	public static IReadOnlySet<string> SharedByProfiles => LocalKeys;
 
@@ -146,6 +148,10 @@ public static class UserConfigPortability
 				return "Update channel";
 			case UserConfigKeys.NewsLastOpen:
 				return "News read status";
+			case UserConfigKeys.RememberWindowPlacement:
+				return "Remember window size and position";
+			case UserConfigKeys.MainWindowPlacement:
+				return "Window size and position";
 		}
 
 		string[] segments = key.Split('.');

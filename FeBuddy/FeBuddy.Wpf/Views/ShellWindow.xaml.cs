@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -13,9 +14,9 @@ namespace FeBuddy.Wpf.Views;
 
 /// <summary>
 /// The main window. See ShellWindow.xaml. Its code-behind is limited to window concerns: the
-/// custom caption buttons, keeping the maximised window inside the work area, the brand mark's
-/// clicks, and building File Conversions ahead of its first open. Everything else is data-bound to
-/// <see cref="ShellViewModel"/>.
+/// custom caption buttons, keeping the maximised window inside the work area, opening where it was
+/// last closed (<see cref="MainWindowPlacement"/>), the brand mark's clicks, and building File
+/// Conversions ahead of its first open. Everything else is data-bound to <see cref="ShellViewModel"/>.
 /// </summary>
 public partial class ShellWindow : Window
 {
@@ -34,6 +35,9 @@ public partial class ShellWindow : Window
 		InitializeComponent();
 		DataContext = new ShellViewModel();
 		MaximizeToWorkArea.Attach(this);
+
+		// After MaximizeToWorkArea's hook, so a window put back maximized keeps off the taskbar.
+		SourceInitialized += (_, _) => MainWindowPlacement.Restore(this);
 		StateChanged += OnStateChanged;
 		ContentRendered += (_, _) => Dispatcher.InvokeAsync(PrepareFileConversions, DispatcherPriority.ApplicationIdle);
 	}
@@ -65,6 +69,18 @@ public partial class ShellWindow : Window
 				// Only a head start: the screen is built again when it is opened.
 				AppLog.Warning("Shell", $"Could not build {view.GetType().Name} ahead of its first open: {ex.Message}");
 			}
+		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnClosing(CancelEventArgs e)
+	{
+		base.OnClosing(e);
+
+		// Once nothing has kept the window open, while its handle is still there to ask.
+		if (!e.Cancel)
+		{
+			MainWindowPlacement.Save(this);
 		}
 	}
 

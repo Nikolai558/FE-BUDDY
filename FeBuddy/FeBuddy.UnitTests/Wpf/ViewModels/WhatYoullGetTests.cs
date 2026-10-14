@@ -743,7 +743,10 @@ public sealed class WhatYoullGetTests : IDisposable
 			],
 			Includes(tab.WhatYoullGet[0]));
 		Assert.Equal(
-			["Every chart at every airport in the d-TPP metafile, not just the ones you chose for `Procedure_Changes.md` and `Procedures.json`"],
+			[
+				"Every chart at every airport in the d-TPP metafile, not just the ones you chose for `Procedure_Changes.md` and `Procedures.json`",
+				"along with `.helpCHARTRECALL` at the top: a quick reference for writing a chart recall command",
+			],
 			Lines(tab.WhatYoullGet[1]));
 	}
 
@@ -846,7 +849,26 @@ public sealed class WhatYoullGetTests : IDisposable
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Facilities", "ZOB");
 
-		Assert.Equal([expected], Lines(ProceduresTab(on).WhatYoullGet.Single(block => block.Outputs == Alias)));
+		Assert.Equal(expected, Lines(ProceduresTab(on).WhatYoullGet.Single(block => block.Outputs == Alias))[0]);
+	}
+
+	/// <summary>The help command is named under the alias line while it's on, by its new name while renamed.</summary>
+	[Fact]
+	public void the_procedures_alias_block_names_the_help_command_while_it_is_on()
+	{
+		ProceduresViewModel tab = ProceduresTab(Alias);
+		string[] lines() => Lines(tab.WhatYoullGet.Single(block => block.Outputs == Alias));
+
+		Assert.Equal(
+			["Every chart at every airport in the d-TPP metafile", "along with `.helpCHARTRECALL` at the top: a quick reference for writing a chart recall command"],
+			lines());
+
+		tab.RenameHelpCommand = true;
+		tab.HelpCommandName = "helpCR";
+		Assert.Equal("along with `.helpCR` at the top: a quick reference for writing a chart recall command", lines()[1]);
+
+		tab.IncludeHelpCommand = false;
+		Assert.Equal(["Every chart at every airport in the d-TPP metafile"], lines());
 	}
 
 	/// <summary>The d-TPP calls a STAR <c>STR</c>: the checkbox and the summary say STAR, and STR is still what is sent.</summary>

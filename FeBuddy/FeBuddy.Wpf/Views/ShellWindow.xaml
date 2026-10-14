@@ -6,6 +6,9 @@
     rows: caption / body / status bar. The body is a fixed nav rail plus a
     ContentControl whose content is swapped by ShellViewModel; the DataTemplates
     below pick the right view for each section view-model.
+    No WindowStartupLocation: MainWindowPlacement puts it where it was last closed,
+    or at its default in the middle of the main screen. Its sizes and CaptionHeight
+    are WindowSizes.Shell's too; change both together.
 -->
 <Window x:Class="FeBuddy.Wpf.Views.ShellWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -23,7 +26,6 @@
         MinWidth="980" MinHeight="640"
         WindowStyle="None"
         AllowsTransparency="False"
-        WindowStartupLocation="CenterScreen"
         UseLayoutRounding="True"
         TextOptions.TextFormattingMode="Ideal"
         FontFamily="{StaticResource Font.Body}"

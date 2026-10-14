@@ -7,7 +7,8 @@
     properties or CRC cards - see ProceduresViewModel's class remarks. Its Outputs card shows its
     three outputs' state (they are turned on and off on the General tab). The selection cards
     pick what the two documents cover, so they grey out while neither document is on, and say
-    they don't reach the chart recall alias file while it's on. An amber card at the top says
+    they don't reach the chart recall alias file while it's on. The last card picks the alias
+    file's help command, so it greys out while that file is off. An amber card at the top says
     when a d-TPP Metafile falls short.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ProceduresView"
@@ -92,6 +93,46 @@
                     </StackPanel>
                 </cards:AreaCard.Footer>
             </cards:AreaCard>
+
+            <!-- ============ external procedures in our airspace: other airports' procedures with a fix in my facility (Feature #367) ============
+                 Adds to the area like the cards below, so with Everything it isn't used. It names the facility
+                 set in Settings, and needs one: without it, the box greys out. Either way a note at the top says
+                 why; what counts as a waypoint inside the facility is in the box's tooltip, even while it's greyed out. -->
+            <ctl:Card Header="External Procedures in Our Airspace" Outputs="ProcedureChanges, ProceduresJson"
+                      IsEnabled="{Binding AreListsUsed}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,10" Visibility="{Binding IncludeFixInFacilityNote, Converter={StaticResource StringToVis}}">
+                        <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Info}" FontFamily="{StaticResource Font.Icon}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Top" Margin="0,2,8,0" />
+                        <TextBlock Text="{Binding IncludeFixInFacilityNote}" Style="{StaticResource Text.Caption}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
+                    </DockPanel>
+                    <CheckBox Margin="0,4,0,0" HorizontalAlignment="Left"
+                              IsChecked="{Binding IncludeProceduresWithFixInFacility}"
+                              IsEnabled="{Binding CanIncludeProceduresWithFixInFacility}"
+                              ToolTipService.ShowOnDisabled="True">
+                        <CheckBox.ToolTip>
+                            <ToolTip MaxWidth="360">
+                                <TextBlock Text="{Binding IncludeFixInFacilityToolTip}" TextWrapping="Wrap" />
+                            </ToolTip>
+                        </CheckBox.ToolTip>
+                        <TextBlock bhv:InlineCode.Text="{Binding IncludeFixInFacilityLabel}" TextWrapping="Wrap" />
+                    </CheckBox>
+
+                    <!-- The options in this card... -->
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,14,0,0" Text="The options in this card..." />
+                    <DockPanel Margin="12,4,0,0">
+                        <TextBlock DockPanel.Dock="Left" Text="•" Style="{StaticResource Text.Caption}" Margin="0,0,8,0" />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                   Text="{x:Static vm:ProceduresViewModel.ExternalProceduresScopeNote}" />
+                    </DockPanel>
+                    <DockPanel Margin="12,2,0,0" Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}">
+                        <TextBlock DockPanel.Dock="Left" Text="•" Style="{StaticResource Text.Caption}" Margin="0,0,8,0" />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                   bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ExternalProceduresChartRecallNote}" />
+                    </DockPanel>
+                </StackPanel>
+            </ctl:Card>
 
             <!-- ============ airports ============
                  This card and the next two add to the area, even outside it. With Everything, which
@@ -381,6 +422,41 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ the chart recall help command ============
+                 Two yes/no questions: whether the alias file starts with the help command, then
+                 whether to rename it, in a box that takes the name without its dot. The card greys out
+                 while the alias file is off (Outputs="Alias"). -->
+            <ctl:Card Header="Chart Recall Help Command" Outputs="Alias">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                               bhv:InlineCode.Text="This alias is a `.note` command that provides the user a quick reference chart for how to formulate an FAA Chart Recall command." />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,0"
+                               bhv:InlineCode.Text="The command is placed as the first line in the `Faa_Chart_Recall.txt` file." />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,10,0,2" Text="Do you want this command included?" />
+                    <RadioButton GroupName="IncludeHelpCommand" Content="No" Margin="0,6,0,0"
+                                 IsChecked="{Binding IncludeHelpCommand, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                    <RadioButton GroupName="IncludeHelpCommand" Content="Yes" Margin="0,3,0,0"
+                                 IsChecked="{Binding IncludeHelpCommand, Mode=TwoWay}" />
+
+                    <!-- Yes: the name, indented under the radio. -->
+                    <StackPanel Margin="26,10,0,0" Visibility="{Binding IncludeHelpCommand, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,2"
+                                   bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.RenameHelpCommandQuestion}" />
+                        <RadioButton GroupName="RenameHelpCommand" Content="No" Margin="0,6,0,0"
+                                     IsChecked="{Binding RenameHelpCommand, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                        <RadioButton GroupName="RenameHelpCommand" Content="Yes" Margin="0,3,0,0"
+                                     IsChecked="{Binding RenameHelpCommand, Mode=TwoWay}" />
+                        <StackPanel Orientation="Horizontal" Margin="26,8,0,0"
+                                    Visibility="{Binding RenameHelpCommand, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="." Style="{StaticResource Text.Body.Strong}" FontSize="18" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBox Width="260" MaxLength="60" Tag="{x:Static vm:ProceduresViewModel.HelpCommandPlaceholder}"
+                                     Text="{Binding HelpCommandName, UpdateSourceTrigger=PropertyChanged}"
+                                     bhv:FieldState.Error="{Binding FieldErrors[HelpCommandName]}" />
+                        </StackPanel>
+                    </StackPanel>
                 </StackPanel>
             </ctl:Card>
 

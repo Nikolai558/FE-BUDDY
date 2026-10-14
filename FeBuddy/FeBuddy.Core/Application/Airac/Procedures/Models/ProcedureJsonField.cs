@@ -39,7 +39,10 @@ public enum ProcedureJsonField
 	/// <summary>The procedure's change this cycle, when it changed.</summary>
 	Change,
 
-	/// <summary>The procedure's compare-PDF URL, for a <see cref="Change"/> of "Changed".</summary>
+	/// <summary>
+	/// The procedure's compare-PDF URL, when its first page changed (and, for a multi-page chart, its
+	/// changed continuation pages' compare-PDF URLs).
+	/// </summary>
 	CompareUrl,
 
 	/// <summary>The procedure's amendment number.</summary>

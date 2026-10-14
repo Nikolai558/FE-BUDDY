@@ -35,7 +35,7 @@ public static class ProcedureBuilder
 	/// <param name="previousDtpp">
 	/// The previous cycle's parsed FAA d-TPP Metafile, or <see langword="null"/> when it is not
 	/// available - a deleted or re-added procedure's <see cref="Procedure.PreviousPdfName"/> is then
-	/// always <see langword="null"/>.
+	/// always <see langword="null"/>, and every procedure's <see cref="Procedure.PreviousPages"/> empty.
 	/// </param>
 	/// <returns>Every airport, in metafile file order, plus any messages collected.</returns>
 	/// <exception cref="InvalidOperationException">Thrown when <paramref name="nasr"/>.Apt or .ClsArsp has not been parsed.</exception>
@@ -114,7 +114,10 @@ public static class ProcedureBuilder
 		return new ProcedureBuildResult(airports, messages);
 	}
 
-	/// <summary>Groups one airport's records by normalized base name and classifies each group.</summary>
+	/// <summary>
+	/// Groups one airport's records by normalized base name, joins each orphan continuation page to
+	/// its procedure, and classifies each group.
+	/// </summary>
 	private static List<Procedure> BuildProcedures(IReadOnlyList<DtppRecord> records, IReadOnlyList<DtppRecord>? previousRecords)
 	{
 		Dictionary<string, List<DtppRecord>> groupsByName = new(StringComparer.OrdinalIgnoreCase);
@@ -134,67 +137,107 @@ public static class ProcedureBuilder
 			group.Add(record);
 		}
 
+		JoinOrphanPages(groupsByName, order);
+
 		return [.. order.Select(baseName => BuildProcedure(baseName, groupsByName[baseName], previousRecords))];
 	}
 
-	/// <summary>Classifies one base-name group's pages into a single <see cref="Procedure"/>.</summary>
+	/// <summary>
+	/// Moves each orphan - a group of continuation pages whose main page is not listed this cycle -
+	/// into the group whose main page has the same <c>procuid</c> under another name. The FAA does
+	/// this when it renames a procedure and removes a page in the same cycle: MSP's 2611 metafile
+	/// lists <c>MINNEAPOLIS NINE, CONT.1</c> as deleted beside <c>MINNEAPOLIS ONE</c> as changed,
+	/// both with procuid 1300. An orphan that matches nothing stays its own procedure.
+	/// </summary>
+	private static void JoinOrphanPages(Dictionary<string, List<DtppRecord>> groupsByName, List<string> order)
+	{
+		string[] names = [.. order];
+
+		foreach (string orphanName in names)
+		{
+			List<DtppRecord> orphan = groupsByName[orphanName];
+
+			if (orphan.Any(record => !ProcedureNaming.IsContinuation(record.ChartName)))
+			{
+				continue;
+			}
+
+			string? ownerName = order.FirstOrDefault(name => groupsByName[name].Any(record =>
+				!ProcedureNaming.IsContinuation(record.ChartName)
+				&& record.ProcUid is { } procUid
+				&& orphan.Any(page => page.ProcUid == procUid)));
+
+			if (ownerName is not null)
+			{
+				groupsByName[ownerName].AddRange(orphan);
+				groupsByName.Remove(orphanName);
+				order.Remove(orphanName);
+			}
+		}
+	}
+
+	/// <summary>Classifies one group's pages into a single <see cref="Procedure"/>.</summary>
 	private static Procedure BuildProcedure(string baseName, List<DtppRecord> group, IReadOnlyList<DtppRecord>? previousRecords)
 	{
-		List<DtppRecord> mainPages = [.. group.Where(record => !ProcedureNaming.IsContinuation(record.ChartName))];
+		// Page order, whatever the metafile's: OrderBy is stable, so a re-added page keeps its
+		// records in file order.
+		List<DtppRecord> pages = [.. group.OrderBy(record => ProcedureNaming.PageNumber(record.ChartName))];
+		List<DtppRecord> mainPages = [.. pages.Where(record => !ProcedureNaming.IsContinuation(record.ChartName))];
+		DtppRecord? mainPage = mainPages.Count > 0 ? mainPages[0] : null;
 
-		bool hasMainDeleted = mainPages.Any(record => HasAction(record, "D"));
-		bool hasMainAdded = mainPages.Any(record => HasAction(record, "A"));
+		DtppRecord? changedContinuation = pages.FirstOrDefault(record =>
+			ProcedureNaming.IsContinuation(record.ChartName) && !string.IsNullOrEmpty(record.UserAction));
 
 		ProcedureChange change;
-		DtppRecord reportedRecord;
 		DtppRecord? currentRecord;
 		DtppRecord? deletedRecord = null;
 
-		if (hasMainDeleted && hasMainAdded)
+		if (mainPages.Any(record => HasAction(record, "D")) && mainPages.Any(record => HasAction(record, "A")))
 		{
 			// Deleted then re-added within this same metafile: the "A" main page is the chart going
-			// forward, the "D" main page is what the previous-cycle lookup falls back to.
+			// forward.
 			change = ProcedureChange.ReAdded;
 			currentRecord = mainPages.First(record => HasAction(record, "A"));
-			reportedRecord = currentRecord;
 			deletedRecord = mainPages.First(record => HasAction(record, "D"));
+		}
+		else if (mainPage is not null && !string.IsNullOrEmpty(mainPage.UserAction))
+		{
+			change = ActionToChange(mainPage.UserAction);
+			currentRecord = change == ProcedureChange.Deleted ? null : mainPage;
+			deletedRecord = change == ProcedureChange.Deleted ? mainPage : null;
+		}
+		else if (changedContinuation is not null && mainPage is not null)
+		{
+			// Only a continuation page changed, was added or was removed, and the procedure carries
+			// on: it is Changed, and each page says what happened to it.
+			change = ActionToChange(changedContinuation.UserAction!) == ProcedureChange.None
+				? ProcedureChange.None
+				: ProcedureChange.Changed;
+			currentRecord = mainPage;
+		}
+		else if (changedContinuation is not null)
+		{
+			// Continuation pages with no main page this cycle and no procedure to join: the page's
+			// own change.
+			change = ActionToChange(changedContinuation.UserAction!);
+			currentRecord = null;
+			deletedRecord = change == ProcedureChange.Deleted ? changedContinuation : null;
 		}
 		else
 		{
-			DtppRecord? mainPage = mainPages.Count > 0 ? mainPages[0] : null;
-
-			if (mainPage is not null && !string.IsNullOrEmpty(mainPage.UserAction))
-			{
-				change = ActionToChange(mainPage.UserAction);
-				reportedRecord = mainPage;
-				currentRecord = change == ProcedureChange.Deleted ? null : mainPage;
-				deletedRecord = change == ProcedureChange.Deleted ? mainPage : null;
-			}
-			else
-			{
-				DtppRecord? changedContinuation = group.FirstOrDefault(record =>
-					ProcedureNaming.IsContinuation(record.ChartName) && !string.IsNullOrEmpty(record.UserAction));
-
-				if (changedContinuation is not null)
-				{
-					change = ActionToChange(changedContinuation.UserAction!);
-					reportedRecord = changedContinuation;
-					currentRecord = mainPage; // the main page persists regardless of the continuation's own change.
-					deletedRecord = change == ProcedureChange.Deleted ? changedContinuation : null;
-				}
-				else
-				{
-					change = ProcedureChange.None;
-					reportedRecord = mainPage ?? group[0];
-					currentRecord = mainPage ?? group[0];
-				}
-			}
+			change = ProcedureChange.None;
+			currentRecord = mainPage ?? pages[0];
 		}
 
-		DtppRecord infoRecord = currentRecord ?? reportedRecord;
+		// With no current record, the procedure is a deleted main page or changed continuation pages.
+		DtppRecord infoRecord = currentRecord ?? mainPage ?? changedContinuation!;
+
+		IReadOnlyList<ProcedurePage> previousPages = previousRecords is not null && pages.Any(record => HasAction(record, "D"))
+			? FindPreviousPages(previousRecords, pages, baseName, infoRecord.ProcUid)
+			: [];
 
 		string? previousPdfName = change is ProcedureChange.Deleted or ProcedureChange.ReAdded
-			? FindPreviousPdfName(previousRecords, baseName, infoRecord.ProcUid)
+			? previousPages.FirstOrDefault(page => !ProcedureNaming.IsContinuation(page.ChartName))?.PdfName
 			: null;
 
 		bool isRemovedFromAirportOnly = deletedRecord is not null
@@ -205,12 +248,11 @@ public static class ProcedureBuilder
 			Name = baseName,
 			ChartCode = group[0].ChartCode,
 			ChartSeq = group[0].ChartSeq,
-			Pages = [.. group.Select(record => new ProcedurePage(record.ChartName, record.PdfName, record.UserAction))],
+			Pages = [.. pages.Select(record => new ProcedurePage(record.ChartName, record.PdfName, record.UserAction))],
 			Change = change,
-			ReportedName = reportedRecord.ChartName,
-			ReportedPdfName = reportedRecord.PdfName,
 			CurrentPdfName = currentRecord?.PdfName,
 			PreviousPdfName = previousPdfName,
+			PreviousPages = previousPages,
 			IsRemovedFromAirportOnly = isRemovedFromAirportOnly,
 			ProcUid = infoRecord.ProcUid,
 			AmdtNum = Normalize(infoRecord.AmdtNum),
@@ -221,37 +263,46 @@ public static class ProcedureBuilder
 	}
 
 	/// <summary>
-	/// Finds the chart's PDF name in the previous cycle's metafile: same airport (the caller already
-	/// scoped <paramref name="previousRecords"/> to it) and same normalized base name, main page
-	/// first; failing that, the same <see cref="DtppMetafileXmlDataModel.Record.ProcUid"/>.
+	/// Finds each of a procedure's pages in the previous cycle's metafile (the caller already scoped
+	/// <paramref name="previousRecords"/> to the airport), by page number: under the procedure's
+	/// base name, then a joined orphan page's own base name, then the same
+	/// <see cref="DtppMetafileXmlDataModel.Record.ProcUid"/>. A deletion placeholder is never a match.
 	/// </summary>
-	private static string? FindPreviousPdfName(IReadOnlyList<DtppRecord>? previousRecords, string baseName, int? procUid)
+	/// <returns>At most one page per page number, in page order.</returns>
+	private static List<ProcedurePage> FindPreviousPages(
+		IReadOnlyList<DtppRecord> previousRecords, List<DtppRecord> pages, string baseName, int? procUid)
 	{
-		if (previousRecords is null)
+		string[] names =
+		[
+			baseName,
+			.. pages
+				.Select(page => ProcedureNaming.BaseName(page.ChartName))
+				.Where(name => !name.Equals(baseName, StringComparison.OrdinalIgnoreCase))
+				.Distinct(StringComparer.OrdinalIgnoreCase),
+		];
+
+		List<ProcedurePage> found = [];
+
+		foreach (int pageNumber in pages.Select(page => ProcedureNaming.PageNumber(page.ChartName)).Distinct())
 		{
-			return null;
-		}
+			List<DtppRecord> candidates = [.. previousRecords.Where(record =>
+				ProcedureNaming.PageNumber(record.ChartName) == pageNumber
+				&& !string.IsNullOrWhiteSpace(record.PdfName)
+				&& !DtppFiles.IsPlaceholderPdf(record.PdfName))];
 
-		DtppRecord? byName = previousRecords.FirstOrDefault(record =>
-			!ProcedureNaming.IsContinuation(record.ChartName)
-			&& ProcedureNaming.BaseName(record.ChartName).Equals(baseName, StringComparison.OrdinalIgnoreCase));
+			DtppRecord? match = names
+				.Select(name => candidates.FirstOrDefault(record =>
+					ProcedureNaming.BaseName(record.ChartName).Equals(name, StringComparison.OrdinalIgnoreCase)))
+				.FirstOrDefault(record => record is not null)
+				?? candidates.FirstOrDefault(record => procUid is not null && record.ProcUid == procUid);
 
-		if (byName is not null)
-		{
-			return byName.PdfName;
-		}
-
-		if (procUid is { } uid)
-		{
-			DtppRecord? byProcUid = previousRecords.FirstOrDefault(record => record.ProcUid == uid);
-
-			if (byProcUid is not null)
+			if (match is not null)
 			{
-				return byProcUid.PdfName;
+				found.Add(new ProcedurePage(match.ChartName, match.PdfName, match.UserAction));
 			}
 		}
 
-		return null;
+		return found;
 	}
 
 	private static ProcedureAirspaceClass ComputeAirspaceClass(IEnumerable<ClsArspCsvDataModel.ClsArsp> rows)

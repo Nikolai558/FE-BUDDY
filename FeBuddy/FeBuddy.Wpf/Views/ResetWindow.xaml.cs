@@ -32,14 +32,18 @@ public partial class ResetWindow : ChromeWindow
 		DataContext = viewModel;
 		viewModel.CloseRequested += (_, _) => Close();
 
+		// No taller than the screen it opens on, from the start: once the owner is set, before the
+		// window is sized to its content.
+		SourceInitialized += (_, _) => MaxHeight = OwnerWorkArea().Height;
+
 		// Before the first render, so the window is never seen at another size.
 		Loaded += (_, _) => KeepTallestHeight();
 	}
 
 	/// <summary>
 	/// Measures the window with what deleting the settings shows, fixes its height there (no taller
-	/// than the screen's work area, less a margin), and centers it again on its owner, inside the
-	/// work area.
+	/// than the work area of the screen its owner is on, less a margin), and centers it again on its
+	/// owner, inside that work area.
 	/// </summary>
 	private void KeepTallestHeight()
 	{
@@ -50,7 +54,7 @@ public partial class ResetWindow : ChromeWindow
 		double tallest = ActualHeight;
 		BindingOperations.GetBindingExpression(SettingsLoss, VisibilityProperty)?.UpdateTarget();
 
-		Rect area = SystemParameters.WorkArea;
+		Rect area = OwnerWorkArea();
 
 		SizeToContent = SizeToContent.Manual;
 		Height = Math.Min(tallest, Math.Max(area.Height - (2 * ScreenMargin), MinHeight));

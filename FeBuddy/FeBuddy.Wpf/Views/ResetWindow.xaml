@@ -17,7 +17,6 @@
         d:DataContext="{d:DesignInstance vm:ResetViewModel}"
         Title="Reset FE-Buddy"
         Width="560" SizeToContent="Height"
-        MaxHeight="{Binding Height, Source={x:Static SystemParameters.WorkArea}}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"

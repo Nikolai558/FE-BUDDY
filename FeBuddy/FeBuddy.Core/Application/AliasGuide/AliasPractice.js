@@ -20,7 +20,10 @@
     otherChart: 'the chart code', airway: 'the airway ID', navaid: "the NAVAID's ID", operator: "the operator's 3LD",
   };
 
-  const outcome = { 'Display the ISR': 'displays the card.', 'Display the fixes': 'displays the fixes.', 'Recall the chart': 'recalls the chart.' };
+  const outcome = {
+    'Display the ISR': 'displays the card.', 'Display the fixes': 'displays the fixes.', 'Recall the chart': 'recalls the chart.',
+    'Show the quick reference': 'shows the quick reference.',
+  };
 
   // ------------------------------------------------------------------ helpers
 
@@ -202,7 +205,8 @@
             hints.push(cardNames[g]
               ? `${show(g)} displays ${cardNames[g]}. For ${cardNames[e]}, start with ${show(e)}.`
               : `For ${cardNames[e]}, start with ${show(e)}.`);
-          } else if (e === 'v' && g === '') forgot.push(`the lower-case ${show('v')} (for Visual) after the airport ID`);
+          } else if (e.startsWith('.') && g === e.slice(1)) hints.push('Every alias command starts with a period.');
+          else if (e === 'v' && g === '') forgot.push(`the lower-case ${show('v')} (for Visual) after the airport ID`);
           else if (e === 'c' && g === 'f') hints.push(`Ending in ${show('f')} displays a procedure's fixes. To recall the chart, end with ${show('c')}.`);
           else if (e === 'f' && g === 'c') hints.push(`Ending in ${show('c')} recalls the chart. To display the fixes, end with ${show('f')}.`);
           else if (g === '') forgot.push(last ? `the ${show(shown)} at the end` : `the ${show(shown)} before the page number`);

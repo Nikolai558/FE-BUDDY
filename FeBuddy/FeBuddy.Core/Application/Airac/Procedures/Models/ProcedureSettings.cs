@@ -44,6 +44,13 @@ public sealed record ProcedureSettings
 	public bool GenerateAliasFile { get; init; } = true;
 
 	/// <summary>
+	/// The name, without its dot, of the help command written as the alias file's first line (see
+	/// <see cref="ChartRecallHelpCommand"/>), or <see langword="null"/> for none. Default
+	/// <see cref="ChartRecallHelpCommand.DefaultName"/>.
+	/// </summary>
+	public string? HelpCommand { get; init; } = ChartRecallHelpCommand.DefaultName;
+
+	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
 	/// block: <see cref="ProcedureService.Run"/> takes it from the AIRAC Service. Default: none
 	/// renamed.
@@ -97,6 +104,15 @@ public sealed record ProcedureSettings
 	/// <see cref="Procedures"/> is. None with <see cref="SubServiceArea.Everything"/>. Default: none.
 	/// </summary>
 	public IReadOnlyList<ProcedureAirportPick> AirportProcedures { get; init; } = [];
+
+	/// <summary>
+	/// Whether to include, at any airport, the departures and arrivals whose route has a fix or NAVAID
+	/// in <see cref="PrimaryFacility"/> (Feature #367; see <c>ProceduresWithFixInFacility</c>), as
+	/// <see cref="ChartTypes"/> allows. Needs <see cref="PrimaryFacility"/>; never with
+	/// <see cref="SubServiceArea.Everything"/>, which has every airport already. Default
+	/// <see langword="true"/>.
+	/// </summary>
+	public bool IncludeProceduresWithFixInFacility { get; init; } = true;
 
 	/// <summary>
 	/// The chart types (d-TPP Metafile <c>chart_code</c>) a whole included airport's procedures are

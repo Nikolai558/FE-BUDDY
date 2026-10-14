@@ -114,9 +114,10 @@ public static class AliasPracticeWriter
 		Line(html, 1, "<div class=\"toolbar\">");
 		Line(html, 2, "<div class=\"filters\" role=\"group\" aria-label=\"Which questions\">");
 		Line(html, 3, "<button type=\"button\" class=\"chip\" data-section=\"\" aria-pressed=\"true\">All</button>");
-		foreach (PracticeAction action in Enum.GetValues<PracticeAction>())
+		// One chip per section: Chart Recall has two actions, recalling a chart and its help command.
+		foreach (string title in Enum.GetValues<PracticeAction>().Select(AliasPracticeContent.SectionTitle).Distinct())
 		{
-			string section = Escape(AliasPracticeContent.SectionTitle(action));
+			string section = Escape(title);
 			Line(html, 3, $"<button type=\"button\" class=\"chip\" data-section=\"{section}\" aria-pressed=\"false\">{section}</button>");
 		}
 

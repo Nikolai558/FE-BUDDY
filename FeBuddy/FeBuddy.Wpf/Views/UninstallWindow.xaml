@@ -14,7 +14,6 @@
         d:DataContext="{d:DesignInstance vm:UninstallViewModel}"
         Title="Uninstall FE-Buddy"
         Width="560" SizeToContent="Height"
-        MaxHeight="{Binding Height, Source={x:Static SystemParameters.WorkArea}}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"

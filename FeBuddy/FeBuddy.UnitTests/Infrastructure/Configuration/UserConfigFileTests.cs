@@ -343,6 +343,79 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Equal("Beta", snapshot["General.UpdateChannel"]);
 	}
 
+	// ============================ shared settings saved as they change ============================
+
+	/// <summary>
+	/// <see cref="UserConfigFile.SaveShared"/> writes <c>Shared.json</c> alone: the profile's file and its
+	/// undo snapshot are left as they are, and a setting set but not saved stays in memory.
+	/// </summary>
+	[Fact]
+	public void save_shared_writes_shared_json_alone()
+	{
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+		UserConfigFile.Write();
+		string profileBefore = File.ReadAllText(UserConfigFile.ConfigFilePath);
+
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "Use"); // set, not saved
+		UserConfigFile.TrySetValue(UserConfigKeys.MainWindowPlacement, "100,50,1200,780,96,Normal");
+		UserConfigFile.SaveShared(UserConfigKeys.MainWindowPlacement);
+
+		Assert.Equal(profileBefore, File.ReadAllText(UserConfigFile.ConfigFilePath));
+		Assert.False(File.Exists(UserConfigFile.PreviousFilePath));
+		Assert.Equal("Use", UserConfigFile.GetValue(AirwaysNode + ".OutputBy"));
+		Assert.Equal("100,50,1200,780,96,Normal", UserConfigFile.ReadSharedValue(UserConfigKeys.MainWindowPlacement));
+	}
+
+	[Fact]
+	public void save_shared_removes_a_shared_setting_that_is_unset()
+	{
+		UserConfigFile.TrySetValue(UserConfigKeys.MainWindowPlacement, "100,50,1200,780,96,Normal");
+		UserConfigFile.SaveShared(UserConfigKeys.MainWindowPlacement);
+
+		UserConfigFile.RemoveValues(UserConfigKeys.MainWindowPlacement);
+		UserConfigFile.SaveShared(UserConfigKeys.MainWindowPlacement);
+
+		Assert.Null(UserConfigFile.ReadSharedValue(UserConfigKeys.MainWindowPlacement));
+	}
+
+	/// <summary>Saved before the launch has read the settings, the profile in use stays the one the file names.</summary>
+	[Fact]
+	public void save_shared_keeps_the_profile_in_use()
+	{
+		UserConfigFile.Write();
+		UserConfigFile.CreateProfile("ZNY", null);
+		UserConfigFile.SwitchProfile("ZNY");
+		UserConfigFile.ConfigureForTesting(_directory); // nothing read: the profile in memory is Default
+
+		UserConfigFile.TrySetValue(UserConfigKeys.MainWindowPlacement, "100,50,1200,780,96,Normal");
+		UserConfigFile.SaveShared(UserConfigKeys.MainWindowPlacement);
+
+		JsonNode shared = JsonNode.Parse(File.ReadAllText(UserConfigFile.SharedFilePath))!;
+		Assert.Equal("ZNY", shared["ActiveProfile"]!.GetValue<string>());
+	}
+
+	[Fact]
+	public void save_shared_rejects_a_setting_that_is_not_shared()
+	{
+		Assert.Throws<ArgumentException>(() => UserConfigFile.SaveShared(UserConfigKeys.MainWindowPlacement, AirwaysNode));
+		Assert.Throws<ArgumentNullException>(() => UserConfigFile.SaveShared(null!));
+		Assert.False(File.Exists(UserConfigFile.SharedFilePath));
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData(" ")]
+	[InlineData("Services.AiracService.UserArtccId")]
+	[InlineData(UserConfigKeys.WelcomeShown)]
+	public void read_shared_value_is_null_for_a_setting_shared_json_does_not_hold(string? key)
+	{
+		File.WriteAllText(UserConfigFile.SharedFilePath, """{ "General": { "UpdateChannel": "Beta" }, "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""");
+
+		Assert.Null(UserConfigFile.ReadSharedValue(key!));
+		Assert.Equal("Beta", UserConfigFile.ReadSharedValue(UserConfigKeys.UpdateChannel));
+	}
+
 	// ============================ the layout version ============================
 
 	/// <summary>A stand-in second layout: Settings ▸ Facility's ARTCC moved under General.</summary>

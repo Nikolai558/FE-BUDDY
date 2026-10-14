@@ -115,6 +115,12 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private string? _selectedPairProcedure;
 	private IReadOnlyList<string> _pairProcedureOptions = [];
 
+	private bool _includeHelpCommand = true;
+	private bool _renameHelpCommand;
+	private string _helpCommandName = string.Empty;
+
+	private bool _includeProceduresWithFixInFacility = true;
+
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public ProceduresViewModel()
 	{
@@ -159,6 +165,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		CancelPairCommand = new RelayCommand(CancelPairEdit);
 		EditPairCommand = new RelayCommand<ProcedureAirportPickItem>(BeginEditPair);
 		DeletePairCommand = new RelayCommand<ProcedureAirportPickItem>(DeletePair);
+
+		// The option for other airports' procedures names the facility saved in Settings.
+		SettingsViewModel.FacilitySaved += (_, _) => OnFacilityChanged();
 
 		LoadFromConfig();
 	}
@@ -213,6 +222,87 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		OnPropertyChanged(nameof(AreListsUsed));
 		OnPropertyChanged(nameof(NewAirportHint));
 		RaiseCardIntros();
+		RaiseFixInFacility();
+	}
+
+	// ================= External Procedures in Our Airspace: other airports' procedures with a fix in my facility =================
+
+	/// <summary>The External Procedures in Our Airspace card's first footer note, under "The options in this card...".</summary>
+	public const string ExternalProceduresScopeNote =
+		"only apply to Departures (ODP/SID) and Arrivals (STAR). IAPs may be included in future updates.";
+
+	/// <summary>The card's second footer note, shown while <c>Faa_Chart_Recall.txt</c> is on.</summary>
+	public const string ExternalProceduresChartRecallNote = "don't apply to `Faa_Chart_Recall.txt`";
+
+	/// <summary>The facility set in Settings ▸ Facility, e.g. <c>ZDC</c>, or <see langword="null"/> when none is.</summary>
+	private static string? SettingsFacility => NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey));
+
+	/// <summary>Whether a facility is set in Settings ▸ Facility: the option needs one.</summary>
+	private static bool HasSettingsFacility => SettingsFacility is not null;
+
+	/// <summary>
+	/// Whether to also include, at any other airport, the departures and arrivals whose route has a fix
+	/// or NAVAID in the facility set in Settings (Feature #367). On by default; used only while a
+	/// facility is set and the area isn't everything.
+	/// </summary>
+	public bool IncludeProceduresWithFixInFacility
+	{
+		get => _includeProceduresWithFixInFacility;
+		set
+		{
+			if (SetProperty(ref _includeProceduresWithFixInFacility, value))
+			{
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>
+	/// The option's label, naming the facility as code: <c>Include procedures for non-`ZDC` airports that
+	/// have a waypoint inside `ZDC`</c>.
+	/// </summary>
+	public string IncludeFixInFacilityLabel => SettingsFacility is { } facility
+		? $"Include procedures for non-`{facility}` airports that have a waypoint inside `{facility}`"
+		: "Include procedures for airports outside your facility that have a waypoint inside it";
+
+	/// <summary>The option's tooltip: what counts as a waypoint inside the facility, and which charts come in.</summary>
+	public string IncludeFixInFacilityToolTip =>
+		$"A departure or arrival is included when any point on its route, transitions included, is a fix or NAVAID that NASR puts in {SettingsFacility ?? "your facility"}. "
+		+ "Only the chart types ticked under Chart Types are included.";
+
+	/// <summary>
+	/// Why the option can't be used, shown at the top of the card - the area is everything, or no facility
+	/// is set - or <see langword="null"/> when it can.
+	/// </summary>
+	public string? IncludeFixInFacilityNote =>
+		!AreListsUsed ? "\"Everything\" already includes every airport, so this card isn't used."
+		: !HasSettingsFacility ? "Set your facility in Settings ▸ Facility to use this card."
+		: null;
+
+	/// <summary>Whether the option can be changed: a facility is set in Settings.</summary>
+	public bool CanIncludeProceduresWithFixInFacility => HasSettingsFacility;
+
+	/// <summary>Whether the run uses the option: it's on, a facility is set, and the area isn't everything.</summary>
+	private bool UsesFixInFacility => IncludeProceduresWithFixInFacility && HasSettingsFacility && AreListsUsed;
+
+	/// <summary>Says the option's label and note again, and checks the page, after the area or the facility changes.</summary>
+	private void RaiseFixInFacility()
+	{
+		foreach (string name in new[]
+		{
+			nameof(IncludeFixInFacilityLabel), nameof(IncludeFixInFacilityToolTip), nameof(IncludeFixInFacilityNote),
+			nameof(CanIncludeProceduresWithFixInFacility),
+		})
+		{
+			OnPropertyChanged(name);
+		}
+	}
+
+	/// <summary>After Settings saves (the facility may have changed): the option says so, and the page is checked again.</summary>
+	private void OnFacilityChanged()
+	{
+		RaiseFixInFacility();
+		Revalidate();
 	}
 
 	// ================= what the cards that add to the area say =================
@@ -315,6 +405,68 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	/// <remarks>None: the Outputs card says where Procedures' outputs are turned on and off.</remarks>
 	public override string? WhatYoullGetFooter => null;
+
+	// ================= the chart recall help command =================
+
+	/// <summary>The Chart Recall Help Command card's second question, naming the default command.</summary>
+	public const string RenameHelpCommandQuestion =
+		$"The command is `.{ChartRecallHelpCommand.DefaultName}` by default. Would you like to rename it?";
+
+	/// <summary>The rename box's placeholder: an example name, without the dot the box shows in front.</summary>
+	public const string HelpCommandPlaceholder = "e.g. helpCR";
+
+	/// <summary>
+	/// Whether <c>Faa_Chart_Recall.txt</c> starts with the help command: "Yes" to the Chart Recall
+	/// Help Command card's question. On by default.
+	/// </summary>
+	public bool IncludeHelpCommand
+	{
+		get => _includeHelpCommand;
+		set
+		{
+			if (SetProperty(ref _includeHelpCommand, value))
+			{
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>"Yes" to renaming the help command: the name typed is used. Off by default.</summary>
+	public bool RenameHelpCommand
+	{
+		get => _renameHelpCommand;
+		set
+		{
+			if (SetProperty(ref _renameHelpCommand, value))
+			{
+				OnPropertyChanged(nameof(HelpCommand));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>
+	/// The help command's new name, as typed, without the dot: the box shows the dot in front, and a
+	/// dot typed or pasted there is dropped. Kept when renaming is turned off.
+	/// </summary>
+	public string HelpCommandName
+	{
+		get => _helpCommandName;
+		set
+		{
+			if (SetProperty(ref _helpCommandName, (value ?? string.Empty).TrimStart('.')))
+			{
+				OnPropertyChanged(nameof(HelpCommand));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>The help command's name, without its dot: the one typed while renaming, else the default.</summary>
+	public string HelpCommand =>
+		RenameHelpCommand && ChartRecallHelpCommand.CleanName(HelpCommandName) is { Length: > 0 } name
+			? name
+			: ChartRecallHelpCommand.DefaultName;
 
 	// ================= d-TPP data =================
 
@@ -818,7 +970,14 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			["PrimaryFacility"] = UserConfigFile.GetValue(SettingsViewModel.ArtccKey) ?? string.Empty,
 			["ChartTypes"] = string.Join(',', ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)),
 			["JsonFields"] = string.Join(',', JsonFieldToggles.Where(t => t.IsSelected).Select(t => t.Token)),
+			["IncludeHelpCommand"] = YesNo(IncludeHelpCommand),
 		};
+
+		// The name typed goes only while renaming; without it the run uses the default.
+		if (IncludeHelpCommand && RenameHelpCommand)
+		{
+			s["HelpCommandName"] = HelpCommand;
+		}
 
 		// Only what the area uses, so the parser sees exactly what the run will do: the facilities
 		// for that area, and the lists that add to it unless it's everything.
@@ -832,6 +991,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			s["Airports"] = string.Join(',', Airports);
 			s["Procedures"] = string.Join(',', ProcedureNames);
 			s["AirportProcedures"] = string.Join(',', AirportProcedures.Select(p => $"{p.Airport}|{p.ProcedureName}"));
+
+			// Off with no facility set, as the greyed-out option shows, so the run doesn't warn about it.
+			s["IncludeProceduresWithFixInFacility"] = YesNo(UsesFixInFacility);
 		}
 
 		AddSharedSettings(s);
@@ -883,6 +1045,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		documents.Add(SummaryJoin.First, area);
 		documents.Add(SummaryJoin.AlongWith, listed is not null && documents.IsEmpty ? $"Charts for {listed}" : listed);
 
+		// Other airports' departures and arrivals that cross the facility: limited to the chart types too.
+		string? crossing = UsesFixInFacility ? $"departures and arrivals at other airports whose route has a fix in {SettingsFacility}" : null;
+		documents.Add(SummaryJoin.AlongWith, crossing is not null && documents.IsEmpty ? char.ToUpperInvariant(crossing[0]) + crossing[1..] : crossing);
+
 		bool wholeAirports = !documents.IsEmpty;
 		bool picked = names.Length > 0 || pairs.Length > 0;
 
@@ -917,6 +1083,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			.Add(SummaryJoin.First, documentsOn.Length == 0
 				? "Every chart at every airport in the d-TPP metafile"
 				: $"Every chart at every airport in the d-TPP metafile, not just the ones you chose for {SummaryLines.Join(documentsOn, "and")}")
+			.Add(SummaryJoin.AlongWith, IncludeHelpCommand ? $"`.{HelpCommand}` at the top: a quick reference for writing a chart recall command" : null)
 			.ToList());
 	}
 
@@ -988,6 +1155,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				toggle.IsSelected = savedJsonFields.Contains(toggle.Token);
 			}
 
+			_includeHelpCommand = GetBool("IncludeHelpCommand", true);
+			_renameHelpCommand = GetBool("RenameHelpCommand", false);
+			_helpCommandName = (Get("HelpCommandName") ?? string.Empty).TrimStart('.');
+			_includeProceduresWithFixInFacility = GetBool("IncludeProceduresWithFixInFacility", true);
+
 			LoadSharedSettings();
 		}
 		finally
@@ -995,7 +1167,17 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			_suppressListChanges = false;
 		}
 
+		foreach (string name in new[]
+		{
+			nameof(IncludeHelpCommand), nameof(RenameHelpCommand), nameof(HelpCommandName), nameof(HelpCommand),
+			nameof(IncludeProceduresWithFixInFacility),
+		})
+		{
+			OnPropertyChanged(name);
+		}
+
 		RaiseCardIntros();
+		RaiseFixInFacility();
 		ClearDirty();
 	}
 
@@ -1008,6 +1190,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		Set("AirportProcedures", string.Join(',', AirportProcedures.Select(p => $"{p.Airport}|{p.ProcedureName}")));
 		Set("ChartTypes", string.Join(',', ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)));
 		Set("JsonFields", string.Join(',', JsonFieldToggles.Where(t => t.IsSelected).Select(t => t.Token)));
+		Set("IncludeHelpCommand", YesNo(IncludeHelpCommand));
+		Set("RenameHelpCommand", YesNo(RenameHelpCommand));
+		Set("HelpCommandName", HelpCommandName.Trim());
+		Set("IncludeProceduresWithFixInFacility", YesNo(IncludeProceduresWithFixInFacility));
 		SaveSharedSettings();
 	}
 
@@ -1024,12 +1210,35 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			ValidateDocumentSelection(validation);
 		}
 
+		// The new name is used only while the alias file, the help command and renaming are all on.
+		if (GenerateAliasFile && IncludeHelpCommand && RenameHelpCommand)
+		{
+			ValidateHelpCommandName(validation);
+		}
+
 		ValidateSharedSettings(validation);
+	}
+
+	/// <summary>Checks the help command's new name: one word, typed.</summary>
+	private void ValidateHelpCommandName(ServiceValidation validation)
+	{
+		string name = ChartRecallHelpCommand.CleanName(HelpCommandName);
+
+		if (name.Length == 0)
+		{
+			validation.AddField(nameof(HelpCommandName),
+				$"Type the command's new name, or pick No to keep .{ChartRecallHelpCommand.DefaultName}.");
+		}
+		else if (ChartRecallHelpCommand.HasSpace(name))
+		{
+			validation.AddField(nameof(HelpCommandName), "A command is one word, so it can't have a space in it.");
+		}
 	}
 
 	/// <summary>
 	/// Checks that the documents include something: with no area, at least one airport or procedure
-	/// listed; and with whole airports coming in (the area, or airports listed), a chart type ticked.
+	/// listed, or other airports' procedures with a fix in the facility; and with whole airports or those
+	/// procedures coming in, a chart type ticked.
 	/// </summary>
 	private void ValidateDocumentSelection(ServiceValidation validation)
 	{
@@ -1037,14 +1246,14 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		bool proceduresListed = AreListsUsed && (ProcedureNames.Count > 0 || AirportProcedures.Count > 0);
 		bool hasWholeAirportSource = Area != SubServiceArea.None || airportsListed;
 
-		if (Area == SubServiceArea.None && !airportsListed && !proceduresListed)
+		if (Area == SubServiceArea.None && !airportsListed && !proceduresListed && !UsesFixInFacility)
 		{
 			validation.AddArea(
 				ServiceAreas.DocumentSelection,
 				"With \"None\" picked on the Area card, list at least one airport or procedure for the documents to include, or pick another area.");
 		}
 
-		if (hasWholeAirportSource && ChartTypeToggles.All(t => !t.IsSelected))
+		if ((hasWholeAirportSource || UsesFixInFacility) && ChartTypeToggles.All(t => !t.IsSelected))
 		{
 			validation.AddArea(
 				ServiceAreas.ChartTypes,

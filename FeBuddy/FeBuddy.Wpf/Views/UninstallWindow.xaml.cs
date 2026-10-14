@@ -28,7 +28,13 @@ public partial class UninstallWindow : ChromeWindow
 		DataContext = viewModel;
 		viewModel.CloseRequested += (_, _) => Close();
 
-		// A long body scrolls rather than pushing the buttons off the bottom of the screen.
-		Body.MaxHeight = Math.Max(MinimumBodyHeight, SystemParameters.WorkArea.Height - ReservedHeight);
+		// No taller than the screen it opens on, and a long body scrolls rather than pushing the buttons
+		// off its bottom. Once the owner is set, before the window is sized to its content.
+		SourceInitialized += (_, _) =>
+		{
+			Rect area = OwnerWorkArea();
+			MaxHeight = area.Height;
+			Body.MaxHeight = Math.Max(MinimumBodyHeight, area.Height - ReservedHeight);
+		};
 	}
 }

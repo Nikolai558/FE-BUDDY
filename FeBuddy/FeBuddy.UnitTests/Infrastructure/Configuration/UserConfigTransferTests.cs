@@ -394,6 +394,46 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.Contains("General.FeBuddyGitHub", plan.IgnoredKeys);
 	}
 
+	/// <summary>
+	/// Where the main window was, and whether to remember it, are this PC's (Feature #364): never
+	/// exported, and every kind of import keeps this PC's and ignores a file's.
+	/// </summary>
+	[Theory]
+	[InlineData(UserConfigImportMode.Replace)]
+	[InlineData(UserConfigImportMode.Merge)]
+	public void the_main_windows_placement_never_travels(UserConfigImportMode mode)
+	{
+		Dictionary<string, string> current = new()
+		{
+			[ArtccKey] = "ZNY",
+			[UserConfigKeys.RememberWindowPlacement] = "N",
+			[UserConfigKeys.MainWindowPlacement] = "2100,100,1800,1170,144,Maximized",
+		};
+
+		UserConfigTransfer.Export(ExportPath, current, "3.1.0", ExportedAt, Alice);
+		string exported = File.ReadAllText(ExportPath);
+
+		Assert.DoesNotContain("WindowPlacement", exported, StringComparison.Ordinal);
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new()
+			{
+				[ArtccKey] = "ZOB",
+				[UserConfigKeys.RememberWindowPlacement] = "Y",
+				[UserConfigKeys.MainWindowPlacement] = "0,0,1200,780,96,Normal",
+			}),
+			current,
+			Bob,
+			_ => true,
+			mode: mode);
+
+		Assert.Equal("N", plan.Settings[UserConfigKeys.RememberWindowPlacement]);
+		Assert.Equal("2100,100,1800,1170,144,Maximized", plan.Settings[UserConfigKeys.MainWindowPlacement]);
+		Assert.Contains(UserConfigKeys.RememberWindowPlacement, plan.IgnoredKeys);
+		Assert.Contains(UserConfigKeys.MainWindowPlacement, plan.IgnoredKeys);
+		Assert.Equal<string>(["Window size and position", "Remember window size and position"], plan.KeptForThisPc);
+	}
+
 	/// <summary>A key with more parts than any setting has is ignored, so the file can always be written.</summary>
 	[Fact]
 	public void plan_ignores_a_key_nested_too_deep_to_write()

@@ -16,7 +16,6 @@
         d:DataContext="{d:DesignInstance vm:ImportSettingsViewModel}"
         Title="Import Settings"
         Width="560" SizeToContent="Height"
-        MaxHeight="{Binding Height, Source={x:Static SystemParameters.WorkArea}}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"

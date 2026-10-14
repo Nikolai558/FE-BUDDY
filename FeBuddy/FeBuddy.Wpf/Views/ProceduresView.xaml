@@ -94,20 +94,43 @@
                 </cards:AreaCard.Footer>
             </cards:AreaCard>
 
-            <!-- ============ neighbors' departures and arrivals with a fix in my facility (Feature #367) ============
+            <!-- ============ external procedures in our airspace: other airports' procedures with a fix in my facility (Feature #367) ============
                  Adds to the area like the cards below, so with Everything it isn't used. It names the facility
-                 set in Settings, and needs one: without it, the box greys out and the note says why. -->
-            <ctl:Card Header="Neighbors' Departures and Arrivals" Outputs="ProcedureChanges, ProceduresJson"
+                 set in Settings, and needs one: without it, the box greys out. Either way a note at the top says
+                 why; what counts as a waypoint inside the facility is in the box's tooltip, even while it's greyed out. -->
+            <ctl:Card Header="External Procedures in Our Airspace" Outputs="ProcedureChanges, ProceduresJson"
                       IsEnabled="{Binding AreListsUsed}">
                 <StackPanel>
-                    <ctl:Option Margin="0,4,0,0" Description="{Binding IncludeFixInFacilityNote}">
-                        <CheckBox Content="{Binding IncludeFixInFacilityLabel}"
-                                  IsChecked="{Binding IncludeProceduresWithFixInFacility}"
-                                  IsEnabled="{Binding CanIncludeProceduresWithFixInFacility}" />
-                    </ctl:Option>
-                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
-                               bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
-                               Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
+                    <DockPanel Margin="0,0,0,10" Visibility="{Binding IncludeFixInFacilityNote, Converter={StaticResource StringToVis}}">
+                        <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Info}" FontFamily="{StaticResource Font.Icon}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Top" Margin="0,2,8,0" />
+                        <TextBlock Text="{Binding IncludeFixInFacilityNote}" Style="{StaticResource Text.Caption}"
+                                   Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" />
+                    </DockPanel>
+                    <CheckBox Margin="0,4,0,0" HorizontalAlignment="Left"
+                              IsChecked="{Binding IncludeProceduresWithFixInFacility}"
+                              IsEnabled="{Binding CanIncludeProceduresWithFixInFacility}"
+                              ToolTipService.ShowOnDisabled="True">
+                        <CheckBox.ToolTip>
+                            <ToolTip MaxWidth="360">
+                                <TextBlock Text="{Binding IncludeFixInFacilityToolTip}" TextWrapping="Wrap" />
+                            </ToolTip>
+                        </CheckBox.ToolTip>
+                        <TextBlock bhv:InlineCode.Text="{Binding IncludeFixInFacilityLabel}" TextWrapping="Wrap" />
+                    </CheckBox>
+
+                    <!-- The options in this card... -->
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,14,0,0" Text="The options in this card..." />
+                    <DockPanel Margin="12,4,0,0">
+                        <TextBlock DockPanel.Dock="Left" Text="•" Style="{StaticResource Text.Caption}" Margin="0,0,8,0" />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                   Text="{x:Static vm:ProceduresViewModel.ExternalProceduresScopeNote}" />
+                    </DockPanel>
+                    <DockPanel Margin="12,2,0,0" Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}">
+                        <TextBlock DockPanel.Dock="Left" Text="•" Style="{StaticResource Text.Caption}" Margin="0,0,8,0" />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                   bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ExternalProceduresChartRecallNote}" />
+                    </DockPanel>
                 </StackPanel>
             </ctl:Card>
 

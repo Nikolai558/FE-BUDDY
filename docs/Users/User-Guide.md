@@ -210,12 +210,12 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
 - **Area** - which airports the documents cover: **Facilities** (every airport of the ones you
   tick), **ROI** (every airport inside it), **Everything** (every airport in the metafile), or
   **None**. Nothing is clipped.
-- **Neighbors' Departures and Arrivals** (on to start) - also includes the departures and STARs at
-  any other airport whose route has a fix in your facility (Settings ▸ Facility): any point of any
-  body or transition that NASR puts in your ARTCC, high or low. A changed one counts if its route
-  did before or does now, so one that left your airspace still shows. Only the chart types ticked
-  under **Chart Types** come in, and approaches aren't covered yet. It needs a facility set in
-  Settings, and isn't used with **Everything**.
+- **External Procedures in Our Airspace** (on to start) - also includes the procedures at airports
+  outside your facility (Settings ▸ Facility) that have a waypoint inside it: any point of any body
+  or transition that NASR puts in your ARTCC, high or low. A changed one counts if its route did
+  before or does now, so one that left your airspace still shows. It covers departures (ODPs and
+  SIDs) and arrivals (STARs) only, for now, and only the chart types ticked under **Chart Types**
+  come in. It needs a facility set in Settings, and isn't used with **Everything**.
 - **What the cards add** - even outside the area: the **Airports** you list (FAA or ICAO ID),
   **Additional Airport-Specific Procedures to Include** (one airport's version of a procedure), and
   **Additional Procedures to Include**, by name (every version of it). With **Everything** they

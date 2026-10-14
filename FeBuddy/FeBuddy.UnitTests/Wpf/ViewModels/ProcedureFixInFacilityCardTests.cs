@@ -10,8 +10,8 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers the Procedure Charts tab's Neighbors' Departures and Arrivals card (Feature #367): on to start,
-/// naming the facility set in Settings; greyed out, saying why, with no facility; what the tab saves and
+/// Covers the Procedure Charts tab's External Procedures in Our Airspace card (Feature #367): on to start,
+/// naming the facility set in Settings; greyed out, saying why, with no facility; its footer; what the tab saves and
 /// sends - off without a facility, nothing with Everything; that it's enough to pick with the area
 /// "None"; and its line in What You'll Get - against a throwaway config.
 /// </summary>
@@ -68,9 +68,20 @@ public sealed class ProcedureFixInFacilityCardTests : IDisposable
 
 		Assert.True(tab.IncludeProceduresWithFixInFacility);
 		Assert.True(tab.CanIncludeProceduresWithFixInFacility);
-		Assert.Equal("Also include departures and arrivals at other airports that have a fix in my facility (ZDC)", tab.IncludeFixInFacilityLabel);
-		Assert.StartsWith("A departure or STAR is added when any point on its route, transitions included, is a fix or NAVAID in ZDC", tab.IncludeFixInFacilityNote, StringComparison.Ordinal);
+		Assert.Equal("Include procedures for non-`ZDC` airports that have a waypoint inside `ZDC`", tab.IncludeFixInFacilityLabel);
+		Assert.Equal(
+			"A departure or arrival is included when any point on its route, transitions included, is a fix or NAVAID that NASR puts in ZDC. "
+			+ "Only the chart types ticked under Chart Types are included.",
+			tab.IncludeFixInFacilityToolTip);
+		Assert.Null(tab.IncludeFixInFacilityNote);
 		Assert.Equal("Y", tab.BuildSettingsBlock()[Key]);
+	}
+
+	[Fact]
+	public void the_cards_footer_says_what_its_options_apply_to()
+	{
+		Assert.Equal("only apply to Departures (ODP/SID) and Arrivals (STAR). IAPs may be included in future updates.", ProceduresViewModel.ExternalProceduresScopeNote);
+		Assert.Equal("don't apply to `Faa_Chart_Recall.txt`", ProceduresViewModel.ExternalProceduresChartRecallNote);
 	}
 
 	[Fact]
@@ -79,8 +90,9 @@ public sealed class ProcedureFixInFacilityCardTests : IDisposable
 		ProceduresViewModel tab = Tab(facility: null);
 
 		Assert.False(tab.CanIncludeProceduresWithFixInFacility);
-		Assert.Equal("Also include departures and arrivals at other airports that have a fix in my facility (none set)", tab.IncludeFixInFacilityLabel);
-		Assert.Equal("Set your facility in Settings ▸ Facility to use this.", tab.IncludeFixInFacilityNote);
+		Assert.Equal("Include procedures for airports outside your facility that have a waypoint inside it", tab.IncludeFixInFacilityLabel);
+		Assert.Contains("is a fix or NAVAID that NASR puts in your facility.", tab.IncludeFixInFacilityToolTip, StringComparison.Ordinal);
+		Assert.Equal("Set your facility in Settings ▸ Facility to use this card.", tab.IncludeFixInFacilityNote);
 		Assert.Equal("N", tab.BuildSettingsBlock()[Key]);
 	}
 
@@ -91,7 +103,7 @@ public sealed class ProcedureFixInFacilityCardTests : IDisposable
 
 		tab.Area = SubServiceArea.Everything;
 
-		Assert.Equal("\"Everything\" already includes every airport, so this option isn't used.", tab.IncludeFixInFacilityNote);
+		Assert.Equal("\"Everything\" already includes every airport, so this card isn't used.", tab.IncludeFixInFacilityNote);
 		Assert.False(tab.BuildSettingsBlock().ContainsKey(Key));
 	}
 

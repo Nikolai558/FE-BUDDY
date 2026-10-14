@@ -225,7 +225,14 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		RaiseFixInFacility();
 	}
 
-	// ================= departures and arrivals at other airports with a fix in my facility =================
+	// ================= External Procedures in Our Airspace: other airports' procedures with a fix in my facility =================
+
+	/// <summary>The External Procedures in Our Airspace card's first footer note, under "The options in this card...".</summary>
+	public const string ExternalProceduresScopeNote =
+		"only apply to Departures (ODP/SID) and Arrivals (STAR). IAPs may be included in future updates.";
+
+	/// <summary>The card's second footer note, shown while <c>Faa_Chart_Recall.txt</c> is on.</summary>
+	public const string ExternalProceduresChartRecallNote = "don't apply to `Faa_Chart_Recall.txt`";
 
 	/// <summary>The facility set in Settings ▸ Facility, e.g. <c>ZDC</c>, or <see langword="null"/> when none is.</summary>
 	private static string? SettingsFacility => NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey));
@@ -250,19 +257,27 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		}
 	}
 
-	/// <summary>The option's label, naming the facility: <c>... that have a fix in my facility (ZDC)</c>.</summary>
-	public string IncludeFixInFacilityLabel =>
-		$"Also include departures and arrivals at other airports that have a fix in my facility ({SettingsFacility ?? "none set"})";
+	/// <summary>
+	/// The option's label, naming the facility as code: <c>Include procedures for non-`ZDC` airports that
+	/// have a waypoint inside `ZDC`</c>.
+	/// </summary>
+	public string IncludeFixInFacilityLabel => SettingsFacility is { } facility
+		? $"Include procedures for non-`{facility}` airports that have a waypoint inside `{facility}`"
+		: "Include procedures for airports outside your facility that have a waypoint inside it";
+
+	/// <summary>The option's tooltip: what counts as a waypoint inside the facility, and which charts come in.</summary>
+	public string IncludeFixInFacilityToolTip =>
+		$"A departure or arrival is included when any point on its route, transitions included, is a fix or NAVAID that NASR puts in {SettingsFacility ?? "your facility"}. "
+		+ "Only the chart types ticked under Chart Types are included.";
 
 	/// <summary>
-	/// The note under the option: why it can't be used - the area is everything, or no facility is set -
-	/// or what it adds.
+	/// Why the option can't be used, shown at the top of the card - the area is everything, or no facility
+	/// is set - or <see langword="null"/> when it can.
 	/// </summary>
-	public string IncludeFixInFacilityNote =>
-		!AreListsUsed ? "\"Everything\" already includes every airport, so this option isn't used."
-		: SettingsFacility is not { } facility ? "Set your facility in Settings ▸ Facility to use this."
-		: $"A departure or STAR is added when any point on its route, transitions included, is a fix or NAVAID in {facility}, as NASR lists them. "
-			+ "Only the chart types ticked below are added. Approaches aren't covered yet.";
+	public string? IncludeFixInFacilityNote =>
+		!AreListsUsed ? "\"Everything\" already includes every airport, so this card isn't used."
+		: !HasSettingsFacility ? "Set your facility in Settings ▸ Facility to use this card."
+		: null;
 
 	/// <summary>Whether the option can be changed: a facility is set in Settings.</summary>
 	public bool CanIncludeProceduresWithFixInFacility => HasSettingsFacility;
@@ -275,7 +290,8 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	{
 		foreach (string name in new[]
 		{
-			nameof(IncludeFixInFacilityLabel), nameof(IncludeFixInFacilityNote), nameof(CanIncludeProceduresWithFixInFacility),
+			nameof(IncludeFixInFacilityLabel), nameof(IncludeFixInFacilityToolTip), nameof(IncludeFixInFacilityNote),
+			nameof(CanIncludeProceduresWithFixInFacility),
 		})
 		{
 			OnPropertyChanged(name);

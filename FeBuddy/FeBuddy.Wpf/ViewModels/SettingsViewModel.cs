@@ -82,6 +82,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// value into its own config node.
 	/// </summary>
 	internal const string ArtccKey = "Services.AiracService.UserArtccId";
+
+	/// <summary>
+	/// Raised after Save writes the settings, the facility (<see cref="ArtccKey"/>) among them, so a page
+	/// that names the facility - Procedure Charts' option for other airports' procedures - can say it again.
+	/// </summary>
+	public static event EventHandler? FacilitySaved;
 	private const string PrecisionKey = UserConfigKeys.CoordinatePrecision;
 
 	private readonly Dispatcher _dispatcher;
@@ -705,6 +711,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 
 		UserConfigFile.Write();
+		FacilitySaved?.Invoke(this, EventArgs.Empty);
 
 		// Only an ROI set or cleared here: an untouched one is left as the Map page last saved it.
 		if (IsRoiPending)

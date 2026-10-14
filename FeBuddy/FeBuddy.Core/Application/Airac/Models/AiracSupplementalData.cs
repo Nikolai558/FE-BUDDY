@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Dtpp;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
 using FeBuddy.Core.Infrastructure.WxStations.Models;
 
@@ -44,6 +45,14 @@ public sealed record AiracSupplementalData
 	/// Only read when <see cref="AiracServiceSettings.Procedures"/> is not <see langword="null"/>.
 	/// </summary>
 	public DtppMetafileDataCollection? PreviousDtpp { get; init; }
+
+	/// <summary>
+	/// The parsed NASR data of the cycle immediately before the selected one, or <see langword="null"/>
+	/// when it isn't loaded - the routes a changed or deleted departure or arrival had, for Procedure
+	/// Charts' procedures-with-a-fix-in-my-facility rule. Only read when
+	/// <see cref="AiracServiceSettings.Procedures"/> is not <see langword="null"/> and uses that rule.
+	/// </summary>
+	public NasrCsvDataCollection? PreviousNasr { get; init; }
 
 	/// <summary>
 	/// The user's custom alias files as they were read (or why each could not be), in merge order.

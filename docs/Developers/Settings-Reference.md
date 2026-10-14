@@ -434,6 +434,7 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
 | `Procedures` | | list of departure and arrival root names, included wherever charted, e.g. `BRWNZ` | none |
 | `AirportProcedures` | | list of `<airport>\|<departure or arrival root name>`, e.g. `PIT\|GRUUB` | none |
+| `IncludeProceduresWithFixInFacility` | | `Y` / `N` - also include, at any airport, the departures and arrivals whose route has a fix in `PrimaryFacility` (Feature #367). The tab sends `N` while no facility is set | `Y` |
 | `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH` | `IAP,STR,DP,ODP,DAU,APD` |
 | `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`) | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
 
@@ -447,6 +448,15 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
   `Everything` they aren't read. With `None`, at least one of them is required. The area's own
   checks (a facility, a ROI) and that one apply only when a document is on. The alias file ignores
   them all: it covers every chart at every airport in the d-TPP Metafile.
+- `IncludeProceduresWithFixInFacility` adds to the area like the lists: not read with `Everything`,
+  and with `None` it counts as something to include when there is a `PrimaryFacility`. On without
+  one, the run warns and skips it. A procedure qualifies when any point of any body or transition of
+  its NASR `DP_RTE`/`STAR_RTE` route is a `FIX_BASE` row whose `ARTCC_ID_HIGH` or `ARTCC_ID_LOW`, or a
+  `NAV_BASE` row whose `HIGH_ALT_ARTCC_ID` or `LOW_ALT_ARTCC_ID`, is the facility - matched by ID and
+  type, and by ICAO region where both have one (`RoutePointArtccResolver`). The rest of the rule -
+  matching a chart to its route, which cycle's route counts, the labels - is in the XML docs of
+  `ProceduresWithFixInFacility`, `NasrProcedureRoutes` and `ProcedureSelection`. It reads the
+  previous cycle's NASR from the cycle cache (`AiracSupplementalData.PreviousNasr`) only when used.
 - A block without `Area` takes `Facilities` as the area when it lists any, otherwise the ROI with
   the old `IncludeRoiAirports = Y`, otherwise `None`. `FilterByRoi` alone never meant the ROI here.
 - An unknown `ChartTypes` code warns but is still used; an unknown `JsonFields` name warns and is

@@ -24,6 +24,12 @@ public static class ProceduresJsonWriter
 	private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
 
 	/// <summary>
+	/// <c>includedBecause</c>'s value on a procedure included only because its route has a fix in the
+	/// user's facility, beside <c>facilityFixes</c>, the fixes.
+	/// </summary>
+	public const string RouteFixInFacility = "routeFixInFacility";
+
+	/// <summary>
 	/// Writes <c>Procedures.json</c> for the included airports and procedures.
 	/// </summary>
 	/// <param name="airports">The included airports (post-selection), each with only its included procedures.</param>
@@ -193,6 +199,13 @@ public static class ProceduresJsonWriter
 		if (fields.Contains(ProcedureJsonField.Producer) && ProducerName(procedure.Civil) is { } producer)
 		{
 			procedureObject["producer"] = producer;
+		}
+
+		// Whatever the fields: only there when nothing but its route brought it in (Feature #367).
+		if (procedure.IncludedForFacilityFixes is { } facilityFixes)
+		{
+			procedureObject["includedBecause"] = RouteFixInFacility;
+			procedureObject["facilityFixes"] = new JsonArray([.. facilityFixes.Fixes.Select(fix => (JsonNode)fix)]);
 		}
 
 		return procedureObject;

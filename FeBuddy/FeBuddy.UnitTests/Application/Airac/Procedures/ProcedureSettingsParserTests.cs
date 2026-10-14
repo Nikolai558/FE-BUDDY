@@ -45,6 +45,7 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Empty(result.Settings.Airports);
 		Assert.Empty(result.Settings.Procedures);
 		Assert.Empty(result.Settings.AirportProcedures);
+		Assert.True(result.Settings.IncludeProceduresWithFixInFacility);
 		Assert.Equal(ProcedureChartTypes.Default, result.Settings.ChartTypes);
 		Assert.Equal(
 		[
@@ -342,6 +343,78 @@ public sealed class ProcedureSettingsParserTests
 		ProcedureAirportPick pick = Assert.Single(result.Settings.AirportProcedures);
 		Assert.Equal("PIT", pick.Airport);
 		Assert.Equal("ILS OR LOC RWY 28C", pick.ProcedureName);
+	}
+
+	/// <summary>Other airports' procedures with a fix in the facility are something to include too - with a facility to have them in.</summary>
+	[Fact]
+	public void procedures_with_a_fix_in_the_facility_alone_satisfy_the_inclusion_source_requirement()
+	{
+		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
+		{
+			["OutputDirectory"] = @"C:\Output",
+			["PrimaryFacility"] = "zdc",
+		};
+
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
+
+		Assert.True(result.Settings.IncludeProceduresWithFixInFacility);
+		Assert.Equal("ZDC", result.Settings.PrimaryFacility);
+
+		settings["IncludeProceduresWithFixInFacility"] = "N";
+		Assert.Contains("'IncludeProceduresWithFixInFacility'", Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings)).Message);
+	}
+
+	// ---- IncludeProceduresWithFixInFacility (Feature #367) ----
+
+	[Theory]
+	[InlineData(null, true)]
+	[InlineData("Y", true)]
+	[InlineData("N", false)]
+	public void procedures_with_a_fix_in_the_facility_are_included_unless_turned_off(string? value, bool expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+
+		if (value is not null)
+		{
+			settings["IncludeProceduresWithFixInFacility"] = value;
+		}
+
+		Assert.Equal(expected, ProcedureSettingsParser.Parse(settings).Settings.IncludeProceduresWithFixInFacility);
+	}
+
+	/// <summary>Like the lists, the rule adds to the area: with everything there is nothing to add.</summary>
+	[Fact]
+	public void with_the_everything_area_procedures_with_a_fix_in_the_facility_are_not_used()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Everything";
+		settings["IncludeProceduresWithFixInFacility"] = "Y";
+
+		Assert.False(ProcedureSettingsParser.Parse(settings).Settings.IncludeProceduresWithFixInFacility);
+	}
+
+	[Theory]
+	[InlineData(null, "ZDC", true)]
+	[InlineData("Y", "ZDC", true)]
+	[InlineData("N", "ZDC", false)]
+	[InlineData("Y", " ", false)]
+	[InlineData("Y", null, false)]
+	public void includes_procedures_with_a_fix_in_the_facility_needs_the_rule_on_and_a_facility(string? value, string? facility, bool expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+
+		if (value is not null)
+		{
+			settings["IncludeProceduresWithFixInFacility"] = value;
+		}
+
+		if (facility is not null)
+		{
+			settings["PrimaryFacility"] = facility;
+		}
+
+		Assert.Equal(expected, ProcedureSettingsParser.IncludesProceduresWithFixInFacility(settings));
+		Assert.Throws<ArgumentNullException>(() => ProcedureSettingsParser.IncludesProceduresWithFixInFacility(null!));
 	}
 
 	// ---- AirportProcedures parsing ----

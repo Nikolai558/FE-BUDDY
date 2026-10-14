@@ -18,7 +18,8 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// A chart shared by more than one included airport (chiefly a STAR) is listed under each of them,
 /// so every airport's list is complete, with a child line naming the other included airports it
 /// also serves - see <see cref="Identity"/>. Regional minimums pages can serve a hundred airports,
-/// so that line names the first few and counts the rest.
+/// so that line names the first few and counts the rest. A chart included only because its route
+/// has a fix in the user's facility says so on a child line, naming the first few fixes.
 /// </remarks>
 public static class ProcedureChangesMarkdownWriter
 {
@@ -28,6 +29,9 @@ public static class ProcedureChangesMarkdownWriter
 
 	/// <summary>How many other airports an "Also serves" line names before it counts the rest.</summary>
 	private const int AlsoServesNamed = 10;
+
+	/// <summary>How many fixes an "In ZDC" line names before it counts the rest.</summary>
+	private const int FixesNamed = 5;
 
 	/// <summary>
 	/// Writes <c>Procedure_Changes.md</c> for the included airports and procedures.
@@ -191,11 +195,23 @@ public static class ProcedureChangesMarkdownWriter
 				"may still be in use elsewhere.");
 		}
 
+		// Only there when nothing but its route brought it in (Feature #367).
+		if (procedure.IncludedForFacilityFixes is { } facilityFixes)
+		{
+			builder.AppendLine($"{childIndent}- In {facilityFixes.Facility}: its route has a fix there ({FixList(facilityFixes.Fixes)})");
+		}
+
 		if (entry.AlsoServes.Count > 0)
 		{
 			builder.AppendLine($"{childIndent}- Also serves: {AlsoServes(entry.AlsoServes)}");
 		}
 	}
+
+	/// <summary>The fixes, e.g. <c>DUCKY, OTTTO</c>, or the first five and <c>and 3 more</c>.</summary>
+	private static string FixList(IReadOnlyList<string> fixes) =>
+		fixes.Count <= FixesNamed
+			? string.Join(", ", fixes)
+			: $"{string.Join(", ", fixes.Take(FixesNamed))} and {fixes.Count - FixesNamed} more";
 
 	/// <summary>The other airports, e.g. <c>LGB, SLI, TOA</c>, or the first ten and <c>and 31 more</c>.</summary>
 	private static string AlsoServes(IReadOnlyList<string> airports) =>

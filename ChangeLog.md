@@ -23,6 +23,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   `.helpCHARTRECALL`, a `.note` command that shows how an instrument approach's (IAP's) chart recall
   command is put together. The new **Chart Recall Help Command** card turns it off or renames it.
 - Bug #365 - `Procedure_Changes.md` links every page of a multi-page chart, not just the first.
+- Feature #367 - Procedure Charts can include departures and STARs at other airports whose route has
+  a fix in your facility, so you see their changes.
 
 ### Info
 - The **Alias Command Guide** (and its Markdown and HTML exports) lists `.helpCHARTRECALL` under

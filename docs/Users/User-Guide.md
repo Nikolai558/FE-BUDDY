@@ -210,6 +210,12 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
 - **Area** - which airports the documents cover: **Facilities** (every airport of the ones you
   tick), **ROI** (every airport inside it), **Everything** (every airport in the metafile), or
   **None**. Nothing is clipped.
+- **Neighbors' Departures and Arrivals** (on to start) - also includes the departures and STARs at
+  any other airport whose route has a fix in your facility (Settings ▸ Facility): any point of any
+  body or transition that NASR puts in your ARTCC, high or low. A changed one counts if its route
+  did before or does now, so one that left your airspace still shows. Only the chart types ticked
+  under **Chart Types** come in, and approaches aren't covered yet. It needs a facility set in
+  Settings, and isn't used with **Everything**.
 - **What the cards add** - even outside the area: the **Airports** you list (FAA or ICAO ID),
   **Additional Airport-Specific Procedures to Include** (one airport's version of a procedure), and
   **Additional Procedures to Include**, by name (every version of it). With **Everything** they
@@ -239,7 +245,9 @@ one page links each page the same way, the rest on a "More pages" line, and says
 different from its chart: "(unchanged)" links to a page that didn't change, "(new page)" to one
 added to a chart that isn't new, and "(removed)" to the last version of one taken off a chart that's
 still in use. A STAR at several airports is listed under each, with "Also serves" naming the
-others. **`Procedures.json`** lists the same airports' current charts.
+others. A chart that's there only for its route says so: "In ZDC: its route has a fix there
+(DUCKY, OTTTO)", naming up to five. **`Procedures.json`** lists the same airports' current charts,
+and marks those with `"includedBecause": "routeFixInFacility"` and their `facilityFixes`.
 
 #### FAA Chart Recall commands
 

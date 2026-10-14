@@ -47,8 +47,27 @@ public static class ProcedureSettingsParser
 		"Facilities", "PrimaryFacility",
 		"IncludeRoiAirports",
 		"Airports", "Procedures", "AirportProcedures",
+		IncludeFixInFacilityKey,
 		"ChartTypes", "JsonFields",
 	};
+
+	/// <summary>The key that turns on the procedures-with-a-fix-in-my-facility rule.</summary>
+	private const string IncludeFixInFacilityKey = "IncludeProceduresWithFixInFacility";
+
+	/// <summary>
+	/// Whether a Procedures block will use the procedures-with-a-fix-in-my-facility rule: it is on
+	/// (the default) and names a facility. For the AIRAC Service, which loads the previous cycle's
+	/// NASR data only then.
+	/// </summary>
+	/// <param name="procedureSettings">The raw settings dictionary.</param>
+	/// <returns><see langword="true"/> when the rule may run.</returns>
+	public static bool IncludesProceduresWithFixInFacility(IReadOnlyDictionary<string, string> procedureSettings)
+	{
+		ArgumentNullException.ThrowIfNull(procedureSettings);
+
+		return SettingsValueReader.YesNo(procedureSettings, IncludeFixInFacilityKey, defaultValue: true)
+			&& SettingsValueReader.OptionalString(procedureSettings, "PrimaryFacility") is not null;
+	}
 
 	/// <summary>The areas Procedures offers: the facilities, the ROI, every airport, or none.</summary>
 	private static readonly IReadOnlyList<SubServiceArea> Areas =
@@ -118,11 +137,16 @@ public static class ProcedureSettingsParser
 		IReadOnlyCollection<string> procedures = lists ? [.. SettingsValueReader.StringList(procedureSettings, "Procedures")] : [];
 		IReadOnlyList<ProcedureAirportPick> airportProcedures = lists ? ParseAirportProcedures(procedureSettings) : [];
 
-		if (generatesDocument && area == SubServiceArea.None && airports.Count == 0 && procedures.Count == 0 && airportProcedures.Count == 0)
+		// Like the lists, the rule adds to the area, so with everything it adds nothing.
+		bool includeFixInFacility = lists && SettingsValueReader.YesNo(procedureSettings, IncludeFixInFacilityKey, defaultValue: true);
+
+		if (generatesDocument && area == SubServiceArea.None && airports.Count == 0 && procedures.Count == 0 && airportProcedures.Count == 0
+			&& !(includeFixInFacility && primaryFacility is not null))
 		{
 			throw new ArgumentException(
 				"'Area' is \"None\" and no 'Airports', 'Procedures' or 'AirportProcedures' entry is listed, so the documents " +
-				"would cover nothing. List at least one, or choose another area (\"Artccs\" with 'Facilities', \"Roi\" or \"Everything\").");
+				"would cover nothing. List at least one, choose another area (\"Artccs\" with 'Facilities', \"Roi\" or \"Everything\"), " +
+				$"or set '{IncludeFixInFacilityKey}' with a 'PrimaryFacility'.");
 		}
 
 		(IReadOnlyCollection<string> chartTypes, IReadOnlyList<ServiceMessage> chartTypeMessages) = ParseChartTypes(procedureSettings);
@@ -149,6 +173,7 @@ public static class ProcedureSettingsParser
 			Airports = airports,
 			Procedures = procedures,
 			AirportProcedures = airportProcedures,
+			IncludeProceduresWithFixInFacility = includeFixInFacility,
 			ChartTypes = chartTypes,
 			JsonFields = jsonFields,
 		};

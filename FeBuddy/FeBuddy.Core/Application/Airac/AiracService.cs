@@ -161,6 +161,7 @@ public static class AiracService
 
 		DtppMetafileDataCollection? dtppData = null;
 		DtppMetafileDataCollection? previousDtppData = null;
+		NasrCsvDataCollection? previousNasrData = null;
 
 		if (settings.Procedures is not null)
 		{
@@ -179,6 +180,13 @@ public static class AiracService
 			previousDtppData = await AiracCycleDataCache.Instance
 				.GetDtppAsync(previousCycle.AiracCycleId, cancellationToken)
 				.ConfigureAwait(false);
+
+			// The routes a changed or deleted departure or arrival had, for the rule that adds those with
+			// a fix in the user's facility: only when it's used, and only from the cache.
+			if (ProcedureSettingsParser.IncludesProceduresWithFixInFacility(settings.Procedures))
+			{
+				previousNasrData = await TryGetCachedNasrAsync(previousCycle.AiracCycleId, cancellationToken).ConfigureAwait(false);
+			}
 		}
 
 		IReadOnlyList<AliasSourceLoad>? customAliasFiles = null;
@@ -204,11 +212,36 @@ public static class AiracService
 			Telephony = telephonyData,
 			Dtpp = dtppData,
 			PreviousDtpp = previousDtppData,
+			PreviousNasr = previousNasrData,
 			CustomAliasFiles = customAliasFiles,
 			Messages = supplementalMessages,
 		};
 
 		return await RunAsync(settings, nasrData, supplementalData, progress, cancellationToken, reviewDuplicates).ConfigureAwait(false);
+	}
+
+	/// <summary>
+	/// A cycle's parsed NASR data when the cache has it or is loading it, or <see langword="null"/>:
+	/// a cycle it doesn't track, or one that failed, isn't published, or wasn't loaded (a dev launch
+	/// can leave one out) is never downloaded or parsed for this.
+	/// </summary>
+	private static async Task<NasrCsvDataCollection?> TryGetCachedNasrAsync(string cycleId, CancellationToken cancellationToken)
+	{
+		if (AiracCycleDataCache.Instance.GetEntry(cycleId) is not { } entry
+			|| !(entry.State == CycleDataState.Ready || AiracCycleDataCache.Instance.IsLoading(entry)))
+		{
+			return null;
+		}
+
+		try
+		{
+			return await AiracCycleDataCache.Instance.GetAsync(cycleId, cancellationToken).ConfigureAwait(false);
+		}
+		catch (Exception ex) when (ex is InvalidOperationException or IOException)
+		{
+			AppLog.Warning(LogSource, $"Cycle {cycleId}'s NASR data couldn't be loaded for Procedure Charts: {ex.Message}");
+			return null;
+		}
 	}
 
 	/// <summary>
@@ -342,7 +375,7 @@ public static class AiracService
 
 		ProcedureServiceResult? proceduresResult = await RunSubServiceAsync(
 			settings.Procedures, "Procedure Charts", "Building procedure publication documents",
-			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block, fileNames),
+			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block, fileNames, supplementalData.PreviousNasr),
 			result => $"{result.AirportCount} airport(s), {result.NewCount + result.ChangedCount + result.DeletedCount} change(s), {result.FilesWritten.Count} document(s)"
 				+ (result.AliasFilePath is not null ? $", {result.AliasCommandCount} FAA Chart Recall command(s)" : string.Empty)).ConfigureAwait(false);
 

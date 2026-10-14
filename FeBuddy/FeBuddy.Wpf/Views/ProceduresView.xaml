@@ -94,6 +94,23 @@
                 </cards:AreaCard.Footer>
             </cards:AreaCard>
 
+            <!-- ============ neighbors' departures and arrivals with a fix in my facility (Feature #367) ============
+                 Adds to the area like the cards below, so with Everything it isn't used. It names the facility
+                 set in Settings, and needs one: without it, the box greys out and the note says why. -->
+            <ctl:Card Header="Neighbors' Departures and Arrivals" Outputs="ProcedureChanges, ProceduresJson"
+                      IsEnabled="{Binding AreListsUsed}">
+                <StackPanel>
+                    <ctl:Option Margin="0,4,0,0" Description="{Binding IncludeFixInFacilityNote}">
+                        <CheckBox Content="{Binding IncludeFixInFacilityLabel}"
+                                  IsChecked="{Binding IncludeProceduresWithFixInFacility}"
+                                  IsEnabled="{Binding CanIncludeProceduresWithFixInFacility}" />
+                    </ctl:Option>
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
+                               bhv:InlineCode.Text="{x:Static vm:ProceduresViewModel.ChartRecallNote}"
+                               Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </ctl:Card>
+
             <!-- ============ airports ============
                  This card and the next two add to the area, even outside it. With Everything, which
                  already has every airport, they aren't used: they grey out, keeping their lists. -->

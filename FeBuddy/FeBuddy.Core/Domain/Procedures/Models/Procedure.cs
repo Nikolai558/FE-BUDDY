@@ -70,4 +70,11 @@ public sealed record Procedure
 
 	/// <summary>The civil/military production code (<c>civil</c>): <c>C</c>, <c>D</c>, <c>N</c> or <c>H</c>.</summary>
 	public string? Civil { get; init; }
+
+	/// <summary>
+	/// Set by <c>ProcedureSelection</c> only when the procedure is included because its route has a
+	/// fix in the user's facility and for no other reason - not the area, not a pick - so the
+	/// documents say why it's there. <see langword="null"/> otherwise.
+	/// </summary>
+	public FacilityFixMatch? IncludedForFacilityFixes { get; init; }
 }

@@ -63,6 +63,77 @@ internal static class ProcedureTestData
 			ClassEAirspace = classE,
 		};
 
+	// ---- NASR routes: DP, STAR, FIX and NAV (Feature #367) ----
+
+	/// <summary>
+	/// Builds a <see cref="NasrCsvDataCollection"/> with every group the procedures-with-a-fix-in-my-facility
+	/// rule reads: the routes (<paramref name="departures"/>, <paramref name="arrivals"/>), the fixes and
+	/// NAVAIDs their points are, and the airports (also what the documents need).
+	/// </summary>
+	public static NasrCsvDataCollection RouteNasr(
+		IEnumerable<AptCsvDataModel.AptBase>? apt = null,
+		IEnumerable<(DpCsvDataModel.DpBase Base, IEnumerable<DpCsvDataModel.DpRte> Points)>? departures = null,
+		IEnumerable<(StarCsvDataModel.StarBase Base, IEnumerable<StarCsvDataModel.StarRte> Points)>? arrivals = null,
+		IEnumerable<FixCsvDataModel.FixBase>? fixes = null,
+		IEnumerable<NavCsvDataModel.NavBase>? navaids = null)
+	{
+		NasrCsvDataCollection nasr = Nasr(apt);
+
+		DpCsvDataCollection dp = new();
+		foreach ((DpCsvDataModel.DpBase dpBase, IEnumerable<DpCsvDataModel.DpRte> points) in departures ?? [])
+		{
+			dp.DpBase.Add(dpBase);
+			dp.DpRte.AddRange(points);
+		}
+
+		StarCsvDataCollection star = new();
+		foreach ((StarCsvDataModel.StarBase starBase, IEnumerable<StarCsvDataModel.StarRte> points) in arrivals ?? [])
+		{
+			star.StarBase.Add(starBase);
+			star.StarRte.AddRange(points);
+		}
+
+		FixCsvDataCollection fix = new();
+		fix.FixBase.AddRange(fixes ?? []);
+
+		NavCsvDataCollection nav = new();
+		nav.NavBase.AddRange(navaids ?? []);
+
+		nasr.Dp = dp;
+		nasr.Star = star;
+		nasr.Fix = fix;
+		nasr.Nav = nav;
+		return nasr;
+	}
+
+	/// <summary>One departure (<c>DP_BASE</c> row) and its route, every point on one body.</summary>
+	public static (DpCsvDataModel.DpBase Base, IEnumerable<DpCsvDataModel.DpRte> Points) Departure(
+		string code, string name, string servedAirports, params (string Id, string Type, string? Region)[] points) =>
+		(new DpCsvDataModel.DpBase { DpComputerCode = code, DpName = name, ServedArpt = servedAirports, GraphicalDpType = "SID" },
+		[.. points.Select((p, i) => new DpCsvDataModel.DpRte
+		{
+			DpComputerCode = code, DpName = name, RoutePortionType = "BODY", RouteName = name, PointSeq = (i + 1) * 10,
+			Point = p.Id, PointType = p.Type, IcaoRegionCode = p.Region,
+		})]);
+
+	/// <summary>One arrival (<c>STAR_BASE</c> row) and its route, every point on one body.</summary>
+	public static (StarCsvDataModel.StarBase Base, IEnumerable<StarCsvDataModel.StarRte> Points) Arrival(
+		string code, string name, string servedAirports, params (string Id, string Type, string? Region)[] points) =>
+		(new StarCsvDataModel.StarBase { StarComputerCode = code, ArrivalName = name, ServedArpt = servedAirports },
+		[.. points.Select((p, i) => new StarCsvDataModel.StarRte
+		{
+			StarComputerCode = code, RoutePortionType = "BODY", RouteName = name, PointSeq = (i + 1) * 10,
+			Point = p.Id, PointType = p.Type, IcaoRegionCode = p.Region,
+		})]);
+
+	/// <summary>One <c>FIX_BASE</c> row.</summary>
+	public static FixCsvDataModel.FixBase FixRow(string id, string? high, string? low, string region = "K6", string useCode = "WP") =>
+		new() { FixId = id, IcaoRegionCode = region, FixUseCode = useCode, ArtccIdHigh = high, ArtccIdLow = low!, CountryCode = "US" };
+
+	/// <summary>One <c>NAV_BASE</c> row.</summary>
+	public static NavCsvDataModel.NavBase NavRow(string id, string type, string? high, string? low) =>
+		new() { NavId = id, NavType = type, HighAltArtccId = high, LowAltArtccId = low, CountryCode = "US" };
+
 	// ---- FAA d-TPP Metafile ----
 
 	/// <summary>Builds a <see cref="DtppMetafileDataCollection"/> holding only the given airports and records.</summary>
@@ -191,7 +262,8 @@ internal static class ProcedureTestData
 		string? computerCode = null,
 		string? civil = null,
 		IReadOnlyList<ProcedurePage>? pages = null,
-		IReadOnlyList<ProcedurePage>? previousPages = null)
+		IReadOnlyList<ProcedurePage>? previousPages = null,
+		FacilityFixMatch? includedForFacilityFixes = null)
 	{
 		pages ??= change switch
 		{
@@ -220,6 +292,7 @@ internal static class ProcedureTestData
 			AmdtDate = amdtDate,
 			ComputerCode = computerCode,
 			Civil = civil,
+			IncludedForFacilityFixes = includedForFacilityFixes,
 		};
 	}
 }

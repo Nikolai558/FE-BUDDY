@@ -416,6 +416,27 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 		Assert.False(fieldOff.ContainsKey("continuationCompareUrls"));
 	}
 
+	// ---- a procedure included for its route's fixes in the facility (Feature #367) ----
+
+	[Fact]
+	public void a_procedure_included_only_for_its_routes_fixes_says_why_whatever_the_fields()
+	{
+		ProcedureAirport airport = ProcedureTestData.BuiltAirport("PHL", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("JIIMS FOUR (RNAV)", chartCode: "STR", change: ProcedureChange.Changed,
+				includedForFacilityFixes: new FacilityFixMatch("ZDC", ["DUCKY", "OTTTO"])),
+			ProcedureTestData.BuiltProcedure("ILS RWY 9R", change: ProcedureChange.Changed),
+		]);
+
+		JsonArray procedures = GenerateFirstAirport(airport, Settings())["procedures"]!.AsArray();
+
+		Assert.Equal(["name", "includedBecause", "facilityFixes"], procedures[0]!.AsObject().Select(kv => kv.Key));
+		Assert.Equal(ProceduresJsonWriter.RouteFixInFacility, procedures[0]!["includedBecause"]!.GetValue<string>());
+		Assert.Equal("routeFixInFacility", ProceduresJsonWriter.RouteFixInFacility);
+		Assert.Equal(["DUCKY", "OTTTO"], procedures[0]!["facilityFixes"]!.AsArray().Select(fix => fix!.GetValue<string>()));
+		Assert.Equal(["name"], procedures[1]!.AsObject().Select(kv => kv.Key));
+	}
+
 	// ---- deleted procedures ----
 
 	[Fact]

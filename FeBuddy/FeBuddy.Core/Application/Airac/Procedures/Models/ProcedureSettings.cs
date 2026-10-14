@@ -106,6 +106,15 @@ public sealed record ProcedureSettings
 	public IReadOnlyList<ProcedureAirportPick> AirportProcedures { get; init; } = [];
 
 	/// <summary>
+	/// Whether to include, at any airport, the departures and arrivals whose route has a fix or NAVAID
+	/// in <see cref="PrimaryFacility"/> (Feature #367; see <c>ProceduresWithFixInFacility</c>), as
+	/// <see cref="ChartTypes"/> allows. Needs <see cref="PrimaryFacility"/>; never with
+	/// <see cref="SubServiceArea.Everything"/>, which has every airport already. Default
+	/// <see langword="true"/>.
+	/// </summary>
+	public bool IncludeProceduresWithFixInFacility { get; init; } = true;
+
+	/// <summary>
 	/// The chart types (d-TPP Metafile <c>chart_code</c>) a whole included airport's procedures are
 	/// limited to; a procedure named by <see cref="Procedures"/> or <see cref="AirportProcedures"/>
 	/// is included regardless. Default <see cref="Domain.Procedures.ProcedureChartTypes.Default"/>.

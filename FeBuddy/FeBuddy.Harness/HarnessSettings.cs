@@ -511,6 +511,10 @@ internal static class HarnessSettings
 			{ "Procedures", "" },            // departures and arrivals by root name, e.g. "GRUUB" to always include GRUUB ONE (RNAV), or whatever the FAA renumbers it to, wherever it is served
 			{ "AirportProcedures", "" },     // e.g. "PIT|GRUUB" (departures and arrivals only)
 
+			// Also every departure and arrival at any other airport whose route has a fix in PrimaryFacility.
+			// The harness has no previous cycle's NASR, so a changed or deleted one is checked against this cycle's route only.
+			{ "IncludeProceduresWithFixInFacility", "Y" },
+
 			{ "ChartTypes", "" },            // blank = default: IAP, STR, DP, ODP, DAU, APD
 			{ "JsonFields", "" },            // blank = default: icaoId, airportName, responsibleArtcc, airspaceClass, chartType, chartUrl, change, compareUrl
 		};

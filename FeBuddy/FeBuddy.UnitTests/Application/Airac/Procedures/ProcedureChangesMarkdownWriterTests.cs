@@ -592,6 +592,55 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 			content);
 	}
 
+	// ---- a chart included for its route's fixes in the facility (Feature #367) ----
+
+	[Fact]
+	public void a_chart_included_only_for_its_routes_fixes_says_so_naming_them()
+	{
+		ProcedureAirport phl = ProcedureTestData.BuiltAirport("PHL", responsibleArtcc: "ZNY", procedures:
+		[
+			ProcedureTestData.BuiltProcedure("JIIMS FOUR (RNAV)", chartCode: "STR", change: ProcedureChange.Changed, pdfName: "00178JIIMS.PDF",
+				includedForFacilityFixes: new FacilityFixMatch("ZDC", ["DUCKY", "OTTTO"])),
+			ProcedureTestData.BuiltProcedure("ILS RWY 9R", change: ProcedureChange.Changed, pdfName: "00178IL9R.PDF"),
+		]);
+
+		string content = Generate([phl], ProcedureTestData.Dtpp("2611"));
+
+		Assert.Contains(
+			"  - [JIIMS FOUR (RNAV)](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00178JIIMS_cmp.pdf)\r\n" +
+			"    - In ZDC: its route has a fix there (DUCKY, OTTTO)\r\n" +
+			"  - [ILS RWY 9R](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00178IL9R_cmp.pdf)\r\n",
+			content);
+	}
+
+	[Fact]
+	public void the_fix_line_names_five_fixes_and_counts_the_rest_before_also_serves()
+	{
+		FacilityFixMatch match = new("ZDC", ["JIIMS", "RANSM", "WEVVE", "ERNYY", "WOJIK", "PSOUT", "DUCKY"]);
+		ProcedureAirport[] airports = [.. new[] { "PHL", "TTN" }.Select(id =>
+			ProcedureTestData.BuiltAirport(id, responsibleArtcc: "ZNY", procedures:
+			[
+				ProcedureTestData.BuiltProcedure("JIIMS FOUR (RNAV)", chartCode: "STR", change: ProcedureChange.Changed, pdfName: "00178JIIMS.PDF",
+					includedForFacilityFixes: match),
+			]))];
+
+		string content = Generate(airports, ProcedureTestData.Dtpp("2611"));
+
+		Assert.Contains(
+			"    - In ZDC: its route has a fix there (JIIMS, RANSM, WEVVE, ERNYY, WOJIK and 2 more)\r\n" +
+			"    - Also serves: TTN\r\n",
+			content);
+	}
+
+	[Fact]
+	public void a_chart_with_no_fix_match_has_no_fix_line()
+	{
+		ProcedureAirport aaa = ProcedureTestData.BuiltAirport("AAA", responsibleArtcc: "ZOB", procedures:
+			[ProcedureTestData.BuiltProcedure("ILS RWY 1", change: ProcedureChange.Changed)]);
+
+		Assert.DoesNotContain("its route has a fix there", Generate([aaa], ProcedureTestData.Dtpp("2611")), StringComparison.Ordinal);
+	}
+
 	// ---- facility ordering ----
 
 	[Fact]

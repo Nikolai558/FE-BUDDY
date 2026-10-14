@@ -9,8 +9,9 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
 /// Covers the Procedure Charts tab's Chart Recall Help Command card: the command is on and keeps its
-/// name to start; a new name loses the dot typed in front and must be one word; what the tab saves
-/// and sends; and nothing is checked while the alias file is off - against a throwaway config.
+/// name to start; a new name loses the dot typed in front and must be letters and numbers only; what the tab saves
+/// and sends; nothing is checked while the alias file is off; and the name the Alias Command Guide
+/// shows, from what was saved - against a throwaway config.
 /// </summary>
 [Collection("AppLog")]
 public sealed class ProcedureHelpCommandCardTests : IDisposable
@@ -127,10 +128,14 @@ public sealed class ProcedureHelpCommandCardTests : IDisposable
 	[Theory]
 	[InlineData("", "Type the command's new name, or pick No to keep .helpCHARTRECALL.")]
 	[InlineData("   ", "Type the command's new name, or pick No to keep .helpCHARTRECALL.")]
-	[InlineData("help CR", "A command is one word, so it can't have a space in it.")]
+	[InlineData("help CR", "Use letters and numbers only: no spaces or symbols.")]
+	[InlineData("help.CR", "Use letters and numbers only: no spaces or symbols.")]
+	[InlineData("help_CR", "Use letters and numbers only: no spaces or symbols.")]
+	[InlineData("help{CR}", "Use letters and numbers only: no spaces or symbols.")]
 	[InlineData("helpCR", null)]
+	[InlineData("helpCR2", null)]
 	[InlineData(" helpCR ", null)]
-	public void a_new_name_must_be_typed_and_be_one_word(string typed, string? error)
+	public void a_new_name_must_be_typed_and_be_letters_and_numbers_only(string typed, string? error)
 	{
 		ProceduresViewModel tab = Tab();
 		tab.RenameHelpCommand = true;
@@ -200,6 +205,63 @@ public sealed class ProcedureHelpCommandCardTests : IDisposable
 		Assert.Equal("helpCR", tab.HelpCommandName);
 		Assert.Equal("helpCR", tab.HelpCommand);
 		Assert.False(tab.IsDirty);
+	}
+
+	// ---- the name Info ▸ Alias Command Guide shows ----
+
+	[Fact]
+	public void with_nothing_saved_the_guide_shows_the_default_name()
+	{
+		Assert.Equal("helpCHARTRECALL", ProceduresViewModel.SavedHelpCommand());
+	}
+
+	[Fact]
+	public void the_guide_shows_a_saved_new_name()
+	{
+		UserConfigFile.TrySetValue($"{Node}.RenameHelpCommand", "Y");
+		UserConfigFile.TrySetValue($"{Node}.HelpCommandName", ".helpCR");
+
+		Assert.Equal("helpCR", ProceduresViewModel.SavedHelpCommand());
+	}
+
+	[Theory]
+	[InlineData("N", "helpCR")]
+	[InlineData("Y", "")]
+	[InlineData("Y", "   ")]
+	[InlineData("Y", "help CR")]
+	[InlineData("Y", "help{CR}")]
+	[InlineData("Y", "help_CR")]
+	public void the_guide_shows_the_default_name_unless_a_usable_new_name_is_saved(string rename, string name)
+	{
+		UserConfigFile.TrySetValue($"{Node}.RenameHelpCommand", rename);
+		UserConfigFile.TrySetValue($"{Node}.HelpCommandName", name);
+
+		Assert.Equal("helpCHARTRECALL", ProceduresViewModel.SavedHelpCommand());
+	}
+
+	[Theory]
+	[InlineData($"{Node}.IncludeHelpCommand")]
+	[InlineData("Services.AiracService.Outputs.Procedures.Alias")]
+	public void with_the_help_command_or_the_alias_file_off_the_guide_has_no_name_for_it(string key)
+	{
+		UserConfigFile.TrySetValue($"{Node}.RenameHelpCommand", "Y");
+		UserConfigFile.TrySetValue($"{Node}.HelpCommandName", "helpCR");
+		UserConfigFile.TrySetValue(key, "N");
+
+		Assert.Null(ProceduresViewModel.SavedHelpCommand());
+	}
+
+	[Fact]
+	public void the_guide_reads_what_was_saved_not_unsaved_changes()
+	{
+		ProceduresViewModel tab = Tab();
+		tab.RenameHelpCommand = true;
+		tab.HelpCommandName = "helpCR";
+
+		Assert.Equal("helpCHARTRECALL", ProceduresViewModel.SavedHelpCommand());
+
+		Assert.True(tab.Save());
+		Assert.Equal("helpCR", ProceduresViewModel.SavedHelpCommand());
 	}
 
 	[Fact]

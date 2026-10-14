@@ -463,10 +463,29 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <summary>The help command's name, without its dot: the one typed while renaming, else the default.</summary>
-	public string HelpCommand =>
-		RenameHelpCommand && ChartRecallHelpCommand.CleanName(HelpCommandName) is { Length: > 0 } name
-			? name
-			: ChartRecallHelpCommand.DefaultName;
+	public string HelpCommand => ChartRecallHelpCommand.Name(RenameHelpCommand, HelpCommandName);
+
+	/// <summary>
+	/// The help command's name as last saved, for Info ▸ Alias Command Guide and its exports:
+	/// <see langword="null"/> while the command is off, or the alias file is (General tab); the default
+	/// for a new name that can't be used. Unsaved changes on this tab don't count.
+	/// </summary>
+	/// <returns>The name, without its dot, or <see langword="null"/>.</returns>
+	public static string? SavedHelpCommand()
+	{
+		if (!AiracGeneralTabViewModel.IsSavedOutputOn(AiracSubServices.ProceduresKey, SubServiceOutputKinds.Alias)
+			|| !ReadYesNo(UserConfigFile.GetValue($"{Node}.IncludeHelpCommand"), defaultValue: true))
+		{
+			return null;
+		}
+
+		string name = ChartRecallHelpCommand.Name(
+			ReadYesNo(UserConfigFile.GetValue($"{Node}.RenameHelpCommand"), defaultValue: false),
+			UserConfigFile.GetValue($"{Node}.HelpCommandName"));
+
+		// The tab won't save a name that can't be used, but one edited by hand or saved while unchecked can still be there.
+		return ChartRecallHelpCommand.IsValidName(name) ? name : ChartRecallHelpCommand.DefaultName;
+	}
 
 	// ================= d-TPP data =================
 
@@ -1219,7 +1238,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		ValidateSharedSettings(validation);
 	}
 
-	/// <summary>Checks the help command's new name: one word, typed.</summary>
+	/// <summary>Checks the help command's new name: typed, and letters and numbers only.</summary>
 	private void ValidateHelpCommandName(ServiceValidation validation)
 	{
 		string name = ChartRecallHelpCommand.CleanName(HelpCommandName);
@@ -1229,9 +1248,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			validation.AddField(nameof(HelpCommandName),
 				$"Type the command's new name, or pick No to keep .{ChartRecallHelpCommand.DefaultName}.");
 		}
-		else if (ChartRecallHelpCommand.HasSpace(name))
+		else if (!ChartRecallHelpCommand.IsValidName(name))
 		{
-			validation.AddField(nameof(HelpCommandName), "A command is one word, so it can't have a space in it.");
+			validation.AddField(nameof(HelpCommandName), "Use letters and numbers only: no spaces or symbols.");
 		}
 	}
 

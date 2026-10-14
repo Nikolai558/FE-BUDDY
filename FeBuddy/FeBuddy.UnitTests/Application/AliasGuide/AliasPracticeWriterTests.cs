@@ -29,10 +29,10 @@ public sealed class AliasPracticeWriterTests : IDisposable
 
 	private static string Html() => AliasPracticeWriter.Write(Options);
 
-	private static JsonElement Data() => JsonDocument.Parse(AliasPracticeWriter.Data()).RootElement;
+	private static JsonElement Data(string? helpCommand = null) => JsonDocument.Parse(AliasPracticeWriter.Data(helpCommand)).RootElement;
 
-	private static JsonElement QuestionNamed(string name) =>
-		Data().GetProperty("questions").EnumerateArray().First(question => question.GetProperty("name").GetString() == name);
+	private static JsonElement QuestionNamed(string name, string? helpCommand = null) =>
+		Data(helpCommand).GetProperty("questions").EnumerateArray().First(question => question.GetProperty("name").GetString() == name);
 
 	// ---- the page ----
 
@@ -100,6 +100,17 @@ public sealed class AliasPracticeWriterTests : IDisposable
 			"Shows the chart recall quick reference for instrument approaches (IAPs).",
 			answer.GetProperty("breakdown")[0].GetProperty("text").GetString());
 		Assert.Contains("'Show the quick reference': 'shows the quick reference.'", AliasPracticeWriter.Script(), StringComparison.Ordinal);
+		Assert.Contains("another name, or left it out", AliasPracticeWriter.Data(null), StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void the_help_command_is_asked_for_by_the_users_name_for_it()
+	{
+		JsonElement answer = Assert.Single(QuestionNamed("Chart Recall", "helpCR").GetProperty("answers").EnumerateArray());
+
+		Assert.Equal(".helpCR", answer.GetProperty("parts")[0].GetProperty("t").GetString());
+		Assert.DoesNotContain("another name, or left it out", AliasPracticeWriter.Data("helpCR"), StringComparison.Ordinal);
+		Assert.Contains(AliasPracticeWriter.Data("helpCR"), AliasPracticeWriter.Write(Options with { HelpCommand = "helpCR" }), StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -107,7 +118,7 @@ public sealed class AliasPracticeWriterTests : IDisposable
 	{
 		string html = Html();
 
-		Assert.Contains("<script type=\"application/json\" id=\"practice-data\">" + Environment.NewLine + AliasPracticeWriter.Data(), html);
+		Assert.Contains("<script type=\"application/json\" id=\"practice-data\">" + Environment.NewLine + AliasPracticeWriter.Data(null), html);
 		Assert.Contains(AliasPracticeWriter.Script(), html);
 		Assert.Contains("<noscript>", html);
 	}
@@ -144,7 +155,7 @@ public sealed class AliasPracticeWriterTests : IDisposable
 	{
 		JsonElement data = Data();
 
-		Assert.Equal(AliasPracticeContent.Questions.Count, data.GetProperty("questions").GetArrayLength());
+		Assert.Equal(AliasPracticeContent.Questions(null).Count, data.GetProperty("questions").GetArrayLength());
 		Assert.Equal("ILS", data.GetProperty("typeNames").GetProperty("I").GetString());
 	}
 
@@ -191,7 +202,7 @@ public sealed class AliasPracticeWriterTests : IDisposable
 	[Fact]
 	public void the_data_holds_nothing_that_could_end_its_script_block()
 	{
-		Assert.DoesNotContain("<", AliasPracticeWriter.Data(), StringComparison.Ordinal);
+		Assert.DoesNotContain("<", AliasPracticeWriter.Data(null), StringComparison.Ordinal);
 	}
 
 	// ---- Export ----

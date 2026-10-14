@@ -9,7 +9,7 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// What the Alias Command Practice asks: real charts, procedures, airports, NAVAIDs, operators and
 /// airways, each with an action - display the ISR, display the fixes, recall the chart - and every
 /// command that does it, with how each part of it is built and what is worth knowing about it; and
-/// the chart recall help command, by its default name.
+/// the chart recall help command, by the user's name for it.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -54,7 +54,16 @@ public static class AliasPracticeContent
 	private const string Dtw = "DETROIT METRO WAYNE COUNTY";
 
 	/// <summary>Every question, grouped by action; the page shuffles them.</summary>
-	public static IReadOnlyList<PracticeQuestion> Questions { get; } =
+	/// <param name="helpCommand">
+	/// The chart recall help command's name, without its dot, as the user's alias file writes it; or
+	/// <see langword="null"/> when it is off or not known: it is then asked for by its default name, with
+	/// a note that a facility may have renamed it or left it out.
+	/// </param>
+	/// <returns>The questions, the help command's last.</returns>
+	public static IReadOnlyList<PracticeQuestion> Questions(string? helpCommand) => [.. CommandQuestions, HelpQuestion(helpCommand)];
+
+	/// <summary>Every question but the help command's, which takes the user's name for it.</summary>
+	private static readonly IReadOnlyList<PracticeQuestion> CommandQuestions =
 	[
 		// ---- In-Scope Reference ----
 		Card(PracticeSubject.Airport, Dtw, "FAA ID DTW · ICAO ID KDTW", [".apt{a:DTW}", ".apt{a:KDTW}"],
@@ -168,17 +177,6 @@ public static class AliasPracticeContent
 			"Radar minimums are `{i:RM}`, and open straight to the airport's own page of the FAA's shared document."),
 		Chart(PracticeSubject.OtherChart, ProcedureChartTypes.Lah, "BUR", "HOLLYWOOD BURBANK", "LAHSO", [".{a:bur}{i:LAHSO}c"],
 			"LAHSO is its own code: `{i:LAHSO}`."),
-
-		// ---- Chart Recall: the help command ----
-		new(PracticeAction.ShowHelp, PracticeSubject.Help, "Chart Recall", "How to write an instrument approach (IAP) chart recall command",
-			[$".{ChartRecallHelpCommand.DefaultName}"],
-			[
-				"It shows the order of a command's parts, the approach type codes, and four examples.",
-				"It's for instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any other "
-				+ "chart, see the Alias Command Guide or your facility's command guide.",
-				"Your facility may have given it another name, or left it out.",
-			],
-			null),
 	];
 
 	/// <summary>The section a question's action belongs to, as the guide names it.</summary>
@@ -292,6 +290,25 @@ public static class AliasPracticeContent
 		PracticeSubject.Navaid => "The NAVAID's ID, or its name without spaces.",
 		_ => "The operator's three-letter designator (3LD), or its telephony without spaces.",
 	};
+
+	/// <summary>
+	/// Chart Recall's help command, by the user's name for it; with none, by its default name and a
+	/// note that a facility may have renamed it or left it out.
+	/// </summary>
+	private static PracticeQuestion HelpQuestion(string? name)
+	{
+		string[] notes =
+		[
+			"It shows the order of a command's parts, the approach type codes, and four examples.",
+			"It's for instrument approaches (IAPs) only, as theirs are the hardest commands to work out. For any other "
+			+ "chart, see the Alias Command Guide or your facility's command guide.",
+		];
+
+		return new(PracticeAction.ShowHelp, PracticeSubject.Help, "Chart Recall", "How to write an instrument approach (IAP) chart recall command",
+			[$".{name ?? ChartRecallHelpCommand.DefaultName}"],
+			name is null ? [.. notes, "Your facility may have given it another name, or left it out."] : notes,
+			null);
+	}
 
 	/// <summary>An In-Scope Reference question.</summary>
 	private static PracticeQuestion Card(PracticeSubject subject, string name, string detail, string[] answers, params string[] notes) =>

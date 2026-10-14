@@ -234,7 +234,8 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
 - **Procedures.json Fields** - the optional fields the JSON carries.
 - **Chart Recall Help Command** - whether `Faa_Chart_Recall.txt` starts with a `.note` command that
   shows how an instrument approach's (IAP's) chart recall command is put together (on by default),
-  and its name: `.helpCHARTRECALL`, or one you type (the dot is added for you). For any other chart,
+  and its name: `.helpCHARTRECALL`, or one you type, letters and numbers only (the dot is added for
+  you). For any other chart,
   the note points to your facility's command guide or FE-Buddy's. It greys out while
   `Faa_Chart_Recall.txt` is off.
 
@@ -524,6 +525,7 @@ and shows what will change first.
   - **Export Alias Command Practice** saves a web page that quizzes your controllers: they type the
     command for a chart, procedure, airway or ISR card, or the chart recall help command, and it says
     what's wrong and how the right one is built.
-  - Both show the help command by its default name, `.helpCHARTRECALL`, say it's for instrument
-    approaches (IAPs) only, and say a facility may have renamed it or left it out.
+  - Both show the help command by the name saved on Procedure Charts and say it's for instrument
+    approaches (IAPs) only. With the help command or the alias file off, they show `.helpCHARTRECALL`
+    and say a facility may have renamed it or left it out.
 - Links to this guide, the FAQ, the change log and the issue tracker.

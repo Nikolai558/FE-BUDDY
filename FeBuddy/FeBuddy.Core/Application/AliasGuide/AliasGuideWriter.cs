@@ -19,13 +19,13 @@ public static class AliasGuideWriter
 {
 	/// <summary>Writes the guide.</summary>
 	/// <param name="format">Web page or Markdown.</param>
-	/// <param name="options">The version and date the guide names.</param>
+	/// <param name="options">The version and date the guide names, and the help command's name.</param>
 	/// <returns>The whole file's text.</returns>
 	public static string Write(AliasGuideFormat format, AliasGuideOptions options)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 
-		AliasGuideDocument guide = AliasGuideContent.Build();
+		AliasGuideDocument guide = AliasGuideContent.Build(options.HelpCommand);
 
 		return format == AliasGuideFormat.Markdown
 			? AliasGuideMarkdownWriter.Write(guide, options)
@@ -47,7 +47,7 @@ public static class AliasGuideWriter
 	/// </summary>
 	/// <param name="folder">The folder to write into.</param>
 	/// <param name="formats">The formats to write; a format listed twice is written once.</param>
-	/// <param name="options">The version and date the guide names.</param>
+	/// <param name="options">The version and date the guide names, and the help command's name.</param>
 	/// <returns>The files written, in the order of <paramref name="formats"/>.</returns>
 	/// <exception cref="IOException">A file could not be written.</exception>
 	/// <exception cref="UnauthorizedAccessException">A file or the folder is not writable.</exception>

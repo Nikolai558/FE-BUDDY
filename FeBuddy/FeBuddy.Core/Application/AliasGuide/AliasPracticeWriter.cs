@@ -73,7 +73,7 @@ public static class AliasPracticeWriter
 		""";
 
 	/// <summary>Writes the practice page.</summary>
-	/// <param name="options">The version and date the page names.</param>
+	/// <param name="options">The version and date the page names, and the help command's name.</param>
 	/// <returns>The page's HTML.</returns>
 	public static string Write(AliasGuideOptions options)
 	{
@@ -167,7 +167,7 @@ public static class AliasPracticeWriter
 		Line(html, 1, $"<footer>{Escape(AliasGuideWriter.Updated(options))}</footer>");
 		html.AppendLine("</main>");
 		html.AppendLine("<script type=\"application/json\" id=\"practice-data\">");
-		html.AppendLine(Data());
+		html.AppendLine(Data(options.HelpCommand));
 		html.AppendLine("</script>");
 		html.AppendLine("<script>");
 		html.Append(Script());
@@ -183,7 +183,7 @@ public static class AliasPracticeWriter
 	/// mark, replacing one already there.
 	/// </summary>
 	/// <param name="folder">The folder to write into.</param>
-	/// <param name="options">The version and date the page names.</param>
+	/// <param name="options">The version and date the page names, and the help command's name.</param>
 	/// <returns>The file written.</returns>
 	/// <exception cref="IOException">The file could not be written.</exception>
 	/// <exception cref="UnauthorizedAccessException">The file or the folder is not writable.</exception>
@@ -203,11 +203,12 @@ public static class AliasPracticeWriter
 	/// notes; and what to say when its ID or name part is wrong. HTML-sensitive characters are
 	/// escaped, so nothing in it can end the script block.
 	/// </summary>
+	/// <param name="helpCommand">The help command's name, without its dot, or <see langword="null"/> when it is off or not known.</param>
 	/// <returns>The JSON.</returns>
-	internal static string Data() => JsonSerializer.Serialize(new
+	internal static string Data(string? helpCommand) => JsonSerializer.Serialize(new
 	{
 		typeNames = AliasPracticeContent.ApproachTypeNames,
-		questions = AliasPracticeContent.Questions.Select(question => new
+		questions = AliasPracticeContent.Questions(helpCommand).Select(question => new
 		{
 			section = AliasPracticeContent.SectionTitle(question.Action),
 			action = AliasPracticeContent.ActionLabel(question.Action),

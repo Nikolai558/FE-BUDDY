@@ -18,6 +18,12 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### AIRAC Service
+- Procedure Charts: a renamed chart recall help command must be letters and numbers only.
+
+### Info
+- Feature #370 - The **Alias Command Guide** (and its exports) and the **Alias Command Practice** use
+  your chart recall help command's name from Procedure Charts.
 
 ---
 

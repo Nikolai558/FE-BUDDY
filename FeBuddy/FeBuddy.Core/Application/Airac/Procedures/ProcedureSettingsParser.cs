@@ -196,19 +196,21 @@ public static class ProcedureSettingsParser
 
 	/// <summary>
 	/// Reads <c>HelpCommandName</c>: the help command's name, with any dot in front dropped. Absent or
-	/// blank, it is <see cref="ChartRecallHelpCommand.DefaultName"/>.
+	/// blank, it is <see cref="ChartRecallHelpCommand.DefaultName"/>; anything but letters and numbers is
+	/// an error (<see cref="ChartRecallHelpCommand.IsValidName"/>).
 	/// </summary>
 	private static string ReadHelpCommandName(IReadOnlyDictionary<string, string> procedureSettings)
 	{
 		string name = ChartRecallHelpCommand.CleanName(SettingsValueReader.OptionalString(procedureSettings, "HelpCommandName"));
 
-		if (ChartRecallHelpCommand.HasSpace(name))
+		if (name.Length > 0 && !ChartRecallHelpCommand.IsValidName(name))
 		{
 			throw new ArgumentException(
-				$"'HelpCommandName' \"{name}\" has a space in it. An alias command is one word, e.g. \"{ChartRecallHelpCommand.DefaultName}\".");
+				$"'HelpCommandName' \"{name}\" can't be used. Use letters and numbers only, e.g. \"{ChartRecallHelpCommand.DefaultName}\".");
 		}
 
-		return name.Length > 0 ? name : ChartRecallHelpCommand.DefaultName;
+		// The GUI sends a name only while renaming (RenameHelpCommand is saved, not sent).
+		return ChartRecallHelpCommand.Name(rename: true, name);
 	}
 
 	/// <summary>Parses <c>AirportProcedures</c>: comma-separated <c>APT|PROCEDURE NAME</c> entries.</summary>

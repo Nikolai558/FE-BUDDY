@@ -428,7 +428,7 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `GenerateProceduresJson` | `Outputs.Procedures.ProceduresJson` (General tab) | `Y` / `N` - `Procedures.json` | `Y` |
 | `GenerateAliasFile` | `Outputs.Procedures.Alias` (General tab) | `Y` / `N` - `Faa_Chart_Recall.txt` | `Y` |
 | `IncludeHelpCommand` | | `Y` / `N` - the help command as `Faa_Chart_Recall.txt`'s first line | `Y` |
-| `HelpCommandName` | sent only while `RenameHelpCommand` (saved, not sent) is `Y` | the help command's name, one word; a dot in front is dropped | `helpCHARTRECALL` |
+| `HelpCommandName` | sent only while `RenameHelpCommand` (saved, not sent) is `Y` | the help command's name, letters and numbers only; a dot in front is dropped | `helpCHARTRECALL` |
 | `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
@@ -472,7 +472,12 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
   `ChartRecallSkipReason` and `ChartRecallAliasBuilder`.
 - The help command (`ChartRecallHelpCommand`) is a `.note` line written before the chart commands,
   and isn't counted as one. `IncludeHelpCommand` and `HelpCommandName` are read only with
-  `GenerateAliasFile = Y`; a blank name is the default, and one with a space in it is an error.
+  `GenerateAliasFile = Y`; a blank name is the default, and anything but letters and numbers is an
+  error (`ChartRecallHelpCommand.IsValidName`).
+- Info ▸ Alias Command Guide, its exports and the practice page show the help command by its saved
+  name (`ProceduresViewModel.SavedHelpCommand`; a blank or invalid name is the default). With
+  `Outputs.Procedures.Alias` or `IncludeHelpCommand` at `N`, they show the default name and say a
+  facility may have renamed it or left it out.
 
 ## Telephony
 

@@ -74,13 +74,26 @@ public static class ChartRecallHelpCommand
 	/// <returns>The name; empty when nothing is left.</returns>
 	public static string CleanName(string? name) => (name ?? string.Empty).Trim().TrimStart('.');
 
-	/// <summary>Whether a name can't be used: an alias command is one word, so it can't have a space in it.</summary>
+	/// <summary>
+	/// The name the command goes by: the new name, cleaned (see <see cref="CleanName"/>), while the user
+	/// renames it and has typed one; otherwise <see cref="DefaultName"/>.
+	/// </summary>
+	/// <param name="rename">Whether the user renames it: "Yes" on the Chart Recall Help Command card.</param>
+	/// <param name="newName">The new name as typed, or <see langword="null"/>.</param>
+	/// <returns>The name, without its dot. One that can't be used is returned as it is, for the caller to refuse (see <see cref="IsValidName"/>).</returns>
+	public static string Name(bool rename, string? newName) =>
+		rename && CleanName(newName) is { Length: > 0 } name ? name : DefaultName;
+
+	/// <summary>
+	/// Whether a name can be used: letters and numbers only - no spaces, dots or other symbols, which
+	/// the Alias Command Guide would also read as its own markup.
+	/// </summary>
 	/// <param name="name">The name, cleaned (see <see cref="CleanName"/>).</param>
-	/// <returns><see langword="true"/> when it has a space, tab or other white space in it.</returns>
-	public static bool HasSpace(string name)
+	/// <returns><see langword="true"/> when it is one or more of A-Z, a-z and 0-9.</returns>
+	public static bool IsValidName(string name)
 	{
 		ArgumentNullException.ThrowIfNull(name);
 
-		return name.Any(char.IsWhiteSpace);
+		return name.Length > 0 && name.All(char.IsAsciiLetterOrDigit);
 	}
 }

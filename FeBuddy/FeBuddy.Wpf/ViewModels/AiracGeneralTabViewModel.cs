@@ -273,21 +273,33 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		Enum.GetValues<SubServiceOutputKinds>().Where(kind => kind != SubServiceOutputKinds.None && row.Descriptor.Outputs.HasFlag(kind));
 
 	/// <summary>A row's saved outputs; an output with nothing saved is on.</summary>
-	private SubServiceOutputKinds ReadOutputs(SubServiceRow row)
+	private static SubServiceOutputKinds ReadOutputs(SubServiceRow row)
 	{
 		SubServiceOutputKinds on = SubServiceOutputKinds.None;
 
 		foreach (SubServiceOutputKinds kind in OfferedKinds(row))
 		{
-			string? saved = Get($"{OutputsNode}.{row.Key}.{kind}");
-
-			if (saved is null || IsYes(saved))
+			if (IsSavedOutputOn(row.Key, kind))
 			{
 				on |= kind;
 			}
 		}
 
 		return on;
+	}
+
+	/// <summary>
+	/// Whether a sub-service's output is on as last saved, e.g. Procedure Charts' alias file; an output
+	/// with nothing saved is on. Unsaved changes on this tab don't count.
+	/// </summary>
+	/// <param name="subServiceKey">The sub-service's key, e.g. <see cref="AiracSubServices.ProceduresKey"/>.</param>
+	/// <param name="kind">The output.</param>
+	/// <returns><see langword="true"/> when it is on.</returns>
+	public static bool IsSavedOutputOn(string subServiceKey, SubServiceOutputKinds kind)
+	{
+		string? saved = UserConfigFile.GetValue($"{Node}.{OutputsNode}.{subServiceKey}.{kind}");
+
+		return saved is null || IsYes(saved);
 	}
 
 

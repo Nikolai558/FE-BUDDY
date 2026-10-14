@@ -248,7 +248,8 @@ added to a chart that isn't new, and "(removed)" to the last version of one take
 still in use. A STAR at several airports is listed under each, with "Also serves" naming the
 others. A chart that's there only for its route says so: "In ZDC: its route has a fix there
 (DUCKY, OTTTO)", naming up to five. **`Procedures.json`** lists the same airports' current charts,
-and marks those with `"includedBecause": "routeFixInFacility"` and their `facilityFixes`.
+and marks those with `"includedBecause": "routeFixInFacility"` and their `facilityFixes`. Neither is
+shown for a chart at an airport in your own facility.
 
 #### FAA Chart Recall commands
 

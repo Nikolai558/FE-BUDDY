@@ -151,12 +151,13 @@ public static class ProcedureService
 
 		IReadOnlyList<ProcedureAirport> included = ProcedureSelection.Select(buildResult.Airports, settings, messages, facilityFixes);
 
+		// Only the labeled ones, outside the facility: one at its own airports isn't labeled (Feature #371).
 		int addedForFixes = included.Sum(airport => airport.Procedures.Count(procedure => procedure.IncludedForFacilityFixes is not null));
 
 		if (facilityFixes is not null)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Info, LogSource, addedForFixes == 0
-				? $"No departure or arrival at another airport has a fix in {settings.PrimaryFacility} that isn't already included."
+				? $"No departure or arrival at an airport outside {settings.PrimaryFacility} has a fix in {settings.PrimaryFacility} that isn't already included."
 				: $"Added {addedForFixes} departure(s) and arrival(s) at {included.Count(airport => airport.Procedures.Any(procedure => procedure.IncludedForFacilityFixes is not null))} " +
 					$"other airport(s), whose route has a fix in {settings.PrimaryFacility}."));
 		}

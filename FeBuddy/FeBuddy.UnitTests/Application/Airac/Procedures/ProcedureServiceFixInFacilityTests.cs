@@ -127,6 +127,34 @@ public sealed class ProcedureServiceFixInFacilityTests : IDisposable
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && m.Text == "Added 3 departure(s) and arrival(s) at 3 other airport(s), whose route has a fix in ZDC.");
 	}
 
+	/// <summary>
+	/// With no area, IAD's TRISH FIVE comes in for its route too, but IAD is in ZDC, so neither document
+	/// labels it; the neighbors' charts keep their label (Feature #371).
+	/// </summary>
+	[Fact]
+	public void a_chart_at_an_airport_in_the_facility_is_added_without_the_label()
+	{
+		ProcedureServiceResult result = ProcedureService.Run(
+			Nasr(), Dtpp(), null, Settings(("Area", "None"), ("Facilities", "")), previousNasr: Nasr(koopr: true));
+
+		string markdown = Markdown();
+		Assert.Contains(
+			"- IAD\r\n" +
+			"  - [TRISH FIVE (RNAV)](https://aeronav.faa.gov/d-tpp/2611/compare_pdf/00005TRISH_cmp.pdf)\r\n",
+			markdown);
+		Assert.DoesNotContain("its route has a fix there (TRISH)", markdown, StringComparison.Ordinal);
+		Assert.Contains("    - In ZDC: its route has a fix there (DUCKY)\r\n", markdown);
+
+		JsonArray airports = JsonNode.Parse(Json())!["airports"]!.AsArray();
+		JsonObject iad = airports.Single(a => a!["airportId"]!.GetValue<string>() == "IAD")!["procedures"]![0]!.AsObject();
+		JsonObject phl = airports.Single(a => a!["airportId"]!.GetValue<string>() == "PHL")!["procedures"]![0]!.AsObject();
+		Assert.False(iad.ContainsKey("includedBecause"));
+		Assert.False(iad.ContainsKey("facilityFixes"));
+		Assert.Equal("routeFixInFacility", phl["includedBecause"]!.GetValue<string>());
+
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && m.Text == "Added 3 departure(s) and arrival(s) at 3 other airport(s), whose route has a fix in ZDC.");
+	}
+
 	[Fact]
 	public void without_the_previous_cycles_nasr_a_deleted_chart_is_checked_against_this_cycles_routes_and_says_so()
 	{
@@ -171,6 +199,6 @@ public sealed class ProcedureServiceFixInFacilityTests : IDisposable
 	{
 		ProcedureServiceResult result = ProcedureService.Run(Nasr(), Dtpp(), null, Settings(("ChartTypes", "IAP")));
 
-		Assert.Contains(result.Messages, m => m.Text == "No departure or arrival at another airport has a fix in ZDC that isn't already included.");
+		Assert.Contains(result.Messages, m => m.Text == "No departure or arrival at an airport outside ZDC has a fix in ZDC that isn't already included.");
 	}
 }

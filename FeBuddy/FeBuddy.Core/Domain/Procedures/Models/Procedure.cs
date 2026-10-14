@@ -73,8 +73,9 @@ public sealed record Procedure
 
 	/// <summary>
 	/// Set by <c>ProcedureSelection</c> only when the procedure is included because its route has a
-	/// fix in the user's facility and for no other reason - not the area, not a pick - so the
-	/// documents say why it's there. <see langword="null"/> otherwise.
+	/// fix in the user's facility and for no other reason - not the area, not a pick - at an airport
+	/// outside that facility, so the documents say why it's there. <see langword="null"/> otherwise,
+	/// including at the facility's own airports (Feature #371).
 	/// </summary>
 	public FacilityFixMatch? IncludedForFacilityFixes { get; init; }
 }

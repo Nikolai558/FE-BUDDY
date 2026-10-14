@@ -31,8 +31,10 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// <para>
 /// A chart whose route has a fix in the user's facility (<see cref="ProceduresWithFixInFacility"/>)
 /// is included too, at any airport, when its chart type is one of
-/// <see cref="ProcedureSettings.ChartTypes"/>. When that is the only reason, the copy returned
-/// carries <see cref="Procedure.IncludedForFacilityFixes"/>, so the documents say why it's there.
+/// <see cref="ProcedureSettings.ChartTypes"/>. When that is the only reason and the airport is outside
+/// the user's facility (<see cref="ProcedureSettings.PrimaryFacility"/>), the copy returned carries
+/// <see cref="Procedure.IncludedForFacilityFixes"/>, so the documents say why it's there. At one of the
+/// facility's own airports it is included without it, as that says nothing new (Feature #371).
 /// </para>
 /// </remarks>
 public static class ProcedureSelection
@@ -153,7 +155,10 @@ public static class ProcedureSelection
 			}
 
 			// A chart whose route has a fix in the facility, if its type is wanted; labeled only when
-			// nothing above included it.
+			// nothing above included it and the airport is outside the facility, since at one of its own
+			// airports the label says nothing new (Feature #371).
+			bool inPrimaryFacility = airport.ResponsibleArtcc is { Length: > 0 } responsibleArtcc
+				&& responsibleArtcc.Equals(settings.PrimaryFacility, StringComparison.OrdinalIgnoreCase);
 			Dictionary<Procedure, FacilityFixMatch> onlyForFixes = new(ReferenceEqualityComparer.Instance);
 
 			foreach (Procedure procedure in airport.Procedures)
@@ -161,7 +166,8 @@ public static class ProcedureSelection
 				if (facilityFixes is not null
 					&& facilityFixes.TryGetValue(procedure, out FacilityFixMatch? match)
 					&& chartTypes.Contains(procedure.ChartCode)
-					&& included.Add(procedure))
+					&& included.Add(procedure)
+					&& !inPrimaryFacility)
 				{
 					onlyForFixes[procedure] = match;
 				}

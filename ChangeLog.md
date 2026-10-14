@@ -20,6 +20,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ## Unreleased
 ### AIRAC Service
 - Procedure Charts: a renamed chart recall help command must be letters and numbers only.
+- Feature #371 - Procedure Charts no longer labels a chart at one of your own facility's airports with
+  "its route has a fix there" (or `routeFixInFacility` in `Procedures.json`). It's still included.
 
 ### Info
 - Feature #370 - The **Alias Command Guide** (and its exports) and the **Alias Command Practice** use

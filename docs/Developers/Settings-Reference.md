@@ -453,7 +453,9 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
   one, the run warns and skips it. A procedure qualifies when any point of any body or transition of
   its NASR `DP_RTE`/`STAR_RTE` route is a `FIX_BASE` row whose `ARTCC_ID_HIGH` or `ARTCC_ID_LOW`, or a
   `NAV_BASE` row whose `HIGH_ALT_ARTCC_ID` or `LOW_ALT_ARTCC_ID`, is the facility - matched by ID and
-  type, and by ICAO region where both have one (`RoutePointArtccResolver`). The rest of the rule -
+  type, and by ICAO region where both have one (`RoutePointArtccResolver`). A chart brought in only
+  by it is labeled in both documents, except at an airport whose responsible ARTCC is
+  `PrimaryFacility` (Feature #371). The rest of the rule -
   matching a chart to its route, which cycle's route counts, the labels - is in the XML docs of
   `ProceduresWithFixInFacility`, `NasrProcedureRoutes` and `ProcedureSelection`. It reads the
   previous cycle's NASR from the cycle cache (`AiracSupplementalData.PreviousNasr`) only when used.

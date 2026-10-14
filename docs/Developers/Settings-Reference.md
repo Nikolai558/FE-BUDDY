@@ -62,12 +62,15 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 | File | Holds |
 |---|---|
 | `UserConfig.<Profile>.json` | One profile: every setting but the shared ones. The name follows Windows' rules for a file name, up to 64 characters; names differing only in case are the same profile. |
-| `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`). |
+| `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, `RememberWindowPlacement`, `MainWindowPlacement`). |
 | `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward). They move and go with it. |
 
 - In memory the two files are one dictionary, so a caller never knows which a key is in. `Save`
   writes a shared key under its node to `Shared.json`, and every other key to the profile. A shared
   key found in a profile (copied in by hand, say) moves to `Shared.json`, unless that has one already.
+  `SaveShared` writes shared keys to `Shared.json` alone, and `ReadSharedValue` reads one straight
+  from it: the main window's placement uses both, as the window opens before the launch reads the
+  settings.
 - `CreateProfile`, `SwitchProfile`, `RenameProfile` and `DeleteProfile` are in
   `UserConfigFile.Profiles.cs`. The profile in use can't be deleted; Settings switches away first.
 - After a switch or an import every page reads the settings again (`ConfigPages.ReloadEverything`).
@@ -83,8 +86,8 @@ needed.
 
 ### General
 
-Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, and the
-first `UpdateChannel`.
+Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`,
+`MainWindowPlacement` (as the main window closes), and the first `UpdateChannel`.
 
 | Key | Values | Default |
 |---|---|---|
@@ -96,6 +99,8 @@ first `UpdateChannel`.
 | `FeBuddyGitHub.CredentialId` | the id (`"N"` GUID) of the saved GitHub token credential FE-Buddy's own GitHub requests use (`GitHubAuth`); blank for none | none |
 | `LegacyGitHubTokenNoticeShown` | `Y` once the notice about 2.x's `FEBUDDY_GITHUB_TOKEN` has been shown | none |
 | `WelcomeShown` | `Y` once the first-launch welcome to FE-Buddy 3 has been shown (`WelcomeNotice`) | none |
+| `RememberWindowPlacement` | `Y` / `N` - the main window reopens where it was closed. Saved at once by Settings ▸ Main Window; `N` also removes `MainWindowPlacement` | `Y` |
+| `MainWindowPlacement` | `left,top,width,height,dpi,state` in physical screen pixels, e.g. `2120,140,1800,1170,144,Maximized` (`SavedWindowPlacement`). Checked against the screens connected at each launch (`WindowPlacementRules`); anything unreadable means the default | none: 1200 x 780, centered on the main screen |
 
 ### Services.AiracService
 
@@ -422,11 +427,14 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `GenerateChangesDocument` | `Outputs.Procedures.ProcedureChanges` (General tab) | `Y` / `N` - `Procedure_Changes.md` | `Y` |
 | `GenerateProceduresJson` | `Outputs.Procedures.ProceduresJson` (General tab) | `Y` / `N` - `Procedures.json` | `Y` |
 | `GenerateAliasFile` | `Outputs.Procedures.Alias` (General tab) | `Y` / `N` - `Faa_Chart_Recall.txt` | `Y` |
+| `IncludeHelpCommand` | | `Y` / `N` - the help command as `Faa_Chart_Recall.txt`'s first line | `Y` |
+| `HelpCommandName` | sent only while `RenameHelpCommand` (saved, not sent) is `Y` | the help command's name, one word; a dot in front is dropped | `helpCHARTRECALL` |
 | `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
 | `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
 | `Procedures` | | list of departure and arrival root names, included wherever charted, e.g. `BRWNZ` | none |
 | `AirportProcedures` | | list of `<airport>\|<departure or arrival root name>`, e.g. `PIT\|GRUUB` | none |
+| `IncludeProceduresWithFixInFacility` | | `Y` / `N` - also include, at any airport, the departures and arrivals whose route has a fix in `PrimaryFacility` (Feature #367). The tab sends `N` while no facility is set | `Y` |
 | `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH` | `IAP,STR,DP,ODP,DAU,APD` |
 | `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`) | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
 
@@ -440,6 +448,15 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
   `Everything` they aren't read. With `None`, at least one of them is required. The area's own
   checks (a facility, a ROI) and that one apply only when a document is on. The alias file ignores
   them all: it covers every chart at every airport in the d-TPP Metafile.
+- `IncludeProceduresWithFixInFacility` adds to the area like the lists: not read with `Everything`,
+  and with `None` it counts as something to include when there is a `PrimaryFacility`. On without
+  one, the run warns and skips it. A procedure qualifies when any point of any body or transition of
+  its NASR `DP_RTE`/`STAR_RTE` route is a `FIX_BASE` row whose `ARTCC_ID_HIGH` or `ARTCC_ID_LOW`, or a
+  `NAV_BASE` row whose `HIGH_ALT_ARTCC_ID` or `LOW_ALT_ARTCC_ID`, is the facility - matched by ID and
+  type, and by ICAO region where both have one (`RoutePointArtccResolver`). The rest of the rule -
+  matching a chart to its route, which cycle's route counts, the labels - is in the XML docs of
+  `ProceduresWithFixInFacility`, `NasrProcedureRoutes` and `ProcedureSelection`. It reads the
+  previous cycle's NASR from the cycle cache (`AiracSupplementalData.PreviousNasr`) only when used.
 - A block without `Area` takes `Facilities` as the area when it lists any, otherwise the ROI with
   the old `IncludeRoiAirports = Y`, otherwise `None`. `FilterByRoi` alone never meant the ROI here.
 - An unknown `ChartTypes` code warns but is still used; an unknown `JsonFields` name warns and is
@@ -447,9 +464,15 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 - `JsonFields`: `icaoId`, `airportName`, `city`, `state`, `responsibleArtcc`, `airspaceClass`,
   `military`, `chartType`, `chartUrl`, `change`, `compareUrl`, `amendment`, `amendmentDate`,
   `procedureUid`, `computerCode`, `producer`. An airport's `airportId` and a procedure's `name` are
-  always written; a field with no value is left out.
+  always written; a field with no value is left out. `chartUrl` also writes `continuationUrls`, the
+  other pages' charts. `compareUrl` is the first page's, only when that page changed, and it also
+  writes `continuationCompareUrls`, the changed continuation pages' (the FAA publishes a compare
+  PDF only for a page it marks changed).
 - The chart recall rules are in the XML docs of `ChartRecallCodes`, `ApproachCodes`, `SidStarCodes`,
   `ChartRecallSkipReason` and `ChartRecallAliasBuilder`.
+- The help command (`ChartRecallHelpCommand`) is a `.note` line written before the chart commands,
+  and isn't counted as one. `IncludeHelpCommand` and `HelpCommandName` are read only with
+  `GenerateAliasFile = Y`; a blank name is the default, and one with a space in it is an error.
 
 ## Telephony
 
@@ -559,7 +582,7 @@ no list:
 | Scope | Keys | Export | Import |
 |---|---|---|---|
 | Secret | under `Secrets`, or ending in `Token`, `Password`, `Secret`, `ApiKey`, `Credential` or `Credentials`, or called `Pat` | never | this PC's is kept |
-| Local | `General.UpdateChannel`, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, and anything outside `General` and `Services` | never | this PC's is kept |
+| Local | `General.UpdateChannel`, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, `RememberWindowPlacement`, `MainWindowPlacement`, and anything outside `General` and `Services` | never | this PC's is kept |
 | Credential choice | ending in `CredentialId` | never | this PC's is kept only where the settings beside it are unchanged (the same custom alias file at the same address) |
 | Machine path | ending in `Folder`, `Directory` or `FilePath` (not `AddFeBuddyOutputFolder`) | your Desktop, Documents or profile become `%DESKTOP%`, `%DOCUMENTS%`, `%USERPROFILE%` | taken only where it works on this PC (below) |
 | Shared | everything else under `General` and `Services` | as it is | as it is |

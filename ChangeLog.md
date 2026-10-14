@@ -21,6 +21,28 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ---
 
+## 3.0.0-beta.11
+### AIRAC Service
+- Procedure Charts: `Faa_Chart_Recall.txt`, and its part of `Combined_Alias.txt`, now starts with
+  `.helpCHARTRECALL`, a `.note` command that shows how an instrument approach's (IAP's) chart recall
+  command is put together. The new **Chart Recall Help Command** card turns it off or renames it.
+- Bug #365 - `Procedure_Changes.md` links every page of a multi-page chart, not just the first.
+- Feature #367 - Procedure Charts can include departures and STARs at other airports whose route has
+  a fix in your facility, so you see their changes.
+
+### Info
+- The **Alias Command Guide** (and its Markdown and HTML exports) lists `.helpCHARTRECALL` under
+  Chart Recall as being for instrument approaches (IAPs) only, and the **Alias Command Practice**
+  asks for it.
+
+### Look and feel
+- Feature #364 - FE-Buddy opens where you last closed it, at the same size, and maximized if it was.
+  It's never out of reach: if that screen is gone, it opens in the middle of your main screen, and if
+  the screen is now smaller, it shrinks to fit. The new **Main Window** card in Settings turns this
+  off, or moves the window back to the middle of the main screen now.
+
+---
+
 ## 3.0.0-beta.10
 ### AIRAC Service
 - Bug #361 - FAA Chart Recall: an approach's runway no longer keeps a leading zero, so a runway the

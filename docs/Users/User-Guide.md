@@ -210,6 +210,12 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
 - **Area** - which airports the documents cover: **Facilities** (every airport of the ones you
   tick), **ROI** (every airport inside it), **Everything** (every airport in the metafile), or
   **None**. Nothing is clipped.
+- **External Procedures in Our Airspace** (on to start) - also includes the procedures at airports
+  outside your facility (Settings ▸ Facility) that have a waypoint inside it: any point of any body
+  or transition that NASR puts in your ARTCC, high or low. A changed one counts if its route did
+  before or does now, so one that left your airspace still shows. It covers departures (ODPs and
+  SIDs) and arrivals (STARs) only, for now, and only the chart types ticked under **Chart Types**
+  come in. It needs a facility set in Settings, and isn't used with **Everything**.
 - **What the cards add** - even outside the area: the **Airports** you list (FAA or ICAO ID),
   **Additional Airport-Specific Procedures to Include** (one airport's version of a procedure), and
   **Additional Procedures to Include**, by name (every version of it). With **Everything** they
@@ -226,16 +232,27 @@ the cycle is *partial*, and the run goes ahead without Procedure Charts' files.
   this cycle, already listed, or already included by the area. **Additional Procedures to Include**
   takes Enter or **Add** too.
 - **Procedures.json Fields** - the optional fields the JSON carries.
+- **Chart Recall Help Command** - whether `Faa_Chart_Recall.txt` starts with a `.note` command that
+  shows how an instrument approach's (IAP's) chart recall command is put together (on by default),
+  and its name: `.helpCHARTRECALL`, or one you type (the dot is added for you). For any other chart,
+  the note points to your facility's command guide or FE-Buddy's. It greys out while
+  `Faa_Chart_Recall.txt` is off.
 
 **`Procedure_Changes.md`** has a section per facility: yours first, then the rest alphabetically,
 then "Other". Each lists the airports that changed, Class B first. A changed chart links to the FAA's
-comparison PDF, a new one to its chart, and a deleted one to its last chart. A STAR at several
-airports is listed under each, with "Also serves" naming the others. **`Procedures.json`** lists the
-same airports' current charts.
+comparison PDF, a new one to its chart, and a deleted one to its last chart. A chart with more than
+one page links each page the same way, the rest on a "More pages" line, and says when a page is
+different from its chart: "(unchanged)" links to a page that didn't change, "(new page)" to one
+added to a chart that isn't new, and "(removed)" to the last version of one taken off a chart that's
+still in use. A STAR at several airports is listed under each, with "Also serves" naming the
+others. A chart that's there only for its route says so: "In ZDC: its route has a fix there
+(DUCKY, OTTTO)", naming up to five. **`Procedures.json`** lists the same airports' current charts,
+and marks those with `"includedBecause": "routeFixInFacility"` and their `facilityFixes`.
 
 #### FAA Chart Recall commands
 
-One `.OPENURL` command per page of every current chart:
+One `.OPENURL` command per page of every current chart, after the help command (`.helpCHARTRECALL`,
+unless you turned it off or renamed it):
 
 ```
 .dtwI22Lc .OPENURL https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF  ; DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L
@@ -458,16 +475,18 @@ to give the map room, and leaving Map expands it again, unless you collapse or e
 
 ## Settings
 
-Press **Save** at the top to keep your changes (credentials save at once). **Export…** and
-**Import…** share your setup, leaving out this PC's own (update channel, credentials, FE-Buddy's
-GitHub token, which News you've read). An import asks where the settings go - a new profile, added to the profile in use, or
-in place of its settings - and shows what will change first.
+Press **Save** at the top to keep your changes (credentials and the Main Window card save at once).
+**Export…** and **Import…** share your setup, leaving out this PC's own (update channel,
+credentials, FE-Buddy's GitHub token, which News you've read, where the window was). An import asks
+where the settings go - a new profile, added to the profile in use, or in place of its settings -
+and shows what will change first.
 
 - **Settings Profile** - a profile is a whole set of settings: keep one for each facility, or one
   for each kind of run (say, GeoJSON every few cycles and aliases every cycle). Choose one in the
   list to switch to it; **New…** makes one (a copy of the profile in use, or every default),
   **Rename…** and **Delete…** act on the one in use. The update channel, which News you've read,
-  FE-Buddy's GitHub token and your saved credentials are the same in every profile.
+  FE-Buddy's GitHub token, your saved credentials and the Main Window card are the same in every
+  profile.
 - **Facility** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first in
   reports), and the **Default Output Directory** (the Desktop to start, with a `FE-Buddy_Output`
   folder inside unless you untick it).
@@ -484,6 +503,10 @@ in place of its settings - and shows what will change first.
 - **Updates / Update Channel** - the update channel (Stable suits almost everyone; Beta and Alpha
   are for development, not early access). It's set when FE-Buddy first starts and only changes
   here - updating never changes it. **Check for updates now** and **Open the Releases Page**.
+- **Main Window** - **Remember window size and position** (on to start): FE-Buddy opens where you
+  last closed it, maximized if it was. If that screen is gone, or its title bar would be out of
+  reach, it opens in the middle of your main screen instead; on a screen now too small for it, it
+  shrinks to fit. **Reset window size and position** moves it to the middle of your main screen now.
 - **Reset / Uninstall**:
   - **Reset FE-Buddy…** - start over as if newly installed. Downloaded data, logs and settings
     backups always go; you choose whether to keep your settings and credentials. Your output folder
@@ -499,6 +522,8 @@ in place of its settings - and shows what will change first.
   - **Export FE-Buddy Alias Command Guide** saves it as a web page, Markdown or both, for your
     facility's website.
   - **Export Alias Command Practice** saves a web page that quizzes your controllers: they type the
-    command for a chart, procedure, airway or ISR card, and it says what's wrong and how the right
-    one is built.
+    command for a chart, procedure, airway or ISR card, or the chart recall help command, and it says
+    what's wrong and how the right one is built.
+  - Both show the help command by its default name, `.helpCHARTRECALL`, say it's for instrument
+    approaches (IAPs) only, and say a facility may have renamed it or left it out.
 - Links to this guide, the FAQ, the change log and the issue tracker.

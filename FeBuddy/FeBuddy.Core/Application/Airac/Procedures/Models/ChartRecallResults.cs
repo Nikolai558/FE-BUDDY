@@ -56,6 +56,6 @@ public sealed record ChartRecallBuildResult(
 	IReadOnlyList<ServiceMessage> Messages);
 
 /// <summary>The outcome of writing <c>Faa_Chart_Recall.txt</c>.</summary>
-/// <param name="FilePath">The path written, or <see langword="null"/> when there was no command to write.</param>
-/// <param name="CommandCount">How many commands were written.</param>
+/// <param name="FilePath">The path written, or <see langword="null"/> when there was no chart command to write.</param>
+/// <param name="CommandCount">How many chart commands were written; the help command isn't one.</param>
 public sealed record ChartRecallAliasWriteResult(string? FilePath, int CommandCount);

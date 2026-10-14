@@ -43,11 +43,31 @@ public static class ProcedureSettingsParser
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"GenerateChangesDocument", "GenerateProceduresJson", "GenerateAliasFile",
+		"IncludeHelpCommand", "HelpCommandName",
 		"Facilities", "PrimaryFacility",
 		"IncludeRoiAirports",
 		"Airports", "Procedures", "AirportProcedures",
+		IncludeFixInFacilityKey,
 		"ChartTypes", "JsonFields",
 	};
+
+	/// <summary>The key that turns on the procedures-with-a-fix-in-my-facility rule.</summary>
+	private const string IncludeFixInFacilityKey = "IncludeProceduresWithFixInFacility";
+
+	/// <summary>
+	/// Whether a Procedures block will use the procedures-with-a-fix-in-my-facility rule: it is on
+	/// (the default) and names a facility. For the AIRAC Service, which loads the previous cycle's
+	/// NASR data only then.
+	/// </summary>
+	/// <param name="procedureSettings">The raw settings dictionary.</param>
+	/// <returns><see langword="true"/> when the rule may run.</returns>
+	public static bool IncludesProceduresWithFixInFacility(IReadOnlyDictionary<string, string> procedureSettings)
+	{
+		ArgumentNullException.ThrowIfNull(procedureSettings);
+
+		return SettingsValueReader.YesNo(procedureSettings, IncludeFixInFacilityKey, defaultValue: true)
+			&& SettingsValueReader.OptionalString(procedureSettings, "PrimaryFacility") is not null;
+	}
 
 	/// <summary>The areas Procedures offers: the facilities, the ROI, every airport, or none.</summary>
 	private static readonly IReadOnlyList<SubServiceArea> Areas =
@@ -84,6 +104,11 @@ public static class ProcedureSettingsParser
 				"sub-service would produce nothing. Turn at least one back on, or leave Procedure Charts out of the run.");
 		}
 
+		// The help command is the alias file's first line, so with no alias file it isn't read.
+		string? helpCommand = generateAliasFile && SettingsValueReader.YesNo(procedureSettings, "IncludeHelpCommand", defaultValue: true)
+			? ReadHelpCommandName(procedureSettings)
+			: null;
+
 		// The selection settings below pick what the two documents cover; the alias file covers every
 		// airport in the metafile whatever they say.
 		bool generatesDocument = generateChangesDocument || generateProceduresJson;
@@ -112,11 +137,16 @@ public static class ProcedureSettingsParser
 		IReadOnlyCollection<string> procedures = lists ? [.. SettingsValueReader.StringList(procedureSettings, "Procedures")] : [];
 		IReadOnlyList<ProcedureAirportPick> airportProcedures = lists ? ParseAirportProcedures(procedureSettings) : [];
 
-		if (generatesDocument && area == SubServiceArea.None && airports.Count == 0 && procedures.Count == 0 && airportProcedures.Count == 0)
+		// Like the lists, the rule adds to the area, so with everything it adds nothing.
+		bool includeFixInFacility = lists && SettingsValueReader.YesNo(procedureSettings, IncludeFixInFacilityKey, defaultValue: true);
+
+		if (generatesDocument && area == SubServiceArea.None && airports.Count == 0 && procedures.Count == 0 && airportProcedures.Count == 0
+			&& !(includeFixInFacility && primaryFacility is not null))
 		{
 			throw new ArgumentException(
 				"'Area' is \"None\" and no 'Airports', 'Procedures' or 'AirportProcedures' entry is listed, so the documents " +
-				"would cover nothing. List at least one, or choose another area (\"Artccs\" with 'Facilities', \"Roi\" or \"Everything\").");
+				"would cover nothing. List at least one, choose another area (\"Artccs\" with 'Facilities', \"Roi\" or \"Everything\"), " +
+				$"or set '{IncludeFixInFacilityKey}' with a 'PrimaryFacility'.");
 		}
 
 		(IReadOnlyCollection<string> chartTypes, IReadOnlyList<ServiceMessage> chartTypeMessages) = ParseChartTypes(procedureSettings);
@@ -135,6 +165,7 @@ public static class ProcedureSettingsParser
 			GenerateChangesDocument = generateChangesDocument,
 			GenerateProceduresJson = generateProceduresJson,
 			GenerateAliasFile = generateAliasFile,
+			HelpCommand = helpCommand,
 			Area = area,
 			Facilities = facilities,
 			PrimaryFacility = primaryFacility,
@@ -142,6 +173,7 @@ public static class ProcedureSettingsParser
 			Airports = airports,
 			Procedures = procedures,
 			AirportProcedures = airportProcedures,
+			IncludeProceduresWithFixInFacility = includeFixInFacility,
 			ChartTypes = chartTypes,
 			JsonFields = jsonFields,
 		};
@@ -161,6 +193,23 @@ public static class ProcedureSettingsParser
 			: SettingsValueReader.StringList(procedureSettings, "Facilities").Count > 0 ? SubServiceArea.Artccs
 			: SettingsValueReader.YesNo(procedureSettings, "IncludeRoiAirports", defaultValue: false) ? SubServiceArea.Roi
 			: SubServiceArea.None;
+
+	/// <summary>
+	/// Reads <c>HelpCommandName</c>: the help command's name, with any dot in front dropped. Absent or
+	/// blank, it is <see cref="ChartRecallHelpCommand.DefaultName"/>.
+	/// </summary>
+	private static string ReadHelpCommandName(IReadOnlyDictionary<string, string> procedureSettings)
+	{
+		string name = ChartRecallHelpCommand.CleanName(SettingsValueReader.OptionalString(procedureSettings, "HelpCommandName"));
+
+		if (ChartRecallHelpCommand.HasSpace(name))
+		{
+			throw new ArgumentException(
+				$"'HelpCommandName' \"{name}\" has a space in it. An alias command is one word, e.g. \"{ChartRecallHelpCommand.DefaultName}\".");
+		}
+
+		return name.Length > 0 ? name : ChartRecallHelpCommand.DefaultName;
+	}
 
 	/// <summary>Parses <c>AirportProcedures</c>: comma-separated <c>APT|PROCEDURE NAME</c> entries.</summary>
 	private static IReadOnlyList<ProcedureAirportPick> ParseAirportProcedures(IReadOnlyDictionary<string, string> procedureSettings)

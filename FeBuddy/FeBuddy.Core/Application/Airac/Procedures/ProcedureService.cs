@@ -3,6 +3,7 @@ using System.Diagnostics;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -45,17 +46,24 @@ public static class ProcedureService
 	/// </param>
 	/// <param name="procedureSettings">The raw Procedures settings dictionary.</param>
 	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
+	/// <param name="previousNasr">
+	/// The previous cycle's parsed NASR data, for the routes a changed or deleted departure or arrival
+	/// had (see <see cref="ProceduresWithFixInFacility"/>), or <see langword="null"/> when it isn't loaded -
+	/// this cycle's routes are then the only ones checked.
+	/// </param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">
-	/// Thrown when a document is requested and <paramref name="nasr"/>.Apt or .ClsArsp has not been parsed.
+	/// Thrown when a document is requested and <paramref name="nasr"/>.Apt or .ClsArsp has not been parsed -
+	/// or, with the procedures-with-a-fix-in-my-facility rule on, its DP, STAR, FIX or NAV.
 	/// </exception>
 	public static ProcedureServiceResult Run(
 		NasrCsvDataCollection nasr,
 		DtppMetafileDataCollection? dtpp,
 		DtppMetafileDataCollection? previousDtpp,
 		IReadOnlyDictionary<string, string> procedureSettings,
-		OutputFileNames? fileNames = null)
+		OutputFileNames? fileNames = null,
+		NasrCsvDataCollection? previousNasr = null)
 	{
 		ArgumentNullException.ThrowIfNull(nasr);
 		ArgumentNullException.ThrowIfNull(procedureSettings);
@@ -80,7 +88,7 @@ public static class ProcedureService
 		}
 
 		DocumentOutcome documents = settings.GenerateChangesDocument || settings.GenerateProceduresJson
-			? WriteDocuments(nasr, dtpp, previousDtpp, settings, messages)
+			? WriteDocuments(nasr, previousNasr, dtpp, previousDtpp, settings, messages)
 			: DocumentOutcome.None;
 
 		AliasOutcome? alias = settings.GenerateAliasFile
@@ -90,9 +98,45 @@ public static class ProcedureService
 		return Finish(stopwatch, messages, documents, alias);
 	}
 
+	/// <summary>
+	/// The charts whose route has a fix in the user's facility (Feature #367), from this cycle's NASR
+	/// routes and, when they're loaded, the previous cycle's; or <see langword="null"/>, with a warning,
+	/// when no facility is set.
+	/// </summary>
+	private static IReadOnlyDictionary<Procedure, FacilityFixMatch>? FindFacilityFixes(
+		NasrCsvDataCollection nasr,
+		NasrCsvDataCollection? previousNasr,
+		IReadOnlyList<ProcedureAirport> airports,
+		ProcedureSettings settings,
+		List<ServiceMessage> messages)
+	{
+		if (settings.PrimaryFacility is not { } facility)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
+				"'IncludeProceduresWithFixInFacility' is on, but no facility is set in Settings ▸ Facility, so departures and " +
+				"arrivals at other airports with a fix in it weren't added."));
+			return null;
+		}
+
+		ProcedureRouteSet? previous = previousNasr is { Dp: not null, Star: not null, Fix: not null, Nav: not null }
+			? ProcedureRouteSet.FromNasr(previousNasr)
+			: null;
+
+		if (previous is null)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				"The previous cycle's NASR data isn't loaded, so a changed or deleted departure or arrival at another airport was " +
+				$"checked against its route this cycle only, for a fix in {facility}."));
+		}
+
+		return ProceduresWithFixInFacility.Find(
+			airports, facility, ProcedureRouteSet.FromNasr(nasr), previous, useAirports: settings.Area == SubServiceArea.None);
+	}
+
 	/// <summary>Builds, selects and writes the requested documents, counting the changes they report.</summary>
 	private static DocumentOutcome WriteDocuments(
 		NasrCsvDataCollection nasr,
+		NasrCsvDataCollection? previousNasr,
 		DtppMetafileDataCollection dtpp,
 		DtppMetafileDataCollection? previousDtpp,
 		ProcedureSettings settings,
@@ -101,7 +145,21 @@ public static class ProcedureService
 		ProcedureBuildResult buildResult = ProcedureBuilder.Build(nasr, dtpp, previousDtpp);
 		messages.AddRange(buildResult.Messages);
 
-		IReadOnlyList<ProcedureAirport> included = ProcedureSelection.Select(buildResult.Airports, settings, messages);
+		IReadOnlyDictionary<Procedure, FacilityFixMatch>? facilityFixes = settings.IncludeProceduresWithFixInFacility
+			? FindFacilityFixes(nasr, previousNasr, buildResult.Airports, settings, messages)
+			: null;
+
+		IReadOnlyList<ProcedureAirport> included = ProcedureSelection.Select(buildResult.Airports, settings, messages, facilityFixes);
+
+		int addedForFixes = included.Sum(airport => airport.Procedures.Count(procedure => procedure.IncludedForFacilityFixes is not null));
+
+		if (facilityFixes is not null)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource, addedForFixes == 0
+				? $"No departure or arrival at another airport has a fix in {settings.PrimaryFacility} that isn't already included."
+				: $"Added {addedForFixes} departure(s) and arrival(s) at {included.Count(airport => airport.Procedures.Any(procedure => procedure.IncludedForFacilityFixes is not null))} " +
+					$"other airport(s), whose route has a fix in {settings.PrimaryFacility}."));
+		}
 
 		int newCount = 0;
 		int changedCount = 0;

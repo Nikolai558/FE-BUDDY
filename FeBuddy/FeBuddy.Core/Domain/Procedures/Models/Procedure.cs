@@ -15,34 +15,39 @@ public sealed record Procedure
 	/// <summary>The chart sequence number of the procedure's first page - what orders it within the airport.</summary>
 	public required int ChartSeq { get; init; }
 
-	/// <summary>Every page (main and continuation), in file order.</summary>
+	/// <summary>
+	/// Every page (main and continuation), in page order: the main page, then <c>CONT.1</c>,
+	/// <c>CONT.2</c>... A re-added procedure lists a page twice, once deleted and once added. A
+	/// continuation page whose own main page is gone this cycle joins the procedure with its
+	/// <c>procuid</c>, under its own name (e.g. <c>MINNEAPOLIS NINE, CONT.1</c> in
+	/// <c>MINNEAPOLIS ONE</c>).
+	/// </summary>
 	public required IReadOnlyList<ProcedurePage> Pages { get; init; }
 
 	/// <summary>How the procedure changed this cycle.</summary>
 	public required ProcedureChange Change { get; init; }
 
 	/// <summary>
-	/// The name of the page the change is reported for: usually <see cref="Name"/>, but a
-	/// continuation page's full name (e.g. <c>THRNE FOUR (RNAV), CONT.1</c>) when only that page
-	/// carries the <c>useraction</c>.
-	/// </summary>
-	public required string ReportedName { get; init; }
-
-	/// <summary>The PDF name of the page named by <see cref="ReportedName"/>.</summary>
-	public required string ReportedPdfName { get; init; }
-
-	/// <summary>
 	/// The main page's current PDF name, or <see langword="null"/> when <see cref="Change"/> is
-	/// <see cref="ProcedureChange.Deleted"/> (there is no current chart).
+	/// <see cref="ProcedureChange.Deleted"/> (there is no current chart). A procedure with no main
+	/// page this cycle has its first page's when it is unchanged, and none when it changed.
 	/// </summary>
 	public string? CurrentPdfName { get; init; }
 
 	/// <summary>
-	/// The chart's PDF name in the previous cycle's metafile, for <see cref="ProcedureChange.Deleted"/>
+	/// The main page's PDF name in the previous cycle's metafile, for <see cref="ProcedureChange.Deleted"/>
 	/// and <see cref="ProcedureChange.ReAdded"/> only; <see langword="null"/> when it could not be
 	/// found there (or the previous metafile was not available).
 	/// </summary>
 	public string? PreviousPdfName { get; init; }
+
+	/// <summary>
+	/// The procedure's pages in the previous cycle's metafile, at most one per page number, in page
+	/// order - found for a procedure with a deleted page (every <see cref="ProcedureChange.Deleted"/>
+	/// and <see cref="ProcedureChange.ReAdded"/> one, and a changed one that lost a page). Empty
+	/// otherwise, or when the previous metafile was not available.
+	/// </summary>
+	public IReadOnlyList<ProcedurePage> PreviousPages { get; init; } = [];
 
 	/// <summary>
 	/// Whether a <see cref="ProcedureChange.Deleted"/> record's PDF placeholder is
@@ -65,4 +70,11 @@ public sealed record Procedure
 
 	/// <summary>The civil/military production code (<c>civil</c>): <c>C</c>, <c>D</c>, <c>N</c> or <c>H</c>.</summary>
 	public string? Civil { get; init; }
+
+	/// <summary>
+	/// Set by <c>ProcedureSelection</c> only when the procedure is included because its route has a
+	/// fix in the user's facility and for no other reason - not the area, not a pick - so the
+	/// documents say why it's there. <see langword="null"/> otherwise.
+	/// </summary>
+	public FacilityFixMatch? IncludedForFacilityFixes { get; init; }
 }

@@ -30,8 +30,14 @@ public partial class ConfirmWindow : ChromeWindow
 		DataContext = viewModel;
 		viewModel.CloseRequested += (_, _) => Close();
 
-		// A long message scrolls rather than pushing the buttons off the bottom of the screen.
-		MessageScroller.MaxHeight = Math.Max(MinimumMessageHeight, SystemParameters.WorkArea.Height - ReservedHeight);
+		// No taller than the screen it opens on, and a long message scrolls rather than pushing the
+		// buttons off its bottom. Once the owner is set, before the window is sized to its content.
+		SourceInitialized += (_, _) =>
+		{
+			Rect area = OwnerWorkArea();
+			MaxHeight = area.Height;
+			MessageScroller.MaxHeight = Math.Max(MinimumMessageHeight, area.Height - ReservedHeight);
+		};
 	}
 
 	/// <summary>

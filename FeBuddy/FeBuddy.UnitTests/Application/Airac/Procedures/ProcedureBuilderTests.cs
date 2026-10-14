@@ -306,12 +306,18 @@ public sealed class ProcedureBuilderTests
 		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, null).Airports[0].Procedures);
 
 		Assert.Equal(ProcedureChange.None, procedure.Change);
-		Assert.Equal("GRUUB ONE (RNAV), CONT.1", procedure.ReportedName);
+		Assert.Equal("GRUUB ONE (RNAV)", procedure.Name);
 		Assert.Equal("GRUUB1B.PDF", procedure.CurrentPdfName);
 	}
 
-	[Fact]
-	public void a_deleted_continuation_with_an_unchanged_main_page_reports_the_continuation_as_deleted()
+	/// <summary>
+	/// Only a continuation page was removed or added: the procedure carries on, so it is Changed - not
+	/// Deleted (which would drop it from Procedures.json) or New - and its pages say what happened.
+	/// </summary>
+	[Theory]
+	[InlineData("D", DtppFiles.DeletedChartPdfName)]
+	[InlineData("A", "GRUUB1B.PDF")]
+	public void a_removed_or_added_continuation_with_an_unchanged_main_page_is_changed(string userAction, string pdfName)
 	{
 		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
 		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2609",
@@ -319,14 +325,32 @@ public sealed class ProcedureBuilderTests
 			records:
 			[
 				ProcedureTestData.RecordRow("AAA", 30000, "STR", "GRUUB ONE (RNAV)", "GRUUB1.PDF"),
-				ProcedureTestData.RecordRow("AAA", 30001, "STR", "GRUUB ONE (RNAV), CONT.1", DtppFiles.DeletedChartPdfName, userAction: "D"),
+				ProcedureTestData.RecordRow("AAA", 30001, "STR", "GRUUB ONE (RNAV), CONT.1", pdfName, userAction: userAction),
 			]);
 
 		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, null).Airports[0].Procedures);
 
-		Assert.Equal(ProcedureChange.Deleted, procedure.Change);
-		Assert.Equal("GRUUB ONE (RNAV), CONT.1", procedure.ReportedName);
+		Assert.Equal(ProcedureChange.Changed, procedure.Change);
 		Assert.Equal("GRUUB1.PDF", procedure.CurrentPdfName); // the main page persists
+		Assert.False(procedure.IsRemovedFromAirportOnly);
+	}
+
+	[Fact]
+	public void an_unrecognized_user_action_on_a_continuation_with_an_unchanged_main_page_is_classified_none()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2609",
+			airports: [ProcedureTestData.AirportRow("AAA")],
+			records:
+			[
+				ProcedureTestData.RecordRow("AAA", 30000, "STR", "GRUUB ONE (RNAV)", "GRUUB1.PDF"),
+				ProcedureTestData.RecordRow("AAA", 30001, "STR", "GRUUB ONE (RNAV), CONT.1", "GRUUB1B.PDF", userAction: "X"),
+			]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, null).Airports[0].Procedures);
+
+		Assert.Equal(ProcedureChange.None, procedure.Change);
+		Assert.Equal("GRUUB1.PDF", procedure.CurrentPdfName);
 	}
 
 	// ---- classification ----
@@ -342,8 +366,6 @@ public sealed class ProcedureBuilderTests
 		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, null).Airports[0].Procedures);
 
 		Assert.Equal(ProcedureChange.New, procedure.Change);
-		Assert.Equal("ILS RWY 1", procedure.ReportedName);
-		Assert.Equal("ILS1.PDF", procedure.ReportedPdfName);
 		Assert.Equal("ILS1.PDF", procedure.CurrentPdfName);
 	}
 
@@ -419,7 +441,6 @@ public sealed class ProcedureBuilderTests
 
 		Assert.Equal(ProcedureChange.ReAdded, procedure.Change);
 		Assert.Equal("NEWILS1.PDF", procedure.CurrentPdfName);
-		Assert.Equal("NEWILS1.PDF", procedure.ReportedPdfName);
 	}
 
 	[Fact]
@@ -440,7 +461,7 @@ public sealed class ProcedureBuilderTests
 	}
 
 	[Fact]
-	public void a_changed_continuation_with_an_unchanged_main_page_reports_the_continuation()
+	public void a_changed_continuation_with_an_unchanged_main_page_is_changed_under_the_procedures_name()
 	{
 		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
 		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2609",
@@ -454,8 +475,7 @@ public sealed class ProcedureBuilderTests
 		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, null).Airports[0].Procedures);
 
 		Assert.Equal(ProcedureChange.Changed, procedure.Change);
-		Assert.Equal("GRUUB ONE (RNAV), CONT.1", procedure.ReportedName);
-		Assert.Equal("GRUUB1B.PDF", procedure.ReportedPdfName);
+		Assert.Equal("GRUUB ONE (RNAV)", procedure.Name);
 		Assert.Equal("GRUUB1.PDF", procedure.CurrentPdfName); // the main page persists
 	}
 
@@ -570,6 +590,246 @@ public sealed class ProcedureBuilderTests
 		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports[0].Procedures);
 
 		Assert.Equal("OLDILS1.PDF", procedure.PreviousPdfName);
+	}
+
+	[Fact]
+	public void a_previous_page_found_by_proc_uid_is_matched_by_page_number()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("AAA")],
+			records:
+			[
+				ProcedureTestData.RecordRow("AAA", 1, "DP", "TEST TWO", DtppFiles.DeletedChartPdfName, userAction: "D", procUid: 3),
+				ProcedureTestData.RecordRow("AAA", 2, "DP", "TEST TWO, CONT.1", DtppFiles.DeletedChartPdfName, userAction: "D", procUid: 3),
+			]);
+
+		// Renamed since the previous cycle: the main page is listed first, but page 2 is still CONT.1.
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2610", records:
+		[
+			ProcedureTestData.RecordRow("AAA", 1, "DP", "TEST ONE", "00100TEST.PDF", procUid: 3),
+			ProcedureTestData.RecordRow("AAA", 2, "DP", "TEST ONE, CONT.1", "00100TEST_C.PDF", procUid: 3),
+		]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports[0].Procedures);
+
+		Assert.Equal(["00100TEST.PDF", "00100TEST_C.PDF"], procedure.PreviousPages.Select(page => page.PdfName));
+	}
+
+	[Fact]
+	public void a_deletion_placeholder_in_the_previous_cycle_is_never_a_previous_page()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("AAA")],
+			records: [ProcedureTestData.RecordRow("AAA", 1, "IAP", "ILS RWY 1", DtppFiles.DeletedChartPdfName, userAction: "D", procUid: 9)]);
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2610", records:
+		[
+			ProcedureTestData.RecordRow("AAA", 1, "IAP", "ILS RWY 1", DtppFiles.DeletedChartPdfName, userAction: "D", procUid: 9),
+			ProcedureTestData.RecordRow("AAA", 2, "IAP", "ILS Z RWY 1", "OLDILSZ1.PDF", procUid: 9),
+		]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports[0].Procedures);
+
+		Assert.Equal("OLDILSZ1.PDF", procedure.PreviousPdfName);
+	}
+
+	// ---- every page of a multi-page procedure (Bug #365) ----
+
+	[Fact]
+	public void pages_are_in_page_order_whatever_the_metafiles_order()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("AAA")],
+			records:
+			[
+				ProcedureTestData.RecordRow("AAA", 30002, "STR", "GRUUB ONE (RNAV), CONT.2", "GRUUB1_C2.PDF", userAction: "C"),
+				ProcedureTestData.RecordRow("AAA", 30000, "STR", "GRUUB ONE (RNAV)", "GRUUB1.PDF", userAction: "C"),
+				ProcedureTestData.RecordRow("AAA", 30001, "STR", "GRUUB ONE (RNAV), CONT.1", "GRUUB1_C.PDF", userAction: "C"),
+			]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, null).Airports[0].Procedures);
+
+		Assert.Equal(["GRUUB1.PDF", "GRUUB1_C.PDF", "GRUUB1_C2.PDF"], procedure.Pages.Select(page => page.PdfName));
+		Assert.Equal(ProcedureChange.Changed, procedure.Change);
+		Assert.Equal("GRUUB1.PDF", procedure.CurrentPdfName);
+	}
+
+	[Fact]
+	public void a_deleted_multi_page_procedure_finds_every_page_in_the_previous_cycle()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("NKX")],
+			records:
+			[
+				ProcedureTestData.RecordRow("NKX", 1, "DP", "LAKEE THREE", DtppFiles.DeletedChartPdfName, userAction: "D"),
+				ProcedureTestData.RecordRow("NKX", 2, "DP", "LAKEE THREE, CONT.1", DtppFiles.DeletedChartPdfName, userAction: "D"),
+				ProcedureTestData.RecordRow("NKX", 3, "DP", "LAKEE THREE, CONT.2", DtppFiles.DeletedChartPdfName, userAction: "D"),
+			]);
+
+		// The previous cycle has no CONT.2: that page is left out.
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2610", records:
+		[
+			ProcedureTestData.RecordRow("NKX", 1, "DP", "LAKEE THREE", "00903LAKEE.PDF"),
+			ProcedureTestData.RecordRow("NKX", 2, "DP", "LAKEE THREE, CONT.1", "00903LAKEE_C.PDF"),
+		]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports[0].Procedures);
+
+		Assert.Equal(ProcedureChange.Deleted, procedure.Change);
+		Assert.Equal(["LAKEE THREE", "LAKEE THREE, CONT.1"], procedure.PreviousPages.Select(page => page.ChartName));
+		Assert.Equal(["00903LAKEE.PDF", "00903LAKEE_C.PDF"], procedure.PreviousPages.Select(page => page.PdfName));
+		Assert.Equal("00903LAKEE.PDF", procedure.PreviousPdfName);
+	}
+
+	[Fact]
+	public void a_readded_multi_page_procedure_finds_every_page_in_the_previous_cycle()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("AAA")],
+			records:
+			[
+				ProcedureTestData.RecordRow("AAA", 1, "STR", "GRUUB ONE (RNAV)", DtppFiles.DeletedChartPdfName, userAction: "D"),
+				ProcedureTestData.RecordRow("AAA", 2, "STR", "GRUUB ONE (RNAV), CONT.1", DtppFiles.DeletedChartPdfName, userAction: "D"),
+				ProcedureTestData.RecordRow("AAA", 3, "STR", "GRUUB ONE (RNAV)", "NEWGRUUB1.PDF", userAction: "A"),
+				ProcedureTestData.RecordRow("AAA", 4, "STR", "GRUUB ONE (RNAV), CONT.1", "NEWGRUUB1_C.PDF", userAction: "A"),
+			]);
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2610", records:
+		[
+			ProcedureTestData.RecordRow("AAA", 1, "STR", "GRUUB ONE (RNAV)", "GRUUB1.PDF"),
+			ProcedureTestData.RecordRow("AAA", 2, "STR", "GRUUB ONE (RNAV), CONT.1", "GRUUB1_C.PDF"),
+		]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports[0].Procedures);
+
+		Assert.Equal(ProcedureChange.ReAdded, procedure.Change);
+		Assert.Equal(
+			[("GRUUB ONE (RNAV)", "D"), ("GRUUB ONE (RNAV)", "A"), ("GRUUB ONE (RNAV), CONT.1", "D"), ("GRUUB ONE (RNAV), CONT.1", "A")],
+			procedure.Pages.Select(page => (page.ChartName, page.UserAction)));
+		Assert.Equal(["GRUUB1.PDF", "GRUUB1_C.PDF"], procedure.PreviousPages.Select(page => page.PdfName));
+		Assert.Equal("NEWGRUUB1.PDF", procedure.CurrentPdfName);
+		Assert.Equal("GRUUB1.PDF", procedure.PreviousPdfName);
+	}
+
+	[Fact]
+	public void previous_pages_are_only_found_for_a_procedure_with_a_deleted_page()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("SLC")],
+			records:
+			[
+				ProcedureTestData.RecordRow("SLC", 1, "STR", "CARTR TWO (RNAV)", "00365CARTR.PDF", userAction: "C"),
+				ProcedureTestData.RecordRow("SLC", 2, "STR", "CARTR TWO (RNAV), CONT.1", "00365CARTR_C.PDF", userAction: "C"),
+			]);
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2610", records:
+		[
+			ProcedureTestData.RecordRow("SLC", 1, "STR", "CARTR ONE (RNAV)", "00365CARTR.PDF"),
+			ProcedureTestData.RecordRow("SLC", 2, "STR", "CARTR ONE (RNAV), CONT.1", "00365CARTR_C.PDF"),
+		]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports[0].Procedures);
+
+		Assert.Empty(procedure.PreviousPages);
+		Assert.Null(procedure.PreviousPdfName);
+	}
+
+	/// <summary>
+	/// MSP in 2611: MINNEAPOLIS NINE was amended to MINNEAPOLIS ONE and lost its second page, so the
+	/// metafile lists a deleted "MINNEAPOLIS NINE, CONT.1" with no main page. It joins MINNEAPOLIS ONE
+	/// by procuid, and its previous page is the previous cycle's CONT.1 - never its main page.
+	/// </summary>
+	[Fact]
+	public void an_orphan_continuation_page_joins_the_procedure_with_its_proc_uid()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("MSP")],
+			records:
+			[
+				ProcedureTestData.RecordRow("MSP", 1, "DP", "MINNEAPOLIS NINE, CONT.1", DtppFiles.DeletedChartPdfName, userAction: "D", procUid: 1300),
+				ProcedureTestData.RecordRow("MSP", 2, "DP", "MINNEAPOLIS ONE", "00264MINNEAPOLIS.PDF", userAction: "C", procUid: 1300),
+			]);
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2610", records:
+		[
+			ProcedureTestData.RecordRow("MSP", 1, "DP", "MINNEAPOLIS NINE", "00264MINNEAPOLIS.PDF", procUid: 1300),
+			ProcedureTestData.RecordRow("MSP", 2, "DP", "MINNEAPOLIS NINE, CONT.1", "00264MINNEAPOLIS_C.PDF", procUid: 1300),
+		]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports[0].Procedures);
+
+		Assert.Equal("MINNEAPOLIS ONE", procedure.Name);
+		Assert.Equal(ProcedureChange.Changed, procedure.Change);
+		Assert.Equal(["MINNEAPOLIS ONE", "MINNEAPOLIS NINE, CONT.1"], procedure.Pages.Select(page => page.ChartName));
+		Assert.Equal("00264MINNEAPOLIS.PDF", procedure.CurrentPdfName);
+		Assert.Equal("00264MINNEAPOLIS_C.PDF", procedure.PreviousPages.Single(page => page.ChartName.EndsWith("CONT.1", StringComparison.Ordinal)).PdfName);
+	}
+
+	[Fact]
+	public void an_orphan_continuation_page_with_no_matching_proc_uid_stays_its_own_procedure_under_its_base_name()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("AAA")],
+			records:
+			[
+				ProcedureTestData.RecordRow("AAA", 1, "STR", "GRUUB ONE (RNAV), CONT.1", DtppFiles.DeletedChartPdfName, userAction: "D", procUid: 7),
+				ProcedureTestData.RecordRow("AAA", 2, "STR", "OTHER ONE", "OTHER1.PDF", userAction: "C", procUid: 8),
+			]);
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2610", records:
+		[
+			ProcedureTestData.RecordRow("AAA", 1, "STR", "GRUUB ONE (RNAV)", "GRUUB1.PDF", procUid: 7),
+			ProcedureTestData.RecordRow("AAA", 2, "STR", "GRUUB ONE (RNAV), CONT.1", "GRUUB1_C.PDF", procUid: 7),
+		]);
+
+		IReadOnlyList<Procedure> procedures = ProcedureBuilder.Build(nasr, dtpp, previousDtpp).Airports[0].Procedures;
+
+		Assert.Equal(["GRUUB ONE (RNAV)", "OTHER ONE"], procedures.Select(procedure => procedure.Name));
+
+		Procedure orphan = procedures[0];
+		Assert.Equal(ProcedureChange.Deleted, orphan.Change);
+		Assert.Equal(["GRUUB1_C.PDF"], orphan.PreviousPages.Select(page => page.PdfName));
+		Assert.Null(orphan.PreviousPdfName);
+	}
+
+	[Fact]
+	public void a_changed_orphan_continuation_page_with_no_procedure_is_changed_with_no_current_chart()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("AAA")],
+			records: [ProcedureTestData.RecordRow("AAA", 1, "STR", "GRUUB ONE (RNAV), CONT.1", "GRUUB1_C.PDF", userAction: "C", procUid: 7)]);
+
+		Procedure procedure = Assert.Single(ProcedureBuilder.Build(nasr, dtpp, null).Airports[0].Procedures);
+
+		Assert.Equal("GRUUB ONE (RNAV)", procedure.Name);
+		Assert.Equal(ProcedureChange.Changed, procedure.Change);
+		Assert.Null(procedure.CurrentPdfName);
+		Assert.Equal(7, procedure.ProcUid);
+		Assert.False(procedure.IsRemovedFromAirportOnly);
+	}
+
+	[Fact]
+	public void only_an_orphan_continuation_page_is_matched_by_proc_uid()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr();
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2611",
+			airports: [ProcedureTestData.AirportRow("AAA")],
+			records:
+			[
+				ProcedureTestData.RecordRow("AAA", 1, "IAP", "ILS RWY 1", "ILS1.PDF", userAction: "C", procUid: 5),
+				ProcedureTestData.RecordRow("AAA", 2, "IAP", "ILS RWY 1 (CAT II)", "ILS1CAT2.PDF", procUid: 5),
+				ProcedureTestData.RecordRow("AAA", 3, "IAP", "ILS RWY 1 (CAT II), CONT.1", "ILS1CAT2_C.PDF", procUid: 5),
+			]);
+
+		IReadOnlyList<Procedure> procedures = ProcedureBuilder.Build(nasr, dtpp, null).Airports[0].Procedures;
+
+		Assert.Equal(["ILS RWY 1", "ILS RWY 1 (CAT II)"], procedures.Select(procedure => procedure.Name));
+		Assert.Single(procedures[0].Pages);
+		Assert.Equal(2, procedures[1].Pages.Count);
 	}
 
 	// ---- DEL_APT_SERVED ----

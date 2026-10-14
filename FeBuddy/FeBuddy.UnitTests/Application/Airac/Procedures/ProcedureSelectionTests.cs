@@ -395,6 +395,55 @@ public sealed class ProcedureSelectionTests
 			Assert.Single(messages).Text);
 	}
 
+	// ---- procedures with a fix in the facility (Feature #367) ----
+
+	private static readonly FacilityFixMatch InZdc = new("ZDC", ["DUCKY", "OTTTO"]);
+
+	[Fact]
+	public void a_chart_whose_route_has_a_fix_in_the_facility_is_added_and_labeled()
+	{
+		Procedure star = ProcedureTestData.BuiltProcedure("JIIMS FOUR (RNAV)", chartCode: "STR", change: ProcedureChange.Changed);
+		Procedure other = ProcedureTestData.BuiltProcedure("ILS RWY 9R", chartCode: "IAP");
+		ProcedureAirport phl = ProcedureTestData.BuiltAirport("PHL", responsibleArtcc: "ZNY", procedures: [star, other]);
+
+		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
+			[phl], Settings(facilities: ["ZDC"]), [], new Dictionary<Procedure, FacilityFixMatch>(ReferenceEqualityComparer.Instance) { [star] = InZdc });
+
+		Procedure included = Assert.Single(Assert.Single(result).Procedures);
+		Assert.Equal("JIIMS FOUR (RNAV)", included.Name);
+		Assert.Same(InZdc, included.IncludedForFacilityFixes);
+		Assert.Null(star.IncludedForFacilityFixes); // the built procedure itself is left as it was
+	}
+
+	[Fact]
+	public void a_chart_the_area_or_a_pick_already_includes_gets_no_label()
+	{
+		Procedure byArea = ProcedureTestData.BuiltProcedure("TRISH FIVE (RNAV)", chartCode: "STR");
+		Procedure byPick = ProcedureTestData.BuiltProcedure("JIIMS FOUR (RNAV)", chartCode: "STR");
+		ProcedureAirport iad = ProcedureTestData.BuiltAirport("IAD", responsibleArtcc: "ZDC", procedures: [byArea]);
+		ProcedureAirport phl = ProcedureTestData.BuiltAirport("PHL", responsibleArtcc: "ZNY", procedures: [byPick]);
+
+		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
+			[iad, phl], Settings(facilities: ["ZDC"], procedures: ["JIIMS"]), [],
+			new Dictionary<Procedure, FacilityFixMatch>(ReferenceEqualityComparer.Instance) { [byArea] = InZdc, [byPick] = InZdc });
+
+		Assert.All(result.SelectMany(airport => airport.Procedures), procedure => Assert.Null(procedure.IncludedForFacilityFixes));
+		Assert.Equal(2, result.Sum(airport => airport.Procedures.Count));
+	}
+
+	[Fact]
+	public void a_chart_type_not_ticked_is_never_added_for_its_route()
+	{
+		Procedure odp = ProcedureTestData.BuiltProcedure("BWI ONE (OBSTACLE)", chartCode: "ODP");
+		ProcedureAirport bwi = ProcedureTestData.BuiltAirport("BWI", responsibleArtcc: "ZNY", procedures: [odp]);
+
+		IReadOnlyList<ProcedureAirport> result = ProcedureSelection.Select(
+			[bwi], Settings(facilities: ["ZDC"], chartTypes: ["IAP", "STR", "DP"]), [],
+			new Dictionary<Procedure, FacilityFixMatch>(ReferenceEqualityComparer.Instance) { [odp] = InZdc });
+
+		Assert.Empty(result);
+	}
+
 	// ---- union and dropping ----
 
 	[Fact]

@@ -38,12 +38,13 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// SYSTEM ▸ Settings. Section order: Settings Profile, Facility, Default Region of Interest,
-/// GeoJSON Files, Credentials, FE-Buddy's GitHub Requests, Updates / Update Channel, Reset /
-/// Uninstall. Every value persists to the settings profile in use
+/// GeoJSON Files, Credentials, FE-Buddy's GitHub Requests, Updates / Update Channel, Main Window,
+/// Reset / Uninstall. Every value persists to the settings profile in use
 /// (<see cref="UserConfigFile"/>), except credentials, which live in Windows Credential Manager and
 /// are saved at once (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the
 /// chosen token's id. The Settings Profile card switches, makes, renames and deletes profiles at
-/// once (<see cref="SettingsProfilesViewModel"/>).
+/// once (<see cref="SettingsProfilesViewModel"/>), and the Main Window card saves at once too
+/// (<see cref="WindowPlacementCardViewModel"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -81,6 +82,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// value into its own config node.
 	/// </summary>
 	internal const string ArtccKey = "Services.AiracService.UserArtccId";
+
+	/// <summary>
+	/// Raised after Save writes the settings, the facility (<see cref="ArtccKey"/>) among them, so a page
+	/// that names the facility - Procedure Charts' option for other airports' procedures - can say it again.
+	/// </summary>
+	public static event EventHandler? FacilitySaved;
 	private const string PrecisionKey = UserConfigKeys.CoordinatePrecision;
 
 	private readonly Dispatcher _dispatcher;
@@ -585,6 +592,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Opens the releases page, where an older version can be downloaded.</summary>
 	public ICommand RollbackCommand { get; }
 
+	// ================= 7. MAIN WINDOW =================
+
+	/// <summary>The Main Window card. Its changes take effect at once and take no part in <see cref="SaveCommand"/>.</summary>
+	public WindowPlacementCardViewModel WindowPlacement { get; } = new();
+
 	// ================= save =================
 
 	/// <summary>Writes every setting on the page to the settings profile in use. Live only while <see cref="IsDirty"/>.</summary>
@@ -699,6 +711,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 
 		UserConfigFile.Write();
+		FacilitySaved?.Invoke(this, EventArgs.Empty);
 
 		// Only an ROI set or cleared here: an untouched one is left as the Map page last saved it.
 		if (IsRoiPending)

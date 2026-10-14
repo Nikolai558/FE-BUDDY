@@ -28,6 +28,12 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// <c>BRWNZ FOUR (RNAV)</c> it was made from - includes <c>BRWNZ FIVE (RNAV)</c> once the FAA
 /// renumbers it. A pick naming another kind of chart (an approach, say) is left out, and says so.
 /// </para>
+/// <para>
+/// A chart whose route has a fix in the user's facility (<see cref="ProceduresWithFixInFacility"/>)
+/// is included too, at any airport, when its chart type is one of
+/// <see cref="ProcedureSettings.ChartTypes"/>. When that is the only reason, the copy returned
+/// carries <see cref="Procedure.IncludedForFacilityFixes"/>, so the documents say why it's there.
+/// </para>
 /// </remarks>
 public static class ProcedureSelection
 {
@@ -39,6 +45,10 @@ public static class ProcedureSelection
 	/// <param name="airports">Every airport <c>ProcedureBuilder</c> built.</param>
 	/// <param name="settings">The parsed settings.</param>
 	/// <param name="messages">Receives one warning for each pick that matched nothing.</param>
+	/// <param name="facilityFixes">
+	/// The charts whose route has a fix in the user's facility, by reference, from
+	/// <see cref="ProceduresWithFixInFacility.Find"/>; <see langword="null"/> when that rule is off.
+	/// </param>
 	/// <returns>
 	/// The included airports (each with only its included procedures, in the original chartseq
 	/// order), in the order <paramref name="airports"/> supplied them.
@@ -46,7 +56,8 @@ public static class ProcedureSelection
 	public static IReadOnlyList<ProcedureAirport> Select(
 		IReadOnlyList<ProcedureAirport> airports,
 		ProcedureSettings settings,
-		List<ServiceMessage> messages)
+		List<ServiceMessage> messages,
+		IReadOnlyDictionary<Procedure, FacilityFixMatch>? facilityFixes = null)
 	{
 		ArgumentNullException.ThrowIfNull(airports);
 		ArgumentNullException.ThrowIfNull(settings);
@@ -141,9 +152,31 @@ public static class ProcedureSelection
 				}
 			}
 
+			// A chart whose route has a fix in the facility, if its type is wanted; labeled only when
+			// nothing above included it.
+			Dictionary<Procedure, FacilityFixMatch> onlyForFixes = new(ReferenceEqualityComparer.Instance);
+
+			foreach (Procedure procedure in airport.Procedures)
+			{
+				if (facilityFixes is not null
+					&& facilityFixes.TryGetValue(procedure, out FacilityFixMatch? match)
+					&& chartTypes.Contains(procedure.ChartCode)
+					&& included.Add(procedure))
+				{
+					onlyForFixes[procedure] = match;
+				}
+			}
+
 			if (included.Count > 0)
 			{
-				result.Add(airport with { Procedures = [.. airport.Procedures.Where(included.Contains)] });
+				result.Add(airport with
+				{
+					Procedures = [.. airport.Procedures
+						.Where(included.Contains)
+						.Select(procedure => onlyForFixes.TryGetValue(procedure, out FacilityFixMatch? match)
+							? procedure with { IncludedForFacilityFixes = match }
+							: procedure)],
+				});
 			}
 		}
 

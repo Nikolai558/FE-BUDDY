@@ -1,8 +1,10 @@
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using System.Windows.Interop;
 using System.Windows.Shell;
 
 using FeBuddy.Wpf.Behaviors;
+using FeBuddy.Wpf.Shell;
 
 namespace FeBuddy.Wpf.Controls;
 
@@ -44,6 +46,21 @@ public class ChromeWindow : Window
 			UseAeroCaptionButtons = false,
 		});
 		MaximizeToWorkArea.Attach(this);
+	}
+
+	/// <summary>
+	/// The work area, in WPF's units, of the screen this window's owner is on - the screen a dialog
+	/// opens on, over its owner - or of this window's own screen when it has no owner. Unlike
+	/// <see cref="SystemParameters.WorkArea"/>, always the main screen's, it follows FE-Buddy onto
+	/// another screen. Ask once the owner is set: from <see cref="Window.SourceInitialized"/>, which
+	/// comes before a window sized to its content is measured, or before the window is shown.
+	/// </summary>
+	/// <returns>The work area; the main screen's when the screen can't be read.</returns>
+	protected Rect OwnerWorkArea()
+	{
+		MonitorArea? monitor = NativeMonitors.Of(new WindowInteropHelper(Owner ?? this).Handle);
+
+		return monitor is null ? SystemParameters.WorkArea : WindowPlacementRules.ToDips(monitor.WorkArea, monitor.Dpi);
 	}
 
 	/// <inheritdoc />

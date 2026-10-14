@@ -208,10 +208,23 @@ public sealed class ProcedureServiceTests : IDisposable
 
 		string expectedPath = Path.Combine(_outputDirectory, "Aliases", "Faa_Chart_Recall.txt");
 		Assert.Equal(expectedPath, result.AliasFilePath);
-		Assert.Equal([".aaaI1c", ".bbbR3c"], File.ReadAllLines(expectedPath).Select(line => line.Split(' ')[0]));
+		Assert.Equal([".helpCHARTRECALL", ".aaaI1c", ".bbbR3c"], File.ReadAllLines(expectedPath).Select(line => line.Split(' ')[0]));
 		Assert.Equal(2, result.AliasCommandCount);
 		Assert.Equal(2, result.AliasAirportCount);
 		Assert.Contains(result.Messages, m => m.Text.StartsWith("Faa_Chart_Recall.txt: 2 command(s) for 2 airport(s)", StringComparison.Ordinal));
+	}
+
+	[Theory]
+	[InlineData("Y", "helpCR", ".helpCR")]
+	[InlineData("N", "helpCR", ".aaaI1c")]
+	public void the_alias_file_starts_with_the_help_command_named_as_set_or_none(string include, string name, string firstCommand)
+	{
+		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
+
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("IncludeHelpCommand", include), ("HelpCommandName", name)));
+
+		Assert.Equal(firstCommand, File.ReadLines(result.AliasFilePath!).First().Split(' ')[0]);
+		Assert.Equal(2, result.AliasCommandCount);
 	}
 
 	[Fact]

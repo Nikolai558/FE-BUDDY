@@ -41,6 +41,20 @@ public static class UserConfigKeys
 	/// </summary>
 	public const string WelcomeShown = "General.WelcomeShown";
 
+	/// <summary>
+	/// Whether FE-Buddy's main window reopens where it was closed (<c>Y</c>, the default) or at its
+	/// default size in the middle of the main screen (<c>N</c>). Kept on this PC: it goes with
+	/// <see cref="MainWindowPlacement"/>.
+	/// </summary>
+	public const string RememberWindowPlacement = "General.RememberWindowPlacement";
+
+	/// <summary>
+	/// Where FE-Buddy's main window was when it last closed, in Windows' physical screen pixels:
+	/// <c>left,top,width,height,dpi,state</c>, e.g. <c>2120,140,1800,1170,144,Maximized</c> (see
+	/// <c>SavedWindowPlacement</c>). Kept on this PC: it is about this PC's screens.
+	/// </summary>
+	public const string MainWindowPlacement = "General.MainWindowPlacement";
+
 	/// <summary>How many decimal places GeoJSON coordinates are rounded to, 0 to 15 (6 when unset).</summary>
 	public const string CoordinatePrecision = "Services.AiracService.CoordinatePrecision";
 

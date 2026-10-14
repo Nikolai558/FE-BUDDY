@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.11
 ### AIRAC Service
 - Procedure Charts: `Faa_Chart_Recall.txt`, and its part of `Combined_Alias.txt`, now starts with
   `.helpCHARTRECALL`, a `.note` command that shows how an instrument approach's (IAP's) chart recall

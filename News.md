@@ -13,6 +13,24 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-14
+<!--
+PostId: 2026-10-14.1
+-->
+
+**Version 3.0.0-beta.11 Compiled!**
+
+Your neighbors' procedures, and a window that stays put
+
+- **Procedure Charts**: the new **External Procedures in Our Airspace** card also brings in departures and arrivals at airports outside your facility that have a waypoint inside it, so you see their changes. It's on to start, and needs your facility set in Settings
+- **Chart recall help**: `Faa_Chart_Recall.txt` now starts with `.helpCHARTRECALL`, which shows how an approach's chart recall command is put together. The new **Chart Recall Help Command** card turns it off or renames it, and the **Alias Command Guide** and **Practice** cover it
+- **FE-Buddy remembers its window**: it opens where you closed it, at the same size, and maximized if it was. Settings ▸ **Main Window** turns this off
+- **Fix**: `Procedure_Changes.md` links every page of a multi-page chart, not just the first
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.11)!!!
+
+---
+
 ## 2026-10-12
 <!--
 PostId: 2026-10-12.3

@@ -18,6 +18,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### Dev notes
+- Bug #375 - The installer's shortcuts use the MSI's icon instead of the exe's, so Windows can't
+  show a cached 2.x icon.
 
 ---
 

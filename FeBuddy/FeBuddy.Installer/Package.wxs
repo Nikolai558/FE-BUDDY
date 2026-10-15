@@ -83,12 +83,17 @@
     <Launch Condition="VERSIONPOLICY_BLOCKED = &quot;0&quot;"
             Message="!(loc.VersionPolicyBlockedError)" />
 
+    <!--
+      The stock dialogs' "Launch FE-BUDDY" (FeBuddy.UI.wxs, the ExitDialog's Finish). It runs with
+      msiexec's account - an administrator when msiexec was started elevated - so it opens
+      FE-Buddy as the signed-in user instead, as the setup window does (UnelevatedLauncher).
+      Return="ignore": not launching never fails setup.
+    -->
     <CustomAction Id="LaunchFEBUDDY"
-                  Directory="INSTALLFOLDER"
-                  ExeCommand="&quot;[INSTALLFOLDER]FE-BUDDY.exe&quot;"
+                  BinaryRef="VersionPolicyCA"
+                  DllEntry="LaunchFeBuddy"
                   Execute="immediate"
-                  Impersonate="yes"
-                  Return="asyncNoWait" />
+                  Return="ignore" />
 
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
               Value="Launch FE-BUDDY" />

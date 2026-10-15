@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    FeBuddy.Installer.CustomActions  -  the MSI's managed custom action (EnforceVersionPolicy).
+    FeBuddy.Installer.CustomActions  -  the MSI's managed custom actions (EnforceVersionPolicy,
+    RemoveFeBuddyCredentials, LaunchFeBuddy).
     ===========================================================================
-    It is a thin wrapper: the rule itself is FeBuddy.Versioning.UpdatePolicy, shared with the
-    app and covered by FeBuddy.UnitTests. This project is not unit tested (it needs an MSI
+    EnforceVersionPolicy is a thin wrapper: the rule itself is FeBuddy.Versioning.UpdatePolicy,
+    shared with the app and covered by FeBuddy.UnitTests. This project is not unit tested (it needs an MSI
     session) and is outside the coverage report.
   -->
 
@@ -52,6 +53,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FeBuddy.Versioning\FeBuddy.Versioning.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The setup window's unelevated launch, shared as it is for the stock dialogs' "Launch FE-BUDDY". -->
+    <Compile Include="..\FeBuddy.Installer.UI\Setup\UnelevatedLauncher.cs" Link="Setup\UnelevatedLauncher.cs" />
   </ItemGroup>
 
 </Project>

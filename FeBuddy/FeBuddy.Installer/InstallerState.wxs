@@ -9,7 +9,13 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>
 
-    <Property Id="INSTALLFOLDER">
+    <!--
+      Secure: the setup window sets these five from the user's choices (SetupChoices), and Windows
+      Installer passes a property set by an unelevated setup window on to the elevated install only
+      when it is secure - otherwise the install would use the defaults. FE-Buddy's update and
+      uninstall start msiexec unelevated, as does a double-click.
+    -->
+    <Property Id="INSTALLFOLDER" Secure="yes">
       <RegistrySearch Id="FindExistingInstallLocation"
                       Root="HKLM"
                       Key="Software\FE-BUDDY"
@@ -18,12 +24,14 @@
     </Property>
 
     <Property Id="CREATE_STARTMENU_SHORTCUT"
-          Value="1" />
+              Value="1"
+              Secure="yes" />
 
     <Property Id="CREATE_DESKTOP_SHORTCUT"
-              Value="1" />
+              Value="1"
+              Secure="yes" />
 
-    <Property Id="SAVED_STARTMENU_SHORTCUT">
+    <Property Id="SAVED_STARTMENU_SHORTCUT" Secure="yes">
       <RegistrySearch Id="FindSavedStartMenuShortcutPreference"
                       Root="HKLM"
                       Key="Software\FE-BUDDY"
@@ -31,7 +39,7 @@
                       Type="raw" />
     </Property>
 
-    <Property Id="SAVED_DESKTOP_SHORTCUT">
+    <Property Id="SAVED_DESKTOP_SHORTCUT" Secure="yes">
       <RegistrySearch Id="FindSavedDesktopShortcutPreference"
                       Root="HKLM"
                       Key="Software\FE-BUDDY"

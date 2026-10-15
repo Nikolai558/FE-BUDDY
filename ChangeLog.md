@@ -19,6 +19,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 ## Unreleased
 ### Dev notes
+- #374 (C1-5) - Setup reopens FE-Buddy as the signed-in user, never as the administrator who
+  approved the install.
 - Bug #375 - The installer's shortcuts use the MSI's icon instead of the exe's, so Windows can't
   show a cached 2.x icon.
 

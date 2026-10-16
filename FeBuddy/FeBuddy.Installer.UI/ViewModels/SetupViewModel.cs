@@ -780,18 +780,9 @@ public sealed class SetupViewModel : ObservableObject
 			return;
 		}
 
-		try
-		{
-			Process.Start(new ProcessStartInfo(exe)
-			{
-				UseShellExecute = true,
-				WorkingDirectory = Path.GetDirectoryName(exe),
-			});
-		}
-		catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-		{
-			// FE-Buddy is installed; the user can start it from the Start menu.
-		}
+		// As the signed-in user, even when msiexec runs elevated. If it can't start, FE-Buddy is
+		// installed and the Start menu opens it.
+		UnelevatedLauncher.Start(exe);
 	}
 
 	// ------------------------------------------------------------------ helpers

@@ -311,9 +311,11 @@ The FAA's data has quirks. Each rule lives in one class.
 
 - **Version check** (`VersionCheck`): reads GitHub's releases, keeps those on the user's channel or
   more stable, and compares by SemVer. See [Versioning](VERSIONING.md).
-- **Update** (`UpdateInstaller`): downloads the release's MSI, which the update window runs
-  elevated; FE-Buddy closes, and the MSI replaces it and relaunches it from its last page. A copy the
-  MSI didn't install opens the release page instead.
+- **Update** (`UpdateInstaller`): downloads the release's MSI, which the update window runs **not
+  elevated**, like the uninstall below; FE-Buddy closes, and the MSI replaces it and relaunches it
+  from its last page. The setup window, and the stock dialogs a PC with the MsiDisableEmbeddedUI
+  policy gets instead (`LaunchActions`), relaunch it as the signed-in user even when msiexec runs
+  elevated (`UnelevatedLauncher`). A copy the MSI didn't install opens the release page instead.
 - **Uninstall** (`AppUninstall`) starts `msiexec /x` **not elevated**, as Windows Settings does, so
   Windows Installer asks for administrator rights itself. Started elevated, a standard user typing
   an administrator's password would run the cleanup as that administrator, clearing the wrong

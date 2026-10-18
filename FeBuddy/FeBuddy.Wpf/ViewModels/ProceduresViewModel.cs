@@ -94,6 +94,13 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <summary>The selected cycle's metafile, indexed in Core off the UI thread; empty while it isn't known or has none.</summary>
 	private ProcedureNameIndex _dtppIndex = ProcedureNameIndex.Empty;
 
+	// What Add would do with each entry in the Add box, worked out once per change to what it depends
+	// on (RaiseNewAirportHint), not on every command re-query and hint read.
+	private List<AirportEntry>? _airportEntries;
+
+	// The root name the Add Procedure box resolves to, for the text and the metafile index it was resolved with.
+	private (string Text, ProcedureNameIndex Index, string? Root)? _resolvedProcedure;
+
 	private bool _dtppKnown;
 	private bool _hasDtppData;
 	private string? _dtppCycleId;
@@ -120,7 +127,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	public ProceduresViewModel()
 	{
 		Facilities.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasFacilities));
-		Airports.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAirports));
+		Airports.CollectionChanged += (_, _) =>
+		{
+			_airportEntries = null;
+			OnPropertyChanged(nameof(HasAirports));
+		};
 		ProcedureNames.CollectionChanged += (_, _) =>
 		{
 			OnPropertyChanged(nameof(HasProcedureNames));
@@ -215,7 +226,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	protected override void OnAreaChanged()
 	{
 		OnPropertyChanged(nameof(AreListsUsed));
-		OnPropertyChanged(nameof(NewAirportHint));
+		RaiseNewAirportHint();
 		RaiseCardIntros();
 		RaiseFixInFacility();
 	}
@@ -606,7 +617,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			if (SetProperty(ref _newAirportText, value))
 			{
-				OnPropertyChanged(nameof(NewAirportHint));
+				RaiseNewAirportHint();
 			}
 		}
 	}
@@ -703,7 +714,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				return string.Empty;
 			}
 
-			if (ResolveRoot(trimmed) is not { } root)
+			if (NewProcedureRoot() is not { } root)
 			{
 				return "Not a departure or arrival in this cycle.";
 			}
@@ -868,7 +879,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		_nasrAirportsByIdent = lists.AirportFaaIdsByIdent;
 		_nasrAirportsByFaaId = lists.AirportsByFaaId;
 
-		OnPropertyChanged(nameof(NewAirportHint));
+		RaiseNewAirportHint();
 
 		// The list was empty when this tab snapshotted itself at construction; re-take the
 		// snapshot now the toggles reflect what is actually saved (or the Settings default).
@@ -1145,7 +1156,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	protected override void Validate(ServiceValidation validation)
 	{
 		// The Add box's hint depends on the area and the list, and any change to them re-validates.
-		OnPropertyChanged(nameof(NewAirportHint));
+		RaiseNewAirportHint();
 
 		// The choices below only pick what the documents cover; the alias file covers every airport.
 		// The area itself (a facility ticked, an ROI set) is checked with the shared settings.
@@ -1281,6 +1292,21 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	private bool CanAddAirport() => ReadAirportEntries().Any(e => e.Outcome == AirportEntryOutcome.Add);
 
+	/// <summary>
+	/// After something the Add box's entries depend on may have changed - the text, the list, the area,
+	/// the facilities ticked, the ROI or the cycle's airports: they're worked out again when next asked
+	/// for, and the hint says so.
+	/// </summary>
+	private void RaiseNewAirportHint()
+	{
+		_airportEntries = null;
+		OnPropertyChanged(nameof(NewAirportHint));
+	}
+
+	/// <inheritdoc />
+	/// <remarks>The default ROI can change without this tab being edited, and the Add box's entries depend on it.</remarks>
+	protected override void OnRoiChanged() => RaiseNewAirportHint();
+
 	private void AddAirport()
 	{
 		List<AirportEntry> entries = ReadAirportEntries();
@@ -1304,10 +1330,12 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <summary>
-	/// Works out what Add would do with each entry in the Add box, in order: add it, skip a repeat
-	/// of one it adds, or leave it with a reason.
+	/// What Add would do with each entry in the Add box, in order: add it, skip a repeat of one it adds,
+	/// or leave it with a reason. Worked out once per change (<see cref="RaiseNewAirportHint"/>).
 	/// </summary>
-	private List<AirportEntry> ReadAirportEntries()
+	private List<AirportEntry> ReadAirportEntries() => _airportEntries ??= WorkOutAirportEntries();
+
+	private List<AirportEntry> WorkOutAirportEntries()
 	{
 		List<AirportEntry> entries = [];
 
@@ -1405,12 +1433,29 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	private bool CanAddProcedure() =>
-		ResolveRoot(_newProcedureText) is { } root
+		NewProcedureRoot() is { } root
 		&& !ProcedureNames.Any(p => p.Equals(root, StringComparison.OrdinalIgnoreCase));
+
+	/// <summary>
+	/// <see cref="ResolveRoot"/> of the Add Procedure box, worked out again only when its text or the
+	/// metafile changes: the hint and Add's re-query both ask, on every keystroke.
+	/// </summary>
+	private string? NewProcedureRoot()
+	{
+		if (_resolvedProcedure is not { } resolved
+			|| !string.Equals(resolved.Text, _newProcedureText, StringComparison.Ordinal)
+			|| !ReferenceEquals(resolved.Index, _dtppIndex))
+		{
+			resolved = (_newProcedureText, _dtppIndex, ResolveRoot(_newProcedureText));
+			_resolvedProcedure = resolved;
+		}
+
+		return resolved.Root;
+	}
 
 	private void AddProcedure()
 	{
-		if (ResolveRoot(_newProcedureText) is not { } root
+		if (NewProcedureRoot() is not { } root
 			|| ProcedureNames.Any(p => p.Equals(root, StringComparison.OrdinalIgnoreCase)))
 		{
 			return;
@@ -1702,7 +1747,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		OnPropertyChanged(nameof(DtppPreviousStatus));
 		OnPropertyChanged(nameof(DtppWarning));
 		OnPropertyChanged(nameof(ProcedureNameOptions));
-		OnPropertyChanged(nameof(NewAirportHint));
+		RaiseNewAirportHint();
 		OnPropertyChanged(nameof(NewProcedureHint));
 		OnPropertyChanged(nameof(PairAirportName));
 		OnPropertyChanged(nameof(PairEditorHint));

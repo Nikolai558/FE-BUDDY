@@ -23,7 +23,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [U1-6](#u1-6) | GUI lag | Med | File Conversions counts (and opens) source files on the UI thread per keystroke and at startup | Fixed | S3 |
 | [U1-7](#u1-7) | GUI lag | Med | Run review message lists are not virtualized and format every message on the UI thread | Fixed | S3 |
 | [W7-2](#w7-2) | GUI lag | Low | A pending reset runs on the UI thread before any window: up to 15 s wait plus deleting all app data, with nothing on screen | Open | S4 |
-| [W6-6](#w6-6) | GUI lag | Low | The Alias Command Guide and News visual trees are rebuilt and re-parsed every time their page opens | Open | S3 |
+| [W6-6](#w6-6) | GUI lag | Low | The Alias Command Guide and News visual trees are rebuilt and re-parsed every time their page opens | Fixed | S3 |
 | [W7-7](#w7-7) | GUI lag | Low | Opening any file or folder picker checks folder existence on the UI thread; an offline network folder stalls it | Open | S4 |
 | [W2-27](#w2-27) | GUI lag | Low | Small synchronous disk touches on the UI thread | Fixed | S3 |
 | [W2-6](#w2-6) | GUI lag | Low | One `File.Exists` per written file on the UI thread after a stopped run | Fixed | S3 |
@@ -31,14 +31,14 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [U1-14](#u1-14) | GUI lag | Low | Duplicate alias review re-checks all groups against all groups on every keystroke | Fixed | S3 |
 | [W3-5](#w3-5) | GUI lag | Low | Output picker filter and listing do per-item work on the UI thread | Open | S4 |
 | [W3-8](#w3-8) | GUI lag | Low | ROI state properties reload the saved ROI 4-5 times per change | Open | S4 |
-| [W1-5](#w1-5) | GUI lag | Low | Getters and CanExecute recompute the same lookups several times per keystroke | Open | S3 |
+| [W1-5](#w1-5) | GUI lag | Low | Getters and CanExecute recompute the same lookups several times per keystroke | Fixed | S3 |
 | [W4-5](#w4-5) | GUI lag | Low | Review tab adds every written file to an ObservableCollection one by one, but only shows the count | Fixed | S3 |
-| [W4-4](#w4-4) | GUI lag | Low | What You'll Get is built twice and its card rebuilt on every edit, even when nothing in it changed | Open | S3 |
+| [W4-4](#w4-4) | GUI lag | Low | What You'll Get is built twice and its card rebuilt on every edit, even when nothing in it changed | Fixed | S3 |
 | [T3-6](#t3-6) | GUI lag | Low | Switching, creating, renaming or deleting a settings profile does file I/O and reloads every page on the UI thread | Open | S4 |
 | [C6-31](#c6-31) | GUI lag | Low | Settings import reads and plans on the UI thread (Core work, Wpf call site) | Open | S4 |
 | [U1-13](#u1-13) | GUI lag | Low | Settings facility list runs its 20k-row LINQ on the UI thread when the cycle is already cached | Open | S4 |
 | [W3-7](#w3-7) | GUI lag | Low | System health refresh hits the disk on every cycle state change | Fixed | S4 |
-| [U1-15](#u1-15) | GUI lag | Low | Switching AIRAC Service tabs rebuilds the whole tab view | Open | S3 |
+| [U1-15](#u1-15) | GUI lag | Low | Switching AIRAC Service tabs rebuilds the whole tab view | Fixed | S3 |
 
 ## High
 
@@ -230,7 +230,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W6-6 · GUI lag · Low · The Alias Command Guide and News visual trees are rebuilt and re-parsed every time their page opens
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged): `TextOrCommand` parses each cell or bullet once. `MarkdownView` builds once XAML has set its properties (when it is initialized), then once per change, and keeps each text's parsed blocks with the text, so the Dashboard's News posts are parsed once, not on every visit. The first parse is still on the UI thread (News.md is 11 KB); the News feed being rebuilt on every environment change is [W3-4](#w3-4), in S4. The built guide isn't cached per document: it has 12 commands. Tests: `MarkdownViewTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Controls/AliasGuideDocumentView.cs:42-44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/AliasGuideDocumentView.cs#L42-L44), 62-84, 304-307; [`FeBuddy/FeBuddy.Wpf/Controls/MarkdownView.cs:27-44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/MarkdownView.cs#L27-L44), 84-90
 
@@ -328,7 +328,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W1-5 · GUI lag · Low · Getters and CanExecute recompute the same lookups several times per keystroke
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged), as proposed: Procedures works out the Add box's entries once per change to what they depend on, not on every re-query and hint read; a new default ROI, set without the tab being edited, is such a change (a new `OnRoiChanged` hook on the GeoJSON tabs). The Add Procedure box's root name is worked out again only when its text or the metafile changes. Core's `VirtualAirlineCallSigns` looks the virtual airline list up by 3LD and telephony, built once per list off the UI thread, for Telephony's hint, note, Confirm and list marks. The note still works out the hint itself: with the lookups, that costs nothing worth keeping a copy for. Tests: `VirtualAirlineCallSignsTests`, `ProceduresViewModelTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:672-693`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L672-L693), 1223, 1357, 1482-1484, 749-767; [`TelephonyViewModel.cs:402-471`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L402-L471), 669-672
 
@@ -352,7 +352,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W4-4 · GUI lag · Low · What You'll Get is built twice and its card rebuilt on every edit, even when nothing in it changed
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged), as proposed: `RaiseWhatYoullGetChanged` builds the summary once and announces it only when it says something new (`SummaryBlock.Same`), so the card isn't rebuilt for an edit it doesn't mention; while it announces, both getters return that one summary. Read at any other time, it is built fresh, so the Preview Settings tab never gets an old one. Tests: `AreaTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceTabViewModel.cs:51-55`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceTabViewModel.cs#L51-L55), 188-198, 208-212; [`FeBuddy/FeBuddy.Wpf/Views/Cards/SummaryCard.xaml:22-24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/Cards/SummaryCard.xaml#L22-L24); [`FeBuddy/FeBuddy.Wpf/Controls/OutputSummary.cs:23-25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/OutputSummary.cs#L23-L25), 44-54
 
@@ -414,7 +414,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### U1-15 · GUI lag · Low · Switching AIRAC Service tabs rebuilds the whole tab view
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged): not measured (it needs the running app). The tab page is now a `KeptContentHost`: each tab's page is built the first time it is shown and kept, so switching back only shows it again; a page whose tab leaves the rail is dropped at the next switch. Nothing is built up front. Each page's cards take their output tags from their own tab. The File Names refresh on a switch stays: it lists the files in memory and rebuilds its rows only when they changed. Tests: `KeptContentHostTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/TabbedServiceView.xaml:174-176`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/TabbedServiceView.xaml#L174-L176); [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:113-119`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L113-L119)
 

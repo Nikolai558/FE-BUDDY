@@ -556,4 +556,40 @@ public sealed class AreaTests : IDisposable
 
 		Assert.Empty(tab.ValidationErrors);
 	}
+
+	/// <summary>
+	/// What You'll Get is announced only when it says something new: typing an ROI corner while the area
+	/// is everything changes nothing in it, so the card isn't rebuilt; picking the ROI does, once, and the
+	/// card reads the one summary built for it.
+	/// </summary>
+	[Fact]
+	public void what_youll_get_is_announced_only_when_it_changes()
+	{
+		AirportsViewModel tab = new() { Area = SubServiceArea.Everything, OverrideRoi = true };
+		List<string?> changed = Changed(tab);
+
+		tab.SwLat = "40";
+		tab.NeLat = "42";
+
+		Assert.True(tab.IsDirty);
+		Assert.DoesNotContain(nameof(ServiceTabViewModel.WhatYoullGet), changed);
+
+		IReadOnlyList<SummaryBlock>? announced = null;
+		tab.PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName == nameof(ServiceTabViewModel.WhatYoullGet))
+			{
+				announced = tab.WhatYoullGet;
+				Assert.Same(announced, tab.WhatYoullGet);
+			}
+		};
+
+		tab.Area = SubServiceArea.Roi;
+
+		Assert.Single(changed, nameof(ServiceTabViewModel.WhatYoullGet));
+		Assert.Single(changed, nameof(ServiceTabViewModel.WhatYoullGetOutputs));
+		Assert.NotNull(announced);
+		Assert.NotSame(announced, tab.WhatYoullGet);
+		Assert.True(SummaryBlock.Same(announced!, tab.WhatYoullGet));
+	}
 }

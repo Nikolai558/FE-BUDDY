@@ -72,6 +72,9 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	private bool _includeVatsimRadarList;
 	private VatsimRadarCopy? _vatsimRadarCopy;
 	private IReadOnlyList<VirtualAirline> _vatsimRadarList = [];
+
+	// The list by 3LD and telephony: the editor asks on every keystroke and command re-query.
+	private VirtualAirlineCallSigns _vatsimRadarCallSigns = VirtualAirlineCallSigns.Empty;
 	private VirtualAirlineListRefreshResult? _lastRefresh;
 	private string? _downloadError;
 	private bool _isDownloadingVatsimRadarList;
@@ -111,7 +114,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 
 		int version = _vatsimRadarCopyVersion;
 
-		_ = Task.Run(VatsimRadarVirtualAirlines.ReadKeptCopy)
+		_ = Task.Run(ReadKeptCopyWithLookup)
 			.ContinueWith(
 				read => _dispatcher.BeginInvoke(() =>
 				{
@@ -123,6 +126,20 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				CancellationToken.None,
 				TaskContinuationOptions.OnlyOnRanToCompletion,
 				TaskScheduler.Default);
+	}
+
+	/// <summary>Reads the kept copy and builds its 3LD and telephony lookup, both off the UI thread.</summary>
+	private static VatsimRadarCopy? ReadKeptCopyWithLookup() => WithLookup(VatsimRadarVirtualAirlines.ReadKeptCopy());
+
+	/// <summary>Builds a copy's lookup (kept with its list), so using the copy on the UI thread only finds it.</summary>
+	private static VatsimRadarCopy? WithLookup(VatsimRadarCopy? copy)
+	{
+		if (copy is not null)
+		{
+			VirtualAirlineCallSigns.For(copy.VirtualAirlines);
+		}
+
+		return copy;
 	}
 
 	/// <inheritdoc />
@@ -502,9 +519,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				return string.Empty;
 			}
 
-			string[] organizations = [.. _vatsimRadarList
-				.Where(listed => listed.HasSameCallSign(designator, telephony))
-				.Select(listed => listed.Organization)];
+			string[] organizations = [.. _vatsimRadarCallSigns.WithCallSign(designator, telephony).Select(listed => listed.Organization)];
 
 			return organizations.Length == 0
 				? string.Empty
@@ -805,7 +820,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// is included; <see langword="null"/> otherwise.
 	/// </summary>
 	private VirtualAirline? FindOnVatsimRadarList(string designator, string telephony, string organization) =>
-		IncludeVatsimRadarList ? VatsimRadarVirtualAirlines.FindSame(_vatsimRadarList, designator, telephony, organization) : null;
+		IncludeVatsimRadarList ? _vatsimRadarCallSigns.FindSame(designator, telephony, organization) : null;
 
 	/// <summary>A virtual airline as the list shows one: <c>DAL · DELTA · Fly Delta Virtual</c>.</summary>
 	private static string Describe(VirtualAirline virtualAirline) =>
@@ -823,7 +838,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				? company
 				: null;
 			item.IsOnVatsimRadarList = IncludeVatsimRadarList
-				&& VatsimRadarVirtualAirlines.FindSameCallSign(_vatsimRadarList, item.Designator, item.Telephony) is not null;
+				&& _vatsimRadarCallSigns.FindSameCallSign(item.Designator, item.Telephony) is not null;
 		}
 
 		RaiseEditorFeedback();
@@ -839,6 +854,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		_vatsimRadarCopyVersion++;
 		_vatsimRadarCopy = copy;
 		_vatsimRadarList = copy?.VirtualAirlines ?? [];
+		_vatsimRadarCallSigns = copy is null ? VirtualAirlineCallSigns.Empty : VirtualAirlineCallSigns.For(copy.VirtualAirlines);
 
 		RaiseVatsimRadarListStatus();
 		RefreshVatsimRadarMatches();
@@ -863,7 +879,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			_lastRefresh = result;
 			_downloadError = null;
 			// Read off the UI thread: merging thousands of rows is no work for it.
-			UseVatsimRadarCopy(await Task.Run(() => VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath, result.OlderCopyPath)));
+			UseVatsimRadarCopy(await Task.Run(() => WithLookup(VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath, result.OlderCopyPath))));
 		}
 		catch (Exception ex)
 		{

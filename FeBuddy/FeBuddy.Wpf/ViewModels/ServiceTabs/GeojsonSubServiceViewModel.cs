@@ -1004,6 +1004,16 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		OnPropertyChanged(nameof(DefaultRoiSummary));
 		OnPropertyChanged(nameof(HasDefaultRoi));
 		RaiseWhatYoullGetChanged();
+		OnRoiChanged();
+	}
+
+	/// <summary>
+	/// After the ROI in use may have changed - the tab's own, the choice between it and the default, or
+	/// the default itself, which changes without the tab being edited. For a tab that keeps something
+	/// worked out from the ROI.
+	/// </summary>
+	protected virtual void OnRoiChanged()
+	{
 	}
 
 	private void RaiseAreaChoices()

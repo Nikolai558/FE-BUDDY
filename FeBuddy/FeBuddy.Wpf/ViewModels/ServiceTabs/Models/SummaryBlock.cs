@@ -114,8 +114,7 @@ public sealed record SummaryBlock(SubServiceOutputKinds Outputs, IReadOnlyList<S
 		foreach (SummaryBlock block in blocks.Where(block => (block.Outputs & on) != SubServiceOutputKinds.None))
 		{
 			SubServiceOutputKinds outputs = block.Outputs & on;
-			int same = shown.FindIndex(other => other.Lines.SequenceEqual(block.Lines) && other.Includes.SequenceEqual(block.Includes)
-				&& other.Files.SequenceEqual(block.Files) && other.Notes.SequenceEqual(block.Notes, StringComparer.Ordinal));
+			int same = shown.FindIndex(other => other.SaysTheSameAs(block));
 
 			if (same >= 0)
 			{
@@ -129,6 +128,19 @@ public sealed record SummaryBlock(SubServiceOutputKinds Outputs, IReadOnlyList<S
 
 		return shown;
 	}
+
+	/// <summary>Whether two summaries say exactly the same: the same blocks, in order, for the same outputs.</summary>
+	/// <param name="first">One summary.</param>
+	/// <param name="second">The other.</param>
+	/// <returns><see langword="true"/> when nothing in them differs.</returns>
+	public static bool Same(IReadOnlyList<SummaryBlock> first, IReadOnlyList<SummaryBlock> second) =>
+		first.Count == second.Count
+		&& first.Zip(second).All(pair => pair.First.Outputs == pair.Second.Outputs && pair.First.SaysTheSameAs(pair.Second));
+
+	/// <summary>Whether this block says exactly what <paramref name="other"/> does, whatever outputs each is for.</summary>
+	private bool SaysTheSameAs(SummaryBlock other) =>
+		Lines.SequenceEqual(other.Lines) && Includes.SequenceEqual(other.Includes)
+		&& Files.SequenceEqual(other.Files) && Notes.SequenceEqual(other.Notes, StringComparer.Ordinal);
 }
 
 /// <summary>

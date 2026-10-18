@@ -52,6 +52,13 @@ public sealed class AiracCycleDataCacheEntry
 	internal Task? DownloadTask { get; set; }
 
 	/// <summary>
+	/// The cycle's <see cref="DtppFiles.FileName"/> as the cache last found it: looked for once the
+	/// cycle's folder is known, and again once the download has fetched it; <see langword="null"/> when
+	/// the folder doesn't have it. <see cref="AiracCycleDataCache.FindDtppFile"/> answers from it.
+	/// </summary>
+	internal string? DtppFile { get; set; }
+
+	/// <summary>
 	/// Whether the FAA has been asked if it has published this cycle. A dev launch that leaves out
 	/// downloading asks nobody, so a download asked for later asks first.
 	/// </summary>
@@ -346,6 +353,7 @@ public sealed class AiracCycleDataCache(
 			if (_isLocallyAvailable(entry.Cycle))
 			{
 				entry.CycleDirectory = _cycleDirectory(entry.Cycle);
+				FindDtppOnDisk(entry, entry.CycleDirectory);
 				SetState(entry, CycleDataState.Downloaded);
 			}
 			else
@@ -464,6 +472,12 @@ public sealed class AiracCycleDataCache(
 	/// Procedures has nothing to run on (the General tab shows such a cycle as partial), rather than
 	/// let a run fail on it.
 	/// </summary>
+	/// <remarks>
+	/// Answers from memory, never the disk: the GUI asks on the UI thread every time a cycle's state
+	/// changes, and the folder can be slow to answer (a roaming or redirected profile). The cache looks
+	/// for the file when it learns the cycle's folder and again once the download has fetched it; the
+	/// metafile is fetched before the cycle is parsed, so a ready cycle keeps its answer until the next launch.
+	/// </remarks>
 	/// <param name="cycleId">The cycle ID.</param>
 	/// <returns>
 	/// The full path of the cycle's <see cref="DtppFiles.FileName"/>, or <see langword="null"/>
@@ -471,13 +485,15 @@ public sealed class AiracCycleDataCache(
 	/// </returns>
 	public string? FindDtppFile(string cycleId)
 	{
-		if (GetEntry(cycleId)?.CycleDirectory is not { } cycleDirectory)
-		{
-			return null;
-		}
+		AiracCycleDataCacheEntry? entry = GetEntry(cycleId);
+		return entry?.CycleDirectory is null ? null : entry.DtppFile;
+	}
 
+	/// <summary>Looks for the cycle's metafile in its folder, for <see cref="FindDtppFile"/> to answer from.</summary>
+	private static void FindDtppOnDisk(AiracCycleDataCacheEntry entry, string cycleDirectory)
+	{
 		string path = Path.Combine(cycleDirectory, DtppFiles.FileName);
-		return File.Exists(path) ? path : null;
+		entry.DtppFile = File.Exists(path) ? path : null;
 	}
 
 	private async Task<NasrCsvDataCollection> RunFlightAsync(AiracCycleDataCacheEntry entry, CancellationToken cancellationToken)
@@ -744,6 +760,7 @@ public sealed class AiracCycleDataCache(
 		// from disk), which is what fills in a next cycle's metafile once the FAA publishes it, at
 		// a later launch, or retries one whose earlier attempt failed.
 		await EnsureDtppAsync(entry, cycleDirectory, cancellationToken).ConfigureAwait(false);
+		FindDtppOnDisk(entry, cycleDirectory);
 
 		SetState(entry, CycleDataState.Downloaded);
 	}

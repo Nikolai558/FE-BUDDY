@@ -47,7 +47,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W2-9](#w2-9) | Bug | Low | Picking a cycle the FAA hasn't published leaves every tab on "Loading AIRAC &lt;id>…" for good | Fixed | S2 |
 | [W2-10](#w2-10) | Bug | Low | A cycle switch rebuilds the ARTCC / NAVAID-type toggles from the saved filter, losing unsaved ticks | Fixed | S1 |
 | [W2-37](#w2-37) | Bug | Low | Review summaries name the default alias file and always mention the ROI | Open | S2 |
-| [W2-5](#w2-5) | Bug | Low | Review tab reports alias files that a run stopped at the duplicate review deleted | Open | S2 |
+| [W2-5](#w2-5) | Bug | Low | Review tab reports alias files that a run stopped at the duplicate review deleted | Fixed | S2 |
 | [W3-16](#w3-16) | Bug | Low | Dashboard can miss log entries written while it is being built | Open | S2 |
 | [W4-8](#w4-8) | Bug | Low | CRC defaults rows accept any non-blank bcg/style/thickness/size, so an imported or hand-edited bad value passes the tab and fails the run | Open | S2 |
 | [W1-15](#w1-15) | Bug | Low | Procedure Charts keeps the previous cycle's d-TPP lookups after a cycle switch | Fixed | S2 |
@@ -528,7 +528,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W2-5 · Bug · Low · Review tab reports alias files that a run stopped at the duplicate review deleted
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: when the user stops at the duplicate review, `AiracService.RunAsync` returns every sub-service's result with `AliasFilePath = null`, and the AIRAC Service screen's `File.Exists` filter is gone ([W2-6](110_GUI-Lag.md#w2-6)). Tests: `AiracServiceTests` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:278-281`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L278-L281); [`AirportsViewModel.cs:100-103`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirportsViewModel.cs#L100-L103); [`NavaidsViewModel.cs:198-201`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L198-L201)
 

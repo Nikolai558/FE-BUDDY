@@ -447,6 +447,15 @@ public static class AiracService
 
 				string earlier = CombinedAliasFileWriter.DeleteEarlierFile(outputDirectory, combinedAliasFileName).Sentence;
 
+				// They're gone, so no sub-service's result names one: its review would list a file that isn't there.
+				airwaysResult = airwaysResult is null ? null : airwaysResult with { AliasFilePath = null };
+				airportsResult = airportsResult is null ? null : airportsResult with { AliasFilePath = null };
+				departuresResult = departuresResult is null ? null : departuresResult with { AliasFilePath = null };
+				arrivalsResult = arrivalsResult is null ? null : arrivalsResult with { AliasFilePath = null };
+				navaidsResult = navaidsResult is null ? null : navaidsResult with { AliasFilePath = null };
+				proceduresResult = proceduresResult is null ? null : proceduresResult with { AliasFilePath = null };
+				telephonyResult = telephonyResult is null ? null : telephonyResult with { AliasFilePath = null };
+
 				AddMessage(new ServiceMessage(LogLevel.Warning, LogSource,
 					$"You stopped the run at the duplicate alias commands, so it saved no alias file and no {combinedAliasFileName}.{earlier} " +
 					$"The duplicates are listed in {Path.GetFileName(duplicateAliasReport.FilePath)}; the other files the run wrote are in the cycle folder.")

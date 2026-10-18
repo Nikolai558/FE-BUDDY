@@ -25,8 +25,8 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W7-2](#w7-2) | GUI lag | Low | A pending reset runs on the UI thread before any window: up to 15 s wait plus deleting all app data, with nothing on screen | Open | S4 |
 | [W6-6](#w6-6) | GUI lag | Low | The Alias Command Guide and News visual trees are rebuilt and re-parsed every time their page opens | Open | S3 |
 | [W7-7](#w7-7) | GUI lag | Low | Opening any file or folder picker checks folder existence on the UI thread; an offline network folder stalls it | Open | S4 |
-| [W2-27](#w2-27) | GUI lag | Low | Small synchronous disk touches on the UI thread | Open | S3 |
-| [W2-6](#w2-6) | GUI lag | Low | One `File.Exists` per written file on the UI thread after a stopped run | Open | S3 |
+| [W2-27](#w2-27) | GUI lag | Low | Small synchronous disk touches on the UI thread | Fixed | S3 |
+| [W2-6](#w2-6) | GUI lag | Low | One `File.Exists` per written file on the UI thread after a stopped run | Fixed | S3 |
 | [W3-4](#w3-4) | GUI lag | Low | News posts are cleared and re-rendered (Markdown re-parsed) on every environment change | Open | S4 |
 | [U1-14](#u1-14) | GUI lag | Low | Duplicate alias review re-checks all groups against all groups on every keystroke | Fixed | S3 |
 | [W3-5](#w3-5) | GUI lag | Low | Output picker filter and listing do per-item work on the UI thread | Open | S4 |
@@ -37,7 +37,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [T3-6](#t3-6) | GUI lag | Low | Switching, creating, renaming or deleting a settings profile does file I/O and reloads every page on the UI thread | Open | S4 |
 | [C6-31](#c6-31) | GUI lag | Low | Settings import reads and plans on the UI thread (Core work, Wpf call site) | Open | S4 |
 | [U1-13](#u1-13) | GUI lag | Low | Settings facility list runs its 20k-row LINQ on the UI thread when the cycle is already cached | Open | S4 |
-| [W3-7](#w3-7) | GUI lag | Low | System health refresh hits the disk on every cycle state change | Open | S4 |
+| [W3-7](#w3-7) | GUI lag | Low | System health refresh hits the disk on every cycle state change | Fixed | S4 |
 | [U1-15](#u1-15) | GUI lag | Low | Switching AIRAC Service tabs rebuilds the whole tab view | Open | S3 |
 
 ## High
@@ -254,7 +254,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W2-27 · GUI lag · Low · Small synchronous disk touches on the UI thread
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged), as proposed: the AIRAC Service run looks for an earlier run's files (`HasExistingOutput`) and for the output folder with `Task.Run`, and counts as running from before the first, so the Run button can't start a second run meanwhile. Wx Stations reads its copy's age with `Task.Run` (`DescribeStationData`). Core's `AiracCycleDataCache` records whether a cycle has its d-TPP Metafile when it learns the cycle's folder and after the download, and `FindDtppFile` answers from that, so the General tab's "partial" (and System health, [W3-7](#w3-7)) never touch the disk. The duplicate alias card's save when its toggle changes is left with the other settings saves in [S4](020_Work-Plan.md#s4). Tests: `AiracCycleDataCacheTests`, `WxStationsViewModelTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:568`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L568), 631, 687; [`AiracGeneralTabViewModel.cs:445-448`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L445-L448); [`WxStationsViewModel.cs:79-86`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/WxStationsViewModel.cs#L79-L86); [`DuplicateAliasesCardViewModel.cs:55-56`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DuplicateAliasesCardViewModel.cs#L55-L56), 111-115
 
@@ -266,7 +266,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W2-6 · GUI lag · Low · One `File.Exists` per written file on the UI thread after a stopped run
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged), as proposed, with [W2-5](100_Bugs.md#w2-5): a stopped run's results name no alias file, so the AIRAC Service screen no longer checks each written file, and the Review tab only counts them ([W4-5](#w4-5)). Tests: `AiracServiceTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:609-610`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L609-L610)
 
@@ -402,7 +402,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W3-7 · GUI lag · Low · System health refresh hits the disk on every cycle state change
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), with [W2-27](#w2-27) in S3: `FindDtppFile` answers from what the cache found, so the refresh reads no file. Tests: `AiracCycleDataCacheTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs:722-724`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs#L722-L724)
 

@@ -629,7 +629,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				ConcatenateAliases = ConcatenateAliasesTab?.BuildSettingsBlock(),
 			};
 
-			if (AiracService.HasExistingOutput(settings))
+			// Running from here, so the Run button can't start a second run while the folder is looked
+			// at off the UI thread (it can be on a slow share) or the user answers about it.
+			IsRunning = true;
+
+			if (await Task.Run(() => AiracService.HasExistingOutput(settings)))
 			{
 				if (AskAboutExistingOutput(settings) is not { } existingOutput)
 				{
@@ -645,7 +649,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				.Select(t => t.Title)];
 
 			cycleOutputDirectory = settings.CycleOutputDirectory;
-			IsRunning = true;
 
 			_runReview.BeginRun(runningTabTitles);
 			_runReviewShown = true;
@@ -670,15 +673,16 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				.Select(t => t.DescribeRunResult(result))
 				.OfType<SubServiceRunResult>()];
 
-			// A run stopped at the duplicates deleted its alias files.
-			string[] files = [.. CollectFilesWritten(result).Where(file => !result.StoppedAtDuplicateReview || File.Exists(file))];
+			// A run stopped at the duplicates names no alias file: Core deleted them. The folder is looked
+			// at off the UI thread.
+			string? outputFolder = await Task.Run(() => ExistingFolder(result.OutputDirectory));
 
 			_runReview.CompleteRun(
 				result,
 				summary,
 				subServiceResults,
-				files,
-				ExistingFolder(result.OutputDirectory));
+				CollectFilesWritten(result),
+				outputFolder);
 
 			if (result.StoppedAtDuplicateReview)
 			{
@@ -692,7 +696,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		catch (Exception ex) when (started && cycleOutputDirectory is { } outputDirectory)
 		{
 			// A run that fails part way may already have written files; offer the folder if so.
-			_runReview.FailRun(ex.Message, outputDirectory: ExistingFolder(outputDirectory));
+			_runReview.FailRun(ex.Message, outputDirectory: await Task.Run(() => ExistingFolder(outputDirectory)));
 			Toast.Error("AIRAC Service failed", ex.Message);
 		}
 		catch (Exception ex)

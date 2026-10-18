@@ -75,14 +75,26 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// Never blocks the run: a missing copy is what the run downloads, and a failed download is
 	/// reported by the run itself.
 	/// </remarks>
-	public void RefreshStationData()
-	{
-		_stationDataStatus = File.Exists(WxStationFiles.SharedFilePath)
-			? $"FE-Buddy's copy is from {File.GetLastWriteTime(WxStationFiles.SharedFilePath):d MMM yyyy}. Every run downloads the latest list first, and uses this copy only if it can't."
-			: "FE-Buddy has no copy yet. Every run downloads the latest list first, so the first run needs an internet connection.";
+	public void RefreshStationData() => _ = RefreshStationDataAsync();
 
+	/// <summary>
+	/// Looks at the kept copy off the UI thread - the folder can be slow to answer (OneDrive, a network
+	/// profile) - then shows what it found.
+	/// </summary>
+	/// <returns>A task that completes when <see cref="StationDataStatus"/> says it.</returns>
+	internal async Task RefreshStationDataAsync()
+	{
+		_stationDataStatus = await Task.Run(() => DescribeStationData(WxStationFiles.SharedFilePath));
 		OnPropertyChanged(nameof(StationDataStatus));
 	}
+
+	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the station list.</summary>
+	/// <param name="path">The copy.</param>
+	/// <returns>The status line.</returns>
+	internal static string DescribeStationData(string path) =>
+		File.Exists(path)
+			? $"FE-Buddy's copy is from {File.GetLastWriteTime(path):d MMM yyyy}. Every run downloads the latest list first, and uses this copy only if it can't."
+			: "FE-Buddy has no copy yet. Every run downloads the latest list first, so the first run needs an internet connection.";
 
 	// ================= parent hooks =================
 

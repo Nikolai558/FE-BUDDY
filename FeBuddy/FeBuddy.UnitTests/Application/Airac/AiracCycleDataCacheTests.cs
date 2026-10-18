@@ -1189,6 +1189,70 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		}
 	}
 
+	/// <summary>
+	/// The GUI asks on the UI thread at every state change, so the answer is what the cache found, not
+	/// a fresh look at the disk: a file gone since still counts, and one that turned up since doesn't.
+	/// </summary>
+	[Fact]
+	public async Task find_dtpp_file_answers_from_what_the_cache_found()
+	{
+		string root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindDtpp_" + Guid.NewGuid().ToString("N"));
+		string withFile = Path.Combine(root, "2610");
+		string withoutFile = Path.Combine(root, "2611");
+		Directory.CreateDirectory(withFile);
+		Directory.CreateDirectory(withoutFile);
+		string dtppFile = Path.Combine(withFile, "d-tpp_Metafile.xml");
+		File.WriteAllText(dtppFile, "<digital_tpp></digital_tpp>");
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (cycle, _) => Task.FromResult(cycle.AiracCycleId == "2610" ? withFile : withoutFile),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+			File.Delete(dtppFile);
+			File.WriteAllText(Path.Combine(withoutFile, "d-tpp_Metafile.xml"), "<digital_tpp></digital_tpp>");
+
+			Assert.Equal(dtppFile, cache.FindDtppFile("2610"));
+			Assert.Null(cache.FindDtppFile("2611"));
+		}
+		finally
+		{
+			Directory.Delete(root, recursive: true);
+		}
+	}
+
+	/// <summary>A dev launch that finds a cycle on disk, without downloading it, finds its metafile there too.</summary>
+	[Fact]
+	public async Task find_dtpp_file_for_a_cycle_found_on_disk_without_downloading()
+	{
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindDtpp_" + Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(cycleDirectory);
+		string dtppFile = Path.Combine(cycleDirectory, "d-tpp_Metafile.xml");
+		File.WriteAllText(dtppFile, "<digital_tpp></digital_tpp>");
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (_, _) => Task.FromResult(cycleDirectory),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+				isLocallyAvailable: _ => true,
+				cycleDirectory: _ => cycleDirectory);
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+
+			Assert.Equal(dtppFile, cache.FindDtppFile("2610"));
+		}
+		finally
+		{
+			Directory.Delete(cycleDirectory, recursive: true);
+		}
+	}
+
 	[Fact]
 	public async Task find_dtpp_file_when_present_returns_its_path()
 	{

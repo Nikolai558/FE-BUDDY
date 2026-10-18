@@ -316,3 +316,5 @@ Raised by [Q1](#q1). The General tab's node (`Services.AiracService`) is the par
 | 2026-10-18 | [W1-13](100_Bugs.md#w1-13) | Agreed: a blank `JsonFields` means no optional fields | Kyle |
 | 2026-10-18 | H1-H3 | Apply to the developer docs too, except `ChangeLog.md` and `RELEASING*.md` | Kyle |
 | 2026-10-18 | H1-H5 | Written into `Code-Structure.md` | Kyle |
+| 2026-10-18 | [D1b-11](500_Developer-Docs.md#d1b-11) | Once 3.0.0 ships, every earlier version is unsupported | Kyle |
+| 2026-10-18 | [D1b-4](500_Developer-Docs.md#d1b-4), [D1a-11](500_Developer-Docs.md#d1a-11) | Their doc lines go with the code in S6 | Kyle |

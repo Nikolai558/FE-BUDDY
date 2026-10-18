@@ -28,7 +28,7 @@ harness and the tests all drive it the same way.
 | `FeBuddy.Wpf` | The app, `FE-BUDDY.exe`: MVVM screens over Core. |
 | `FeBuddy.Versioning` | The version number and the upgrade rule, shared by Core and the installer (netstandard2.0). |
 | `FeBuddy.Installer` | The MSI (WiX). |
-| `FeBuddy.Installer.CustomActions` | The MSI's code: enforce the upgrade rule, and remove saved credentials on uninstall (net472). |
+| `FeBuddy.Installer.CustomActions` | The MSI's code: enforce the upgrade rule, remove saved credentials on uninstall, and open FE-Buddy as the signed-in user from the stock dialogs' Finish (net472). |
 | `FeBuddy.Installer.UI` | The MSI's setup window, in the app's theme: install, update, roll back, repair and uninstall (WPF, net472, an MSI embedded UI). |
 | `FeBuddy.Harness` | A console app that runs the services with settings written in code. |
 | `FeBuddy.UnitTests` | xUnit tests for Core, Versioning and the app's view-models and controls. |

@@ -19,14 +19,14 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S3](#s3) | GUI lag: AIRAC Service and File Conversions | 15 | [110](110_GUI-Lag.md) |
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | 14 | [110](110_GUI-Lag.md) |
 | [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | 24 + 1 | [120](120_Logic-In-GUI.md) |
-| [S6](#s6) | Old-version code (D1), unused code and the H4 renames | 102 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
+| [S6](#s6) | Old-version code (D1), unused code and the H4 renames | 103 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
 | [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
 | [S8](#s8) | Comments and XML docs: GUI | 94 | [220](220_Comments-GUI.md) |
 | [S9](#s9) | Unit tests | 101 | [300](300_Unit-Tests.md) |
 | [S10](#s10) | Installer, Versioning, CI and build scripts | 41 | [400](400_Installer-Harness-CI.md) |
-| [S11](#s11) | Developer docs and house rules | 28 | [500](500_Developer-Docs.md) |
+| [S11](#s11) | Developer docs and house rules | 1 | [500](500_Developer-Docs.md) |
 | [S12](#s12) | User docs and on-screen text | 85 | [600](600_User-Docs-Proposal.md), [610](610_On-Screen-Text.md) |
-| [S13](#s13) | Final pass | - | - |
+| [S13](#s13) | Final pass, and the [3.0.0 release day](#release-day) | 2 | [500](500_Developer-Docs.md) |
 | [After 3.0](#after-30) | Deferred by the decisions | 22 | - |
 
 Counts are the findings each session still has to do, duplicates and deferred findings left out; "+ n" is work the decisions added that isn't a finding. S12 includes the 69 sections of the user-docs proposal.
@@ -106,6 +106,11 @@ Every finding in [130_Old-Version-Code.md](130_Old-Version-Code.md) (as [D1](010
 
 **Also:** the [H4](010_Decisions.md#h4) renames and file moves, here rather than in the comment sessions: [C2-20](200_Comments-Core.md#c2-20), [C3-22](200_Comments-Core.md#c3-22), [C1-34](200_Comments-Core.md#c1-34), [C1-35](200_Comments-Core.md#c1-35), [C6-34](200_Comments-Core.md#c6-34), [W6-29](220_Comments-GUI.md#w6-29), [W7-12](220_Comments-GUI.md#w7-12), [W4-36](220_Comments-GUI.md#w4-36), [D1b-10](500_Developer-Docs.md#d1b-10).
 
+**Docs that go with the code:**
+
+- With [C3-1](130_Old-Version-Code.md#c3-1), delete `Architecture.md`'s sentence about the older single `vatsim_radar_airlines.json` ([D1b-4](500_Developer-Docs.md#d1b-4)).
+- With [C4-12](130_Old-Version-Code.md#c4-12), delete or reword `Settings-Reference.md`'s `IncludeRoiAirports` lines ([D1a-11](500_Developer-Docs.md#d1a-11)).
+
 <a id="s7"></a>
 
 ### S7 · Comments and XML docs: Core and NASR
@@ -136,13 +141,24 @@ Every finding in [400_Installer-Harness-CI.md](400_Installer-Harness-CI.md) exce
 
 Every finding in [500_Developer-Docs.md](500_Developer-Docs.md) apart from [D1b-1](500_Developer-Docs.md#d1b-1) (S6) and [D1b-10](500_Developer-Docs.md#d1b-10) (S6), the agreed house rules H1 to H5 ([010_Decisions.md](010_Decisions.md#proposed-house-rules)), and a `TODO.md` item for each entry under [After 3.0](#after-30).
 
-**Fixed (not yet merged):** the house rules H1 to H5, written into `Code-Structure.md`; the `TODO.md` items; [D1b-2](500_Developer-Docs.md#d1b-2), [D1b-3](500_Developer-Docs.md#d1b-3), [D1b-9](500_Developer-Docs.md#d1b-9), [W5-22](500_Developer-Docs.md#w5-22), [W7-26](500_Developer-Docs.md#w7-26), [D1b-16](500_Developer-Docs.md#d1b-16)
+**Fixed (not yet merged):** the house rules H1 to H5, written into `Code-Structure.md`; the `TODO.md` items; [D1b-2](500_Developer-Docs.md#d1b-2), [D1b-3](500_Developer-Docs.md#d1b-3), [D1b-9](500_Developer-Docs.md#d1b-9), [W5-22](500_Developer-Docs.md#w5-22), [W7-26](500_Developer-Docs.md#w7-26), [D1b-16](500_Developer-Docs.md#d1b-16), [C1-32](500_Developer-Docs.md#c1-32), [C1-33](500_Developer-Docs.md#c1-33), [D1b-4](500_Developer-Docs.md#d1b-4), [D1b-5](500_Developer-Docs.md#d1b-5), [D1b-6](500_Developer-Docs.md#d1b-6), [D1b-7](500_Developer-Docs.md#d1b-7), [D1a-1](500_Developer-Docs.md#d1a-1), [D1a-4](500_Developer-Docs.md#d1a-4), [D1a-5](500_Developer-Docs.md#d1a-5), [D1a-6](500_Developer-Docs.md#d1a-6), [D1a-7](500_Developer-Docs.md#d1a-7), [D1a-8](500_Developer-Docs.md#d1a-8), [C2-31](500_Developer-Docs.md#c2-31), [C2-32](500_Developer-Docs.md#c2-32), [C3-15](500_Developer-Docs.md#c3-15), [D1a-10](500_Developer-Docs.md#d1a-10), [D1a-13](500_Developer-Docs.md#d1a-13), [D1a-14](500_Developer-Docs.md#d1a-14), [D1a-18](500_Developer-Docs.md#d1a-18), [D1b-13](500_Developer-Docs.md#d1b-13), [D1b-14](500_Developer-Docs.md#d1b-14), [D1b-15](500_Developer-Docs.md#d1b-15), [O1-36](500_Developer-Docs.md#o1-36), [N1-1](500_Developer-Docs.md#n1-1)
+
+**Still to do:** [D1a-3](500_Developer-Docs.md#d1a-3), with [S5](#s5), when the Settings page's keys move. [D1a-11](500_Developer-Docs.md#d1a-11) goes with its code in [S6](#s6); [D1b-11](500_Developer-Docs.md#d1b-11) and [D1b-12](500_Developer-Docs.md#d1b-12) wait for the [3.0.0 release day](#release-day).
 
 <a id="s12"></a>
 
 ### S12 · User docs and on-screen text
 
 Shrink the user manuals as [600_User-Docs-Proposal.md](600_User-Docs-Proposal.md) proposes, add the GUI text it lists, and fix [610_On-Screen-Text.md](610_On-Screen-Text.md). The token guide's `## If something goes wrong` heading and the three file names the app links to must survive (a test checks them).
+
+<a id="release-day"></a>
+
+### On the 3.0.0 release day
+
+Docs that are true only until 3.0.0 is published. Change them in the release's own pull request, with [S13](#s13).
+
+- [D1b-12](500_Developer-Docs.md#d1b-12): `RELEASING.md` becomes "The installer is always `FE-BUDDY-Setup.msi`, so `…/releases/latest/download/FE-BUDDY-Setup.msi` is always the latest **stable** release." In `VERSIONING.md`, drop "(Alpha and Beta now get `3.0.0-beta.N`)", as the finding proposes.
+- [D1b-11](500_Developer-Docs.md#d1b-11): in `SECURITY.md`'s support table, every version before 3.0 is unsupported (`:x:`; decided by Kyle). The paragraph becomes "FE-BUDDY 2.9.3 is the last 2.x release. Please move to FE-BUDDY 3.x: download it from [Releases](https://github.com/Nikolai558/FE-BUDDY/releases), or accept the update 2.9.x's updater offers."
 
 <a id="s13"></a>
 

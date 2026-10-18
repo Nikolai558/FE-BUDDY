@@ -10,41 +10,41 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
-| [D1b-11](#d1b-11) | Wrong doc | Med | SECURITY.md: 2.x Beta channel already gets 3.0 betas; the support table goes stale at 3.0.0 | Open | S11 |
+| [D1b-11](#d1b-11) | Wrong doc | Med | SECURITY.md: 2.x Beta channel already gets 3.0 betas; the support table goes stale at 3.0.0 | Agreed, release day | S13 |
 | [D1b-2](#d1b-2) | Wrong doc | Med | "A new NASR CSV group" steps miss the Group() arm, the Code arm, the parse method and the test fixtures | Fixed | S11 |
 | [D1b-3](#d1b-3) | Wrong doc | Med | "Adding a sub-service" misses the steps that wire a new sub-service's files into the run | Fixed | S11 |
-| [D1a-1](#d1a-1) | Wrong doc | Med | "Adding a setting" step 4: LocalKeys also makes a setting shared by every profile | Open | S11 |
-| [C1-32](#c1-32) | Wrong doc | Low | Architecture.md: "one left unloaded is NotLoaded" mixes up a cycle's state and the service's readiness | Open | S11 |
-| [C1-33](#c1-33) | Wrong doc | Low | Architecture.md's launch steps leave out the GitHub token check | Open | S11 |
-| [D1b-4](#d1b-4) | History wording | Low | Architecture narrates 3.0.0-beta.4's single airline file | Open | S11 |
-| [D1b-5](#d1b-5) | History wording | Low | "still parses all 24" | Open | S11 |
-| [D1b-6](#d1b-6) | Wrong doc | Low | Output layout bullet leaves out Publication_Docs and the duplicate report | Open | S11 |
-| [D1b-7](#d1b-7) | Minor | Low | Designation rule names no class in a list where "each rule lives in one class" | Open | S11 |
+| [D1a-1](#d1a-1) | Wrong doc | Med | "Adding a setting" step 4: LocalKeys also makes a setting shared by every profile | Fixed | S11 |
+| [C1-32](#c1-32) | Wrong doc | Low | Architecture.md: "one left unloaded is NotLoaded" mixes up a cycle's state and the service's readiness | Fixed | S11 |
+| [C1-33](#c1-33) | Wrong doc | Low | Architecture.md's launch steps leave out the GitHub token check | Fixed | S11 |
+| [D1b-4](#d1b-4) | History wording | Low | Architecture narrates 3.0.0-beta.4's single airline file | Fixed | S11 |
+| [D1b-5](#d1b-5) | History wording | Low | "still parses all 24" | Fixed | S11 |
+| [D1b-6](#d1b-6) | Wrong doc | Low | Output layout bullet leaves out Publication_Docs and the duplicate report | Fixed | S11 |
+| [D1b-7](#d1b-7) | Minor | Low | Designation rule names no class in a list where "each rule lives in one class" | Fixed | S11 |
 | [D1b-10](#d1b-10) | Minor | Low | Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root | Agreed | S6 |
 | [D1b-9](#d1b-9) | Stale doc | Low | Code-Structure's folder maps miss some major types | Fixed | S11 |
 | [W5-22](#w5-22) | Stale doc | Low | Code-Structure's folder map leaves out Views/Models | Fixed | S11 |
 | [W7-26](#w7-26) | Stale doc | Low | Code-Structure's Shell/ list misses the window-placement files | Fixed | S11 |
-| [N1-1](#n1-1) | Stale doc | Low | The developer README describes the custom-actions project without its new launch action | Open | S11 |
-| [D1b-15](#d1b-15) | Minor | Low | RELEASING-QuickRef.md: wrong snippet under NEWS.md, wrong branch and version casing, typos, and not linked from anywhere | Open | S11 |
-| [D1b-12](#d1b-12) | Stale doc | Low | Release-day staleness in RELEASING.md and VERSIONING.md | Open | S11 |
-| [D1b-13](#d1b-13) | History wording | Low | Figure 3's caption says the screenshot is from an older format | Open | S11 |
-| [D1b-14](#d1b-14) | Minor | Low | RELEASING.md: branch-protection paragraph contradicts itself; "What does what" and the check table are incomplete | Open | S11 |
-| [C2-31](#c2-31) | Stale doc | Low | Settings-Reference: `ExcludedDesignations` example `RN,SL` is not a designation FE-Buddy produces | Open | S11 |
-| [C2-32](#c2-32) | Wrong doc | Low | Settings-Reference: Airways CRC keys for unwritten or excluded files | Open | S11 |
-| [C3-15](#c3-15) | History wording | Low | Settings-Reference: "the key keeps its old name" | Open | S11 |
-| [D1a-10](#d1a-10) | History wording | Low | Procedure lists: "saved before 3.0.0-beta.9" | Open | S11 |
-| [D1a-11](#d1a-11) | History wording | Low | "the old `IncludeRoiAirports`", "before there was a choice", "never meant" | Open | S11 |
-| [D1a-13](#d1a-13) | History wording | Low | "as the profiles did" / "no migration step was needed" (duplicated) | Open | S11 |
-| [D1a-14](#d1a-14) | History wording | Low | Import: "beta.3 `UserConfig.json`" | Open | S11 |
-| [D1a-18](#d1a-18) | Minor | Low | Readability: duplication and placement | Open | S11 |
+| [N1-1](#n1-1) | Stale doc | Low | The developer README describes the custom-actions project without its new launch action | Fixed | S11 |
+| [D1b-15](#d1b-15) | Minor | Low | RELEASING-QuickRef.md: wrong snippet under NEWS.md, wrong branch and version casing, typos, and not linked from anywhere | Fixed | S11 |
+| [D1b-12](#d1b-12) | Stale doc | Low | Release-day staleness in RELEASING.md and VERSIONING.md | Agreed, release day | S13 |
+| [D1b-13](#d1b-13) | History wording | Low | Figure 3's caption says the screenshot is from an older format | Fixed | S11 |
+| [D1b-14](#d1b-14) | Minor | Low | RELEASING.md: branch-protection paragraph contradicts itself; "What does what" and the check table are incomplete | Fixed | S11 |
+| [C2-31](#c2-31) | Stale doc | Low | Settings-Reference: `ExcludedDesignations` example `RN,SL` is not a designation FE-Buddy produces | Fixed | S11 |
+| [C2-32](#c2-32) | Wrong doc | Low | Settings-Reference: Airways CRC keys for unwritten or excluded files | Fixed | S11 |
+| [C3-15](#c3-15) | History wording | Low | Settings-Reference: "the key keeps its old name" | Fixed | S11 |
+| [D1a-10](#d1a-10) | History wording | Low | Procedure lists: "saved before 3.0.0-beta.9" | Fixed | S11 |
+| [D1a-11](#d1a-11) | History wording | Low | "the old `IncludeRoiAirports`", "before there was a choice", "never meant" | Agreed | S6 |
+| [D1a-13](#d1a-13) | History wording | Low | "as the profiles did" / "no migration step was needed" (duplicated) | Fixed | S11 |
+| [D1a-14](#d1a-14) | History wording | Low | Import: "beta.3 `UserConfig.json`" | Fixed | S11 |
+| [D1a-18](#d1a-18) | Minor | Low | Readability: duplication and placement | Fixed | S11 |
 | [D1a-3](#d1a-3) | Wrong doc | Low | "keys read in more than one place are constants in UserConfigKeys" is not true for the facility and the default ROI | Open | S11 |
-| [D1a-4](#d1a-4) | Wrong doc | Low | Procedure Charts and Telephony don't read `CoordinatePrecision`, `FebProperties` or `CrcDefaultsFor`, though the app sends them | Open | S11 |
-| [D1a-5](#d1a-5) | Wrong doc | Low | MapService: the base-map settings are saved by BaseMapSettings, and the opacity is saved only after the slider settles | Open | S11 |
-| [D1a-6](#d1a-6) | Wrong doc | Low | `HelpCommandName` is sent only while `IncludeHelpCommand` is also `Y`, and `RenameHelpCommand` has no row | Open | S11 |
-| [D1a-7](#d1a-7) | Wrong doc | Low | NAVAIDs: missing that the merged Symbols file's `style` isn't read while styled by type | Open | S11 |
-| [D1a-8](#d1a-8) | Wrong doc | Low | "Adding a setting" step 3 doesn't fit Add Custom Aliases, SCT2, the numbered lists, or the harness | Open | S11 |
+| [D1a-4](#d1a-4) | Wrong doc | Low | Procedure Charts and Telephony don't read `CoordinatePrecision`, `FebProperties` or `CrcDefaultsFor`, though the app sends them | Fixed | S11 |
+| [D1a-5](#d1a-5) | Wrong doc | Low | MapService: the base-map settings are saved by BaseMapSettings, and the opacity is saved only after the slider settles | Fixed | S11 |
+| [D1a-6](#d1a-6) | Wrong doc | Low | `HelpCommandName` is sent only while `IncludeHelpCommand` is also `Y`, and `RenameHelpCommand` has no row | Fixed | S11 |
+| [D1a-7](#d1a-7) | Wrong doc | Low | NAVAIDs: missing that the merged Symbols file's `style` isn't read while styled by type | Fixed | S11 |
+| [D1a-8](#d1a-8) | Wrong doc | Low | "Adding a setting" step 3 doesn't fit Add Custom Aliases, SCT2, the numbered lists, or the harness | Fixed | S11 |
 | [D1b-16](#d1b-16) | Stale doc | Low | TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests | Fixed | S11 |
-| [O1-36](#o1-36) | Wrong doc | Low | VERSIONING.md: the version check keeps only "the user's channel" | Open | S11 |
+| [O1-36](#o1-36) | Wrong doc | Low | VERSIONING.md: the version check keeps only "the user's channel" | Fixed | S11 |
 | [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Agreed, changed | S6 |
 
 ## docs
@@ -53,7 +53,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-11 · Wrong doc · Med · SECURITY.md: 2.x Beta channel already gets 3.0 betas; the support table goes stale at 3.0.0
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Agreed, release day: "on its Alpha or Beta channel" is fixed now; the support table and the paragraph change on the 3.0.0 release day, with every version before 3.0 unsupported (Kyle, [decision log](010_Decisions.md#decision-log)) · **Session:** [S13](020_Work-Plan.md#s13)
 
 **Where:** [`docs/SECURITY.md:52-60`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/SECURITY.md?plain=1#L52-L60)
 
@@ -112,7 +112,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-1 · Wrong doc · Med · "Adding a setting" step 4: LocalKeys also makes a setting shared by every profile
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). Step 4 now says a `LocalKeys` setting is saved in `Shared.json` and shared by every profile. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:625-628`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L625-L628); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigPortability.cs:40-49`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigPortability.cs#L40-L49),74
 
@@ -126,7 +126,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### C1-32 · Wrong doc · Low · Architecture.md: "one left unloaded is NotLoaded" mixes up a cycle's state and the service's readiness
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The dev-launch paragraph now says a cycle left unloaded loads when asked for, and that `NotLoaded` is the service's readiness while that's the current cycle. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Architecture.md:55-57`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L55-L57)
 
@@ -140,7 +140,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### C1-33 · Wrong doc · Low · Architecture.md's launch steps leave out the GitHub token check
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The launch steps add step 7, the shell's GitHub token check. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Architecture.md:32-45`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L32-L45)
 
@@ -154,7 +154,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-4 · History wording · Low · Architecture narrates 3.0.0-beta.4's single airline file
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The TLS 1.3 reason is its own sentence; the sentence about the older single file goes with its code in [S6](020_Work-Plan.md#s6). · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Architecture.md:116-118`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L116-L118)
 
@@ -168,7 +168,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-5 · History wording · Low · "still parses all 24"
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). "still" is gone. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Architecture.md:76-77`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L76-L77)
 
@@ -182,7 +182,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-6 · Wrong doc · Low · Output layout bullet leaves out Publication_Docs and the duplicate report
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The bullet now names `Publication_Docs` and `Duplicate_Alias_Commands.txt`, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Architecture.md:186-187`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L186-L187)
 
@@ -196,7 +196,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-7 · Minor · Low · Designation rule names no class in a list where "each rule lives in one class"
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The Designation bullet names `AirwayClassifier.DeriveDesignation`. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Architecture.md:245`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L245), 252-253
 
@@ -266,7 +266,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### N1-1 · Stale doc · Low · The developer README describes the custom-actions project without its new launch action
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The README's row names the Finish launch, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/README.md:31`](https://github.com/Nikolai558/FE-BUDDY/blob/e15a634aa6915245e558875cd249bccdb8455480/docs/Developers/README.md?plain=1#L31)
 
@@ -280,7 +280,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-15 · Minor · Low · RELEASING-QuickRef.md: wrong snippet under NEWS.md, wrong branch and version casing, typos, and not linked from anywhere
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). Every item fixed as proposed, and the two release docs now link to each other. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/RELEASING-QuickRef.md:3`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/RELEASING-QuickRef.md?plain=1#L3), 19, 25, 32, 46, 54, 58-67, 93-94, 99-102, 108-114, 120-122, 143-146
 
@@ -294,7 +294,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-12 · Stale doc · Low · Release-day staleness in RELEASING.md and VERSIONING.md
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Agreed, release day: both sentences change on the 3.0.0 release day, as proposed · **Session:** [S13](020_Work-Plan.md#s13)
 
 **Where:** [`docs/Developers/RELEASING.md:142-144`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/RELEASING.md?plain=1#L142-L144); [`docs/Developers/VERSIONING.md:144-145`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/VERSIONING.md?plain=1#L144-L145)
 
@@ -308,7 +308,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-13 · History wording · Low · Figure 3's caption says the screenshot is from an older format
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The caption is reworded, as proposed; the screenshot stays. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/RELEASING.md:196-201`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/RELEASING.md?plain=1#L196-L201)
 
@@ -322,7 +322,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-14 · Minor · Low · RELEASING.md: branch-protection paragraph contradicts itself; "What does what" and the check table are incomplete
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The branch-protection sentence, the `ReleaseCommon.ps1` row and the check table's Installer, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/RELEASING.md:96`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/RELEASING.md?plain=1#L96), 163-168, 172-181
 
@@ -336,7 +336,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### C2-31 · Stale doc · Low · Settings-Reference: `ExcludedDesignations` example `RN,SL` is not a designation FE-Buddy produces
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The doc's example is now `A,G`; the Harness's is deferred with the rest of the Harness. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:328`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L328) (the same example is in [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L73), other scope)
 
@@ -350,7 +350,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### C2-32 · Wrong doc · Low · Settings-Reference: Airways CRC keys for unwritten or excluded files
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The File keys paragraph now says when Airways reads the CRC keys, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:232-235`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L232-L235)
 
@@ -364,7 +364,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### C3-15 · History wording · Low · Settings-Reference: "the key keeps its old name"
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). "(the key keeps its old name)" is gone. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:492`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L492)
 
@@ -380,7 +380,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-10 · History wording · Low · Procedure lists: "saved before 3.0.0-beta.9"
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The doc part, as proposed; the code comment is left for [S8](020_Work-Plan.md#s8). · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:444-446`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L444-L446); [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:1143-1144`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L1143-L1144)
 
@@ -395,7 +395,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-11 · History wording · Low · "the old `IncludeRoiAirports`", "before there was a choice", "never meant"
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Agreed: the doc lines go with the code they describe, in S6 with [C4-12](130_Old-Version-Code.md#c4-12) (Kyle, [decision log](010_Decisions.md#decision-log)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Settings-Reference.md:203`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L203), 204, 462-463; [`FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs:49`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs#L49); [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs:185-188`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs#L185-L188)
 
@@ -412,7 +412,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-13 · History wording · Low · "as the profiles did" / "no migration step was needed" (duplicated)
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The first copy is gone, and "Changing the layout" states the rule plainly. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:84-85`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L84-L85), 634-635
 
@@ -426,7 +426,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-14 · History wording · Low · Import: "beta.3 `UserConfig.json`"
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The import line names a profile's `UserConfig.<Profile>.json`, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:582`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L582)
 
@@ -440,7 +440,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-18 · Minor · Low · Readability: duplication and placement
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). (a) to (e) done: a "Saved settings outside the tabs" section, one `Combined_Alias.txt` sentence, a saved-names line for the conversions, the route detail cut to a pointer, and no feature numbers. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:87-178`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L87-L178), 525-528, 556-563, 437, 451-461, 466-472
 
@@ -479,7 +479,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-4 · Wrong doc · Low · Procedure Charts and Telephony don't read `CoordinatePrecision`, `FebProperties` or `CrcDefaultsFor`, though the app sends them
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The shared keys' intro, Procedure Charts and Telephony now say what each reads, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:182-183`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L182-L183), 421-423, 494-495
 
@@ -493,7 +493,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-5 · Wrong doc · Low · MapService: the base-map settings are saved by BaseMapSettings, and the opacity is saved only after the slider settles
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The MapService intro names `BaseMapSettings` and the opacity's delay, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:150`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L150)
 
@@ -507,7 +507,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-6 · Wrong doc · Low · `HelpCommandName` is sent only while `IncludeHelpCommand` is also `Y`, and `RenameHelpCommand` has no row
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). `HelpCommandName` and `RenameHelpCommand` each have their own row, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:431`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L431)
 
@@ -523,7 +523,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-7 · Wrong doc · Low · NAVAIDs: missing that the merged Symbols file's `style` isn't read while styled by type
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The NAVAIDs section adds the bullet, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:372-381`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L372-L381)
 
@@ -537,7 +537,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-8 · Wrong doc · Low · "Adding a setting" step 3 doesn't fit Add Custom Aliases, SCT2, the numbered lists, or the harness
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). Step 3 covers SCT2, Add Custom Aliases, the numbered entries and the harness, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:620-624`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L620-L624)
 
@@ -567,7 +567,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### O1-36 · Wrong doc · Low · VERSIONING.md: the version check keeps only "the user's channel"
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The version check keeps the user's channel or a more stable one, as proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/VERSIONING.md:75-77`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/VERSIONING.md?plain=1#L75-L77)
 

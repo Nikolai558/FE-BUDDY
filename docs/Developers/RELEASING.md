@@ -9,6 +9,7 @@ feature branch --PR--> v3-development --PR--> releases --(automatic)--> draft re
 ```
 
 The examples and screenshots below are from `3.0.0-alpha.2`; use your own version in its place.
+Short checklist: [Release quick reference](RELEASING-QuickRef.md).
 
 ## Writing a change-log entry
 
@@ -93,7 +94,7 @@ FE-Buddy's update window, so write them for users:
 
    | Check | What it checks |
    |---|---|
-   | Build, Test, CodeQL | The same as every pull request. |
+   | Build, Test, Installer, CodeQL | The same as every pull request. |
    | Release source | The pull request is from `v3-development`. |
    | Release pre-flight | The version is one step after the last release and not released yet; `ChangeLog.md` has its section, newest, with `## Unreleased` empty; developer mode is off; the installer-counter token works; the MSI builds with the right version and 2.x's upgrade identity; the release notes render. |
 
@@ -164,8 +165,8 @@ Rulesets protect `v3-development`, `releases` and 2.x's `development`, and every
 repository admins can bypass them. Changes reach those branches only by pull request, as a merge
 commit, once the required checks pass (`releases` also needs signed commits). The one exception is
 the installer-counter commit the Release workflow makes to `v3-development` with
-`RELEASE_COUNTER_PAT`. Nobody can push, force-push, delete or re-create them. Only the admins can create, move or delete a tag. Other
-branches are unrestricted.
+`RELEASE_COUNTER_PAT`. Nobody can force-push to, delete or re-create those branches. Only the
+admins can create, move or delete a tag. Other branches are unrestricted.
 
 ## What does what
 
@@ -174,6 +175,7 @@ branches are unrestricted.
 | `ChangeLog.md` | Every 3.x release's notes. 2.x's are in the [2.x change log](https://github.com/Nikolai558/FE-BUDDY/blob/2.9.3/ChangeLog.md). |
 | `.github/workflows/release-checks.yml` | On pull requests into `releases`: Release source and Release pre-flight. |
 | `.github/workflows/release.yml` | On a merge into `releases`: checks again, builds, commits the counter, drafts the release. |
+| `.github/scripts/ReleaseCommon.ps1` | Shared helpers the release scripts dot-source: the version, `ChangeLog.md`'s sections, the check summary. |
 | `.github/scripts/Test-ReleaseReadiness.ps1` | The checks that need no build. |
 | `.github/scripts/Build-ReleaseAssets.ps1` | Builds and checks the MSI; writes the release notes. |
 | `.github/scripts/Push-InstallerCounter.ps1` | Commits the advanced installer counter to `v3-development`. |
@@ -195,8 +197,8 @@ branches are unrestricted.
 <a id="figure-3"></a>
 **Figure 3 - The change in `ChangeLog.md`**
 
-From before a `---` also went under `## Unreleased` and the `###` headings were added; follow the
-example in step 3.
+The screenshot has no `---` under `## Unreleased` and no `###` headings; follow the example in
+step 3.
 
 ![A diff of ChangeLog.md adding the 3.0.0-alpha.2 heading below Unreleased](Media/Releasing/03-changelog-diff.png)
 

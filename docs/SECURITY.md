@@ -57,7 +57,7 @@ release.
 
 FE-BUDDY 2.9.3 is the last planned 2.x release. Please move to FE-BUDDY 3.x when you can: download it
 from [Releases](https://github.com/Nikolai558/FE-BUDDY/releases). 2.9.x's updater offers it once
-3.0.0 is out, or now on its Alpha channel.
+3.0.0 is out, or now on its Alpha or Beta channel.
 
 ## Verifying a download
 

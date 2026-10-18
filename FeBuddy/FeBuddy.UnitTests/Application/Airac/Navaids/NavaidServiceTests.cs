@@ -115,6 +115,16 @@ public sealed class NavaidServiceTests : IDisposable
 	}
 
 	[Fact]
+	public void a_nasr_file_with_no_navaids_says_none_were_found()
+	{
+		NavaidServiceResult result = NavaidService.Run(NavaidTestData.Build([]), Settings(("GenerateAliasFile", "N")));
+
+		Assert.Equal(0, result.NavaidCount);
+		Assert.Contains(result.Messages, m =>
+			m.IsAdvisory && m.Text == "No NAVAIDs were found, so no NAVAIDs GeoJSON files were written.");
+	}
+
+	[Fact]
 	public void with_no_alias_file_the_advisory_leaves_it_out()
 	{
 		NasrCsvDataCollection data = NavaidTestData.Build([NavaidTestData.FanMarkerRow("OM")]);

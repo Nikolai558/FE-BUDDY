@@ -557,6 +557,51 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		await prepare.WaitAsync(TimeSpan.FromSeconds(5));
 	}
 
+	/// <summary>
+	/// A run that starts a cycle's parse and is cancelled while that parse waits its turn only stops
+	/// waiting: the parse goes on, and the next ask gets the data.
+	/// </summary>
+	[Fact]
+	public async Task a_cancelled_run_never_leaves_the_parse_it_started_cancelled()
+	{
+		TaskCompletionSource currentParsing = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource releaseCurrent = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		NasrCsvDataCollection previousData = new();
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
+			parse: async (directory, _) =>
+			{
+				if (directory == Current.AiracCycleId)
+				{
+					currentParsing.SetResult();
+					await releaseCurrent.Task;
+				}
+
+				return directory == Previous.AiracCycleId ? previousData : new NasrCsvDataCollection();
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: true, Parse: false, Prune: false));
+
+		Task<NasrCsvDataCollection> current = cache.GetAsync("2610");
+		await currentParsing.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+		// The run's ask starts the previous cycle's parse, queued behind the current one's.
+		using CancellationTokenSource run = new();
+		Task<NasrCsvDataCollection> cancelled = cache.GetAsync("2609", run.Token);
+		Assert.True(SpinWait.SpinUntil(() => cache.GetEntry("2609")!.ParseTask is not null, TimeSpan.FromSeconds(5)));
+
+		run.Cancel();
+		releaseCurrent.SetResult();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelled.WaitAsync(TimeSpan.FromSeconds(5)));
+		await current.WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Same(previousData, await cache.GetAsync("2609").WaitAsync(TimeSpan.FromSeconds(5)));
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2609")!.State);
+	}
+
 	[Fact]
 	public async Task each_parse_logs_how_long_it_took_and_how_many_groups_it_parsed()
 	{

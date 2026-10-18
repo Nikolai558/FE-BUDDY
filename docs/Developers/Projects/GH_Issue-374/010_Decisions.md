@@ -70,11 +70,11 @@ None of it matters to 2.x users upgrading to 3.0. What goes:
 
 ### D3 · The duplicate-alias review keeps the wrong line by default
 
-**Status:** Agreed (Nikolas, 2026-10-17)
+**Status:** Agreed (Nikolas, 2026-10-17); confirmed (Kyle, 2026-10-18)
 
 [W2-12](220_Comments-GUI.md#w2-12). CRC reads an alias file top to bottom and the **last** duplicate wins (`Combined_Alias.txt` already relies on this). The review window defaults to keeping the *first* line and says that's "what CRC would have done anyway". It should default to the last, and its comment should say why.
 
-**Decision:** Agreed. Per Kyle, the CRC developers said the last matching alias wins, which is why custom aliases are written at the bottom of the combined file. Kyle to confirm before the fix.
+**Decision:** Agreed. Per Kyle, the CRC developers said the last matching alias wins, which is why custom aliases are written at the bottom of the combined file. Kyle confirmed it.
 
 <a id="d4"></a>
 
@@ -311,3 +311,6 @@ Raised by [Q1](#q1). The General tab's node (`Services.AiracService`) is the par
 | 2026-10-17 | [H3](#h3) | Agreed | Nikolas |
 | 2026-10-17 | [H4](#h4) | Agreed; renames before 3.0, in S6 | Nikolas |
 | 2026-10-17 | [H5](#h5) | New rule from Q1; agreed | Nikolas |
+| 2026-10-18 | [C1-3](100_Bugs.md#c1-3) | Keep checking the previous cycle's route for deleted and changed procedures; fix the failure instead | Kyle |
+| 2026-10-18 | [D3](#d3) | Confirmed: CRC reads an alias file top to bottom, and the last duplicate is the one it uses | Kyle |
+| 2026-10-18 | [W1-13](100_Bugs.md#w1-13) | Agreed: a blank `JsonFields` means no optional fields | Kyle |

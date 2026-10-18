@@ -134,7 +134,7 @@ public static class AirwaySettingsParser
 			OutputDirectory = SettingsValueReader.RequiredString(airwaySettings, "OutputDirectory"),
 			GenerateGeojson = writingGeojson,
 			OutputBy = outputBy,
-			BufferAirwayWaypoints = buffer,
+			BufferAirwayWaypoints = readsBufferDistances,
 			FixBufferNm = readsBufferDistances
 				? ReadBufferDistance(airwaySettings, FixBufferKey, AirwayWaypointBuffer.DefaultFixRadiusNm)
 				: AirwayWaypointBuffer.DefaultFixRadiusNm,

@@ -28,7 +28,8 @@ public sealed record AirwaySettings
 	/// <summary>
 	/// When <see langword="true"/>, each airway leg is shortened around its endpoint waypoints
 	/// (<see cref="FixBufferNm"/> for 5-character fixes, <see cref="NavaidBufferNm"/> otherwise) so
-	/// lines stop short of waypoint symbols/text.
+	/// lines stop short of waypoint symbols/text. Only ever <see langword="true"/> when GeoJSON is
+	/// written: buffering shapes what is drawn, never the alias file.
 	/// </summary>
 	public required bool BufferAirwayWaypoints { get; init; }
 

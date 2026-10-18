@@ -653,7 +653,9 @@ the settings file while every setting keeps its dotted path needs only step 3, a
    ```
    A step edits the settings by dotted path (`Move`, `ChangeValue`, `Set`, `Remove`). It may meet a
    file that already has some of the new layout: `Move`, `Set` and `Remove` can run twice without
-   harm, and a `ChangeValue` must leave an already-changed value alone.
+   harm, and a `ChangeValue` must leave an already-changed value alone. The shared settings go
+   through the same steps: `Shared.json` is brought forward on its own, by its own stamp, so a step
+   sees one file's settings at a time, and one that renames a shared setting renames it there too.
 3. **For a file that moves**, have `UserConfigFile` look for it where the old layout kept it too.
 4. **Add a sample** of the new layout: `FeBuddy.UnitTests\Fixtures\UserConfig\UserConfig.v<N>.json`,
    a full file as the new version saves it, with its fingerprint in `UserConfigLayoutTests`.

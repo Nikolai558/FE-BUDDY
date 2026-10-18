@@ -240,8 +240,14 @@ public sealed class AirwayServiceTests : IDisposable
 		Assert.Equal(1.0, DistanceNm(leg[leg.GetArrayLength() - 1], lat: 41.0, lon: -81.0), precision: 2);
 	}
 
-	[Fact]
-	public void an_airway_whose_legs_are_all_shorter_than_the_buffer_is_dropped()
+	/// <summary>
+	/// Buffering only shapes what is drawn: an airway it leaves no legs of is left out of the GeoJSON,
+	/// but stays in Airways.txt in either alias scope.
+	/// </summary>
+	[Theory]
+	[InlineData("All")]
+	[InlineData("RoiAirways")]
+	public void an_airway_whose_legs_are_all_shorter_than_the_buffer_is_not_drawn_but_stays_in_the_alias_file(string aliasScope)
 	{
 		NasrCsvDataCollection data = AirwayTestDataBuilder.Build(
 			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 40.001, -80.0)],
@@ -253,9 +259,11 @@ public sealed class AirwayServiceTests : IDisposable
 			]);
 
 		AirwayServiceResult result = AirwayService.Run(data, Settings(
-			[.. SouthEastRoi, ("BufferAirwayWaypoints", "Y"), ("GenerateAliasFile", "N")]));
+			[.. SouthEastRoi, ("BufferAirwayWaypoints", "Y"), ("AliasRoiScope", aliasScope)]));
 
 		Assert.Equal(0, result.AirwayCount);
+		Assert.Empty(result.GeojsonFilesWritten);
+		Assert.Contains(".J2F .FF AAAAA BBBBB", File.ReadAllText(result.AliasFilePath!), StringComparison.Ordinal);
 	}
 
 	[Fact]

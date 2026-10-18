@@ -144,7 +144,11 @@ public static class AirwayBuilder
 				}
 			}
 
-			// Buffering only shapes what is drawn, so an airway outside the ROI skips it.
+			// Buffering only shapes what is drawn, so an airway outside the ROI skips it. An airway it
+			// leaves no legs of is kept, not drawn, on its unbuffered line: the alias file still owes
+			// the user every airway.
+			bool isDrawn = true;
+
 			if (crossesRoi && settings.BufferAirwayWaypoints)
 			{
 				AirwayBufferResult bufferResult =
@@ -152,12 +156,14 @@ public static class AirwayBuilder
 
 				messages.AddRange(bufferResult.Messages);
 
-				lineStrings = bufferResult.LineStrings;
-
-				if (lineStrings.Count == 0)
+				if (bufferResult.LineStrings.Count > 0)
+				{
+					lineStrings = bufferResult.LineStrings;
+				}
+				else
 				{
 					// Every leg was shorter than its combined buffer radius.
-					continue;
+					isDrawn = false;
 				}
 			}
 
@@ -174,7 +180,8 @@ public static class AirwayBuilder
 				Segments = normalizedSegments,
 				Points = points,
 				Geometry = Combine(lineStrings),
-				CrossesRoi = crossesRoi
+				CrossesRoi = crossesRoi,
+				IsDrawn = isDrawn
 			};
 
 			airways.Add(airway);

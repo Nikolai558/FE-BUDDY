@@ -75,9 +75,13 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	private readonly HttpClient? _httpClient;
 	private readonly Dispatcher _dispatcher;
 
-	// Whether each file on this PC holds an alias command, as last read, with when it was written and
-	// its size - so validating as the user types doesn't read every file again.
-	private readonly Dictionary<string, (DateTime Written, long Length, bool HasCommands)> _localFileChecks = new(StringComparer.OrdinalIgnoreCase);
+	// What each file on this PC was found to be, by path. Found off the UI thread
+	// (CheckLocalFilesAsync); validating and the rows' notices only read it.
+	private readonly Dictionary<string, LocalAliasFileState> _localFiles = new(StringComparer.OrdinalIgnoreCase);
+
+	// Checks the files once the user stops typing a path, rather than on every keystroke: a half-typed
+	// path on a share that isn't there would tie up a check for seconds each time.
+	private readonly DispatcherTimer _checkAfterTyping;
 	private bool _loading;
 	private bool _addCustomAliasFiles = true;
 
@@ -99,6 +103,13 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		_store = store;
 		_httpClient = httpClient;
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+
+		_checkAfterTyping = new DispatcherTimer(DispatcherPriority.Background, _dispatcher) { Interval = TimeSpan.FromMilliseconds(400) };
+		_checkAfterTyping.Tick += (_, _) =>
+		{
+			_checkAfterTyping.Stop();
+			_ = CheckLocalFilesAsync();
+		};
 
 		AddFileCommand = new RelayCommand(AddFiles);
 		// A new web address opens expanded: its box is where the address goes.
@@ -322,6 +333,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 		RefreshRowHints();
 		ClearDirty();
+		_ = CheckLocalFilesAsync();
 	}
 
 	/// <inheritdoc />
@@ -368,6 +380,48 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 		RefreshRowHints();
 		MarkDirty();
+		_checkAfterTyping.Stop();
+		_checkAfterTyping.Start();
+	}
+
+	/// <summary>
+	/// Finds what each local file the rows name is - there, readable, an alias file - off the UI thread,
+	/// then shows it: the rows' notices and the tab's validation only read what was found. Runs when
+	/// the tab loads, when the list changes, and once the user stops typing a path.
+	/// </summary>
+	/// <returns>A task that completes when the rows show what was found.</returns>
+	internal async Task CheckLocalFilesAsync()
+	{
+		string[] paths = [.. Sources
+			.Where(row => row.IsFile)
+			.Select(row => row.Location.Trim())
+			.Where(Path.IsPathFullyQualified)
+			.Distinct(StringComparer.OrdinalIgnoreCase)];
+
+		if (paths.Length == 0)
+		{
+			return;
+		}
+
+		try
+		{
+			Dictionary<string, LocalAliasFileState> found = await Task.Run(() =>
+				paths.ToDictionary(path => path, AliasSourceLoader.InspectLocalFile, StringComparer.OrdinalIgnoreCase));
+
+			foreach ((string path, LocalAliasFileState state) in found)
+			{
+				_localFiles[path] = state;
+			}
+
+			RefreshRowHints();
+			Revalidate();
+		}
+		catch (Exception ex)
+		{
+			// A path Windows refuses outright (too long, a reserved name) is the row's to say; this keeps
+			// anything unexpected from taking FE-Buddy down, since nothing waits for the check.
+			AppLog.Warning(LogSource, $"Checking the custom alias files failed: {ex.Message}");
+		}
 	}
 
 	/// <summary>Picks the file for a file row.</summary>
@@ -403,7 +457,8 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 		try
 		{
-			AliasSourceLoad load = await AliasSourceLoader.LoadAsync(source, _store, _httpClient);
+			// Off the UI thread: a file is read, or looked for, before the loader's first wait.
+			AliasSourceLoad load = await Task.Run(() => AliasSourceLoader.LoadAsync(source, _store, _httpClient));
 
 			if (IsStill(row, source))
 			{
@@ -510,6 +565,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		RefreshRowHints();
 		MarkDirty();
 		CommandManager.InvalidateRequerySuggested();
+		_ = CheckLocalFilesAsync();
 	}
 
 	private void Renumber()
@@ -598,41 +654,15 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// <summary>
 	/// Why a file on this PC can't be saved for what it holds: a file with no alias command in it is
 	/// not an alias file. One that isn't there, or can't be read, only gets a notice (see
-	/// <see cref="RefreshRowHints"/>): the run says what happened to it.
+	/// <see cref="RefreshRowHints"/>): the run says what happened to it. Reads only what
+	/// <see cref="CheckLocalFilesAsync"/> found: nothing until it has looked.
 	/// </summary>
-	private string? LocalFileErrorOf(AliasSourceRow row)
-	{
-		string path = row.Location.Trim();
+	private string? LocalFileErrorOf(AliasSourceRow row) =>
+		row.IsFile && LocalFileState(row) == LocalAliasFileState.NoAliasCommands ? NoAliasCommandsMessage : null;
 
-		if (!row.IsFile || !Path.IsPathFullyQualified(path))
-		{
-			return null;
-		}
-
-		try
-		{
-			FileInfo file = new(path);
-
-			if (!file.Exists)
-			{
-				return null;
-			}
-
-			if (!_localFileChecks.TryGetValue(path, out (DateTime Written, long Length, bool HasCommands) known)
-				|| known.Written != file.LastWriteTimeUtc
-				|| known.Length != file.Length)
-			{
-				known = (file.LastWriteTimeUtc, file.Length, CombinedAliasFileWriter.CountCommands(File.ReadAllText(path)) > 0);
-				_localFileChecks[path] = known;
-			}
-
-			return known.HasCommands ? null : NoAliasCommandsMessage;
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			return null;
-		}
-	}
+	/// <summary>What <see cref="CheckLocalFilesAsync"/> found the row's file to be, or <see langword="null"/> before it has looked.</summary>
+	private LocalAliasFileState? LocalFileState(AliasSourceRow row) =>
+		_localFiles.TryGetValue(row.Location.Trim(), out LocalAliasFileState state) ? state : null;
 
 	/// <summary>
 	/// Updates what each row warns about without stopping a save - a file that is not on this PC, a
@@ -645,7 +675,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 			string location = row.Location.Trim();
 
 			row.Notice =
-				row.IsFile && Path.IsPathFullyQualified(location) && !File.Exists(location)
+				row.IsFile && LocalFileState(row) == LocalAliasFileState.Missing
 					? "This file is not on this PC. It may have been moved or renamed."
 				: row.IsUrl && row.CredentialId != Guid.Empty && _credentialsError is not null
 					? $"Windows Credential Manager could not be read, so its credential cannot be checked: {_credentialsError}"

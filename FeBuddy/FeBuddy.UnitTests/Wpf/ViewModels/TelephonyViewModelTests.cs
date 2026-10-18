@@ -792,6 +792,17 @@ public sealed class TelephonyViewModelTests : IDisposable
 		new(new SharedDataRefreshResult(null, null, "offline"), new SharedDataRefreshResult(null, null, "offline"));
 
 	/// <summary>A tab using this copy of the list, whose downloads count how often they are asked for and never touch the network.</summary>
+	/// <summary>Waits for the download ticking the box started: the list is read off the UI thread, so it finishes later.</summary>
+	private static async Task DownloadFinished(TelephonyViewModel tab)
+	{
+		for (int waited = 0; tab.IsDownloadingVatsimRadarList && waited < 5000; waited += 10)
+		{
+			await Task.Delay(10);
+		}
+
+		Assert.False(tab.IsDownloadingVatsimRadarList);
+	}
+
 	private static (TelephonyViewModel Tab, Func<int> Downloads) TabUsing(VatsimRadarCopy? copy, VirtualAirlineListRefreshResult? downloadResult = null)
 	{
 		int downloads = 0;
@@ -978,13 +989,14 @@ public sealed class TelephonyViewModelTests : IDisposable
 
 	/// <summary>Ticking the box with no copy fetches one, so the editor has something to check against; with a copy it doesn't.</summary>
 	[Fact]
-	public void ticking_the_box_downloads_the_list_only_when_there_is_no_copy()
+	public async Task ticking_the_box_downloads_the_list_only_when_there_is_no_copy()
 	{
 		(TelephonyViewModel withoutCopy, Func<int> downloadsWithout) = TabUsing(null);
 		(TelephonyViewModel withCopy, Func<int> downloadsWith) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")));
 
 		withoutCopy.IncludeVatsimRadarList = true;
 		withCopy.IncludeVatsimRadarList = true;
+		await DownloadFinished(withoutCopy);
 
 		Assert.Equal(1, downloadsWithout());
 		Assert.Equal(0, downloadsWith());
@@ -1009,6 +1021,7 @@ public sealed class TelephonyViewModelTests : IDisposable
 			new SharedDataRefreshResult(vatsimRadar, keptUtc, "The SSL connection could not be established: TLS alert"));
 		(TelephonyViewModel tab, Func<int> downloads) = TabUsing(null, refreshed);
 		tab.IncludeVatsimRadarList = true;
+		await DownloadFinished(tab);
 
 		await tab.DownloadVatsimRadarListAsync();
 

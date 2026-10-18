@@ -75,6 +75,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	private VirtualAirlineListRefreshResult? _lastRefresh;
 	private string? _downloadError;
 	private bool _isDownloadingVatsimRadarList;
+	private int _vatsimRadarCopyVersion;
 	private IReadOnlyDictionary<(string Designator, string Telephony), string> _realOperators =
 		new Dictionary<(string Designator, string Telephony), string>();
 
@@ -93,7 +94,35 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 
 		LoadFromConfig();
 		RefreshTelephonyData();
-		UseVatsimRadarCopy(VatsimRadarVirtualAirlines.ReadKeptCopy());
+		LoadVatsimRadarCopy();
+	}
+
+	/// <summary>
+	/// Reads FE-Buddy's kept copies of the virtual airline list off the UI thread - GNG's part alone has
+	/// thousands of rows - and then uses them, unless a download got there first. A tab built outside
+	/// the app (a unit test) reads nothing: the tests hand a copy in (<see cref="UseVatsimRadarCopy"/>).
+	/// </summary>
+	private void LoadVatsimRadarCopy()
+	{
+		if (Application.Current is null)
+		{
+			return;
+		}
+
+		int version = _vatsimRadarCopyVersion;
+
+		_ = Task.Run(VatsimRadarVirtualAirlines.ReadKeptCopy)
+			.ContinueWith(
+				read => _dispatcher.BeginInvoke(() =>
+				{
+					if (_vatsimRadarCopyVersion == version)
+					{
+						UseVatsimRadarCopy(read.Result);
+					}
+				}),
+				CancellationToken.None,
+				TaskContinuationOptions.OnlyOnRanToCompletion,
+				TaskScheduler.Default);
 	}
 
 	/// <inheritdoc />
@@ -128,13 +157,28 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// </remarks>
 	public void RefreshTelephonyData()
 	{
-		_telephonyDataStatus = File.Exists(TelephonyFiles.RegisterFilePath)
-			? $"FE-Buddy's copy is from {File.GetLastWriteTime(TelephonyFiles.RegisterFilePath):d MMM yyyy}. Every run downloads the latest pages first, and uses this copy only if it can't."
-			: "FE-Buddy has no copy yet. Every run downloads the latest pages first, so the first run needs an internet connection.";
+		// The copy is looked at off the UI thread: the folder can be slow to answer (OneDrive, a network profile).
+		_ = Task.Run(() => DescribeTelephonyData(TelephonyFiles.RegisterFilePath))
+			.ContinueWith(
+				read => _dispatcher.BeginInvoke(() =>
+				{
+					_telephonyDataStatus = read.Result;
+					OnPropertyChanged(nameof(TelephonyDataStatus));
+				}),
+				CancellationToken.None,
+				TaskContinuationOptions.OnlyOnRanToCompletion,
+				TaskScheduler.Default);
 
-		OnPropertyChanged(nameof(TelephonyDataStatus));
 		LoadRealOperators();
 	}
+
+	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the FAA pages.</summary>
+	/// <param name="registerPath">The register's copy.</param>
+	/// <returns>The status line.</returns>
+	internal static string DescribeTelephonyData(string registerPath) =>
+		File.Exists(registerPath)
+			? $"FE-Buddy's copy is from {File.GetLastWriteTime(registerPath):d MMM yyyy}. Every run downloads the latest pages first, and uses this copy only if it can't."
+			: "FE-Buddy has no copy yet. Every run downloads the latest pages first, so the first run needs an internet connection.";
 
 	/// <summary>
 	/// Reads the real operators from FE-Buddy's copies of the FAA's pages, off the UI thread, to say
@@ -792,6 +836,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// <param name="copy">The copy, or <see langword="null"/> when there is none.</param>
 	internal void UseVatsimRadarCopy(VatsimRadarCopy? copy)
 	{
+		_vatsimRadarCopyVersion++;
 		_vatsimRadarCopy = copy;
 		_vatsimRadarList = copy?.VirtualAirlines ?? [];
 
@@ -817,7 +862,8 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			VirtualAirlineListRefreshResult result = await RefreshVatsimRadarList(CancellationToken.None);
 			_lastRefresh = result;
 			_downloadError = null;
-			UseVatsimRadarCopy(VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath, result.OlderCopyPath));
+			// Read off the UI thread: merging thousands of rows is no work for it.
+			UseVatsimRadarCopy(await Task.Run(() => VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath, result.OlderCopyPath)));
 		}
 		catch (Exception ex)
 		{

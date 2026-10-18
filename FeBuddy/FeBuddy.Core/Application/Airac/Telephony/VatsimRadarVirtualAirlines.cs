@@ -47,13 +47,18 @@ public static class VatsimRadarVirtualAirlines
 		ArgumentNullException.ThrowIfNull(vatsimRadar);
 
 		List<VatsimRadarAirline> merged = [.. gng];
-		int gngCount = merged.Count;
+
+		// Each 3LD's first GNG row, found once: GNG lists thousands.
+		Dictionary<string, int> firstGngRow = new(StringComparer.OrdinalIgnoreCase);
+
+		for (int i = 0; i < merged.Count; i++)
+		{
+			firstGngRow.TryAdd(merged[i].Icao.Trim(), i);
+		}
 
 		foreach (VatsimRadarAirline airline in vatsimRadar)
 		{
-			int index = merged.FindIndex(0, gngCount, row => row.Icao.Trim().Equals(airline.Icao.Trim(), StringComparison.OrdinalIgnoreCase));
-
-			if (index >= 0)
+			if (firstGngRow.TryGetValue(airline.Icao.Trim(), out int index))
 			{
 				merged[index] = merged[index] with { Name = airline.Name, Callsign = airline.Callsign };
 			}
@@ -76,6 +81,10 @@ public static class VatsimRadarVirtualAirlines
 		List<VirtualAirline> usable = [];
 		List<string> leftOut = [];
 
+		// What VirtualAirline.IsSameAs compares - 3LD, telephony and organization, trimmed, ignoring
+		// case - kept as one key, so each airline is checked once rather than against every one so far.
+		HashSet<string> listed = new(StringComparer.OrdinalIgnoreCase);
+
 		foreach (VatsimRadarAirline airline in list
 			.OrderBy(airline => airline.Icao, StringComparer.OrdinalIgnoreCase)
 			.ThenBy(airline => airline.Callsign, StringComparer.OrdinalIgnoreCase)
@@ -85,7 +94,7 @@ public static class VatsimRadarVirtualAirlines
 			{
 				leftOut.Add(airline.Icao);
 			}
-			else if (FindSame(usable, airline.Icao, airline.Callsign, airline.Name) is null)
+			else if (listed.Add($"{airline.Icao.Trim()}\n{airline.Callsign.Trim()}\n{airline.Name.Trim()}"))
 			{
 				usable.Add(new VirtualAirline(airline.Icao, airline.Callsign, airline.Name));
 			}

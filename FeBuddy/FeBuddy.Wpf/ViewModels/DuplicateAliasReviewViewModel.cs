@@ -25,6 +25,7 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class DuplicateAliasReviewViewModel : ObservableObject
 {
 	private readonly IReadOnlySet<string> _taken;
+	private readonly IReadOnlyList<DuplicateAliasCommand> _duplicates;
 	private bool _canFinish;
 
 	/// <summary>Creates the window's model.</summary>
@@ -34,6 +35,7 @@ public sealed class DuplicateAliasReviewViewModel : ObservableObject
 		ArgumentNullException.ThrowIfNull(review);
 
 		_taken = review.TakenCommands;
+		_duplicates = review.Duplicates;
 		Groups = [.. review.Duplicates.Select(duplicate => NewGroup(duplicate, review.SavedChoices))];
 		FinishCommand = new RelayCommand(() => Close(Choices()), () => CanFinish);
 		StopCommand = new RelayCommand(() => Close(null));
@@ -87,20 +89,20 @@ public sealed class DuplicateAliasReviewViewModel : ObservableObject
 		return new DuplicateAliasGroupItem(duplicate.Command, lines);
 	}
 
-	/// <summary>Checks every command again: a new command in one can clash with another's.</summary>
+	/// <summary>
+	/// Checks every command again - a new command in one can clash with another's - in one pass in Core,
+	/// so a review of hundreds of commands keeps up with the typing.
+	/// </summary>
 	private void Revalidate()
 	{
-		foreach (DuplicateAliasGroupItem group in Groups)
-		{
-			HashSet<string> givenOut = new(
-				DuplicateAliasChoices.NewCommands(Groups.Where(other => !ReferenceEquals(other, group)).SelectMany(other => other.Lines).Select(line => line.ToChoice())),
-				StringComparer.OrdinalIgnoreCase);
+		IReadOnlyList<string?> problems = DuplicateAliasChoices.Problems(
+			_duplicates,
+			[.. Groups.Select(group => (IReadOnlyList<DuplicateAliasRule?>)[.. group.Lines.Select(line => line.ToChoice())])],
+			_taken);
 
-			group.Problem = DuplicateAliasChoices.Problem(
-				new DuplicateAliasCommand(group.Command, [.. group.Lines.Select(line => line.Line)]),
-				[.. group.Lines.Select(line => line.ToChoice())],
-				_taken,
-				givenOut);
+		for (int i = 0; i < Groups.Count; i++)
+		{
+			Groups[i].Problem = problems[i];
 		}
 
 		CanFinish = Groups.All(group => !group.HasProblem);

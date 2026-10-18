@@ -28,6 +28,28 @@ public sealed class AliasSourceLoaderTests : IDisposable
 
 	// ============================ files on this PC ============================
 
+	/// <summary>A local file is found to be missing, unreadable (locked), an alias file, or not one - for the tab to show off the UI thread.</summary>
+	[Fact]
+	public void a_local_file_is_found_missing_unreadable_or_with_or_without_alias_commands()
+	{
+		Directory.CreateDirectory(_folder);
+		string aliases = Path.Combine(_folder, "ZOB-Alias.txt");
+		string notes = Path.Combine(_folder, "Notes.txt");
+		File.WriteAllText(aliases, ".zob .msg ZOB\r\n");
+		File.WriteAllText(notes, "Remember to upload the aliases.\r\n");
+
+		Assert.Equal(LocalAliasFileState.Missing, AliasSourceLoader.InspectLocalFile(Path.Combine(_folder, "gone.txt")));
+		Assert.Equal(LocalAliasFileState.HasAliasCommands, AliasSourceLoader.InspectLocalFile(aliases));
+		Assert.Equal(LocalAliasFileState.NoAliasCommands, AliasSourceLoader.InspectLocalFile(notes));
+
+		using (File.Open(aliases, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			Assert.Equal(LocalAliasFileState.Unreadable, AliasSourceLoader.InspectLocalFile(aliases));
+		}
+
+		Assert.Throws<ArgumentException>(() => AliasSourceLoader.InspectLocalFile(" "));
+	}
+
 	[Fact]
 	public async Task a_file_is_read_without_its_byte_order_mark()
 	{

@@ -51,7 +51,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W3-16](#w3-16) | Bug | Low | Dashboard can miss log entries written while it is being built | Open | S2 |
 | [W4-8](#w4-8) | Bug | Low | CRC defaults rows accept any non-blank bcg/style/thickness/size, so an imported or hand-edited bad value passes the tab and fails the run | Open | S2 |
 | [W1-15](#w1-15) | Bug | Low | Procedure Charts keeps the previous cycle's d-TPP lookups after a cycle switch | Fixed | S2 |
-| [W4-7](#w4-7) | Bug | Low | A folder that exists but can't be listed is reported as "does not exist" | Open | S2 |
+| [W4-7](#w4-7) | Bug | Low | A folder that exists but can't be listed is reported as "does not exist" | Fixed | S2 |
 | [W1-7](#w1-7) | Bug | Low | Telephony's "real operator" note counts expired U.S. special call signs, which the run drops | Open | S2 |
 | [W5-3](#w5-3) | Bug | Low | Error tooltips never show on CRC ERAM Defaults drop-downs or on the fan-marker style box | Open | S2 |
 | [O1-2](#o1-2) | Bug | Low | Any CPU never builds FeBuddy.UnitTests | Fixed | S2 |
@@ -576,7 +576,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W4-7 · Bug · Low · A folder that exists but can't be listed is reported as "does not exist"
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), with [U1-6](110_GUI-Lag.md#u1-6): `SourceFolderCount` keeps why a folder couldn't be read, and the page says "This folder can't be read: &lt;reason>" and "The source folder can't be read: &lt;reason>". Tests: `ConversionSourceFolderTests` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs:134-141`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs#L134-L141), 235-238, 472-482
 

@@ -64,10 +64,72 @@ public static class DuplicateAliasChoices
 		IReadOnlySet<string> taken,
 		IReadOnlySet<string> givenOut)
 	{
+		ArgumentNullException.ThrowIfNull(givenOut);
+
+		return Problem(duplicate, choices, taken, givenOut.Contains);
+	}
+
+	/// <summary>
+	/// Why each command's choices don't settle it, or <see langword="null"/> for one they do: the same
+	/// check as <see cref="Problem(DuplicateAliasCommand, IReadOnlyList{DuplicateAliasRule?}, IReadOnlySet{string}, IReadOnlySet{string})"/>
+	/// for every command at once, each against the new commands the others give out. The new commands
+	/// are counted once for them all, rather than gathered again for each command, so the duplicate
+	/// alias review can check them all as the user types.
+	/// </summary>
+	/// <param name="duplicates">The duplicated commands and their lines.</param>
+	/// <param name="choices">Each command's choices, in the same order; within each, one per line, in line order.</param>
+	/// <param name="taken">Every command the run already uses, which a new command must not be.</param>
+	/// <returns>Each command's problem, in the same order.</returns>
+	public static IReadOnlyList<string?> Problems(
+		IReadOnlyList<DuplicateAliasCommand> duplicates,
+		IReadOnlyList<IReadOnlyList<DuplicateAliasRule?>> choices,
+		IReadOnlySet<string> taken)
+	{
+		ArgumentNullException.ThrowIfNull(duplicates);
+		ArgumentNullException.ThrowIfNull(choices);
+		ArgumentNullException.ThrowIfNull(taken);
+
+		if (choices.Count != duplicates.Count)
+		{
+			throw new ArgumentException("Give one list of choices for each duplicated command.", nameof(choices));
+		}
+
+		// How many lines give out each new command, in all, and within each command.
+		Dictionary<string, int> everywhere = new(StringComparer.OrdinalIgnoreCase);
+		Dictionary<string, int>[] within = new Dictionary<string, int>[choices.Count];
+
+		for (int i = 0; i < choices.Count; i++)
+		{
+			within[i] = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+			foreach (string newCommand in NewCommands(choices[i].OfType<DuplicateAliasRule>()))
+			{
+				everywhere[newCommand] = everywhere.GetValueOrDefault(newCommand) + 1;
+				within[i][newCommand] = within[i].GetValueOrDefault(newCommand) + 1;
+			}
+		}
+
+		string?[] problems = new string?[duplicates.Count];
+
+		for (int i = 0; i < duplicates.Count; i++)
+		{
+			Dictionary<string, int> own = within[i];
+			problems[i] = Problem(duplicates[i], choices[i], taken,
+				newCommand => everywhere.GetValueOrDefault(newCommand) > own.GetValueOrDefault(newCommand));
+		}
+
+		return problems;
+	}
+
+	private static string? Problem(
+		DuplicateAliasCommand duplicate,
+		IReadOnlyList<DuplicateAliasRule?> choices,
+		IReadOnlySet<string> taken,
+		Func<string, bool> givenOutElsewhere)
+	{
 		ArgumentNullException.ThrowIfNull(duplicate);
 		ArgumentNullException.ThrowIfNull(choices);
 		ArgumentNullException.ThrowIfNull(taken);
-		ArgumentNullException.ThrowIfNull(givenOut);
 
 		if (choices.Count != duplicate.Lines.Count || choices.Any(choice => choice is null))
 		{
@@ -95,7 +157,7 @@ public static class DuplicateAliasChoices
 				return $"{newCommand} is already used in this run. Choose another command.";
 			}
 
-			if (givenOut.Contains(newCommand) || !ownNewCommands.Add(newCommand))
+			if (givenOutElsewhere(newCommand) || !ownNewCommands.Add(newCommand))
 			{
 				return $"{newCommand} is already given to another line. Choose another command.";
 			}

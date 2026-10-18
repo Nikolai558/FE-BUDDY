@@ -86,6 +86,34 @@ public static class AliasSourceLoader
 		return await DownloadAsync(source, store, httpClient ?? owned!, cancellationToken).ConfigureAwait(false);
 	}
 
+	/// <summary>
+	/// What a custom alias file on this PC is: missing, unreadable, or whether it holds an alias
+	/// command. Reads the file, so call it off the UI thread: a path on a network share or a cloud
+	/// placeholder can take seconds to answer.
+	/// </summary>
+	/// <param name="path">The file's full path.</param>
+	/// <returns>What it is.</returns>
+	public static LocalAliasFileState InspectLocalFile(string path)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+		try
+		{
+			if (!File.Exists(path))
+			{
+				return LocalAliasFileState.Missing;
+			}
+
+			return CombinedAliasFileWriter.CountCommands(File.ReadAllText(path)) > 0
+				? LocalAliasFileState.HasAliasCommands
+				: LocalAliasFileState.NoAliasCommands;
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			return LocalAliasFileState.Unreadable;
+		}
+	}
+
 	private static async Task<AliasSourceLoad> ReadFileAsync(AliasSource source, CancellationToken cancellationToken)
 	{
 		if (!File.Exists(source.Location))

@@ -116,6 +116,38 @@ public sealed class VatsimRadarVirtualAirlinesTests : IDisposable
 	/// As VATSIM-Radar merges them: GNG's rows, duplicates kept; a VATSIM-Radar entry takes over the name
 	/// and telephony of the first GNG row with its 3LD; one GNG doesn't have is added at the end.
 	/// </summary>
+	/// <summary>Spaces around a value don't make another virtual airline: each is written once.</summary>
+	[Fact]
+	public void the_same_virtual_airline_with_spaces_around_its_values_is_written_once()
+	{
+		VatsimRadarSelection selection = VatsimRadarVirtualAirlines.Select(
+		[
+			new VatsimRadarAirline("WEX", "World Express", "WORLD EXPRESS"),
+			new VatsimRadarAirline(" wex ", " world express ", " World Express "),
+		]);
+
+		Assert.Single(selection.VirtualAirlines);
+	}
+
+	/// <summary>
+	/// GNG lists thousands of rows: merging and selecting look each one up once, rather than against every
+	/// row so far, so the Telephony tab's list is ready at once.
+	/// </summary>
+	[Fact]
+	public void a_list_of_tens_of_thousands_merges_and_selects_at_once()
+	{
+		VatsimRadarAirline[] gng = [.. Enumerable.Range(0, 20_000).Select(i => new VatsimRadarAirline($"A{i:00000}", $"Org {i}", $"CALL{i}"))];
+		VatsimRadarAirline[] vatsimRadar = [.. Enumerable.Range(10_000, 20_000).Select(i => new VatsimRadarAirline($"A{i:00000}", $"Virtual {i}", $"CALL{i}"))];
+		System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+		List<VatsimRadarAirline> merged = VatsimRadarVirtualAirlines.Merge(gng, vatsimRadar);
+		VatsimRadarSelection selection = VatsimRadarVirtualAirlines.Select(merged);
+
+		Assert.Equal(30_000, merged.Count);
+		Assert.Equal(30_000, selection.VirtualAirlines.Count + selection.LeftOut.Count);
+		Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"Took {stopwatch.Elapsed}.");
+	}
+
 	[Fact]
 	public void merge_replaces_the_first_gng_row_with_the_3ld_and_appends_the_rest()
 	{

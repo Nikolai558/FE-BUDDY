@@ -37,8 +37,10 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	private const string Node = "Services.AiracService.General";
 	private const string SelectedSubServicesKey = "SelectedSubServices";
 	private const string OutputsNode = "Outputs";
+	private const string CyclePositionKey = "CyclePosition";
 
 	private bool _loading;
+	private bool _cycleFromSave;
 	private bool _isReady;
 	private string _waitingMessage = string.Empty;
 	private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
@@ -125,6 +127,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 				return;
 			}
 
+			_cycleFromSave = false;
 			MarkDirty();
 			CycleChanged?.Invoke(this, EventArgs.Empty);
 		}
@@ -179,6 +182,34 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		}
 
 		OnPropertyChanged(nameof(SelectedCycleLabel));
+		OpenOnCurrentWhileSavedNextIsUnpublished();
+	}
+
+	/// <summary>
+	/// A saved Next cycle the FAA hasn't published yet opens on Current instead, and says why. The saved
+	/// choice stays as it is, so the tab doesn't read as unsaved. A Next picked this session is left alone.
+	/// </summary>
+	private void OpenOnCurrentWhileSavedNextIsUnpublished()
+	{
+		if (!_cycleFromSave
+			|| _selectedCyclePosition != AiracCyclePosition.Next
+			|| CycleOptions.Single(option => option.Position == AiracCyclePosition.Next).Status != CycleStatus.NotYetPublished)
+		{
+			return;
+		}
+
+		bool wasClean = !IsDirty;
+		string next = AppEnvironment.GetAiracCycle(AiracCyclePosition.Next).AiracCycleId;
+
+		SelectedCyclePosition = AiracCyclePosition.Current;
+
+		if (wasClean)
+		{
+			ClearDirty();
+		}
+
+		Toast.Info("Opened on the current AIRAC cycle",
+			$"You last used the next cycle, {next}, but the FAA hasn't published it yet.");
 	}
 
 	/// <inheritdoc />
@@ -206,6 +237,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		try
 		{
 			SelectedCyclePosition = ResolveSavedCyclePosition();
+			_cycleFromSave = true;
 
 			// Nothing saved yet: everything is in.
 			string? savedSelection = Get(SelectedSubServicesKey);
@@ -246,7 +278,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		Set("AiracCycleId", AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId);
+		Set(CyclePositionKey, SelectedCyclePosition.ToString());
 		Set(SelectedSubServicesKey, string.Join(',', IncludedSubServices.Select(s => s.Key)));
 
 		foreach (SubServiceRow row in SubServices)
@@ -319,32 +351,15 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	}
 
 	/// <summary>
-	/// Maps the saved cycle id back onto previous / current / next. The id is saved rather than the
-	/// position because a position means something different every 28 days; if the saved id is no
-	/// longer one of the three, the user gets the current cycle.
+	/// The cycle to open on: the position last saved, so the tab reopens on the same kind of cycle
+	/// whichever cycles those are now. A saved Next opens on Next; anything else opens on Current - a
+	/// saved Previous too, so last cycle's data is never reopened without the user picking it.
 	/// </summary>
 	/// <returns>The cycle position to select.</returns>
-	private static AiracCyclePosition ResolveSavedCyclePosition()
-	{
-		string? savedId = Normalize(UserConfigFile.GetValue($"{Node}.AiracCycleId"));
-
-		if (savedId is null)
-		{
-			return AiracCyclePosition.Current;
-		}
-
-		foreach (AiracCyclePosition position in new[] { AiracCyclePosition.Previous, AiracCyclePosition.Current, AiracCyclePosition.Next })
-		{
-			if (string.Equals(AppEnvironment.GetAiracCycle(position).AiracCycleId, savedId, StringComparison.OrdinalIgnoreCase))
-			{
-				return position;
-			}
-		}
-
-		return AiracCyclePosition.Current;
-	}
-
-	private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+	private AiracCyclePosition ResolveSavedCyclePosition() =>
+		string.Equals(Get(CyclePositionKey)?.Trim(), nameof(AiracCyclePosition.Next), StringComparison.OrdinalIgnoreCase)
+			? AiracCyclePosition.Next
+			: AiracCyclePosition.Current;
 
 	/// <summary>What a cycle row's state means, for its colour.</summary>
 	public enum CycleStatus

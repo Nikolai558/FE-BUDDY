@@ -108,7 +108,7 @@ The AIRAC Service's General tab. Its node sits beside the other tabs' nodes, so 
 
 | Key | Values | Default |
 |---|---|---|
-| `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
+| `CyclePosition` | `Current` or `Next`: the cycle last saved, so the tab reopens on the same kind of cycle. Anything else (`Previous` too) opens on Current, and so does a saved `Next` the FAA hasn't published yet | `Current` |
 | `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
 

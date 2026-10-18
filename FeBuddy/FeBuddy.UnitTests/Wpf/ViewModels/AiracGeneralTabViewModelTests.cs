@@ -276,6 +276,62 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.StartsWith("Cycle 2611's NASR data is ready, but its d-TPP Metafile isn't.", next.ToolTip, StringComparison.Ordinal);
 	}
 
+	/// <summary>
+	/// The tab saves which cycle - Current or Next - not its ID, so next cycle it reopens on the same
+	/// kind of cycle, never on last cycle's data by mistake.
+	/// </summary>
+	[Fact]
+	public void the_cycle_is_saved_as_its_position_and_reopens_on_it()
+	{
+		AiracGeneralTabViewModel general = new() { SelectedCyclePosition = AiracCyclePosition.Next };
+		Assert.True(general.Save());
+
+		Assert.Equal("Next", UserConfigFile.GetValue($"{Node}.CyclePosition"));
+		Assert.Null(UserConfigFile.GetValue($"{Node}.AiracCycleId"));
+		Assert.Equal(AiracCyclePosition.Next, new AiracGeneralTabViewModel().SelectedCyclePosition);
+	}
+
+	/// <summary>A saved Previous, a cycle ID an older build saved, or nothing at all opens on Current.</summary>
+	[Theory]
+	[InlineData("CyclePosition", "Previous")]
+	[InlineData("CyclePosition", "Current")]
+	[InlineData("CyclePosition", "2")]
+	[InlineData("AiracCycleId", "2609")]
+	public void anything_but_a_saved_next_opens_on_current(string key, string value)
+	{
+		AppEnvironment.LaunchUtcNow = new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc);
+		UserConfigFile.TrySetValue($"{Node}.{key}", value);
+
+		AiracGeneralTabViewModel general = new();
+
+		Assert.Equal(AiracCyclePosition.Current, general.SelectedCyclePosition);
+		Assert.False(general.IsDirty);
+	}
+
+	/// <summary>
+	/// A saved Next the FAA hasn't published yet opens on Current, still clean, so the saved choice
+	/// stands for when it is; a Next picked this session stays picked.
+	/// </summary>
+	[Fact]
+	public async Task a_saved_next_cycle_not_yet_published_opens_on_current()
+	{
+		UserConfigFile.TrySetValue($"{Node}.CyclePosition", "Next");
+		await PrepareCyclesAsync(new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc), withDtpp: _ => true, notPublished: "2611");
+		int cycleChanges = 0;
+
+		AiracGeneralTabViewModel general = new();
+		general.CycleChanged += (_, _) => cycleChanges++;
+
+		Assert.Equal(AiracCyclePosition.Current, general.SelectedCyclePosition);
+		Assert.False(general.IsDirty);
+
+		general.SelectedCyclePosition = AiracCyclePosition.Next;
+		general.RefreshCycleOptions();
+
+		Assert.Equal(AiracCyclePosition.Next, general.SelectedCyclePosition);
+		Assert.Equal(1, cycleChanges);
+	}
+
 	[Fact]
 	public void a_cycle_still_being_prepared_is_working_and_has_no_tooltip()
 	{
@@ -320,12 +376,14 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 	/// Fixes the launch clock at <paramref name="utcNow"/> and prepares the three cycles from it, each
 	/// in its own folder, writing a d-TPP Metafile into the folders <paramref name="withDtpp"/> picks.
 	/// </summary>
-	private async Task PrepareCyclesAsync(DateTime utcNow, Func<string, bool> withDtpp)
+	private async Task PrepareCyclesAsync(DateTime utcNow, Func<string, bool> withDtpp, string? notPublished = null)
 	{
 		AppEnvironment.LaunchUtcNow = utcNow;
 
 		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
-			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
+			probe: (cycle, _) => Task.FromResult(cycle.AiracCycleId == notPublished
+				? AiracCyclePublicationState.NotYetPublished
+				: AiracCyclePublicationState.Published),
 			download: (cycle, _) => Task.FromResult(Directory.CreateDirectory(Path.Combine(_root, "cycles", cycle.AiracCycleId)).FullName),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
 			ensureDtpp: (cycleDirectory, cycleId, _) =>

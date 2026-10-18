@@ -51,7 +51,7 @@ The bugs to fix before anything else, each with a regression test.
 | [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4) | A settings file that can't be written (antivirus lock, read-only folder) crashes the app on several GUI paths. The crash handler only catches UI-thread exceptions, so a background crash leaves no crash file. | Fixed (not yet merged) |
 | [O1-1](100_Bugs.md#o1-1) | Pull requests that only change docs skip the Test job, but the tests read `docs/*.md` (link anchors, file encoding). A doc-only PR can break `v3-development` and still merge. | Fixed (not yet merged) |
 | [C1-5](100_Bugs.md#c1-5) | After an update, FE-Buddy relaunched **elevated** from inside msiexec, as the admin who approved it. | Fixed ([#377](https://github.com/Nikolai558/FE-BUDDY/pull/377)) |
-| [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | Declining the administrator prompt during an update makes setup say FE-Buddy is up to date. Comes from the [C1-5](100_Bugs.md#c1-5) fix. See [Related issues](#related-issues). | Fixed (not yet merged); needs a test on a VM |
+| [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | Declining the administrator prompt during an update makes setup say FE-Buddy is up to date. Comes from the [C1-5](100_Bugs.md#c1-5) fix. See [Related issues](#related-issues). | Fixed (not yet merged); tested on a VM |
 
 [C3-17](100_Bugs.md#c3-17) was deferred and lowered to Low: the GUI rejects a non-http(s) address before a run can reach it.
 
@@ -68,7 +68,7 @@ Every other bug in [100_Bugs.md](100_Bugs.md), High and Med first.
 **Also:**
 
 - [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) ([Q9](010_Decisions.md#q9)): a restart notice when FE-Buddy is updated from another Windows account. See [Related issues](#related-issues).
-- Save the General tab's cycle position, not the cycle ID ([Q7](010_Decisions.md#q7), [D2-46](600_User-Docs-Proposal.md#d2-46)), under its new node from S1.
+- Save the General tab's cycle position, not the cycle ID ([Q7](010_Decisions.md#q7), [D2-46](600_User-Docs-Proposal.md#d2-46)), under its new node from S1. **Done** (not yet merged).
 
 [C1-4](100_Bugs.md#c1-4) and [C5-22](100_Bugs.md#c5-22) are deferred ([Q2](010_Decisions.md#q2), [Q3](010_Decisions.md#q3)).
 
@@ -197,7 +197,7 @@ Opened by Nikolas on 2026-10-16. A side effect of the [C1-5](100_Bugs.md#c1-5) f
 - Before [#377](https://github.com/Nikolai558/FE-BUDDY/pull/377), the update window said "Update cancelled - installing needs administrator permission". The setup window's Cancelled page could say the same, and that nothing changed.
 - [N1-3](610_On-Screen-Text.md#n1-3) adds a heads-up to the update window, so the prompt isn't a surprise.
 
-**Fixed** (not yet merged). Whether Windows always sends `InstallEnd` after a successful install couldn't be confirmed: Microsoft's documentation says it is raised at the end of an install, with the result in field 3, but doesn't promise it every time. So the fix doesn't rely on it. A result of 1 is a success as before. With no result, `SetupOutcomeRules` (`FeBuddy.Installer.UI/Setup`) looks at what is installed now: a new version, or FE-Buddy gone after an uninstall, is a success; anything else is a new outcome, **Setup didn't run**, whose page says nothing changed, that the administrator prompt was most likely declined, and to try again and choose Yes when Windows asks (worded after Kyle's review to suit an update or uninstall started from FE-Buddy too). A repair or a reinstall of the same version can't be told from nothing happening, so with no result it reads as didn't run. Tests: `SetupOutcomeRulesTests`, with the rule compiled into the unit tests from source, since the setup window targets .NET Framework. **Still to do:** decline the prompt on a VM for an update, a fresh install (double-click) and an uninstall from Settings, and check that a normal update still says "up to date".
+**Fixed** (not yet merged). Whether Windows always sends `InstallEnd` after a successful install couldn't be confirmed: Microsoft's documentation says it is raised at the end of an install, with the result in field 3, but doesn't promise it every time. So the fix doesn't rely on it. A result of 1 is a success as before. With no result, `SetupOutcomeRules` (`FeBuddy.Installer.UI/Setup`) looks at what is installed now: a new version, or FE-Buddy gone after an uninstall, is a success; anything else is a new outcome, **Setup didn't run**, whose page says nothing changed, that the administrator prompt was most likely declined, and to try again and choose Yes when Windows asks (worded after Kyle's review to suit an update or uninstall started from FE-Buddy too). A repair or a reinstall of the same version can't be told from nothing happening, so with no result it reads as didn't run. Tests: `SetupOutcomeRulesTests`, with the rule compiled into the unit tests from source, since the setup window targets .NET Framework. **Tested** by Nikolas on a VM: declining the prompt for an update, a fresh install (double-click) and an uninstall from Settings shows "Setup didn't run", and a normal update still says "up to date".
 
 ### [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) · FE-Buddy left open in another account keeps running the old version
 

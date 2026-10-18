@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
 
-**47 findings** (2 High, 11 Med, 34 Low), 16 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**47 findings** (2 High, 11 Med, 34 Low), 23 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -27,16 +27,16 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Open | S2 |
 | [C1-2](#c1-2) | Bug | Low | A cancelled run can leave a cycle's parse permanently "cancelled" for the session | Fixed | S2 |
 | [C1-3](#c1-3) | Bug | Low | Procedure Charts' optional previous-cycle NASR load can fail the whole run; GetAsync's exception doc is incomplete | Fixed | S2 |
-| [C2-3](#c2-3) | Bug | Low | Waypoint buffering can remove an airway from Airways.txt, and runs on alias-only runs | Open | S2 |
-| [C3-16](#c3-16) | Bug | Low | NAVAIDs' "nothing written" advisory: one branch unreachable, wrong text when NASR has no NAVAIDs | Open | S2 |
+| [C2-3](#c2-3) | Bug | Low | Waypoint buffering can remove an airway from Airways.txt, and runs on alias-only runs | Fixed | S2 |
+| [C3-16](#c3-16) | Bug | Low | NAVAIDs' "nothing written" advisory: one branch unreachable, wrong text when NASR has no NAVAIDs | Fixed | S2 |
 | [C4-11](#c4-11) | Bug | Low | IncludesProceduresWithFixInFacility returns true when the rule can't run, so the run loads (or waits for) the previous cycle's NASR for nothing | Fixed | S2 |
-| [C5-8](#c5-8) | Bug | Low | Card-mode warning says elements "carry only their filters", but they carry filter 0 | Open | S2 |
+| [C5-8](#c5-8) | Bug | Low | Card-mode warning says elements "carry only their filters", but they carry filter 0 | Fixed | S2 |
 | [C1-4](#c1-4) | Bug | Low | AppEnvironment.RecheckAsync moves the AIRAC date, so the GUI can name a cycle the cache doesn't track | Deferred | After 3.0 |
-| [C5-23](#c5-23) | Bug | Low | ROI validation accepts "NaN" | Open | S2 |
-| [C6-29](#c6-29) | Bug | Low | Shared.json's layout stamp is written but never read, so a future step can't reach shared settings | Agreed, changed | S2 |
-| [C6-23](#c6-23) | Bug | Low | CredentialStore leaves the Basic sign-in's UTF-8 bytes (user:password) uncleared, contrary to its own rule | Open | S2 |
+| [C5-23](#c5-23) | Bug | Low | ROI validation accepts "NaN" | Fixed | S2 |
+| [C6-29](#c6-29) | Bug | Low | Shared.json's layout stamp is written but never read, so a future step can't reach shared settings | Fixed | S2 |
+| [C6-23](#c6-23) | Bug | Low | CredentialStore leaves the Basic sign-in's UTF-8 bytes (user:password) uncleared, contrary to its own rule | Fixed | S2 |
 | [C5-22](#c5-22) | Bug | Low | DAT and SCT readers never throw InvalidDataException, so a wrong file is an advisory, not a failed file | Deferred | After 3.0 |
-| [C7-10](#c7-10) | Bug | Low | A 404 for the previous cycle is logged as "not published by the FAA yet" | Open | S2 |
+| [C7-10](#c7-10) | Bug | Low | A 404 for the previous cycle is logged as "not published by the FAA yet" | Fixed | S2 |
 | [O1-30](#o1-30) | Bug | Low | A failure building the setup window cancels the install instead of falling back | Open | S2 |
 | [O1-23](#o1-23) | Bug | Low | Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM | Open | S2 |
 | [T1c-26](#t1c-26) | Bug | Low | Two tests read the clock twice and can fail at 0000Z | Open | S2 |
@@ -280,7 +280,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C2-3 · Bug · Low · Waypoint buffering can remove an airway from Airways.txt, and runs on alias-only runs
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed with a new flag: the parser buffers only when GeoJSON is written, and an airway buffering leaves no legs of is kept with `Airway.IsDrawn` false on its unbuffered line, so it stays in Airways.txt (both scopes) and out of the GeoJSON. Tests: `AirwaySettingsParserTests.an_alias_only_run_never_buffers` and `AirwayServiceTests.an_airway_whose_legs_are_all_shorter_than_the_buffer_is_not_drawn_but_stays_in_the_alias_file` (both fail on the old code) · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwaySettingsParser.cs:129-137`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwaySettingsParser.cs#L129-L137); [`FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayBuilder.cs:147-162`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayBuilder.cs#L147-L162); [`FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayService.cs:53-54`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayService.cs#L53-L54)
 
@@ -292,7 +292,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C3-16 · Bug · Low · NAVAIDs' "nothing written" advisory: one branch unreachable, wrong text when NASR has no NAVAIDs
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: the checks now run no NAVAIDs at all, then none matching the filters, then none in the ROI. Test: `NavaidServiceTests.a_nasr_file_with_no_navaids_says_none_were_found` (fails on the old code); the other two messages keep their tests · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Navaids/NavaidService.cs:73-79`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Navaids/NavaidService.cs#L73-L79)
 
@@ -316,7 +316,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C5-8 · Bug · Low · Card-mode warning says elements "carry only their filters", but they carry filter 0
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: the warning says the elements carry only filter 0 (shown at every filter setting). Test: `EramToGeojsonServiceTests.from_the_card_only_a_kind_without_card_defaults_is_warned_about_once` checks the new text · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Conversions/EramToGeojson/EramGeojsonWriter.cs:188-195`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/EramToGeojson/EramGeojsonWriter.cs#L188-L195)
 
@@ -340,7 +340,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C5-23 · Bug · Low · ROI validation accepts "NaN"
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: a value that isn't finite (`NaN`, `Infinity`, `-Infinity`) is "not a valid decimal coordinate". Test: `RoiFilterTests.is_coordinate_valid_format_rejects_a_value_that_is_not_finite`, each value at each corner (fails on the old code) · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Domain/Geo/RoiFilter.cs:158-168`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Geo/RoiFilter.cs#L158-L168) (and 71-84)
 
@@ -352,7 +352,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C6-29 · Bug · Low · Shared.json's layout stamp is written but never read, so a future step can't reach shared settings
 
-**Status:** Agreed, changed: option (b), bring Shared.json forward too, before 3.0, with a test ([Q4](010_Decisions.md#q4)) · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), option (b) ([Q4](010_Decisions.md#q4)): `ReadAll` takes `Shared.json`'s stamp, runs the steps from that layout before the shared keys are picked out, and writes it back stamped current. A newer file, or one whose update can't be worked out, is used as it is and keeps its stamp; one whose update can't be written is tried again at the next launch. The `UserConfigMigrations` remarks and Settings-Reference.md "Changing the layout" updated. Tests: `UserConfigFileTests.an_older_shared_file_is_brought_forward_and_written_back` and `a_newer_shared_file_is_left_alone_and_keeps_its_stamp` (both fail on the old code) · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:665-678`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L665-L678), 720, 181-189, 892
 
@@ -364,7 +364,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C6-23 · Bug · Low · CredentialStore leaves the Basic sign-in's UTF-8 bytes (user:password) uncleared, contrary to its own rule
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: the Basic header's bytes are cleared in a `finally`, and the class remarks name `AuthorizeGitHubToken`. Credentials.md already matched. No new test (no seam to see the buffer); the existing tests pass · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Credentials/CredentialStore.cs:24-30`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Credentials/CredentialStore.cs#L24-L30), 304-306; [`docs/Developers/Credentials.md:103-105`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Credentials.md?plain=1#L103-L105)
 
@@ -388,7 +388,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C7-10 · Bug · Low · A 404 for the previous cycle is logged as "not published by the FAA yet"
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: the 404 log line says "not published yet, or no longer served", and the `DtppDownloadOutcome` and `DtppDownloader` docs use [D4](010_Decisions.md#d4)'s "approximately 20 days prior to" (the single constant waits until after 3.0). Test: `DtppDownloaderTests.a_404_is_reported_as_not_yet_published_and_places_nothing` now checks the message · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/DtppDownloader.cs:96-100`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/DtppDownloader.cs#L96-L100); [`FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/Models/DtppDownloadOutcome.cs:14-18`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/Models/DtppDownloadOutcome.cs#L14-L18)
 

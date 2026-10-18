@@ -155,7 +155,8 @@ public static class RoiFilter
 		out double value,
 		out string? error)
 	{
-		if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+		// NaN and infinity parse, but fail every range comparison and so would pass the range check.
+		if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || !double.IsFinite(value))
 		{
 			error = $"{fieldName} '{text}' is not a valid decimal coordinate.";
 			return false;

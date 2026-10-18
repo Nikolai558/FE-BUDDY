@@ -607,6 +607,7 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 
 		string warning = Assert.Single(result.Warnings);
 		Assert.Contains("no CRC Symbol defaults are set on the tab", warning);
+		Assert.EndsWith("carry only filter 0 (shown at every filter setting) and CRC draws them with its own defaults.", warning, StringComparison.Ordinal);
 	}
 
 	// ================= the run =================

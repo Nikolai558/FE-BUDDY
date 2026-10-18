@@ -24,7 +24,8 @@ namespace FeBuddy.Core.Infrastructure.Credentials;
 /// A secret goes in and never comes back out: <see cref="List"/> and <see cref="Find(Guid)"/>
 /// return <see cref="CredentialInfo"/>, which has no secret, and read each entry without ever
 /// turning its secret into text. The only way to use one is
-/// <see cref="Authorize(HttpRequestMessage, Guid)"/>, which adds it to a request - and only to an
+/// <see cref="Authorize(HttpRequestMessage, Guid)"/> (or, for FE-Buddy's own GitHub requests,
+/// <c>AuthorizeGitHubToken</c>), which adds it to a request - and only to an
 /// HTTPS request for one of the credential's own websites (<see cref="CredentialHosts"/>). Every
 /// byte buffer an entry passes through is cleared once read or written. Nothing here logs a secret,
 /// and nothing that uses a credential should either.
@@ -301,9 +302,22 @@ public sealed class CredentialStore
 			return CredentialUseResult.HostNotAllowed;
 		}
 
-		request.Headers.Authorization = stored.Info.Kind == CredentialKind.UsernamePassword
-			? new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{stored.Info.UserName}:{stored.Secret}")))
-			: new AuthenticationHeaderValue("Bearer", stored.Secret);
+		if (stored.Info.Kind != CredentialKind.UsernamePassword)
+		{
+			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", stored.Secret);
+			return CredentialUseResult.Applied;
+		}
+
+		byte[] basic = Encoding.UTF8.GetBytes($"{stored.Info.UserName}:{stored.Secret}");
+
+		try
+		{
+			request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(basic));
+		}
+		finally
+		{
+			CryptographicOperations.ZeroMemory(basic);
+		}
 
 		return CredentialUseResult.Applied;
 	}

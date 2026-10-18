@@ -641,6 +641,51 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Equal("ZOB", UserConfigFile.GetValue("General.Facility.ArtccId"));
 	}
 
+	/// <summary>
+	/// Shared.json goes through the same steps, by its own stamp: a step that renames a shared setting
+	/// renames it there, the file is written back stamped current, and a restart still has it.
+	/// </summary>
+	[Fact]
+	public void an_older_shared_file_is_brought_forward_and_written_back()
+	{
+		UserConfigMigrations.ConfigureForTesting(2,
+			[new UserConfigMigration(2, "Renamed the update channel", settings => settings.Move("General.Channel", UserConfigKeys.UpdateChannel))]);
+		UserConfigFile.ConfigureForTesting(_directory);
+		File.WriteAllText(UserConfigFile.SharedFilePath, """{ "ConfigVersion": 1, "ActiveProfile": "Default", "General": { "Channel": "Beta" } }""");
+
+		UserConfigFile.ReadAll();
+
+		Assert.Equal("Beta", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+		Assert.Equal(2, Stamp(UserConfigFile.SharedFilePath));
+		JsonNode general = JsonNode.Parse(File.ReadAllText(UserConfigFile.SharedFilePath))!["General"]!;
+		Assert.Equal("Beta", general["UpdateChannel"]!.GetValue<string>());
+		Assert.Null(general["Channel"]);
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Info && e.Message.Contains(
+			"Brought the settings in 'Shared.json' up from layout 1 to layout 2: Renamed the update channel.", StringComparison.Ordinal));
+
+		// A restart: the file is in the current layout, and the setting is still there.
+		UserConfigFile.ConfigureForTesting(_directory);
+		UserConfigFile.ReadAll();
+		Assert.Equal("Beta", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+	}
+
+	/// <summary>A Shared.json saved by a newer FE-Buddy is used as it is, and a save keeps its stamp.</summary>
+	[Fact]
+	public void a_newer_shared_file_is_left_alone_and_keeps_its_stamp()
+	{
+		const string NewerShared = """{ "ConfigVersion": 99, "ActiveProfile": "Default", "General": { "UpdateChannel": "Beta" } }""";
+		File.WriteAllText(UserConfigFile.SharedFilePath, NewerShared);
+
+		UserConfigFile.ReadAll();
+
+		Assert.Equal("Beta", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+		Assert.Equal(NewerShared, File.ReadAllText(UserConfigFile.SharedFilePath));
+
+		UserConfigFile.TrySetValue(UserConfigKeys.UpdateChannel, "Stable");
+		UserConfigFile.SaveShared(UserConfigKeys.UpdateChannel);
+		Assert.Equal(99, Stamp(UserConfigFile.SharedFilePath));
+	}
+
 	/// <summary>An undo snapshot that can't be deleted is only a warning: the settings are still brought forward.</summary>
 	[Fact]
 	public void an_undo_snapshot_that_cannot_be_deleted_is_only_a_warning()

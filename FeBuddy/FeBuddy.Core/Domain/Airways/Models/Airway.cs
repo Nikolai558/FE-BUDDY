@@ -51,9 +51,20 @@ public sealed class Airway
 	/// <remarks>
 	/// An airway outside the ROI is still built, because the alias file's <c>All</c> scope
 	/// promises every FAA airway whatever the region. It is never drawn: <c>AirwayService</c>
-	/// hands only the airways with this flag set to the GeoJSON output, and for those
-	/// <see cref="Geometry"/> is already clipped to the ROI. For an airway outside the ROI,
-	/// <see cref="Geometry"/> is the unclipped, unbuffered line and is not used.
+	/// hands only the airways with this flag set (and <see cref="IsDrawn"/>) to the GeoJSON output,
+	/// and for those <see cref="Geometry"/> is already clipped to the ROI. For an airway outside the
+	/// ROI, <see cref="Geometry"/> is the unclipped, unbuffered line and is not used.
 	/// </remarks>
 	public bool CrossesRoi { get; init; } = true;
+
+	/// <summary>
+	/// Whether this airway is drawn in the GeoJSON. <see langword="false"/> when waypoint buffering
+	/// left none of its legs: it is still in the alias file, and <see cref="Geometry"/> is the
+	/// unbuffered line, which is not used.
+	/// </summary>
+	/// <remarks>
+	/// Kept apart from <see cref="CrossesRoi"/>, which the alias file's ROI scope filters on: an
+	/// airway in the ROI that buffering leaves nothing of still belongs in that scope.
+	/// </remarks>
+	public bool IsDrawn { get; init; } = true;
 }

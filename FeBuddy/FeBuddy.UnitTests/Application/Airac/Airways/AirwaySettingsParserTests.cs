@@ -207,6 +207,17 @@ public sealed class AirwaySettingsParserTests
 		Assert.Contains($"'{key}'", error.Message);
 	}
 
+	/// <summary>Buffering shapes only what is drawn, so an alias-only run never buffers, whatever is sent.</summary>
+	[Fact]
+	public void an_alias_only_run_never_buffers()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateGeojson"] = "N";
+		settings["BufferAirwayWaypoints"] = "Y";
+
+		Assert.False(AirwaySettingsParser.Parse(settings).Settings.BufferAirwayWaypoints);
+	}
+
 	[Theory]
 	[InlineData("N", "Y")]
 	[InlineData("Y", "N")]

@@ -12,8 +12,8 @@ public enum DtppDownloadOutcome
 	Downloaded = 1,
 
 	/// <summary>
-	/// The FAA has not published this cycle's metafile yet (the download 404'd) - normal for a
-	/// cycle whose effective date is more than about 15-18 days away, never an error.
+	/// The FAA's server has no Metafile for this cycle (the download 404'd): normal for the next cycle
+	/// until the FAA posts it, approximately 20 days prior to its effective date. Never an error.
 	/// </summary>
 	NotYetPublished = 2,
 }

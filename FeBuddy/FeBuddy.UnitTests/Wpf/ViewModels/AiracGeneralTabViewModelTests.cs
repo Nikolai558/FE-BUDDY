@@ -22,7 +22,7 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 [Collection("AppLog")]
 public sealed class AiracGeneralTabViewModelTests : IDisposable
 {
-	private const string Node = "Services.AiracService";
+	private const string Node = "Services.AiracService.General";
 
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_General_" + Guid.NewGuid().ToString("N"));
 
@@ -180,6 +180,35 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.False(Row(reloaded, AiracSubServices.AirportsKey).Geojson);
 		Assert.False(Row(reloaded, AiracSubServices.ProceduresKey).ProceduresJson);
 		Assert.True(Row(reloaded, AiracSubServices.ProceduresKey).ProcedureChanges);
+	}
+
+	/// <summary>
+	/// The General tab's node sits beside the other tabs' nodes, so saving another tab or the Map's
+	/// default ROI doesn't offer the General tab an undo, and the General tab's undo restores only its
+	/// own settings, not every AIRAC tab's.
+	/// </summary>
+	[Fact]
+	public void the_general_tabs_save_and_undo_never_reach_another_tabs_settings()
+	{
+		const string airwaysKey = "Services.AiracService.Airways.FixBufferNm";
+		AiracGeneralTabViewModel general = new();
+
+		UserConfigFile.TrySetValue(airwaysKey, "2");
+		UserConfigFile.Save("Services.AiracService.Airways");
+		UserConfigFile.TrySetValue(UserConfigAreas.DefaultRoiKey, "Y");
+		UserConfigFile.Save("Services.AiracService.DefaultRoi");
+
+		Assert.False(general.CanUndo);
+
+		Row(general, AiracSubServices.FixesKey).IsIncluded = false;
+		Assert.True(general.Save());
+		Row(general, AiracSubServices.FixesKey).IsIncluded = true;
+		Assert.True(general.Save());
+		general.UndoLastSave();
+
+		Assert.False(general.IsIncluded(AiracSubServices.FixesKey));
+		Assert.Equal("2", UserConfigFile.GetValue(airwaysKey));
+		Assert.Equal("Y", UserConfigFile.GetValue(UserConfigAreas.DefaultRoiKey));
 	}
 
 	/// <summary>Settings edited by hand with every output off would make nothing: they load with every output on.</summary>

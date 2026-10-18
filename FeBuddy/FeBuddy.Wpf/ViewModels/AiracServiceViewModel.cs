@@ -204,7 +204,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	private string WaitingMessage => Readiness switch
 	{
-		AiracCycleReadiness.Unavailable => "The current AIRAC cycle failed to download or parse. The AIRAC Service is unavailable — see the Dashboard activity log.",
+		AiracCycleReadiness.Unavailable => "The current AIRAC cycle couldn't be downloaded or read, so the AIRAC Service is unavailable. " +
+			"Check the internet connection (a proxy or firewall can block the FAA's site) and that the PC's clock is right, then restart FE-Buddy. " +
+			"The Dashboard activity log says what went wrong.",
 		AiracCycleReadiness.NotLoaded => $"Loading AIRAC {AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId}… This dev launch didn't load it at launch.",
 		_ => "Waiting for the current AIRAC cycle to finish downloading and parsing. This service will be available in a moment.",
 	};
@@ -519,75 +521,82 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private async Task RunAsync()
 	{
-		// The File Names tab's validity depends on which files the other tabs write.
-		_fileNames.RefreshFiles();
+		// Set once the run has begun, so a failure before it (saving the tabs, looking for an earlier
+		// run's files) says the run didn't start rather than that it failed.
+		string? cycleOutputDirectory = null;
+		bool started = false;
 
-		if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
+		try
 		{
-			return;
-		}
+			// The File Names tab's validity depends on which files the other tabs write.
+			_fileNames.RefreshFiles();
 
-		ServiceTabViewModel[] runnable = [.. Tabs.Where(t => t.IsAvailable && t.IsRunnable
-			&& !ReferenceEquals(t, GeneralTab) && !ReferenceEquals(t, _fileNames) && !ReferenceEquals(t, PreviewTab))];
-
-		if (runnable.Length == 0)
-		{
-			Toast.Warn("Nothing to run", "Include a sub-service in the General tab first.");
-			return;
-		}
-
-		AiracCycleInfo cycle = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition);
-
-		// The only sub-service-specific lines in the run: which block each tab's settings belong
-		// to. Everything else goes through ISubServiceRunTarget.
-		AiracServiceSettings settings = new()
-		{
-			SelectedCycle = cycle,
-			OutputDirectory = OutputPreferences.Directory,
-			AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder,
-			// Settings ▸ Facility: listed first in the duplicate alias report.
-			PrimaryFacility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
-				? facility.ToUpperInvariant()
-				: null,
-			FileNames = _fileNames.BuildFileNamesBlock(),
-			ReviewDuplicateAliases = DuplicateAliasesCardViewModel.LoadReview(),
-			DuplicateAliasChoices = DuplicateAliasesCardViewModel.LoadChoices(),
-			Airways = AirwaysTab?.BuildSettingsBlock(),
-			Airports = AirportsTab?.BuildSettingsBlock(),
-			Departures = DeparturesTab?.BuildSettingsBlock(),
-			Arrivals = ArrivalsTab?.BuildSettingsBlock(),
-			Navaids = NavaidsTab?.BuildSettingsBlock(),
-			ArtccBoundaries = ArtccBoundariesTab?.BuildSettingsBlock(),
-			Fixes = FixesTab?.BuildSettingsBlock(),
-			WxStations = WxStationsTab?.BuildSettingsBlock(),
-			Procedures = ProceduresTab?.BuildSettingsBlock(),
-			Telephony = TelephonyTab?.BuildSettingsBlock(),
-			ConcatenateAliases = ConcatenateAliasesTab?.BuildSettingsBlock(),
-		};
-
-		if (AiracService.HasExistingOutput(settings))
-		{
-			if (AskAboutExistingOutput(settings) is not { } existingOutput)
+			if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
 			{
 				return;
 			}
 
-			settings = settings with { ExistingOutput = existingOutput };
-		}
+			ServiceTabViewModel[] runnable = [.. Tabs.Where(t => t.IsAvailable && t.IsRunnable
+				&& !ReferenceEquals(t, GeneralTab) && !ReferenceEquals(t, _fileNames) && !ReferenceEquals(t, PreviewTab))];
 
-		IReadOnlyList<ISubServiceRunTarget> targets = IncludedRunTargets;
-		string[] runningTabTitles = [.. Tabs
-			.Where(t => t.IsAvailable && t is ISubServiceRunTarget)
-			.Select(t => t.Title)];
+			if (runnable.Length == 0)
+			{
+				Toast.Warn("Nothing to run", "Include a sub-service in the General tab first.");
+				return;
+			}
 
-		IsRunning = true;
+			AiracCycleInfo cycle = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition);
 
-		_runReview.BeginRun(runningTabTitles);
-		_runReviewShown = true;
-		ShowPostRunTab();
+			// The only sub-service-specific lines in the run: which block each tab's settings belong
+			// to. Everything else goes through ISubServiceRunTarget.
+			AiracServiceSettings settings = new()
+			{
+				SelectedCycle = cycle,
+				OutputDirectory = OutputPreferences.Directory,
+				AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder,
+				// Settings ▸ Facility: listed first in the duplicate alias report.
+				PrimaryFacility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
+					? facility.ToUpperInvariant()
+					: null,
+				FileNames = _fileNames.BuildFileNamesBlock(),
+				ReviewDuplicateAliases = DuplicateAliasesCardViewModel.LoadReview(),
+				DuplicateAliasChoices = DuplicateAliasesCardViewModel.LoadChoices(),
+				Airways = AirwaysTab?.BuildSettingsBlock(),
+				Airports = AirportsTab?.BuildSettingsBlock(),
+				Departures = DeparturesTab?.BuildSettingsBlock(),
+				Arrivals = ArrivalsTab?.BuildSettingsBlock(),
+				Navaids = NavaidsTab?.BuildSettingsBlock(),
+				ArtccBoundaries = ArtccBoundariesTab?.BuildSettingsBlock(),
+				Fixes = FixesTab?.BuildSettingsBlock(),
+				WxStations = WxStationsTab?.BuildSettingsBlock(),
+				Procedures = ProceduresTab?.BuildSettingsBlock(),
+				Telephony = TelephonyTab?.BuildSettingsBlock(),
+				ConcatenateAliases = ConcatenateAliasesTab?.BuildSettingsBlock(),
+			};
 
-		try
-		{
+			if (AiracService.HasExistingOutput(settings))
+			{
+				if (AskAboutExistingOutput(settings) is not { } existingOutput)
+				{
+					return;
+				}
+
+				settings = settings with { ExistingOutput = existingOutput };
+			}
+
+			IReadOnlyList<ISubServiceRunTarget> targets = IncludedRunTargets;
+			string[] runningTabTitles = [.. Tabs
+				.Where(t => t.IsAvailable && t is ISubServiceRunTarget)
+				.Select(t => t.Title)];
+
+			cycleOutputDirectory = settings.CycleOutputDirectory;
+			IsRunning = true;
+
+			_runReview.BeginRun(runningTabTitles);
+			_runReviewShown = true;
+			ShowPostRunTab();
+			started = true;
+
 			// Made here, on the UI thread, Progress<T> hands each report to the UI thread itself: one
 			// hop, queued ahead of this method's own continuation, so every report lands before
 			// CompleteRun. A second hop (a BeginInvoke in the handler) let the last report of a quick
@@ -625,18 +634,26 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				Toast.Success("AIRAC Service complete", summary);
 			}
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (started && cycleOutputDirectory is { } outputDirectory)
 		{
 			// A run that fails part way may already have written files; offer the folder if so.
-			_runReview.FailRun(ex.Message, outputDirectory: ExistingFolder(settings.CycleOutputDirectory));
+			_runReview.FailRun(ex.Message, outputDirectory: ExistingFolder(outputDirectory));
 			Toast.Error("AIRAC Service failed", ex.Message);
+		}
+		catch (Exception ex)
+		{
+			AppLog.Error("AiracService", $"The run could not start: {ex.Message}");
+			Toast.Error("AIRAC Service didn't start", ex.Message);
 		}
 		finally
 		{
 			IsRunning = false;
 
 			// The run replaced the kept Wx Stations and telephony copies when it could download them.
-			RefreshDownloadedDataStatus();
+			if (started)
+			{
+				RefreshDownloadedDataStatus();
+			}
 		}
 	}
 

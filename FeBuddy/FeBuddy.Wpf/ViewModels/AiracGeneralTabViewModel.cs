@@ -19,8 +19,9 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 /// <remarks>
 /// <para>
-/// It is a settings tab like any other - it owns the <c>Services.AiracService</c> subtree, is dirty
-/// until saved, and has the same one-step undo. Ticking a sub-service brings its tab back from grey
+/// It is a settings tab like any other - it owns the <c>Services.AiracService.General</c> subtree, is
+/// dirty until saved, and has the same one-step undo. Its node sits beside the other tabs' nodes, not
+/// above them, so its save and undo can't reach their settings. Ticking a sub-service brings its tab back from grey
 /// straight away (the user asked for it, so they should see it), but like every other setting on
 /// this tab it is only kept once saved.
 /// </para>
@@ -33,7 +34,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 {
-	private const string Node = "Services.AiracService";
+	private const string Node = "Services.AiracService.General";
 	private const string SelectedSubServicesKey = "SelectedSubServices";
 	private const string OutputsNode = "Outputs";
 

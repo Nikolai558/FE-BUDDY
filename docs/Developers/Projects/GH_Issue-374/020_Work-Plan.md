@@ -14,7 +14,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 | Session | What | Findings | Files |
 |---|---|---:|---|
-| [S1](#s1) | Fix-first bugs, plus [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | 13 + [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | [100](100_Bugs.md) |
+| [S1](#s1) | Fix-first bugs, plus [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | 14 + [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | [100](100_Bugs.md) |
 | [S2](#s2) | The other bugs, plus [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) and [Q7](010_Decisions.md#q7) | 29 + 2 | [100](100_Bugs.md) |
 | [S3](#s3) | GUI lag: AIRAC Service and File Conversions | 15 | [110](110_GUI-Lag.md) |
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | 14 | [110](110_GUI-Lag.md) |
@@ -39,18 +39,19 @@ The bugs to fix before anything else, each with a regression test.
 
 | ID | Bug | Status |
 |---|---|---|
-| [W2-1](100_Bugs.md#w2-1) | The General tab saves and undoes the whole `Services.AiracService` settings node. Saving any other tab (or setting a default ROI on the Map) turns on the General tab's **Undo last save**, and clicking it wipes every saved AIRAC Service setting. Decided ([Q1](010_Decisions.md#q1)): the General tab gets its own node, with no settings-layout step, and a test for [H5](010_Decisions.md#h5). | Agreed, changed |
-| [U1-3](100_Bugs.md#u1-3) | Settings are read on a background thread at launch, after the temp folder is cleared. File Conversions is built from settings when the window goes idle, and nothing reloads it. If it's built first it shows defaults, and saving it can overwrite the user's saved settings with them. | Agreed |
+| [N1-4](100_Bugs.md#n1-4) | Found while fixing W7-3: a save that meets a settings file locked for a moment (antivirus, a sync tool) wrote back an almost empty file, wiping every other setting. | Fixed (not yet merged) |
+| [W2-1](100_Bugs.md#w2-1) | The General tab saves and undoes the whole `Services.AiracService` settings node. Saving any other tab (or setting a default ROI on the Map) turns on the General tab's **Undo last save**, and clicking it wipes every saved AIRAC Service setting. Decided ([Q1](010_Decisions.md#q1)): the General tab gets its own node, with no settings-layout step, and a test for [H5](010_Decisions.md#h5). | Fixed (not yet merged) |
+| [U1-3](100_Bugs.md#u1-3) | Settings are read on a background thread at launch, after the temp folder is cleared. File Conversions is built from settings when the window goes idle, and nothing reloads it. If it's built first it shows defaults, and saving it can overwrite the user's saved settings with them. | Fixed (not yet merged) |
 | [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10) | Switching the cycle on the General tab quietly throws away unsaved ticks in the lists built from the cycle. The tab still shows as unsaved. | Open |
-| [W1-13](100_Bugs.md#w1-13) | Unticking every Procedures.json field sends `JsonFields=""`, which Core reads as "use the 8 defaults". The run writes the fields the user turned off. | Open |
-| [C1-1](100_Bugs.md#c1-1) | If the probe says the *current* cycle is "not yet published" (a proxy answering 403, a PC clock set ahead), the AIRAC Service waits forever with no error. | Agreed |
-| [C5-1](100_Bugs.md#c5-1) | DAT and SCT conversions overwrite each other's output when two sources share a name (`ZOB.sct` and `ZOB.sct2`), with no warning. | Agreed |
-| [C3-18](100_Bugs.md#c3-18) | `Combined_Alias.txt` can be written empty. Uploading it would wipe the facility's aliases. | Agreed |
+| [W1-13](100_Bugs.md#w1-13) | Unticking every Procedures.json field sends `JsonFields=""`, which Core reads as "use the 8 defaults". The run writes the fields the user turned off. | Fixed (not yet merged); allows "none", Kyle to agree |
+| [C1-1](100_Bugs.md#c1-1) | If the probe says the *current* cycle is "not yet published" (a proxy answering 403, a PC clock set ahead), the AIRAC Service waits forever with no error. | Fixed (not yet merged) |
+| [C5-1](100_Bugs.md#c5-1) | DAT and SCT conversions overwrite each other's output when two sources share a name (`ZOB.sct` and `ZOB.sct2`), with no warning. | Fixed (not yet merged) |
+| [C3-18](100_Bugs.md#c3-18) | `Combined_Alias.txt` can be written empty. Uploading it would wipe the facility's aliases. | Fixed (not yet merged) |
 | [W3-15](100_Bugs.md#w3-15) | The Reset window says settings backups are always deleted. A reset that keeps settings keeps them. | Agreed |
-| [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4) | A settings file that can't be written (antivirus lock, read-only folder) crashes the app on several GUI paths. The crash handler only catches UI-thread exceptions, so a background crash leaves no crash file. | W7-3, W2-11: Agreed, changed; W7-4: Open |
+| [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4) | A settings file that can't be written (antivirus lock, read-only folder) crashes the app on several GUI paths. The crash handler only catches UI-thread exceptions, so a background crash leaves no crash file. | Fixed (not yet merged) |
 | [O1-1](100_Bugs.md#o1-1) | Pull requests that only change docs skip the Test job, but the tests read `docs/*.md` (link anchors, file encoding). A doc-only PR can break `v3-development` and still merge. | Agreed, changed |
 | [C1-5](100_Bugs.md#c1-5) | After an update, FE-Buddy relaunched **elevated** from inside msiexec, as the admin who approved it. | Fixed ([#377](https://github.com/Nikolai558/FE-BUDDY/pull/377)) |
-| [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | Declining the administrator prompt during an update makes setup say FE-Buddy is up to date. Comes from the [C1-5](100_Bugs.md#c1-5) fix. See [Related issues](#related-issues). | Open |
+| [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | Declining the administrator prompt during an update makes setup say FE-Buddy is up to date. Comes from the [C1-5](100_Bugs.md#c1-5) fix. See [Related issues](#related-issues). | Fixed (not yet merged); needs a test on a VM |
 
 [C3-17](100_Bugs.md#c3-17) was deferred and lowered to Low: the GUI rejects a non-http(s) address before a run can reach it.
 
@@ -175,6 +176,8 @@ Opened by Nikolas on 2026-10-16. A side effect of the [C1-5](100_Bugs.md#c1-5) f
 - The same path most likely reports **any** declined prompt as success, not only an update's: a fresh install by double-click, and Uninstall from Settings (`msiexec /x` has run unelevated since before the review), which would show "removed from this PC". Worth testing all three.
 - Before [#377](https://github.com/Nikolai558/FE-BUDDY/pull/377), the update window said "Update cancelled - installing needs administrator permission". The setup window's Cancelled page could say the same, and that nothing changed.
 - [N1-3](610_On-Screen-Text.md#n1-3) adds a heads-up to the update window, so the prompt isn't a surprise.
+
+**Fixed** (not yet merged). Whether Windows always sends `InstallEnd` after a successful install couldn't be confirmed: Microsoft's documentation says it is raised at the end of an install, with the result in field 3, but doesn't promise it every time. So the fix doesn't rely on it. A result of 1 is a success as before. With no result, `SetupOutcomeRules` (`FeBuddy.Installer.UI/Setup`) looks at what is installed now: a new version, or FE-Buddy gone after an uninstall, is a success; anything else is a new outcome, **Setup didn't run**, whose page says nothing changed, that the administrator prompt was most likely declined, and to run Setup again and choose Yes. A repair or a reinstall of the same version can't be told from nothing happening, so with no result it reads as didn't run. Tests: `SetupOutcomeRulesTests`, with the rule compiled into the unit tests from source, since the setup window targets .NET Framework. **Still to do:** decline the prompt on a VM for an update, a fresh install (double-click) and an uninstall from Settings, and check that a normal update still says "up to date".
 
 ### [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) · FE-Buddy left open in another account keeps running the old version
 

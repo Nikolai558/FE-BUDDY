@@ -5,6 +5,7 @@ using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -91,7 +92,7 @@ public sealed class BaseMapSettings : ObservableObject
 			if (SetProperty(ref _showGridlines, value))
 			{
 				UserConfigFile.TrySetValue(GridlinesKey, value ? "Y" : "N");
-				UserConfigFile.Save(Node);
+				SettingsWrites.TrySave(Node, "base map settings");
 			}
 		}
 	}
@@ -126,7 +127,7 @@ public sealed class BaseMapSettings : ObservableObject
 	private void OnLayerToggled()
 	{
 		UserConfigFile.TrySetValue(LayersKey, string.Join(',', Toggles.Where(t => t.IsVisible).Select(t => t.Layer)));
-		UserConfigFile.Save(Node);
+		SettingsWrites.TrySave(Node, "base map settings");
 		Rebuild();
 	}
 
@@ -134,7 +135,7 @@ public sealed class BaseMapSettings : ObservableObject
 	{
 		_saveOpacity.Stop();
 		UserConfigFile.TrySetValue(OpacityKey, OpacityPercent.ToString(CultureInfo.InvariantCulture));
-		UserConfigFile.Save(Node);
+		SettingsWrites.TrySave(Node, "base map settings");
 	}
 
 	private void Rebuild() =>

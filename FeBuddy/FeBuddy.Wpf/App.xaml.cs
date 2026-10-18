@@ -17,9 +17,11 @@ namespace FeBuddy.Wpf;
 
 /// <summary>
 /// Application entry point. Carries out a reset asked for in Settings (<see cref="AppDataReset"/>),
-/// starts the shared application log's file sink and runs <see cref="LaunchSequence"/> off the UI
-/// thread (see docs/Developers/Architecture.md, Launch), then keeps a last-chance handler
-/// that writes an unhandled exception to disk so a crash on a user's machine leaves a trace.
+/// starts the shared application log's file sink, reads the saved settings before any window is
+/// built, and runs the rest of <see cref="LaunchSequence"/> off the UI thread (see
+/// docs/Developers/Architecture.md, Launch), then keeps last-chance handlers that
+/// write an exception nothing caught, on any thread, to disk (<see cref="CrashReport"/>) so a
+/// crash on a user's machine leaves a trace.
 /// </summary>
 public partial class App : Application
 {
@@ -52,6 +54,8 @@ public partial class App : Application
 		DevMode.IsEnabled = DevModeEnabled || devLaunch;
 
 		DispatcherUnhandledException += OnUnhandled;
+		AppDomain.CurrentDomain.UnhandledException += OnUnhandledElsewhere;
+		TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
 		// Before the log, the settings or any cycle is opened: a reset deletes them all.
 		AppDataResetResult? reset = AppDataReset.RunPending(CredentialStore.Default, ResetWaitForExit);
@@ -66,6 +70,11 @@ public partial class App : Application
 
 		// Published before the window is built, so the shell and every page know a dev launch.
 		LaunchOptions options = devLaunch ? LaunchOptions.DevLaunch(DevLaunchSettings.Read()) : LaunchOptions.Normal;
+
+		// Before the window: every page reads its settings as it is built, so they must be in memory
+		// first, or a page shows defaults and saving it writes them over the user's settings.
+		LaunchSequence.ReadSettings(AppVersion.Current, options);
+		options = options with { SettingsRead = true };
 		LaunchSequence.UseOptions(options);
 
 		base.OnStartup(e);
@@ -113,32 +122,23 @@ public partial class App : Application
 		}
 	}
 
-	private static void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
-	{
-		try
-		{
-			// Beside the day's log, so it is attached with it and removed on uninstall.
-			string directory = AppLog.LogDirectory;
-			Directory.CreateDirectory(directory);
-			var path = Path.Combine(directory, "febuddy-wpf-crash.txt");
-			var sb = new System.Text.StringBuilder();
-			for (Exception? ex = e.Exception; ex is not null; ex = ex.InnerException)
-			{
-				sb.AppendLine(ex.GetType().FullName + ": " + ex.Message);
-				if (ex is System.Windows.Markup.XamlParseException xpe)
-				{
-					sb.AppendLine($"  BaseUri={xpe.BaseUri}  Line={xpe.LineNumber}  Pos={xpe.LinePosition}");
-				}
-			}
-			sb.AppendLine();
-			sb.AppendLine(e.Exception.ToString());
-			File.WriteAllText(path, sb.ToString());
+	private static void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e) =>
+		CrashReport.Write(e.Exception, "on the UI thread");
 
-			AppLog.Error("App", "Unhandled dispatcher exception: " + e.Exception.Message);
-		}
-		catch
+	/// <summary>
+	/// An exception on any other thread - an <see langword="async"/> <see langword="void"/>
+	/// continuation off the UI thread, a timer, a thread - which ends the process: the report is all
+	/// that is left of it.
+	/// </summary>
+	private static void OnUnhandledElsewhere(object sender, UnhandledExceptionEventArgs e)
+	{
+		if (e.ExceptionObject is Exception exception)
 		{
-			// Nothing useful to do if even logging fails.
+			CrashReport.Write(exception, "off the UI thread");
 		}
 	}
+
+	/// <summary>A failed task nothing waited for. It doesn't end the process, but would otherwise go unseen.</summary>
+	private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e) =>
+		AppLog.Error("App", $"A background task failed and nothing waited for it: {e.Exception.GetBaseException().Message}");
 }

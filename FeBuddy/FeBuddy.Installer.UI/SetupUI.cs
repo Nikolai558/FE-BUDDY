@@ -49,7 +49,7 @@ public sealed class SetupUI : IEmbeddedUI
 
 	private bool _cancelSent;
 	private bool _fatalExit;
-	private int _installResult = -1;
+	private int _installResult = SetupOutcomeRules.ResultNotSent;
 	private string? _lastAction;
 	private int _updatePosted;
 
@@ -171,7 +171,9 @@ public sealed class SetupUI : IEmbeddedUI
 				// Fields: product name, product code, and how the installation ended - an action
 				// result, as an MSI log's "Return value": 1 succeeded, 2 cancelled, 3 failed. Not an
 				// error code such as 1603.
-				_installResult = messageRecord.FieldCount >= 3 && !messageRecord.IsNull(3) ? messageRecord.GetInteger(3) : -1;
+				_installResult = messageRecord.FieldCount >= 3 && !messageRecord.IsNull(3)
+					? messageRecord.GetInteger(3)
+					: SetupOutcomeRules.ResultNotSent;
 				return MessageResult.OK;
 
 			case InstallMessage.Initialize:
@@ -192,11 +194,15 @@ public sealed class SetupUI : IEmbeddedUI
 			return;
 		}
 
-		SetupOutcome outcome = _cancelSent || _installResult == ResultUserExit
-			? SetupOutcome.Cancelled
-			: _fatalExit || _installResult is ResultFailure or ResultNone
-				? SetupOutcome.Failed
-				: SetupOutcome.Succeeded;
+		SetupContext context = _viewModel.Context;
+		SetupOutcome outcome = SetupOutcomeRules.Decide(
+			_cancelSent,
+			_fatalExit,
+			_installResult,
+			removing: _choices?.Operation == SetupOperation.Remove,
+			context.InstalledVersion,
+			context.Version,
+			() => InstalledFeBuddy.Read().Version);
 
 		_dispatcher.Invoke(() =>
 		{
@@ -214,12 +220,6 @@ public sealed class SetupUI : IEmbeddedUI
 	}
 
 	// ------------------------------------------------------------------ window thread
-
-	// INSTALLMESSAGE_INSTALLEND's result field: the installation's action result. 0 (no result)
-	// is what Wine's msi sends for a failure, and is taken as one.
-	private const int ResultNone = 0;
-	private const int ResultUserExit = 2;
-	private const int ResultFailure = 3;
 
 	private void RunWindow(SetupContext context)
 	{

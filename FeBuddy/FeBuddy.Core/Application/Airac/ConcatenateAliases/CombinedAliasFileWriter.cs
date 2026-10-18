@@ -164,11 +164,17 @@ public static class CombinedAliasFileWriter
 		int customCommands = custom.Sum(f => f.Lines.Count(line => CommandOf(line) is not null));
 		int feBuddyCommands = feBuddy.Sum(f => f.Lines.Count(line => CommandOf(line) is not null));
 
-		if (custom.Count == 0 && feBuddy.Count == 0)
+		// Nothing to merge: the custom files read have no lines of their own (one that was only an
+		// earlier file's FE-Buddy section, an empty one, a lone .FeUseOnly), and the run wrote no alias
+		// file. A file written now would have no aliases, and uploading it would empty the facility's.
+		if (feBuddy.Count == 0 && custom.All(f => f.Lines.Count == 0))
 		{
+			string why = custom.Count == 0
+				? "no custom alias file could be read, and the run wrote no alias file."
+				: "the custom alias files have no aliases of their own, and the run wrote no alias file.";
+
 			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
-				$"{fileName} was not written: no custom alias file could be read, and the run wrote no alias file." +
-				DeleteEarlierFile(outputDirectory, fileName).Sentence)
+				$"{fileName} was not written: {why}" + DeleteEarlierFile(outputDirectory, fileName).Sentence)
 			{ IsAdvisory = true });
 
 			return Result(null, customFiles.Count, 0, 0, [], 0, 0, messages, stopwatch);

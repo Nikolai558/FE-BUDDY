@@ -15,7 +15,7 @@ namespace FeBuddy.UnitTests.Infrastructure.Configuration;
 public sealed class UserConfigTransferTests : IDisposable
 {
 	private const string ArtccKey = "Services.AiracService.UserArtccId";
-	private const string CycleKey = "Services.AiracService.AiracCycleId";
+	private const string CycleKey = "Services.AiracService.General.AiracCycleId";
 	private const string DatFolderKey = "Services.FileConversions.DatToGeojson.SourceFolder";
 	private const string SctFolderKey = "Services.FileConversions.SctToGeojson.SourceFolder";
 	private const string EramFolderKey = "Services.FileConversions.EramToGeojson.SourceFolder";

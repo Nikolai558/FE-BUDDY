@@ -140,6 +140,40 @@ public sealed class UserConfigLayoutTests : IDisposable
 		MapLayersState.HomeKey,
 	];
 
+	/// <summary>
+	/// Settings left behind with no layout step, on purpose: the General tab's, which moved from
+	/// <c>Services.AiracService</c> into its own <c>Services.AiracService.General</c> node. A file
+	/// that still has them opens the General tab on its defaults: every sub-service included, every
+	/// output on.
+	/// </summary>
+	private static bool LeftBehindOnPurpose(string key) =>
+		key is "Services.AiracService.AiracCycleId" or "Services.AiracService.SelectedSubServices"
+		|| key.StartsWith("Services.AiracService.Outputs.", StringComparison.Ordinal);
+
+	/// <summary>
+	/// Every page and tab saves under a node of its own, and no node sits inside another's: a save or
+	/// an undo of one node replaces everything under it, so a node inside another would be saved and
+	/// undone with it.
+	/// </summary>
+	[Fact]
+	public void no_settings_node_sits_inside_another()
+	{
+		string[] nodes =
+		[
+			.. EveryPage().Select(page => page.NodePath),
+			DuplicateAliasesCardViewModel.Node,
+			DefaultRoiStore.Node,
+			MapLayersState.Node,
+		];
+
+		Assert.Equal(nodes.Length, nodes.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+		Assert.Empty(
+			from outer in nodes
+			from inner in nodes
+			where inner.StartsWith(outer + ".", StringComparison.OrdinalIgnoreCase)
+			select $"{inner} is inside {outer}");
+	}
+
 	[Fact]
 	public void every_layout_has_a_sample_and_a_fingerprint_and_nothing_else_does()
 	{
@@ -228,7 +262,7 @@ public sealed class UserConfigLayoutTests : IDisposable
 					problems.Add($"{key}: saved as '{now}', not '{value}'");
 				}
 			}
-			else if (!elsewhere.Contains(key))
+			else if (!elsewhere.Contains(key) && !LeftBehindOnPurpose(key))
 			{
 				problems.Add($"{key}: no longer read or saved");
 			}

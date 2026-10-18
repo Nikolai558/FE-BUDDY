@@ -537,7 +537,10 @@ public sealed class AiracCycleDataCache(
 				return AiracCycleReadiness.Waiting;
 			}
 
-			if (current.State == CycleDataState.Failed)
+			// The FAA always has the current cycle, so one it seems not to have (a proxy or firewall
+			// answering for its site, or a PC clock set ahead) won't arrive by waiting: it is as
+			// unavailable as one that failed.
+			if (current.State is CycleDataState.Failed or CycleDataState.NotYetPublished)
 			{
 				return AiracCycleReadiness.Unavailable;
 			}

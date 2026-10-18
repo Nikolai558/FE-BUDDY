@@ -40,10 +40,11 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 public sealed class MapLayersState : ObservableObject
 {
-	private const string Node = "Services.MapService";
 	private const string OutputKey = UserConfigKeys.MapOutputGeojson;
 
-	// Internal so the unit tests can check every settings layout's keys are still the ones read here.
+	// Internal so the unit tests can check every settings layout's keys are still the ones read here,
+	// and that no other page's node sits inside the Map's.
+	internal const string Node = "Services.MapService";
 	internal const string AiracKey = Node + ".AiracLayers";
 	internal const string HomeKey = Node + ".Home";
 
@@ -183,8 +184,11 @@ public sealed class MapLayersState : ObservableObject
 	{
 		Home = home;
 		UserConfigFile.TrySetValue(HomeKey, home.ToConfig());
-		UserConfigFile.Save(Node);
-		Toast.Success("Home view saved", "The home button (and every map that opens fresh) now starts here.");
+
+		if (SettingsWrites.TrySave(Node, "map settings"))
+		{
+			Toast.Success("Home view saved", "The home button (and every map that opens fresh) now starts here.");
+		}
 	}
 
 	/// <summary>Whether the side panel (ROI and layers) is shown; hiding it gives the map the room.</summary>
@@ -431,7 +435,7 @@ public sealed class MapLayersState : ObservableObject
 	{
 		Home = null;
 		UserConfigFile.TrySetValue(HomeKey, string.Empty);
-		UserConfigFile.Save(Node);
+		SettingsWrites.TrySave(Node, "map settings");
 	}
 
 	// ============================ cycles ================================
@@ -533,7 +537,7 @@ public sealed class MapLayersState : ObservableObject
 		}
 
 		UserConfigFile.TrySetValue(AiracKey, string.Join(',', AiracToggles.Where(t => t.IsVisible).Select(t => t.Kind)));
-		UserConfigFile.Save(Node);
+		SettingsWrites.TrySave(Node, "map settings");
 
 		if (toggle.IsVisible && toggle.Layers is null)
 		{
@@ -761,7 +765,7 @@ public sealed class MapLayersState : ObservableObject
 	private void SaveOutputChoices()
 	{
 		UserConfigFile.TrySetValue(OutputKey, string.Join('|', _selectedOutputs.Order(StringComparer.OrdinalIgnoreCase)));
-		UserConfigFile.Save(Node);
+		SettingsWrites.TrySave(Node, "map settings");
 	}
 
 	/// <summary>

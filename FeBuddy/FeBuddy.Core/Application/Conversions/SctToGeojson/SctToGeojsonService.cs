@@ -48,9 +48,12 @@ public static class SctToGeojsonService
 		IReadOnlyList<string> sources = ConversionFiles.Resolve(parsed, Extensions, LogSource, messages);
 		GeojsonFileSet files = new(parsed.CoordinatePrecision);
 
+		// ZOB.sct and ZOB.sct2 (or two files picked from two folders) would share one folder.
+		HashSet<string> folderNames = new(StringComparer.OrdinalIgnoreCase);
+
 		IReadOnlyList<SourceFileConversion> conversions = ConversionFiles.ConvertEach(
 			sources,
-			source => Convert(source, parsed, files, messages),
+			source => Convert(source, parsed, files, folderNames, messages),
 			(source, error) => new SourceFileConversion { SourcePath = source, Error = error },
 			Describe,
 			progress,
@@ -79,6 +82,7 @@ public static class SctToGeojsonService
 		string source,
 		SctToGeojsonSettings settings,
 		GeojsonFileSet files,
+		HashSet<string> folderNames,
 		List<ServiceMessage> messages)
 	{
 		string name = Path.GetFileName(source);
@@ -89,10 +93,21 @@ public static class SctToGeojsonService
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, $"{name}: {problem}"));
 		}
 
-		(IReadOnlyList<string> paths, int featureCount) = SctGeojsonWriter.Write(sctFile, settings, files);
+		string own = ConversionFiles.SafeFileName(Path.GetFileNameWithoutExtension(source));
+		string folder = ConversionFiles.UniqueFileName(own, folderNames);
+		(IReadOnlyList<string> paths, int featureCount) = SctGeojsonWriter.Write(sctFile, settings, files, folder);
+
+		if (paths.Count > 0 && !string.Equals(folder, own, StringComparison.Ordinal))
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"{name}: another file in this run has the same name, so its files are in the folder {folder}."));
+		}
 
 		if (paths.Count == 0)
 		{
+			// Nothing went in the folder, so its name is free for a later file.
+			folderNames.Remove(folder);
+
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
 				$"{name} has nothing FE-Buddy converts (lines, SIDs, STARs, labels or regions), so no GeoJSON was written for it.")
 			{

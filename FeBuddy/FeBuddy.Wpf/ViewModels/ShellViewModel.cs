@@ -335,7 +335,7 @@ public sealed class ShellViewModel : ObservableObject
 
 		if (readiness == AiracCycleReadiness.Unavailable)
 		{
-			return new HealthRow(Name, "current cycle failed to download or parse", StatusKind.Down);
+			return new HealthRow(Name, "current cycle couldn't be downloaded or read", StatusKind.Down);
 		}
 
 		if (readiness == AiracCycleReadiness.NotLoaded)
@@ -694,7 +694,7 @@ public sealed class ShellViewModel : ObservableObject
 
 		AiracStatus = readiness switch
 		{
-			AiracCycleReadiness.Unavailable => "AIRAC data unavailable — current cycle failed",
+			AiracCycleReadiness.Unavailable => "AIRAC data unavailable — current cycle couldn't be loaded",
 			AiracCycleReadiness.NotLoaded => "AIRAC data not loaded (dev launch)",
 			_ => "Waiting for AIRAC data…",
 		};

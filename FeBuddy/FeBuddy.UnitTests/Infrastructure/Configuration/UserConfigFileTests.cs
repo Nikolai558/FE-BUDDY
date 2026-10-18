@@ -165,6 +165,101 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.False(UserConfigFile.Undo(AirwaysNode));
 	}
 
+	/// <summary>
+	/// A profile that is there but can't be read for a moment (antivirus, a sync tool) is never written
+	/// back with only the node being saved: the save fails, and every other setting in it survives.
+	/// </summary>
+	[Fact]
+	public void save_and_undo_never_write_over_a_profile_they_cannot_read()
+	{
+		UserConfigFile.TrySetValue("General.UpdateChannel", "Stable");
+		UserConfigFile.Save(GeneralNode);
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+		UserConfigFile.Save(AirwaysNode);
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "Designation");
+		UserConfigFile.Save(AirwaysNode);
+		string before = File.ReadAllText(UserConfigFile.ConfigFilePath);
+
+		using (File.Open(UserConfigFile.ConfigFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "Rte");
+
+			Assert.Throws<IOException>(() => UserConfigFile.Save(AirwaysNode));
+			Assert.Throws<IOException>(() => UserConfigFile.Undo(AirwaysNode));
+		}
+
+		Assert.Equal(before, File.ReadAllText(UserConfigFile.ConfigFilePath));
+	}
+
+	/// <summary>A profile that isn't valid JSON is replaced by a save, as before: there is nothing in it to keep.</summary>
+	[Fact]
+	public void save_replaces_a_profile_that_is_not_json()
+	{
+		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+
+		UserConfigFile.Save(AirwaysNode);
+
+		Assert.Equal("HighLow", UserConfigFile.GetValue(AirwaysNode + ".OutputBy"));
+	}
+
+	/// <summary>
+	/// A profile that couldn't be read at launch leaves defaults in memory: writing them all would
+	/// replace every setting, so <see cref="UserConfigFile.Write"/> refuses until a read succeeds.
+	/// </summary>
+	[Fact]
+	public void write_refuses_after_the_profile_could_not_be_read_at_launch()
+	{
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+		UserConfigFile.Write();
+		string before = File.ReadAllText(UserConfigFile.ConfigFilePath);
+
+		// A new launch: nothing of the profile in memory yet.
+		UserConfigFile.ConfigureForTesting(_directory);
+
+		using (File.Open(UserConfigFile.ConfigFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			Assert.Equal(UserConfigReadResult.Unreadable, UserConfigFile.ReadAll());
+		}
+
+		Assert.Throws<IOException>(UserConfigFile.Write);
+		Assert.Equal(before, File.ReadAllText(UserConfigFile.ConfigFilePath));
+
+		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
+		UserConfigFile.Write();
+		Assert.Equal("HighLow", UserConfigFile.GetValue(AirwaysNode + ".OutputBy"));
+	}
+
+	/// <summary>
+	/// A profile already read that is locked when it is read again keeps its settings in memory, rather
+	/// than every page reading defaults until the next read; another profile's are never kept for it.
+	/// </summary>
+	[Fact]
+	public void a_locked_re_read_keeps_the_settings_read_before_but_never_another_profiles()
+	{
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+		UserConfigFile.Write();
+
+		using (File.Open(UserConfigFile.ConfigFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			Assert.Equal(UserConfigReadResult.Unreadable, UserConfigFile.ReadAll());
+			Assert.Equal("HighLow", UserConfigFile.GetValue(AirwaysNode + ".OutputBy"));
+		}
+
+		UserConfigFile.Write();
+		Assert.Contains("HighLow", File.ReadAllText(UserConfigFile.ConfigFilePath), StringComparison.Ordinal);
+
+		UserConfigFile.CreateProfile("Other", new Dictionary<string, string> { [AirwaysNode + ".OutputBy"] = "Designation" });
+		string other = UserConfigFile.ProfileFilePath("Other");
+
+		using (File.Open(other, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			UserConfigFile.SwitchProfile("Other");
+			Assert.Null(UserConfigFile.GetValue(AirwaysNode + ".OutputBy"));
+			Assert.Throws<IOException>(UserConfigFile.Write);
+		}
+	}
+
 	/// <summary>Undo with no snapshot for the node is a no-op returning <see langword="false"/>.</summary>
 	[Fact]
 	public void undo_with_no_snapshot_returns_false()

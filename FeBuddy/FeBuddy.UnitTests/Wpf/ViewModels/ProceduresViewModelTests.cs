@@ -41,6 +41,22 @@ public sealed class ProceduresViewModelTests : IDisposable
 		}
 	}
 
+	/// <summary>
+	/// Every Procedures.json field unticked is saved blank, sent blank and read back blank; the
+	/// defaults are only for a tab that has never saved its fields.
+	/// </summary>
+	[Fact]
+	public void every_json_field_unticked_stays_unticked_and_is_sent_blank()
+	{
+		Assert.Contains(new ProceduresViewModel().JsonFieldToggles, toggle => toggle.IsSelected);
+
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.JsonFields", "");
+		ProceduresViewModel procedures = new();
+
+		Assert.DoesNotContain(procedures.JsonFieldToggles, toggle => toggle.IsSelected);
+		Assert.Equal(string.Empty, procedures.CaptureCurrentValues()["JsonFields"]);
+	}
+
 	[Fact]
 	public void a_pasted_list_adds_every_airport_in_order_by_its_faa_id()
 	{

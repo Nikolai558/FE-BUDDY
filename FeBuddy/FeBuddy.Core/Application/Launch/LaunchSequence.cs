@@ -36,6 +36,12 @@ namespace FeBuddy.Core.Application.Launch;
 /// doesn't load is loaded when something asks for it. Clearing the temporary folder and reading the
 /// settings always run.
 /// </para>
+/// <para>
+/// The app reads the settings itself, on the UI thread, before it builds any page
+/// (<see cref="ReadSettings"/>, then <see cref="LaunchOptions.SettingsRead"/>): a page that reads its
+/// settings while it is built would otherwise show defaults, and saving it would write them over the
+/// user's. It is a few small files.
+/// </para>
 /// </remarks>
 public static class LaunchSequence
 {
@@ -94,30 +100,10 @@ public static class LaunchSequence
 			() => TempWorkspace.ClearOnLaunch(),
 			defaultValue: 0);
 
-		RunStep(
-			progress, LaunchStep.ReadUserConfig, "Reading saved settings",
-			() =>
-			{
-				UserConfigReadResult read = UserConfigFile.ReadAll();
-
-				// No settings to read is FE-Buddy 3's first launch on this PC. Worked out before the
-				// update channel below is saved, since that writes the settings file. A dev launch
-				// that leaves the welcome out doesn't look, so it doesn't count as shown either.
-				if (options.Runs(OptionalLaunchStep.WelcomeWindow))
-				{
-					WelcomeNotice.Check(read);
-				}
-
-				// App-wide output preferences are applied as soon as they are readable, so any
-				// file written this session follows them.
-				OutputFormatting.LoadFromUserConfig();
-
-				// The first launch keeps the running build's update channel, so no later update
-				// can move the user to another one; only Settings does.
-				UpdateChannelSetting.SaveDefaultIfUnset(currentVersion, read);
-				return true;
-			},
-			defaultValue: false);
+		if (!options.SettingsRead)
+		{
+			ReadSettings(currentVersion, options, progress);
+		}
 
 		// FE-Buddy 2.x kept a GitHub token in plain text in an environment variable. This needs the
 		// settings just read (whether the user has been told already); the shell tells them as soon
@@ -210,6 +196,47 @@ public static class LaunchSequence
 		AppLog.Success(LogSource, "Launch sequence complete.");
 
 		return new LaunchResult(time, version, tempClearFailures);
+	}
+
+	/// <summary>
+	/// Reads the saved settings, and applies what launch needs from them: whether to welcome the user,
+	/// the output preferences, and the update channel a first launch keeps. The app calls this on the
+	/// UI thread before it builds any page, then passes <see cref="LaunchOptions.SettingsRead"/> so
+	/// <see cref="RunAsync(string, LaunchOptions, IProgress{LaunchProgress}?, CancellationToken)"/>
+	/// leaves it out. Never throws.
+	/// </summary>
+	/// <param name="currentVersion">The running application's version string.</param>
+	/// <param name="options">How FE-Buddy was started.</param>
+	/// <param name="progress">Optional per-step progress.</param>
+	/// <returns><see langword="true"/> when the step ran to the end.</returns>
+	public static bool ReadSettings(string currentVersion, LaunchOptions options, IProgress<LaunchProgress>? progress = null)
+	{
+		ArgumentNullException.ThrowIfNull(options);
+
+		return RunStep(
+			progress, LaunchStep.ReadUserConfig, "Reading saved settings",
+			() =>
+			{
+				UserConfigReadResult read = UserConfigFile.ReadAll();
+
+				// No settings to read is FE-Buddy 3's first launch on this PC. Worked out before the
+				// update channel below is saved, since that writes the settings file. A dev launch
+				// that leaves the welcome out doesn't look, so it doesn't count as shown either.
+				if (options.Runs(OptionalLaunchStep.WelcomeWindow))
+				{
+					WelcomeNotice.Check(read);
+				}
+
+				// App-wide output preferences are applied as soon as they are readable, so any
+				// file written this session follows them.
+				OutputFormatting.LoadFromUserConfig();
+
+				// The first launch keeps the running build's update channel, so no later update
+				// can move the user to another one; only Settings does.
+				UpdateChannelSetting.SaveDefaultIfUnset(currentVersion, read);
+				return true;
+			},
+			defaultValue: false);
 	}
 
 	// Ask GitHub whether a newer release exists on the user's channel.

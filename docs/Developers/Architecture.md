@@ -25,15 +25,17 @@ changes when the app's look does.
 
 ## Launch
 
-`App.OnStartup` carries out a pending reset (`AppDataReset.RunPending`), starts the log file, then
-runs `LaunchSequence.RunAsync` off the UI thread. A step that fails is logged and only disables what
-needs it; launch never stops.
+`App.OnStartup` carries out a pending reset (`AppDataReset.RunPending`), starts the log file and
+reads the settings (`LaunchSequence.ReadSettings`), all before the window is built, then runs
+`LaunchSequence.RunAsync` off the UI thread. The settings come first because every page reads its
+own as it is built: one built before them would show defaults, and saving it would write them over
+the user's. A step that fails is logged and only disables what needs it; launch never stops.
 
-1. Clear `%TEMP%\FE-Buddy`, read the settings profile in use and, at the first launch, save the update
-   channel (`UpdateChannelSetting.SaveDefaultIfUnset`;
-   [Versioning](VERSIONING.md#pre-releases-and-channels)). No settings to read is FE-Buddy 3's first
-   launch on the PC: the shell then shows a one-time welcome (`WelcomeNotice`), before the notice in
-   step 2.
+1. Read the settings profile in use and, at the first launch, save the update channel
+   (`UpdateChannelSetting.SaveDefaultIfUnset`; [Versioning](VERSIONING.md#pre-releases-and-channels)),
+   on the UI thread as above; then, off it, clear `%TEMP%\FE-Buddy`. No settings to read is
+   FE-Buddy 3's first launch on the PC: the shell then shows a one-time welcome (`WelcomeNotice`),
+   before the notice in step 2.
 2. Look for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` variable - its name only, never its value - and,
    if it is set, show a one-time notice (`LegacyGitHubTokenNotice`).
 3. Uninstall a copy of FE-Buddy 2.x that Squirrel installed in `%LOCALAPPDATA%\FE-BUDDY`, by running
@@ -81,7 +83,7 @@ downloads and parses it then.
 | `Waiting` | the current cycle is still downloading or parsing | locked |
 | `Ready` | the current cycle is ready, and neither other cycle has failed | open |
 | `Degraded` | the current cycle is ready, and previous or next failed | open; the failed cycle shows *failed* |
-| `Unavailable` | the current cycle failed | locked |
+| `Unavailable` | the current cycle failed, or the FAA seemed not to have it (a proxy or firewall answering for its site, or the PC's clock set ahead): it won't arrive by waiting | locked |
 | `NotLoaded` | a dev launch left the current cycle unloaded, and nothing has asked for it | locked; opening it loads the cycle |
 
 The next and previous cycles go on loading while the service is open. Asking for a cycle that's
@@ -304,8 +306,11 @@ The FAA's data has quirks. Each rule lives in one class.
   `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log`, kept 30 days. `Debug` entries are recorded only in
   developer mode. The Dashboard's **Clear** clears `DisplayEntries`; `Entries` and the file keep
   everything.
-- **A crash** is written to `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt` by a last-chance handler
-  in `App`.
+- **A crash** is written to `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt` (`CrashReport`) by
+  `App`'s last-chance handlers, whichever thread it happens on.
+- **A settings file that can't be written or read** (antivirus, a sync tool, a read-only folder) never
+  closes FE-Buddy: every GUI save goes through `SettingsWrites`, which says so and leaves the change
+  unsaved, so saving again tries again. `UserConfigFile` never writes back a file it couldn't read.
 
 ## Updates and News
 

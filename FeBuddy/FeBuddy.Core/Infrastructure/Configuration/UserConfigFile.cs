@@ -86,6 +86,19 @@ public static partial class UserConfigFile
 	private static int _stampVersion = UserConfigVersion.Current;
 
 	/// <summary>
+	/// Whether the last <see cref="ReadAll"/> found the active profile's file but couldn't read it (a
+	/// lock, a permission) and had nothing of it in memory to keep, so the settings in memory are
+	/// defaults, not the user's: <see cref="Write"/> then refuses, rather than replace the file with them.
+	/// </summary>
+	private static bool _profileUnreadable;
+
+	/// <summary>
+	/// The profile whose settings memory holds from a good read (or that has no file yet), or
+	/// <see langword="null"/>. A later read that can't get at that profile's file keeps them.
+	/// </summary>
+	private static string? _profileInMemory;
+
+	/// <summary>
 	/// The directory holding every settings file: <c>%APPDATA%\FE-Buddy\User Configurations</c> by default.
 	/// </summary>
 	public static string Directory
@@ -146,13 +159,23 @@ public static partial class UserConfigFile
 	/// and logs a warning rather than throwing - this is the launch read path. A file in an older
 	/// layout is brought forward, and an older FE-Buddy's one file moved in (see the class remarks).
 	/// </summary>
+	/// <remarks>
+	/// A profile already read that can't be read again for a moment (locked by antivirus or a sync tool)
+	/// keeps what memory holds of it, rather than drop every setting to its default until the next read.
+	/// </remarks>
 	/// <returns>Whether the profile was read, missing or unreadable.</returns>
 	public static UserConfigReadResult ReadAll()
 	{
 		lock (Gate)
 		{
+			Dictionary<string, string> held = new(Values, StringComparer.Ordinal);
+			int heldStamp = _stampVersion;
+			string? heldProfile = _profileInMemory;
+
 			Values.Clear();
 			_stampVersion = UserConfigMigrations.CurrentVersion;
+			_profileUnreadable = false;
+			_profileInMemory = null;
 
 			MoveLegacyFileIn();
 
@@ -164,6 +187,7 @@ public static partial class UserConfigFile
 			if (!File.Exists(path))
 			{
 				AddAll(shared);
+				_profileInMemory = _profile;
 				AppLog.Warning(LogSource, $"No config file at '{path}'. Using defaults for every setting.");
 				return UserConfigReadResult.Missing;
 			}
@@ -177,6 +201,7 @@ public static partial class UserConfigFile
 				{
 					int version = TakeVersion(obj, path);
 					FlattenInto(obj, prefix: string.Empty, Values);
+					_profileInMemory = _profile;
 
 					// A profile from before Shared.json (or copied in by hand) still holds them: Shared.json
 					// takes any it lacks, and its own win over the profile's from then on.
@@ -203,10 +228,21 @@ public static partial class UserConfigFile
 				AppLog.Warning(LogSource, $"Config file '{path}' is not a JSON object. Using defaults.");
 				return UserConfigReadResult.Unreadable;
 			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+				&& string.Equals(heldProfile, _profile, StringComparison.OrdinalIgnoreCase))
+			{
+				Values.Clear();
+				AddAll(held);
+				_stampVersion = heldStamp;
+				_profileInMemory = heldProfile;
+				AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Keeping the settings read before.");
+				return UserConfigReadResult.Unreadable;
+			}
 			catch (Exception ex)
 			{
 				Values.Clear();
 				AddAll(shared);
+				_profileUnreadable = ex is IOException or UnauthorizedAccessException;
 				AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Using defaults.");
 				return UserConfigReadResult.Unreadable;
 			}
@@ -217,10 +253,22 @@ public static partial class UserConfigFile
 	/// Writes the entire in-memory dictionary - the active profile's settings to its file, the shared
 	/// ones to <c>Shared.json</c> - then re-reads them so the dictionary reflects exactly what is on disk.
 	/// </summary>
+	/// <exception cref="IOException">
+	/// A file could not be written or read, or the profile's file couldn't be read when the settings
+	/// were last read, so memory holds defaults that would replace every setting in it. Nothing is written
+	/// in that case.
+	/// </exception>
+	/// <exception cref="UnauthorizedAccessException">A file could not be written, for want of permission.</exception>
 	public static void Write()
 	{
 		lock (Gate)
 		{
+			if (_profileUnreadable && File.Exists(ConfigFilePath))
+			{
+				throw new IOException(
+					$"'{Path.GetFileName(ConfigFilePath)}' couldn't be read, so it wasn't written over: that would replace every setting in it.");
+			}
+
 			UpdateSharedFile(UserConfigPortability.SharedByProfiles);
 			WriteConfig(ConfigFilePath, BuildTree(ProfileValues(Values)), _stampVersion);
 		}
@@ -392,6 +440,11 @@ public static partial class UserConfigFile
 	/// <param name="nodePath">
 	/// The dotted path of the node to save, e.g. <c>Services.AiracService.Airways</c>.
 	/// </param>
+	/// <exception cref="IOException">
+	/// A file could not be written, or is there but could not be read (written back, it would lose every
+	/// other setting in it). The setting stays in memory, unsaved.
+	/// </exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
 	public static void Save(string nodePath)
 	{
 		if (string.IsNullOrWhiteSpace(nodePath))
@@ -401,7 +454,7 @@ public static partial class UserConfigFile
 
 		lock (Gate)
 		{
-			JsonObject onDisk = LoadObjectOrEmpty(ConfigFilePath);
+			JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
 
 			// Snapshot the CURRENT on-disk subtree into the previous file, at the same path.
 			JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
@@ -505,6 +558,11 @@ public static partial class UserConfigFile
 	/// </summary>
 	/// <param name="nodePath">The dotted path to restore.</param>
 	/// <returns><see langword="true"/> if a previous value was restored.</returns>
+	/// <exception cref="IOException">
+	/// The profile's file could not be written, or is there but could not be read. Nothing was restored
+	/// unless the profile was written and only the snapshot couldn't be updated.
+	/// </exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
 	public static bool Undo(string nodePath)
 	{
 		if (string.IsNullOrWhiteSpace(nodePath))
@@ -528,7 +586,7 @@ public static partial class UserConfigFile
 
 			JsonNode? snapshot = GetNodeAtPath(previous, nodePath);
 
-			JsonObject onDisk = LoadObjectOrEmpty(ConfigFilePath);
+			JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
 			SetNodeAtPath(onDisk, nodePath, snapshot?.DeepClone());
 			RemoveSharedSettings(onDisk);
 			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
@@ -557,6 +615,8 @@ public static partial class UserConfigFile
 			_root = directory ?? AppPaths.AppDataDirectory;
 			_profile = DefaultProfile;
 			_stampVersion = UserConfigMigrations.CurrentVersion;
+			_profileUnreadable = false;
+			_profileInMemory = null;
 		}
 	}
 
@@ -688,7 +748,7 @@ public static partial class UserConfigFile
 	/// </param>
 	private static void UpdateSharedFile(IEnumerable<string> keys, bool keepActiveProfile = false)
 	{
-		JsonObject shared = LoadObjectOrEmpty(SharedFilePath);
+		JsonObject shared = LoadObjectToUpdate(SharedFilePath);
 		shared.Remove(UserConfigVersion.FileKey);
 
 		string profile = keepActiveProfile && shared[ActiveProfileKey] is JsonValue onDisk && onDisk.TryGetValue(out string? name)
@@ -788,6 +848,33 @@ public static partial class UserConfigFile
 		}
 
 		return anyChild ? subtree : null;
+	}
+
+	/// <summary>
+	/// Reads a settings file that is about to be written back with a change: empty when it is missing
+	/// or isn't valid JSON (writing replaces it), but an error when it is there and can't be read - locked
+	/// for a moment by antivirus or a sync tool, say - since writing back what little was read would
+	/// lose every other setting in it.
+	/// </summary>
+	/// <exception cref="IOException">The file is there but could not be read.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	private static JsonObject LoadObjectToUpdate(string path)
+	{
+		if (!File.Exists(path))
+		{
+			return [];
+		}
+
+		string json = File.ReadAllText(path);
+
+		try
+		{
+			return JsonNode.Parse(json) as JsonObject ?? [];
+		}
+		catch (JsonException)
+		{
+			return [];
+		}
 	}
 
 	private static JsonObject LoadObjectOrEmpty(string path)

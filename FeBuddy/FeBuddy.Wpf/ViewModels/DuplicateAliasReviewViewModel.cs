@@ -15,9 +15,10 @@ namespace FeBuddy.Wpf.ViewModels;
 /// alias file saved.
 /// </summary>
 /// <remarks>
-/// A line starts with its saved choice, when there is one. Otherwise the first line of a command
-/// with no line kept keeps it, and the rest are left out, so finishing straight away does what
-/// CRC would have done anyway: run the first. Each command is checked as the choices change, by
+/// A line starts with its saved choice, when there is one. Otherwise the last line of a command
+/// with no line kept keeps it, and the rest are left out, so finishing straight away does what CRC
+/// would have done anyway: it reads an alias file top to bottom and runs the last copy of a command,
+/// and the lines are in the order they go into Combined_Alias.txt. Each command is checked as the choices change, by
 /// the run's own rules (<see cref="DuplicateAliasChoices.Problem"/>) - a new command against every
 /// command in the run and every other new command.
 /// </remarks>
@@ -71,12 +72,14 @@ public sealed class DuplicateAliasReviewViewModel : ObservableObject
 	{
 		DuplicateAliasRule?[] savedChoices = [.. duplicate.Lines.Select(line => saved.FirstOrDefault(choice => choice.IsFor(duplicate.Command, line)))];
 		bool kept = savedChoices.Any(choice => choice?.Action == DuplicateAliasAction.Keep);
+
+		// With no line kept, the last line with no saved choice keeps the command: the copy CRC runs.
+		int keeper = kept ? -1 : Array.FindLastIndex(savedChoices, choice => choice is null);
 		List<DuplicateAliasLineItem> lines = [];
 
 		for (int i = 0; i < duplicate.Lines.Count; i++)
 		{
-			DuplicateAliasAction action = savedChoices[i]?.Action ?? (kept ? DuplicateAliasAction.Ignore : DuplicateAliasAction.Keep);
-			kept |= action == DuplicateAliasAction.Keep;
+			DuplicateAliasAction action = savedChoices[i]?.Action ?? (i == keeper ? DuplicateAliasAction.Keep : DuplicateAliasAction.Ignore);
 
 			lines.Add(new DuplicateAliasLineItem(duplicate.Command, duplicate.Lines[i], action, savedChoices[i]?.NewCommand, Revalidate));
 		}

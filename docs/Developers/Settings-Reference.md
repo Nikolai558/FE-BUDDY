@@ -452,7 +452,7 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `Procedures` | | list of departure and arrival root names, included wherever charted, e.g. `BRWNZ` | none |
 | `AirportProcedures` | | list of `<airport>\|<departure or arrival root name>`, e.g. `PIT\|GRUUB` | none |
 | `IncludeProceduresWithFixInFacility` | | `Y` / `N` - also include, at any airport, the departures and arrivals whose route has a fix in `PrimaryFacility`. The tab sends `N` while no facility is set | `Y` |
-| `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH` | `IAP,STR,DP,ODP,DAU,APD` |
+| `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH`; blank for none | `IAP,STR,DP,ODP,DAU,APD` |
 | `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`); blank for none of them, so only the fields always written | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
 
 - The three `Generate…` keys can't all be `N`.

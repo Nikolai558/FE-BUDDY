@@ -515,7 +515,7 @@ internal static class HarnessSettings
 			// The harness has no previous cycle's NASR, so a changed or deleted one is checked against this cycle's route only.
 			{ "IncludeProceduresWithFixInFacility", "Y" },
 
-			{ "ChartTypes", "" },            // blank = default: IAP, STR, DP, ODP, DAU, APD
+			{ "ChartTypes", "IAP,STR,DP,ODP,DAU,APD" }, // the default; blank = none
 			{ "JsonFields", "icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl" }, // the default; blank = none of the optional fields
 		};
 

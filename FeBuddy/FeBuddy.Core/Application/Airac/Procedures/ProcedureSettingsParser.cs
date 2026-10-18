@@ -241,15 +241,23 @@ public static class ProcedureSettingsParser
 		return picks;
 	}
 
-	/// <summary>Parses <c>ChartTypes</c>, defaulting to <see cref="ProcedureChartTypes.Default"/> when absent or blank.</summary>
+	/// <summary>
+	/// Parses <c>ChartTypes</c>: <see cref="ProcedureChartTypes.Default"/> when it is absent, and none
+	/// when it is blank, as the tab reads a saved blank list.
+	/// </summary>
 	private static (IReadOnlyCollection<string> ChartTypes, IReadOnlyList<ServiceMessage> Messages) ParseChartTypes(
 		IReadOnlyDictionary<string, string> procedureSettings)
 	{
+		if (!procedureSettings.ContainsKey("ChartTypes"))
+		{
+			return (ProcedureChartTypes.Default, []);
+		}
+
 		IReadOnlyList<string> raw = SettingsValueReader.StringList(procedureSettings, "ChartTypes");
 
 		if (raw.Count == 0)
 		{
-			return (ProcedureChartTypes.Default, []);
+			return ([], []);
 		}
 
 		List<string> chartTypes = [.. raw

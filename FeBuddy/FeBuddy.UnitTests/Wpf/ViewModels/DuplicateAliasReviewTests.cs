@@ -55,20 +55,34 @@ public sealed class DuplicateAliasReviewTests : IDisposable
 
 	// ---- the window ----
 
-	/// <summary>With nothing saved, the first line keeps the command and the rest are left out, so finishing straight away is allowed.</summary>
+	/// <summary>
+	/// With nothing saved, the last line keeps the command and the rest are left out: CRC runs the
+	/// last copy of a command, so finishing straight away does what it would have done anyway.
+	/// </summary>
 	[Fact]
-	public void each_command_starts_with_its_first_line_kept_and_the_rest_left_out()
+	public void each_command_starts_with_its_last_line_kept_and_the_rest_left_out()
 	{
 		DuplicateAliasReviewViewModel window = Window(null, Duplicate(".orfNUTIYf", "Departures.txt", "Arrivals.txt", "Faa_Chart_Recall.txt"));
 
 		DuplicateAliasGroupItem group = Assert.Single(window.Groups);
-		Assert.Equal([Keep, Ignore, Ignore], group.Lines.Select(line => line.Action));
+		Assert.Equal([Ignore, Ignore, Keep], group.Lines.Select(line => line.Action));
 		Assert.Equal("3 lines", group.LineCount);
 		Assert.Equal(".orfNUTIYf .FF A B", group.Lines[0].Text);
 		Assert.Equal("Departures.txt", group.Lines[0].FileName);
 		Assert.NotEqual(group.Lines[0].GroupName, group.Lines[1].GroupName);
 		Assert.True(window.CanFinish);
 		Assert.StartsWith("One alias command is used by more than one line", window.Intro, StringComparison.Ordinal);
+	}
+
+	/// <summary>A line with a saved choice keeps it; with no line kept, the last line with nothing saved keeps the command.</summary>
+	[Fact]
+	public void with_no_line_kept_the_last_unsaved_line_keeps_the_command()
+	{
+		DuplicateAliasRule savedIgnore = new("Faa_Chart_Recall.txt", ".orfNUTIYf", 1, Ignore);
+
+		DuplicateAliasReviewViewModel window = Window([savedIgnore], Duplicate(".orfNUTIYf", "Departures.txt", "Arrivals.txt", "Faa_Chart_Recall.txt"));
+
+		Assert.Equal([Ignore, Keep, Ignore], window.Groups[0].Lines.Select(line => line.Action));
 	}
 
 	[Fact]
@@ -95,21 +109,21 @@ public sealed class DuplicateAliasReviewTests : IDisposable
 		DuplicateAliasReviewViewModel window = Window(null, Duplicate(".orfNUTIYf", "Departures.txt", "Arrivals.txt"));
 		DuplicateAliasGroupItem group = window.Groups[0];
 		List<string?> changed = [];
-		group.Lines[1].PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+		group.Lines[0].PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
-		group.Lines[1].Action = Keep;
+		group.Lines[0].Action = Keep;
 		Assert.Equal("Only one line can keep .orfNUTIYf. Leave out or rename the others.", group.Problem);
 		Assert.True(group.HasProblem);
 		Assert.False(window.CanFinish);
 
-		group.Lines[1].Action = Rename;
+		group.Lines[0].Action = Rename;
 		Assert.Equal("Type the new command.", group.Problem);
 		Assert.Contains(nameof(DuplicateAliasLineItem.IsRename), changed);
 
-		group.Lines[1].NewCommand = ".ZOBATIS";
+		group.Lines[0].NewCommand = ".ZOBATIS";
 		Assert.Equal(".ZOBATIS is already used in this run. Choose another command.", group.Problem);
 
-		group.Lines[1].NewCommand = " .orfNUTIYa ";
+		group.Lines[0].NewCommand = " .orfNUTIYa ";
 		Assert.Null(group.Problem);
 		Assert.True(window.CanFinish);
 	}
@@ -137,8 +151,8 @@ public sealed class DuplicateAliasReviewTests : IDisposable
 	public void finishing_hands_back_a_choice_for_every_line()
 	{
 		DuplicateAliasReviewViewModel window = Window(null, Duplicate(".orfNUTIYf", "Departures.txt", "Arrivals.txt"));
-		window.Groups[0].Lines[1].Action = Rename;
-		window.Groups[0].Lines[1].NewCommand = ".orfNUTIYa ";
+		window.Groups[0].Lines[0].Action = Rename;
+		window.Groups[0].Lines[0].NewCommand = ".orfNUTIYa ";
 		bool closed = false;
 		window.CloseRequested += (_, _) => closed = true;
 
@@ -146,7 +160,7 @@ public sealed class DuplicateAliasReviewTests : IDisposable
 
 		Assert.True(closed);
 		Assert.Equal(
-			[new DuplicateAliasRule("Departures.txt", ".orfNUTIYf", 1, Keep), new DuplicateAliasRule("Arrivals.txt", ".orfNUTIYf", 1, Rename, ".orfNUTIYa")],
+			[new DuplicateAliasRule("Departures.txt", ".orfNUTIYf", 1, Rename, ".orfNUTIYa"), new DuplicateAliasRule("Arrivals.txt", ".orfNUTIYf", 1, Keep)],
 			window.Result);
 	}
 
@@ -168,7 +182,7 @@ public sealed class DuplicateAliasReviewTests : IDisposable
 	public void a_line_not_renamed_gives_no_new_command()
 	{
 		DuplicateAliasReviewViewModel window = Window(null, Duplicate(".orfNUTIYf", "Departures.txt", "Arrivals.txt"));
-		DuplicateAliasLineItem line = window.Groups[0].Lines[1];
+		DuplicateAliasLineItem line = window.Groups[0].Lines[0];
 
 		line.NewCommand = ".typed";
 

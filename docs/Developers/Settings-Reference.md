@@ -621,7 +621,8 @@ no list:
 
 ## Adding a setting
 
-1. **Pick its node:** `General` for app-wide preferences, the tab's own node otherwise.
+1. **Pick its node:** `General` for app-wide preferences, the tab's own node otherwise. A page or tab
+   writes only its own node ([Code Structure](Code-Structure.md#rules-for-core-and-the-app)).
 2. **Save and load it** in the tab's `LoadFromConfig` / `WriteToConfig` with `Get` / `Set` (relative
    to the tab's node; a file conversion tab: `LoadOwnSettings` / `SaveOwnSettings`). If more than one
    class reads it, add a constant to `UserConfigKeys`.

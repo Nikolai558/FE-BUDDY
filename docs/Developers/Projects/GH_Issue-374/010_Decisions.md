@@ -235,7 +235,7 @@ Patterns the review kept finding. Agreeing on a rule stops them coming back. Ses
 
 ### H1 · Call the settings files by their real names
 
-**Status:** Agreed, changed (Nikolas, 2026-10-17)
+**Status:** Done (not yet merged): in `Code-Structure.md`'s "Rules for Core and the app", for code and the developer docs. Agreed, changed (Nikolas, 2026-10-17)
 
 `UserConfig.json` is still named in about 10 comments, including one the user sees ([D1b-24](220_Comments-GUI.md#d1b-24), [W5-2](610_On-Screen-Text.md#w5-2)). It's `UserConfig.<Profile>.json` and `Shared.json` now.
 
@@ -245,7 +245,7 @@ Patterns the review kept finding. Agreeing on a rule stops them coming back. Ses
 
 ### H2 · No issue or feature numbers in comments
 
-**Status:** Agreed, changed (Nikolas, 2026-10-17)
+**Status:** Done (not yet merged): in `Code-Structure.md`'s "Rules for Core and the app", for code and the developer docs except `ChangeLog.md` and `RELEASING*.md`. Agreed, changed (Nikolas, 2026-10-17)
 
 [#318](https://github.com/Nikolai558/FE-BUDDY/issues/318), [#335](https://github.com/Nikolai558/FE-BUDDY/issues/335), [#364](https://github.com/Nikolai558/FE-BUDDY/issues/364), [#367](https://github.com/Nikolai558/FE-BUDDY/issues/367), [#371](https://github.com/Nikolai558/FE-BUDDY/issues/371) and others appear in dozens of places. `Code-Structure.md` already says no task numbers. Keep only bug references that explain a choice. A repository test could enforce it.
 
@@ -255,7 +255,7 @@ Patterns the review kept finding. Agreeing on a rule stops them coming back. Ses
 
 ### H3 · No history narration in comments
 
-**Status:** Agreed (Nikolas, 2026-10-17)
+**Status:** Done (not yet merged): in `Code-Structure.md`'s "Rules for Core and the app", for code and the developer docs except `ChangeLog.md` and `RELEASING*.md`. Agreed (Nikolas, 2026-10-17)
 
 "as in 2.x", "beta.N and earlier", "now", "still", "the old …". Keep it only where it explains a choice made because of a bug we found.
 
@@ -265,7 +265,7 @@ Patterns the review kept finding. Agreeing on a rule stops them coming back. Ses
 
 ### H4 · Naming and layout
 
-**Status:** Agreed (Nikolas, 2026-10-17)
+**Status:** Done (not yet merged): in `Code-Structure.md`'s "Rules for Core and the app" and "Naming by role"; the renames themselves are in [S6](020_Work-Plan.md#s6). Agreed (Nikolas, 2026-10-17)
 
 `*Service` only for entry points; data types in `Models/`; one type per file.
 
@@ -275,7 +275,7 @@ Patterns the review kept finding. Agreeing on a rule stops them coming back. Ses
 
 ### H5 · One settings node per page or tab
 
-**Status:** Agreed (Nikolas, 2026-10-17)
+**Status:** Done (not yet merged): in `Code-Structure.md`'s "Rules for Core and the app", pointed to from `Settings-Reference.md`'s "Adding a setting", and checked by `UserConfigLayoutTests.no_settings_node_sits_inside_another`. Agreed (Nikolas, 2026-10-17)
 
 Raised by [Q1](#q1). The General tab's node (`Services.AiracService`) is the parent of every other AIRAC tab's node, which is what caused [W2-1](100_Bugs.md#w2-1). The Settings page also writes the Facility, the coordinate precision and the default ROI inside that node.
 
@@ -314,3 +314,5 @@ Raised by [Q1](#q1). The General tab's node (`Services.AiracService`) is the par
 | 2026-10-18 | [C1-3](100_Bugs.md#c1-3) | Keep checking the previous cycle's route for deleted and changed procedures; fix the failure instead | Kyle |
 | 2026-10-18 | [D3](#d3) | Confirmed: CRC reads an alias file top to bottom, and the last duplicate is the one it uses | Kyle |
 | 2026-10-18 | [W1-13](100_Bugs.md#w1-13) | Agreed: a blank `JsonFields` means no optional fields | Kyle |
+| 2026-10-18 | H1-H3 | Apply to the developer docs too, except `ChangeLog.md` and `RELEASING*.md` | Kyle |
+| 2026-10-18 | H1-H5 | Written into `Code-Structure.md` | Kyle |

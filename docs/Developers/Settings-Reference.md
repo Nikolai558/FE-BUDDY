@@ -102,13 +102,21 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `Wel
 | `RememberWindowPlacement` | `Y` / `N` - the main window reopens where it was closed. Saved at once by Settings ▸ Main Window; `N` also removes `MainWindowPlacement` | `Y` |
 | `MainWindowPlacement` | `left,top,width,height,dpi,state` in physical screen pixels, e.g. `2120,140,1800,1170,144,Maximized` (`SavedWindowPlacement`). Checked against the screens connected at each launch (`WindowPlacementRules`); anything unreadable means the default | none: 1200 x 780, centered on the main screen |
 
-### Services.AiracService
+### Services.AiracService.General
+
+The AIRAC Service's General tab. Its node sits beside the other tabs' nodes, so its save and
+**Undo last save** touch only these keys.
 
 | Key | Values | Default |
 |---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
 | `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
+
+### Services.AiracService
+
+| Key | Values | Default |
+|---|---|---|
 | `UserArtccId` | the Settings ▸ Facility ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedure Charts' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedure Charts until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
 | `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
@@ -206,7 +214,7 @@ none of them.
 - `CrcDefaultsFiles` keeps every choice, even for files the current settings don't write, so a file
   switched off and on keeps its choice. A run sends only the files written.
 - A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedure Charts' two documents) are
-  set on the General tab and saved there, under `Services.AiracService.Outputs` - never in the
+  set on the General tab and saved there, under `Services.AiracService.General.Outputs` - never in the
   sub-service's own node, so saving or undoing its tab can't change them.
 - Where a sub-service has both, `GenerateGeojson` and `GenerateAliasFile` can't both be `N`, and
   `GenerateGeojson = Y` needs at least one `Emit…`.
@@ -436,7 +444,7 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `AirportProcedures` | | list of `<airport>\|<departure or arrival root name>`, e.g. `PIT\|GRUUB` | none |
 | `IncludeProceduresWithFixInFacility` | | `Y` / `N` - also include, at any airport, the departures and arrivals whose route has a fix in `PrimaryFacility` (Feature #367). The tab sends `N` while no facility is set | `Y` |
 | `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH` | `IAP,STR,DP,ODP,DAU,APD` |
-| `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`) | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
+| `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`); blank for none of them, so only the fields always written | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
 
 - The three `Generate…` keys can't all be `N`.
 - `Procedures` and `AirportProcedures` take departures and arrivals only (d-TPP `DP`, `ODP`, `STR`),

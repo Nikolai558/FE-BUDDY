@@ -102,6 +102,20 @@ public sealed class AppDataResetTests : IDisposable
 		Assert.Single(_credentials.List());
 	}
 
+	/// <summary>A profile's backups live beside it, so keeping the settings keeps them, as the Reset window says.</summary>
+	[Fact]
+	public void keeping_the_settings_keeps_each_profiles_backups()
+	{
+		Write(@"User Configurations\UserConfig-previous.Default.json", "{}");
+		Write(@"User Configurations\UserConfig-before-import.ZOB.json", "{}");
+		AppDataReset.Request(new AppDataResetRequest(KeepSettings: true, DeleteCredentials: false, WaitForProcessId: Environment.ProcessId));
+
+		AppDataReset.RunPending(_credentials, NoWait);
+
+		Assert.Contains("UserConfig-previous.Default.json", Names(Path.Combine(_appData, "User Configurations")));
+		Assert.Contains("UserConfig-before-import.ZOB.json", Names(Path.Combine(_appData, "User Configurations")));
+	}
+
 	[Fact]
 	public void deleting_the_settings_and_credentials_leaves_nothing()
 	{

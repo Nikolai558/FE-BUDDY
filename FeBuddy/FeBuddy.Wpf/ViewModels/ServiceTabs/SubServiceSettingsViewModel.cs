@@ -72,7 +72,8 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 
 	/// <summary>
 	/// Validates and persists this menu's subtree. Returns <see langword="false"/> (and toasts
-	/// the reason) when validation fails; the offending inputs stay highlighted.
+	/// the reason) when validation fails, the offending inputs staying highlighted, or when the
+	/// settings file can't be written; either way the tab keeps its unsaved changes.
 	/// </summary>
 	/// <returns><see langword="true"/> if the settings were saved.</returns>
 	public override bool Save()
@@ -86,7 +87,11 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 		}
 
 		WriteToConfig();
-		UserConfigFile.Save(NodePath);
+
+		if (!SettingsWrites.TrySave(NodePath, $"{Title} settings"))
+		{
+			return false;
+		}
 
 		ClearDirty();
 		OnPropertyChanged(nameof(CanUndo));
@@ -150,7 +155,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	/// <summary>Restores this node's previous save, if a snapshot exists.</summary>
 	public void UndoLastSave()
 	{
-		if (!UserConfigFile.Undo(NodePath))
+		if (!SettingsWrites.TryUndo(NodePath, $"{Title} settings"))
 		{
 			return;
 		}

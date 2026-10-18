@@ -55,18 +55,25 @@ public static class SctGeojsonWriter
 	/// <param name="sctFile">The sector file's content.</param>
 	/// <param name="settings">The parsed settings.</param>
 	/// <param name="files">The run's file set, which does the writing and remembers what was written.</param>
+	/// <param name="folderName">
+	/// The sector file's folder name, when it isn't the source's own name: another source in the run
+	/// has the same name (see <see cref="ConversionFiles.UniqueFileName"/>).
+	/// </param>
 	/// <returns>The files written for this sector file, and how many rendered Features they hold.</returns>
 	public static (IReadOnlyList<string> Paths, int FeatureCount) Write(
 		SctFile sctFile,
 		SctToGeojsonSettings settings,
-		GeojsonFileSet files)
+		GeojsonFileSet files,
+		string? folderName = null)
 	{
 		ArgumentNullException.ThrowIfNull(sctFile);
 		ArgumentNullException.ThrowIfNull(settings);
 		ArgumentNullException.ThrowIfNull(files);
 
 		int before = files.FilesWritten.Count;
-		string directory = Path.Combine(OutputDirectory(settings), ConversionFiles.SafeFileName(Path.GetFileNameWithoutExtension(sctFile.SourcePath)));
+		string directory = Path.Combine(
+			OutputDirectory(settings),
+			folderName ?? ConversionFiles.SafeFileName(Path.GetFileNameWithoutExtension(sctFile.SourcePath)));
 
 		foreach ((SctLineSection section, IReadOnlyList<SctSegment> segments) in sctFile.Lines)
 		{

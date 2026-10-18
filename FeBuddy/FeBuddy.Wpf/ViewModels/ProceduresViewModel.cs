@@ -1154,8 +1154,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				AirportProcedures.Add(item);
 			}
 
+			// The defaults only when nothing is saved: a saved blank list is the user's choice.
 			string? savedChartTypesRaw = Get("ChartTypes");
-			HashSet<string> savedChartTypes = string.IsNullOrWhiteSpace(savedChartTypesRaw)
+			HashSet<string> savedChartTypes = savedChartTypesRaw is null
 				? new HashSet<string>(ProcedureChartTypes.Default, StringComparer.OrdinalIgnoreCase)
 				: ParseList(savedChartTypesRaw);
 
@@ -1165,7 +1166,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			}
 
 			string? savedJsonFieldsRaw = Get("JsonFields");
-			HashSet<string> savedJsonFields = string.IsNullOrWhiteSpace(savedJsonFieldsRaw)
+			HashSet<string> savedJsonFields = savedJsonFieldsRaw is null
 				? new HashSet<string>(ProcedureSettingsParser.DefaultJsonFields.Select(CoreFebProperties.Name), StringComparer.OrdinalIgnoreCase)
 				: ParseList(savedJsonFieldsRaw);
 

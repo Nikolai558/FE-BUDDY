@@ -41,6 +41,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The setup window targets .NET Framework (it runs inside msiexec), so it can't be referenced:
+         the rule that decides how an installation ended is compiled in from source instead. -->
+    <Compile Include="..\FeBuddy.Installer.UI\Setup\SetupOutcome.cs" Link="Installer\Linked\SetupOutcome.cs" />
+    <Compile Include="..\FeBuddy.Installer.UI\Setup\SetupOutcomeRules.cs" Link="Installer\Linked\SetupOutcomeRules.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- A trimmed real NASR cycle (header + first 3 records of every CSV FE-Buddy reads). -->
     <None Include="Fixtures\Nasr\*.csv" CopyToOutputDirectory="PreserveNewest" />
     <!-- A made-up RADAR Video Map in the FAA .dat layout. Real FAA .dat files must never be

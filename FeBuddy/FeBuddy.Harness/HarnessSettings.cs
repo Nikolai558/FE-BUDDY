@@ -516,7 +516,7 @@ internal static class HarnessSettings
 			{ "IncludeProceduresWithFixInFacility", "Y" },
 
 			{ "ChartTypes", "" },            // blank = default: IAP, STR, DP, ODP, DAU, APD
-			{ "JsonFields", "" },            // blank = default: icaoId, airportName, responsibleArtcc, airspaceClass, chartType, chartUrl, change, compareUrl
+			{ "JsonFields", "icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl" }, // the default; blank = none of the optional fields
 		};
 
 		return settings;

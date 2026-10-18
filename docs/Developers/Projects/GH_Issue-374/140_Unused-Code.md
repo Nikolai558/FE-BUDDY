@@ -32,13 +32,13 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 | [C5-21](#c5-21) | Test-only | Low | Small result fields, an out parameter and two defaults that only tests use | Open | S6 |
 | [C1-13](#c1-13) | Test-only | Low | ServiceResult.Warnings is used only by the Harness and tests | Open | S6 |
 | [C1-12](#c1-12) | Test-only | Low | NewsCheckResult.FromNetwork is read only by tests | Open | S6 |
-| [T1b-21](#t1b-21) | Test-only | Low | ReadArea's no-`Area` fallback is reached only by tests | Open | S6 |
+| [T1b-21](#t1b-21) | Test-only | Low | ReadArea's no-`Area` fallback is reached only by tests | Agreed, changed | S6 |
 | [C1-11](#c1-11) | Test-only | Low | VersionCheckResult.ParseChannel(string?) (one-argument overload) is used only by a test | Open | S6 |
 | [C5-6](#c5-6) | Unused | Low | Airway.Segments and AirwayPoint.FoundIn are written but never read; Airway.AwyLocation and Airway.MaxAuthAlt are read only by a test | Open | S6 |
 | [C6-28](#c6-28) | Test-only | Low | UserConfigPackage.ConfigVersion (and its default) and UserConfigMigrationResult.FromVersion are read only by tests | Open | S6 |
 | [C6-25](#c6-25) | Test-only | Low | UserConfigFile.ProfileExists | Open | S6 |
 | [C6-4](#c6-4) | Unused | Low | `v\d+` in LegacyBackupName matches a file no release ever wrote | Open | S6 |
-| [C6-27](#c6-27) | Test-only | Low | UserConfigMigrationContext.Move, ChangeValue and Values are used only by tests | Open | S6 |
+| [C6-27](#c6-27) | Test-only | Low | UserConfigMigrationContext.Move, ChangeValue and Values are used only by tests | Agreed | S6 |
 | [C5-5](#c5-5) | Test-only | Low | EramProperties' custom equality serves only tests; its remark claims a grouping that doesn't happen | Open | S6 |
 | [C6-26](#c6-26) | Test-only | Low | AppLog.GetLogFilePath is used only by tests and duplicates the writer's own path logic | Open | S6 |
 | [C7-18](#c7-18) | Test-only | Low | `MarkdownParser.ParseInlines`'s `issueUrlBase` and `linkBase` parameters are used only by tests | Open | S6 |
@@ -67,20 +67,20 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 | [W4-21](#w4-21) | Test-only | Low | AliasSourceRow.CheckFailed is read only by a test | Open | S6 |
 | [W1-16](#w1-16) | Unused | Low | Procedure Charts and Telephony have unbound properties and raises nothing listens to | Open | S6 |
 | [W1-17](#w1-17) | Test-only | Low | DtppPreviousStatus is read only by a test, and two of its three messages are never shown | Open | S6 |
-| [W4-19](#w4-19) | Unused | Low | ConversionTabViewModel is an extra layer with exactly one subclass | Open | S6 |
+| [W4-19](#w4-19) | Unused | Low | ConversionTabViewModel is an extra layer with exactly one subclass | Deferred | After 3.0 |
 | [W4-12](#w4-12) | Unused | Low | Unused members on the conversion page base: HasSourceFiles, EmitLines, and the Emit* no-op setters | Open | S6 |
 | [D1a-17](#d1a-17) | Unused | Low | Procedure Charts and Telephony save four settings nothing reads, and send four the parser ignores | Open | S6 |
 | [W4-13](#w4-13) | Unused | Low | Duplicate properties on GeojsonSubServiceViewModel: WritesAliasFile and HasGeojsonFiles | Open | S6 |
 | [W4-14](#w4-14) | Unused | Low | Virtual members nobody overrides: GenerateGeojson, IsAreaInUse | Open | S6 |
 | [W4-22](#w4-22) | Test-only | Low | GeojsonSubServiceViewModel.EveryOutput is only ever used by tabs built in tests | Open | S6 |
-| [W4-20](#w4-20) | Unused | Low | Card interfaces with a single implementer, used only for design-time DataContext | Open | S6 |
+| [W4-20](#w4-20) | Unused | Low | Card interfaces with a single implementer, used only for design-time DataContext | Deferred | After 3.0 |
 | [W4-17](#w4-17) | Unused | Low | ISubServiceOutputs.IsIncluded is never read through the interface | Open | S6 |
 | [W4-9](#w4-9) | Unused | Low | ServicePreviewSection.Note is never set | Open | S6 |
 | [W4-10](#w4-10) | Unused | Low | SubServiceDescriptor.AliasFileName is set for 7 sub-services and never read | Open | S6 |
 | [W4-15](#w4-15) | Unused | Low | ServiceTabViewModel's base MarkDirty/ClearDirty never run, and the remark describes behaviour no tab has | Open | S6 |
 | [W4-16](#w4-16) | Unused | Low | ServiceTabViewModel.IsRunnable only feeds a count that IncludedRunTargets already gives; its doc claims more | Open | S6 |
 | [W4-11](#w4-11) | Unused | Low | ServiceValidation.HasErrors is unused | Open | S6 |
-| [W4-18](#w4-18) | Unused | Low | TabbedServiceViewModel's optional parts have one user, which supplies all of them | Open | S6 |
+| [W4-18](#w4-18) | Unused | Low | TabbedServiceViewModel's optional parts have one user, which supplies all of them | Deferred | After 3.0 |
 | [W3-19](#w3-19) | Unused | Low | SettingsViewModel.IsOnline is never bound or read | Open | S6 |
 | [W3-22](#w3-22) | Unused | Low | Redundant "no entries" guards before ComputeReadiness | Open | S6 |
 | [W3-20](#w3-20) | Unused | Low | ShellViewModel.VersionBrushKey and IsOnline are bindable properties nothing binds | Open | S6 |
@@ -419,7 +419,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### T1b-21 · Test-only · Low · ReadArea's no-`Area` fallback is reached only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed, changed: remove the fallback and give the tests that rely on it an `Area` ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs:47-73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs#L47-L73); tests relying on it include [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Airports/AirportSettingsParserTests.cs:97-102`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Airports/AirportSettingsParserTests.cs#L97-L102), [`Airports/AirportServiceTests.cs:128-143`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Airports/AirportServiceTests.cs#L128-L143), 186-198, [`Navaids/NavaidServiceTests.cs:61-99`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Navaids/NavaidServiceTests.cs#L61-L99), [`Fixes/FixServiceTests.cs:59-71`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Fixes/FixServiceTests.cs#L59-L71), [`Fixes/FixSettingsParserTests.cs:563-577`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Fixes/FixSettingsParserTests.cs#L563-L577), [`WxStations/WxStationServiceTests.cs:66-96`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/WxStations/WxStationServiceTests.cs#L66-L96), [`WxStations/WxStationSettingsParserTests.cs:258-272`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/WxStations/WxStationSettingsParserTests.cs#L258-L272), [`ArtccBoundaries/ArtccBoundarySettingsParserTests.cs:73-82`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/ArtccBoundaries/ArtccBoundarySettingsParserTests.cs#L73-L82), [`ArtccBoundaries/ArtccBoundaryServiceTests.cs:62-84`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/ArtccBoundaries/ArtccBoundaryServiceTests.cs#L62-L84)
 
@@ -509,7 +509,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C6-27 · Test-only · Low · UserConfigMigrationContext.Move, ChangeValue and Values are used only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed: keep ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigMigrationContext.cs:24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigMigrationContext.cs#L24), 43-72, 74-85
 
@@ -923,7 +923,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-19 · Unused · Low · ConversionTabViewModel is an extra layer with exactly one subclass
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Deferred ([Q6](010_Decisions.md#q6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ConversionTabViewModel.cs:21-108`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ConversionTabViewModel.cs#L21-L108); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs:38`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs#L38), 250, 290
 
@@ -1009,7 +1009,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-20 · Unused · Low · Card interfaces with a single implementer, used only for design-time DataContext
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Deferred ([Q6](010_Decisions.md#q6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/IGeojsonFileChoices.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/IGeojsonFileChoices.cs), [`ICrcDefaultsChoice.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ICrcDefaultsChoice.cs), [`IAreaSettings.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/IAreaSettings.cs), [`IPreviewOptions.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/IPreviewOptions.cs)
 
@@ -1109,7 +1109,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-18 · Unused · Low · TabbedServiceViewModel's optional parts have one user, which supplies all of them
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Deferred ([Q6](010_Decisions.md#q6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/TabbedServiceViewModel.cs:15-28`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/TabbedServiceViewModel.cs#L15-L28), 52-54, 60-64, 129-145, 158-172
 

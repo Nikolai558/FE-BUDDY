@@ -22,7 +22,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </para>
 /// <para>
 /// <see cref="SubServiceDescriptor.Key"/> is persisted in <c>UserConfig</c> under
-/// <c>Services.AiracService.SelectedSubServices</c> and <c>Services.AiracService.Outputs.&lt;Key&gt;</c>,
+/// <c>Services.AiracService.General.SelectedSubServices</c> and <c>Services.AiracService.General.Outputs.&lt;Key&gt;</c>,
 /// so renaming a key loses what was saved under the old one.
 /// </para>
 /// </remarks>

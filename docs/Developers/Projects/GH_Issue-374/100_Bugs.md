@@ -4,25 +4,26 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
 
-**46 findings** (1 High, 12 Med, 33 Low), 1 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**47 findings** (2 High, 11 Med, 34 Low), 13 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
-| [W2-1](#w2-1) | Bug | High | General tab's Save and "Undo last save" act on the whole `Services.AiracService` subtree | Open | S1 |
-| [O1-1](#o1-1) | Bug | Med | Docs-only PRs skip Test and Installer, but the tests and the MSI read docs/*.md and LICENSE.md | Open | S1 |
-| [C1-1](#c1-1) | Bug | Med | A current cycle the probe calls "not yet published" leaves the AIRAC Service "Waiting" forever | Open | S1 |
-| [C3-18](#c3-18) | Bug | Med | An empty `Combined_Alias.txt` can be written | Open | S1 |
-| [C3-17](#c3-17) | Bug | Med | A custom alias file's address with a secret is echoed when it isn't http(s) | Open | S1 |
-| [C5-1](#c5-1) | Bug | Med | DAT and SCT conversions silently overwrite a file when two sources share a name | Open | S1 |
-| [U1-3](#u1-3) | Bug | Med | Pages can be built from empty settings before the launch sequence has read them | Open | S1 |
-| [W7-3](#w7-3) | Bug | Med | A settings file that can't be written crashes FE-Buddy when the default ROI is saved or cleared (and the write runs on the UI thread) | Open | S1 |
-| [W2-11](#w2-11) | Bug | Med | An exception before the run's `try` crashes the app | Open | S1 |
+| [W2-1](#w2-1) | Bug | High | General tab's Save and "Undo last save" act on the whole `Services.AiracService` subtree | Fixed | S1 |
+| [N1-4](#n1-4) | Bug | High | A save can wipe the settings file when it can't read it for a moment | Fixed | S1 |
+| [O1-1](#o1-1) | Bug | Med | Docs-only PRs skip Test and Installer, but the tests and the MSI read docs/*.md and LICENSE.md | Fixed | S1 |
+| [C1-1](#c1-1) | Bug | Med | A current cycle the probe calls "not yet published" leaves the AIRAC Service "Waiting" forever | Fixed | S1 |
+| [C3-18](#c3-18) | Bug | Med | An empty `Combined_Alias.txt` can be written | Fixed | S1 |
+| [C5-1](#c5-1) | Bug | Med | DAT and SCT conversions silently overwrite a file when two sources share a name | Fixed | S1 |
+| [U1-3](#u1-3) | Bug | Med | Pages can be built from empty settings before the launch sequence has read them | Fixed | S1 |
+| [W7-3](#w7-3) | Bug | Med | A settings file that can't be written crashes FE-Buddy when the default ROI is saved or cleared (and the write runs on the UI thread) | Fixed | S1 |
+| [W2-11](#w2-11) | Bug | Med | An exception before the run's `try` crashes the app | Fixed | S1 |
 | [W1-14](#w1-14) | Bug | Med | Switching the cycle silently undoes unsaved ticks in the cycle-built lists | Open | S1 |
-| [W1-13](#w1-13) | Bug | Med | Unticking every Procedures.json field gives the 8 default fields | Open | S1 |
-| [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Open | S1 |
+| [W1-13](#w1-13) | Bug | Med | Unticking every Procedures.json field gives the 8 default fields | Fixed | S1 |
+| [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Fixed | S1 |
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
+| [C3-17](#c3-17) | Bug | Low | A custom alias file's address with a secret is echoed when it isn't http(s) | Deferred | After 3.0 |
 | [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Open | S2 |
 | [C1-2](#c1-2) | Bug | Low | A cancelled run can leave a cycle's parse permanently "cancelled" for the session | Open | S2 |
 | [C1-3](#c1-3) | Bug | Low | Procedure Charts' optional previous-cycle NASR load can fail the whole run; GetAsync's exception doc is incomplete | Open | S2 |
@@ -30,16 +31,16 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [C3-16](#c3-16) | Bug | Low | NAVAIDs' "nothing written" advisory: one branch unreachable, wrong text when NASR has no NAVAIDs | Open | S2 |
 | [C4-11](#c4-11) | Bug | Low | IncludesProceduresWithFixInFacility returns true when the rule can't run, so the run loads (or waits for) the previous cycle's NASR for nothing | Open | S2 |
 | [C5-8](#c5-8) | Bug | Low | Card-mode warning says elements "carry only their filters", but they carry filter 0 | Open | S2 |
-| [C1-4](#c1-4) | Bug | Low | AppEnvironment.RecheckAsync moves the AIRAC date, so the GUI can name a cycle the cache doesn't track | Open | S2 |
+| [C1-4](#c1-4) | Bug | Low | AppEnvironment.RecheckAsync moves the AIRAC date, so the GUI can name a cycle the cache doesn't track | Deferred | After 3.0 |
 | [C5-23](#c5-23) | Bug | Low | ROI validation accepts "NaN" | Open | S2 |
-| [C6-29](#c6-29) | Bug | Low | Shared.json's layout stamp is written but never read, so a future step can't reach shared settings | Open | S2 |
+| [C6-29](#c6-29) | Bug | Low | Shared.json's layout stamp is written but never read, so a future step can't reach shared settings | Agreed, changed | S2 |
 | [C6-23](#c6-23) | Bug | Low | CredentialStore leaves the Basic sign-in's UTF-8 bytes (user:password) uncleared, contrary to its own rule | Open | S2 |
-| [C5-22](#c5-22) | Bug | Low | DAT and SCT readers never throw InvalidDataException, so a wrong file is an advisory, not a failed file | Open | S2 |
+| [C5-22](#c5-22) | Bug | Low | DAT and SCT readers never throw InvalidDataException, so a wrong file is an advisory, not a failed file | Deferred | After 3.0 |
 | [C7-10](#c7-10) | Bug | Low | A 404 for the previous cycle is logged as "not published by the FAA yet" | Open | S2 |
 | [O1-30](#o1-30) | Bug | Low | A failure building the setup window cancels the install instead of falling back | Open | S2 |
 | [O1-23](#o1-23) | Bug | Low | Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM | Open | S2 |
 | [T1c-26](#t1c-26) | Bug | Low | Two tests read the clock twice and can fail at 0000Z | Open | S2 |
-| [W7-4](#w7-4) | Bug | Low | The "last-chance" crash handler only sees exceptions on the UI thread | Open | S1 |
+| [W7-4](#w7-4) | Bug | Low | The "last-chance" crash handler only sees exceptions on the UI thread | Fixed | S1 |
 | [W6-3](#w6-3) | Bug | Low | The "Towered Airports" layer would include any airport whose tower code has no display mapping, e.g. `TRACON` | Open | S2 |
 | [W7-22](#w7-22) | Bug | Low | Card.Popup casts its shadow upwards, onto the map toolbar for the two map menus | Open | S2 |
 | [W2-8](#w2-8) | Bug | Low | A run can start before the selected cycle's lists exist, and silently drops CRC defaults | Open | S2 |
@@ -63,7 +64,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W2-1 · Bug · High · General tab's Save and "Undo last save" act on the whole `Services.AiracService` subtree
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged). The General tab saves under `Services.AiracService.General`, beside the other tabs' nodes, with no settings-layout step: a file with the old keys opens the General tab on its defaults ([Q1](010_Decisions.md#q1)). Tests: `AiracGeneralTabViewModelTests.the_general_tabs_save_and_undo_never_reach_another_tabs_settings`, and `UserConfigLayoutTests.no_settings_node_sits_inside_another` for [H5](010_Decisions.md#h5); both fail on the old node. The layout guard lists the three old keys as left behind on purpose. Settings-Reference.md updated · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:22-23`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L22-L23), 36, 76
 
@@ -71,13 +72,25 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 **Proposed:** Give the General tab a node of its own, e.g. `Services.AiracService.General` (`AiracCycleId`, `SelectedSubServices`, `Outputs.*`), with a `UserConfigMigrations` step that moves the three keys, and update `IsSavedOutputOn`, ProceduresViewModel:476, Settings-Reference.md and the tests' fixtures. Then reword the remark to "It owns `Services.AiracService.General` ...". (Alternative: let `UserConfigFile.Save/Undo/CanUndo` take the child nodes to leave alone, but a separate node is simpler.)
 
+<a id="n1-4"></a>
+
+### N1-4 · Bug · High · A save can wipe the settings file when it can't read it for a moment
+
+**Status:** Fixed (not yet merged); found while fixing [W7-3](#w7-3). Data loss, but it needs the file to be locked at the moment of a save, so it is rare. Tests: `UserConfigFileTests.save_and_undo_never_write_over_a_profile_they_cannot_read`, `write_refuses_after_the_profile_could_not_be_read_at_launch` and `a_locked_re_read_keeps_the_settings_read_before_but_never_another_profiles` · **Session:** [S1](020_Work-Plan.md#s1)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:793-808`](https://github.com/Nikolai558/FE-BUDDY/blob/85991050e44eb6d26e828ba22c12de6e6f9437ff/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L793-L808) (`LoadObjectOrEmpty`), used by `Save` ([:404](https://github.com/Nikolai558/FE-BUDDY/blob/85991050e44eb6d26e828ba22c12de6e6f9437ff/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L404)), `Undo` ([:531](https://github.com/Nikolai558/FE-BUDDY/blob/85991050e44eb6d26e828ba22c12de6e6f9437ff/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L531)) and `UpdateSharedFile` ([:691](https://github.com/Nikolai558/FE-BUDDY/blob/85991050e44eb6d26e828ba22c12de6e6f9437ff/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L691)); `ReadAll` ([:206-212](https://github.com/Nikolai558/FE-BUDDY/blob/85991050e44eb6d26e828ba22c12de6e6f9437ff/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L206-L212)) and `Write` ([:220](https://github.com/Nikolai558/FE-BUDDY/blob/85991050e44eb6d26e828ba22c12de6e6f9437ff/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L220))
+
+**Problem:** `Save` and `Undo` read the profile's file with `LoadObjectOrEmpty`, which gives an empty object when the file is there but can't be read: locked for a moment by antivirus or a sync tool, or no permission. The save then writes that empty object, plus the one node being saved, back over the file: every other setting in the profile is gone. `UpdateSharedFile` did the same to `Shared.json` (every shared setting, and the active profile's name). And a `ReadAll` that met such a lock dropped every setting in memory to its default; a Settings ▸ **Save** (`Write`) after it wrote those defaults over the file.
+
+**Fix:** `Save`, `Undo` and `UpdateSharedFile` read with `LoadObjectToUpdate`, which throws on a file that is there but can't be read (a file that isn't valid JSON is still replaced, as before). `ReadAll` keeps the settings it last read when the same profile is locked on a re-read; at launch or after a profile switch there is nothing to keep, so it uses defaults and `Write` refuses until a read succeeds.
+
 ## Med
 
 <a id="o1-1"></a>
 
 ### O1-1 · Bug · Med · Docs-only PRs skip Test and Installer, but the tests and the MSI read docs/*.md and LICENSE.md
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), as agreed: `ci.yml` has no `Changes` job any more, so Build, Test and Installer run on every pull request; its header comment and the developer README's Continuous integration section say so. No unit test: it is workflow configuration, and the next docs-only pull request shows it. If the rulesets list a `Changes` check as required, take it off · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`.github/workflows/ci.yml:12-17`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/.github/workflows/ci.yml#L12-L17), [`.github/workflows/ci.yml:66-73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/.github/workflows/ci.yml#L66-L73)
 
@@ -89,7 +102,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C1-1 · Bug · Med · A current cycle the probe calls "not yet published" leaves the AIRAC Service "Waiting" forever
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), as proposed: `ComputeReadiness` treats a current cycle that is `NotYetPublished` as `Unavailable`. The AIRAC Service's message now says to check the internet connection (a proxy or firewall) and the PC's clock; the status line and the Systems row say the cycle "couldn't be loaded"/"couldn't be downloaded or read". `Unavailable`'s doc and Architecture.md's readiness table updated. Test: `AiracCycleDataCacheTests.a_current_cycle_that_is_not_published_is_unavailable_not_waiting` · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs:540-550`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs#L540-L550); [`FeBuddy/FeBuddy.Core/Infrastructure/Nasr/AiracCycleAvailability.cs:102-105`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Nasr/AiracCycleAvailability.cs#L102-L105); [`FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs:695-700`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs#L695-L700)
 
@@ -101,7 +114,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C3-18 · Bug · Med · An empty `Combined_Alias.txt` can be written
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), as proposed: when the run wrote no alias file and no custom file has a line of its own (an old upload that was only FE-Buddy's section, an empty file, a lone `.FeUseOnly`), nothing is written, an earlier file is deleted, and an advisory says why. Test: `CombinedAliasFileWriterTests.custom_files_with_no_aliases_of_their_own_and_no_run_aliases_write_no_file` (on the old code the file was written) · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/ConcatenateAliases/CombinedAliasFileWriter.cs:156`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/ConcatenateAliases/CombinedAliasFileWriter.cs#L156),167-175,203-216
 
@@ -109,23 +122,11 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 **Proposed:** Treat it as nothing to merge: `if (feBuddy.Count == 0 && custom.All(f => f.Lines.Count == 0))`.
 
-<a id="c3-17"></a>
-
-### C3-17 · Bug · Med · A custom alias file's address with a secret is echoed when it isn't http(s)
-
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
-
-**Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/ConcatenateAliases/ConcatenateAliasesSettingsParser.cs:195-206`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/ConcatenateAliases/ConcatenateAliasesSettingsParser.cs#L195-L206)
-
-**Problem:** `ftp://user:token@host/file` (or `sftp://...?...token=`) parses as an absolute URI, fails the scheme check and is echoed in the exception, which reaches the Review tab and the log, so the secret check never runs.
-
-**Proposed:** Check `UrlSecrets.Describe(uri)` first when `Uri.TryCreate` succeeds, and drop `'{url}'` from the non-http(s) message ("...'s web address is not an http:// or https:// address.").
-
 <a id="c5-1"></a>
 
 ### C5-1 · Bug · Med · DAT and SCT conversions silently overwrite a file when two sources share a name
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), as agreed: each run keeps the output names it has used, and a clashing source is written as `ZOB (2)` (SCT: its folder) with `ConversionFiles.UniqueFileName`, with an Info message saying so. A file that writes nothing doesn't take a name. Tests: `DatToGeojsonServiceTests.two_maps_with_one_name_are_both_kept`, `SctToGeojsonServiceTests.two_sector_files_with_one_name_get_a_folder_each` · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Conversions/DatToGeojson/DatGeojsonWriter.cs:66`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/DatToGeojson/DatGeojsonWriter.cs#L66); [`FeBuddy/FeBuddy.Core/Application/Conversions/SctToGeojson/SctGeojsonWriter.cs:69`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/SctToGeojson/SctGeojsonWriter.cs#L69); [`FeBuddy/FeBuddy.Core/Application/Conversions/SctToGeojson/SctToGeojsonService.cs:26`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/SctToGeojson/SctToGeojsonService.cs#L26)
 
@@ -137,7 +138,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### U1-3 · Bug · Med · Pages can be built from empty settings before the launch sequence has read them
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), as agreed. The read step (read the settings, the welcome check, the output preferences, the first launch's update channel) is `LaunchSequence.ReadSettings`, which `App.OnStartup` runs on the UI thread before the window is built; it then passes `LaunchOptions.SettingsRead`, so `RunAsync` doesn't read them again. Architecture.md's Launch section updated. Test: `LaunchSequenceTests.settings_read_before_the_window_are_there_at_once_and_not_read_again` · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Launch/LaunchSequence.cs:92-120`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/LaunchSequence.cs#L92-L120); [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:81`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L81); [`FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml.cs:42`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml.cs#L42),51-60; [`FeBuddy/FeBuddy.Wpf/ViewModels/FileConversionsViewModel.cs:50-52`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FileConversionsViewModel.cs#L50-L52)
 
@@ -149,7 +150,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W7-3 · Bug · Med · A settings file that can't be written crashes FE-Buddy when the default ROI is saved or cleared (and the write runs on the UI thread)
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged). Every GUI save and undo goes through `SettingsWrites` (`FeBuddy.Wpf/Shell`): a settings file that can't be written or read is logged and shown as an error, never thrown, and the settings are read again so nothing takes the change for saved; the page keeps the user's change and stays unsaved, so saving again tries again. `DefaultRoiStore.Set`/`Clear` return whether they saved and raise `Changed` only then; the Settings page stays unsaved if its write or the ROI fails. The writes still run on the UI thread (that lag is [W3-1](110_GUI-Lag.md#w3-1) and [C6-30](110_GUI-Lag.md#c6-30)). Tests: `SettingsWritesTests` (on the old code the save threw). Fixing it turned up [N1-4](#n1-4) · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs:56-79`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs#L56-L79); [`FeBuddy/FeBuddy.Wpf/ViewModels/DefaultRoiTarget.cs:42-54`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DefaultRoiTarget.cs#L42-L54); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:717-729`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L717-L729)
 
@@ -163,7 +164,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W2-11 · Bug · Med · An exception before the run's `try` crashes the app
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged). Both `RunAsync`s (AIRAC Service, File Conversions) have one `try` from their first line: a failure before the run starts is logged and shown as "didn't start" with the reason; once it has started, as "failed", as before. ERAM's `ConfirmRun` is inside it too. No unit test of its own: the run methods open windows. The main way in, a save that throws, is covered by [W7-3](#w7-3)'s tests · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:67`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L67), 520-587; [`FeBuddy/FeBuddy.Wpf/ViewModels/FileConversionsViewModel.cs:58`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FileConversionsViewModel.cs#L58), 238-264; [`EramToGeojsonViewModel.cs:159-162`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/EramToGeojsonViewModel.cs#L159-L162)
 
@@ -177,7 +178,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W1-14 · Bug · Med · Switching the cycle silently undoes unsaved ticks in the cycle-built lists
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Open: Nikolas asks why the lists are rebuilt at all. The parse is cached; each cycle's option lists differ and are re-derived on the UI thread ([U1-1](110_GUI-Lag.md#u1-1)). Likely done with U1-1, keeping the on-screen ticks when the cached lists are swapped in. Re-checked at `4773137` · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs:245-261`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs#L245-L261); [`FixesViewModel.cs:241-303`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs#L241-L303); [`AirwaysViewModel.cs:211-224`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs#L211-L224); [`ProceduresViewModel.cs:892-922`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L892-L922)
 
@@ -191,7 +192,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W1-13 · Bug · Med · Unticking every Procedures.json field gives the 8 default fields
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), allowing "none" as Nikolas leans; Kyle still to agree. Core uses the defaults only when `JsonFields` is absent and reads a blank one as no optional field; the tab reads a saved blank `JsonFields` (and `ChartTypes`) back as blank. The Harness now sends the default list itself, so its runs are unchanged. If "none" shouldn't be allowed after all, keep the Core change and add a `Validate` rule. Settings-Reference.md updated. Tests: `ProcedureSettingsParserTests.blank_json_fields_mean_none_of_the_optional_fields`, `ProceduresViewModelTests.every_json_field_unticked_stays_unticked_and_is_sent_blank` · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:991`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L991), 1157-1175, 1211
 
@@ -203,7 +204,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W3-15 · Bug · Med · Reset window says settings backups are always deleted, but a reset that keeps settings keeps them
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), the second option: the backups line is gone from `AlwaysDeleted`, and `SettingsLoss` starts "Every settings profile and its backups (the copies Undo last save and Import keep)". Tests: `ResetViewModelTests.every_reset_lists_what_always_goes`, and `AppDataResetTests.keeping_the_settings_keeps_each_profiles_backups` with the profile backups' real names · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ResetViewModel.cs:22-29`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ResetViewModel.cs#L22-L29)
 
@@ -215,7 +216,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C1-5 · Bug · Med · The update's relaunch inherits msiexec's elevation
 
-**Status:** Fixed by Nikolas in [#377](https://github.com/Nikolai558/FE-BUDDY/pull/377) (afd1d39). Follow-up: [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378). · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed by Nikolas in [#377](https://github.com/Nikolai558/FE-BUDDY/pull/377) (afd1d39), and confirmed on a Windows 11 VM. Follow-up: [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378). · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/UpdateWindowViewModel.cs:252-256`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/UpdateWindowViewModel.cs#L252-L256); [`FeBuddy/FeBuddy.Installer.UI/ViewModels/SetupViewModel.cs:768-795`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Installer.UI/ViewModels/SetupViewModel.cs#L768-L795); [`FeBuddy/FeBuddy.Installer/Package.wxs:86-91`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Installer/Package.wxs#L86-L91); [`FeBuddy/FeBuddy.Core/Application/Updates/UpdateInstaller.cs:11-15`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Updates/UpdateInstaller.cs#L11-L15)
 
@@ -224,6 +225,18 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 **Proposed:** Relaunch FE-Buddy un-elevated as the signed-in user, e.g. start it through `explorer.exe "<path>\FE-BUDDY.exe"` from the setup UI, or another de-elevation route; then test "Update now" on a standard account with over-the-shoulder credentials.
 
 ## Low
+
+<a id="c3-17"></a>
+
+### C3-17 · Bug · Low · A custom alias file's address with a secret is echoed when it isn't http(s)
+
+**Status:** Deferred, and lowered from Med to Low: partly true. The parser would echo the address, but the GUI rejects a non-http(s) address first and blocks the run, so a user can't reach it (re-checked at `4773137`). Revisit if anyone asks for FTP or other non-web sources; the fix is then to drop `'{url}'` from that one message · **Session:** [After 3.0](020_Work-Plan.md#after-30)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/ConcatenateAliases/ConcatenateAliasesSettingsParser.cs:195-206`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/ConcatenateAliases/ConcatenateAliasesSettingsParser.cs#L195-L206)
+
+**Problem:** `ftp://user:token@host/file` (or `sftp://...?...token=`) parses as an absolute URI, fails the scheme check and is echoed in the exception, which reaches the Review tab and the log, so the secret check never runs.
+
+**Proposed:** Check `UrlSecrets.Describe(uri)` first when `Uri.TryCreate` succeeds, and drop `'{url}'` from the non-http(s) message ("...'s web address is not an http:// or https:// address.").
 
 <a id="o1-42"></a>
 
@@ -315,7 +328,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C1-4 · Bug · Low · AppEnvironment.RecheckAsync moves the AIRAC date, so the GUI can name a cycle the cache doesn't track
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Deferred: FE-Buddy should handle a new cycle without a restart (closest to B); the approach is still to be worked out ([Q2](010_Decisions.md#q2)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Launch/AppEnvironment.cs:33-38`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/AppEnvironment.cs#L33-L38), 49-57, 107-111
 
@@ -339,7 +352,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C6-29 · Bug · Low · Shared.json's layout stamp is written but never read, so a future step can't reach shared settings
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Agreed, changed: option (b), bring Shared.json forward too, before 3.0, with a test ([Q4](010_Decisions.md#q4)) · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:665-678`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L665-L678), 720, 181-189, 892
 
@@ -363,7 +376,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C5-22 · Bug · Low · DAT and SCT readers never throw InvalidDataException, so a wrong file is an advisory, not a failed file
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Deferred: agreed that a wrong file fails, as ERAM's does; check a few real DAT and SCT files first ([Q3](010_Decisions.md#q3)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Dat/DatFileReader.cs:39-43`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Dat/DatFileReader.cs#L39-L43),66-124; [`FeBuddy/FeBuddy.Core/Infrastructure/Sct/SctFileReader.cs:30-33`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Sct/SctFileReader.cs#L30-L33),66-119; [`FeBuddy/FeBuddy.Core/Application/Conversions/ConversionFiles.cs:114-118`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/ConversionFiles.cs#L114-L118); [`docs/Developers/Code-Structure.md:268-269`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L268-L269)
 
@@ -425,7 +438,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W7-4 · Bug · Low · The "last-chance" crash handler only sees exceptions on the UI thread
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), the first option. `App` also hooks `AppDomain.CurrentDomain.UnhandledException`, which writes the same crash report (now `CrashReport`, written straight to disk, not through the log's background writer), and logs `TaskScheduler.UnobservedTaskException`. Architecture.md updated. Tests: `CrashReportTests`; the hooks themselves can't be unit-tested · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:18-23`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L18-L23),54,116-143; [`docs/Developers/Architecture.md:307-308`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L307-L308)
 

@@ -239,6 +239,37 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 		Assert.True(result.Messages[1].IsAdvisory);
 	}
 
+	/// <summary>
+	/// Custom files with no aliases of their own - last cycle's upload that was only FE-Buddy's section,
+	/// an empty file, a lone .FeUseOnly line - and no alias file from the run: an empty file uploaded
+	/// would empty the facility's aliases, so none is written and an earlier one is deleted.
+	/// </summary>
+	[Fact]
+	public void custom_files_with_no_aliases_of_their_own_and_no_run_aliases_write_no_file()
+	{
+		CombinedAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
+		string oldUpload = Lines(
+			"; ===== FE-Buddy aliases (AIRAC 2609) start here. FE-Buddy replaces everything down to the end line every cycle. =====",
+			".J60F .FF OLD",
+			End);
+
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
+			[Read(1, "Combined_Alias.txt", oldUpload), Read(2, "empty.txt", string.Empty), Read(3, "header.txt", ".FeUseOnly ZOB")],
+			[],
+			"2610",
+			_output);
+
+		Assert.Null(result.FilePath);
+		Assert.False(File.Exists(CombinedAliasPath));
+		ServiceMessage warning = result.Messages[^1];
+		Assert.Equal(LogLevel.Warning, warning.Level);
+		Assert.True(warning.IsAdvisory);
+		Assert.Equal(
+			"Combined_Alias.txt was not written: the custom alias files have no aliases of their own, and the run wrote no alias file. " +
+			"The one an earlier run wrote was deleted, so it cannot be uploaded by mistake.",
+			warning.Text);
+	}
+
 	[Fact]
 	public void nothing_to_merge_deletes_the_file_an_earlier_run_wrote()
 	{

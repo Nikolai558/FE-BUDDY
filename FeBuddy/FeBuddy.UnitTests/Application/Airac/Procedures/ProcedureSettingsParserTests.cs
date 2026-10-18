@@ -493,6 +493,19 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Equal(8, parsed.JsonFields.Count);
 	}
 
+	/// <summary>Every optional field unticked is a choice: only the fields always written, never the defaults.</summary>
+	[Fact]
+	public void blank_json_fields_mean_none_of_the_optional_fields()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["JsonFields"] = "";
+
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
+
+		Assert.Empty(result.Settings.JsonFields);
+		Assert.Empty(result.Messages.WarningTexts());
+	}
+
 	[Fact]
 	public void json_fields_parse_known_names_and_dedupe()
 	{

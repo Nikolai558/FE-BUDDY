@@ -710,21 +710,26 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			UserConfigFile.TrySetValue(ArtccKey, SelectedFacility!);
 		}
 
-		UserConfigFile.Write();
+		if (!SettingsWrites.TryWrite("settings"))
+		{
+			return;
+		}
+
 		FacilitySaved?.Invoke(this, EventArgs.Empty);
 
 		// Only an ROI set or cleared here: an untouched one is left as the Map page last saved it.
+		bool roiSaved = true;
+
 		if (IsRoiPending)
 		{
+			RegionOfInterest? previous = _savedRoi;
 			_savedRoi = DefaultRoi;
+			roiSaved = DefaultRoi is { } roi ? DefaultRoiStore.Set(roi) : DefaultRoiStore.Clear();
 
-			if (DefaultRoi is { } roi)
+			if (!roiSaved)
 			{
-				DefaultRoiStore.Set(roi);
-			}
-			else
-			{
-				DefaultRoiStore.Clear();
+				// Everything else is saved; the ROI is still to save, so the page stays unsaved.
+				_savedRoi = previous;
 			}
 		}
 
@@ -733,8 +738,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		_savedChannel = Channel;
 		_savedState = SavedStateSnapshot.Of(CurrentValues());
-		IsDirty = false;
-		Toast.Success("Settings saved", $"Saved to the {UserConfigFile.ActiveProfile} profile.");
+		IsDirty = !roiSaved;
+
+		if (roiSaved)
+		{
+			Toast.Success("Settings saved", $"Saved to the {UserConfigFile.ActiveProfile} profile.");
+		}
 
 		// A new channel is checked straight away: its newer releases, or - running a pre-release after
 		// choosing a more stable channel - its latest release to go back to.

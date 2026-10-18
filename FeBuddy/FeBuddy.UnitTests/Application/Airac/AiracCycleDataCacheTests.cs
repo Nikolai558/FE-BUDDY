@@ -295,6 +295,27 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		Assert.Equal(AiracCycleReadiness.Unavailable, cache.ComputeReadiness());
 	}
 
+	/// <summary>
+	/// The FAA always has the current cycle, so one the probe calls not yet published (a proxy
+	/// answering 403, a PC clock set ahead) is unavailable, not something to wait for forever.
+	/// </summary>
+	[Fact]
+	public async Task a_current_cycle_that_is_not_published_is_unavailable_not_waiting()
+	{
+		AiracCycleDataCache cache = new(
+			probe: (cycle, _) => Task.FromResult(
+				cycle.AiracCycleId == Current.AiracCycleId
+					? AiracCyclePublicationState.NotYetPublished
+					: AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Equal(CycleDataState.NotYetPublished, cache.GetEntry("2610")!.State);
+		Assert.Equal(AiracCycleReadiness.Unavailable, cache.ComputeReadiness());
+	}
+
 	[Fact]
 	public async Task readiness_is_ready_when_next_is_not_yet_published()
 	{

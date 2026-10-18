@@ -370,6 +370,31 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.True(LegacyGitHubTokenNotice.HasBeenShown);
 	}
 
+	/// <summary>
+	/// The app reads the settings before it builds any page (<see cref="LaunchSequence.ReadSettings"/>),
+	/// so a page never starts from defaults; the launch then doesn't read them again, which would drop
+	/// what a page has set in memory meanwhile.
+	/// </summary>
+	[Fact]
+	public async Task settings_read_before_the_window_are_there_at_once_and_not_read_again()
+	{
+		const string key = "Services.AiracService.Airways.OutputBy";
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+		Directory.CreateDirectory(UserConfigFile.Directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, """{ "ConfigVersion": 2, "Services": { "AiracService": { "Airways": { "OutputBy": "HighLow" } } } }""");
+
+		Assert.True(LaunchSequence.ReadSettings("3.0.0", LaunchOptions.Normal));
+		Assert.Equal("HighLow", UserConfigFile.GetValue(key));
+
+		UserConfigFile.TrySetValue(key, "Designation");
+		RecordingProgress progress = new();
+
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal with { SettingsRead = true }, progress);
+
+		Assert.Equal("Designation", UserConfigFile.GetValue(key));
+		Assert.DoesNotContain(progress.Reports, report => report.Step == LaunchStep.ReadUserConfig);
+	}
+
 	/// <summary>Issue #351: the first launch leaves the welcome for the shell; a launch after it doesn't.</summary>
 	[Fact]
 	public async Task the_first_launch_leaves_the_welcome_for_the_shell_once()

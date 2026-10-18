@@ -259,15 +259,24 @@ public static class ProcedureSettingsParser
 		return (chartTypes, messages);
 	}
 
-	/// <summary>Parses <c>JsonFields</c>, defaulting to <see cref="DefaultJsonFields"/> when absent or blank.</summary>
+	/// <summary>
+	/// Parses <c>JsonFields</c>: <see cref="DefaultJsonFields"/> when it is absent, and none of the
+	/// optional fields when it is blank - the user unticked them all, and gets only the fields that
+	/// are always written.
+	/// </summary>
 	private static (IReadOnlyCollection<ProcedureJsonField> Fields, IReadOnlyList<ServiceMessage> Messages) ParseJsonFields(
 		IReadOnlyDictionary<string, string> procedureSettings)
 	{
+		if (!procedureSettings.ContainsKey("JsonFields"))
+		{
+			return (DefaultJsonFields, []);
+		}
+
 		IReadOnlyList<string> raw = SettingsValueReader.StringList(procedureSettings, "JsonFields");
 
 		if (raw.Count == 0)
 		{
-			return (DefaultJsonFields, []);
+			return ([], []);
 		}
 
 		List<ProcedureJsonField> fields = [];

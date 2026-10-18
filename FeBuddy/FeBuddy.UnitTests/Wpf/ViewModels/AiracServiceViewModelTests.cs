@@ -47,7 +47,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 	[Fact]
 	public void a_sub_service_left_out_keeps_its_tab_greyed_out_with_a_tooltip()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", "Airports");
+		UserConfigFile.TrySetValue("Services.AiracService.General.SelectedSubServices", "Airports");
 
 		AiracServiceViewModel screen = new();
 
@@ -66,7 +66,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 	[Fact]
 	public void next_steps_over_greyed_out_tabs()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", "Fixes");
+		UserConfigFile.TrySetValue("Services.AiracService.General.SelectedSubServices", "Fixes");
 
 		AiracServiceViewModel screen = new();
 		screen.NextCommand.Execute(null);
@@ -77,7 +77,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 	[Fact]
 	public void including_a_sub_service_brings_its_tab_back()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", "Airports");
+		UserConfigFile.TrySetValue("Services.AiracService.General.SelectedSubServices", "Airports");
 		AiracServiceViewModel screen = new();
 		AiracGeneralTabViewModel general = Assert.IsType<AiracGeneralTabViewModel>(screen.Tabs[0]);
 
@@ -91,7 +91,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 	[Fact]
 	public void with_nothing_included_there_is_no_file_names_or_preview_tab()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", string.Empty);
+		UserConfigFile.TrySetValue("Services.AiracService.General.SelectedSubServices", string.Empty);
 
 		AiracServiceViewModel screen = new();
 
@@ -102,7 +102,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 	[Fact]
 	public void add_custom_aliases_comes_in_while_an_included_sub_service_makes_an_alias_file()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", "Fixes");
+		UserConfigFile.TrySetValue("Services.AiracService.General.SelectedSubServices", "Fixes");
 		AiracServiceViewModel screen = new();
 		ServiceTabViewModel concatenate = TabTitled(screen, "Add Custom Aliases");
 		Assert.False(concatenate.IsAvailable);
@@ -127,7 +127,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 	[Fact]
 	public void the_combined_alias_file_is_listed_for_renaming_while_an_alias_file_is_written()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", "Airports");
+		UserConfigFile.TrySetValue("Services.AiracService.General.SelectedSubServices", "Airports");
 		AiracServiceViewModel screen = new();
 		FileNamesViewModel fileNames = Assert.IsType<FileNamesViewModel>(TabTitled(screen, "File Names"));
 		ConcatenateAliasesViewModel addCustom = Assert.IsType<ConcatenateAliasesViewModel>(TabTitled(screen, "Add Custom Aliases"));

@@ -164,9 +164,9 @@ release workflow commits it ([why](VERSIONING.md#the-msis-own-version-number)).
 
 `.github/workflows/ci.yml` runs on pushes and pull requests to `v3-development` and pull requests
 into `releases`: **Build**, **Test** (the coverage gate) and **Installer** (the MSI, kept a day for
-testing). CodeQL runs separately, on pull requests and pushes to both branches, and weekly. A pull
-request into `v3-development` that changes only `.md` files outside `FeBuddy/` skips Build, Test
-and Installer - except the root `News.md`, which is built into the app.
+testing). CodeQL runs separately, on pull requests and pushes to both branches, and weekly. Every
+pull request runs all three, documentation-only ones included: the tests read the docs (their links
+and every file's encoding).
 
 ## Odds and ends
 

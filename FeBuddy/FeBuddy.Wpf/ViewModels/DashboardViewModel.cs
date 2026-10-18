@@ -266,7 +266,7 @@ public sealed class DashboardViewModel : ObservableObject
 		if (news is { ParseSucceeded: true, LatestPostId: { } latest })
 		{
 			UserConfigFile.TrySetValue(UserConfigKeys.NewsLastOpen, latest.ToString());
-			UserConfigFile.Save("General");
+			SettingsWrites.TrySave("General", "News you have read");
 			NewsButtonHighlighted = false;
 		}
 	}

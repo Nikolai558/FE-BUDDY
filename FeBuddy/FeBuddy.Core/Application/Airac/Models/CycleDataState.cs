@@ -46,7 +46,10 @@ public enum AiracCycleReadiness
 	/// <summary>The service unlocks, but the previous and/or next cycle failed and is unselectable.</summary>
 	Degraded = 2,
 
-	/// <summary>The current cycle failed; the service stays disabled.</summary>
+	/// <summary>
+	/// The current cycle failed, or the FAA seemed not to have it (a proxy or firewall answering for its
+	/// site, or the PC's clock set ahead); the service stays disabled.
+	/// </summary>
 	Unavailable = 3,
 
 	/// <summary>

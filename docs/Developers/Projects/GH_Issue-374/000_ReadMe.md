@@ -36,11 +36,11 @@ And the user manuals: they should be very short. Anything that isn't common sens
 
 ## Where we are
 
-As of 2026-10-17: the review is done and Nikolas has answered every decision and question in [010_Decisions.md](010_Decisions.md). **1 of 664 findings fixed** so far; 21 are deferred to [after 3.0](020_Work-Plan.md#after-30).
+As of 2026-10-17: the review is done and Nikolas has answered every decision and question in [010_Decisions.md](010_Decisions.md). **1 of 664 findings fixed** so far; 22 are deferred to [after 3.0](020_Work-Plan.md#after-30).
 
 | File | Findings | High | Med | Low | Done | Session |
 |---|---:|---:|---:|---:|---:|---|
-| [100_Bugs.md](100_Bugs.md) | 46 | 1 | 12 | 33 | 1 | [S1](020_Work-Plan.md#s1), [S2](020_Work-Plan.md#s2) |
+| [100_Bugs.md](100_Bugs.md) | 46 | 1 | 11 | 34 | 1 | [S1](020_Work-Plan.md#s1), [S2](020_Work-Plan.md#s2) |
 | [110_GUI-Lag.md](110_GUI-Lag.md) | 29 | 2 | 10 | 17 |  | [S3](020_Work-Plan.md#s3), [S4](020_Work-Plan.md#s4) |
 | [120_Logic-In-GUI.md](120_Logic-In-GUI.md) | 24 |  | 3 | 21 |  | [S5](020_Work-Plan.md#s5) |
 | [130_Old-Version-Code.md](130_Old-Version-Code.md) | 17 |  | 5 | 12 |  | [S6](020_Work-Plan.md#s6) |
@@ -53,7 +53,7 @@ As of 2026-10-17: the review is done and Nikolas has answered every decision and
 | [500_Developer-Docs.md](500_Developer-Docs.md) | 36 | 1 | 4 | 31 |  | [S11](020_Work-Plan.md#s11) |
 | [600_User-Docs-Proposal.md](600_User-Docs-Proposal.md) | 69 sections | | | | | [S12](020_Work-Plan.md#s12) |
 | [610_On-Screen-Text.md](610_On-Screen-Text.md) | 16 |  | 1 | 15 |  | [S12](020_Work-Plan.md#s12) |
-| **Total** | **664** | **4** | **59** | **601** | **1** | |
+| **Total** | **664** | **4** | **58** | **602** | **1** | |
 
 **Done so far:** [C1-5](100_Bugs.md#c1-5), fixed by Nikolas ([#377](https://github.com/Nikolai558/FE-BUDDY/pull/377)).
 

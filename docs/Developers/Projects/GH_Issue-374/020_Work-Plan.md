@@ -5,7 +5,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 ## How the work runs
 
 1. The team settles [010_Decisions.md](010_Decisions.md).
-2. Each session below becomes one Claude Code brief and one pull request. A big session can be split. A brief is written from these files once the decisions it depends on are in, and covers only findings whose Status is Open or Agreed.
+2. Each session below becomes one Claude Code brief and one pull request. A big session can be split. A brief is written from these files once the decisions it depends on are in, and covers only findings whose Status is Agreed or Agreed, changed.
 3. When the pull request merges, the Status of every finding it closed is updated, and the session is ticked on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 **Order.** S1 first. S3 to S5 move code into Core, and S6 deletes code and does the [H4](010_Decisions.md#h4) renames, so do them before S7 and S8: fixing comments on code that moves, goes or is renamed is wasted work. S12 comes late because S3 to S5 may change GUI text. S13 is last. What was deferred is listed under [After 3.0](#after-30).
@@ -14,7 +14,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 | Session | What | Findings | Files |
 |---|---|---:|---|
-| [S1](#s1) | Fix-first bugs, plus [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | 14 + [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | [100](100_Bugs.md) |
+| [S1](#s1) | Fix-first bugs, plus [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | 13 + [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | [100](100_Bugs.md) |
 | [S2](#s2) | The other bugs, plus [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) and [Q7](010_Decisions.md#q7) | 29 + 2 | [100](100_Bugs.md) |
 | [S3](#s3) | GUI lag: AIRAC Service and File Conversions | 15 | [110](110_GUI-Lag.md) |
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | 14 | [110](110_GUI-Lag.md) |
@@ -27,7 +27,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S11](#s11) | Developer docs and house rules | 34 | [500](500_Developer-Docs.md) |
 | [S12](#s12) | User docs and on-screen text | 85 | [600](600_User-Docs-Proposal.md), [610](610_On-Screen-Text.md) |
 | [S13](#s13) | Final pass | - | - |
-| [After 3.0](#after-30) | Deferred by the decisions | 21 | - |
+| [After 3.0](#after-30) | Deferred by the decisions | 22 | - |
 
 Counts are the findings each session still has to do, duplicates and deferred findings left out; "+ n" is work the decisions added that isn't a finding. S12 includes the 69 sections of the user-docs proposal.
 
@@ -40,18 +40,19 @@ The bugs to fix before anything else, each with a regression test.
 | ID | Bug | Status |
 |---|---|---|
 | [W2-1](100_Bugs.md#w2-1) | The General tab saves and undoes the whole `Services.AiracService` settings node. Saving any other tab (or setting a default ROI on the Map) turns on the General tab's **Undo last save**, and clicking it wipes every saved AIRAC Service setting. Decided ([Q1](010_Decisions.md#q1)): the General tab gets its own node, with no settings-layout step, and a test for [H5](010_Decisions.md#h5). | Agreed, changed |
-| [U1-3](100_Bugs.md#u1-3) | Settings are read on a background thread at launch, after the temp folder is cleared. File Conversions is built from settings when the window goes idle, and nothing reloads it. If it's built first it shows defaults, and saving it can overwrite the user's saved settings with them. | Open |
+| [U1-3](100_Bugs.md#u1-3) | Settings are read on a background thread at launch, after the temp folder is cleared. File Conversions is built from settings when the window goes idle, and nothing reloads it. If it's built first it shows defaults, and saving it can overwrite the user's saved settings with them. | Agreed |
 | [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10) | Switching the cycle on the General tab quietly throws away unsaved ticks in the lists built from the cycle. The tab still shows as unsaved. | Open |
 | [W1-13](100_Bugs.md#w1-13) | Unticking every Procedures.json field sends `JsonFields=""`, which Core reads as "use the 8 defaults". The run writes the fields the user turned off. | Open |
-| [C1-1](100_Bugs.md#c1-1) | If the probe says the *current* cycle is "not yet published" (a proxy answering 403, a PC clock set ahead), the AIRAC Service waits forever with no error. | Open |
-| [C5-1](100_Bugs.md#c5-1) | DAT and SCT conversions overwrite each other's output when two sources share a name (`ZOB.sct` and `ZOB.sct2`), with no warning. | Open |
-| [C3-18](100_Bugs.md#c3-18) | `Combined_Alias.txt` can be written empty. Uploading it would wipe the facility's aliases. | Open |
-| [C3-17](100_Bugs.md#c3-17) | A secret in a non-http address (`ftp://user:token@host/…`) ends up in the error message, the Review tab and the log. | Open |
-| [W3-15](100_Bugs.md#w3-15) | The Reset window says settings backups are always deleted. A reset that keeps settings keeps them. | Open |
-| [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4) | A settings file that can't be written (antivirus lock, read-only folder) crashes the app on several GUI paths. The crash handler only catches UI-thread exceptions, so a background crash leaves no crash file. | Open |
-| [O1-1](100_Bugs.md#o1-1) | Pull requests that only change docs skip the Test job, but the tests read `docs/*.md` (link anchors, file encoding). A doc-only PR can break `v3-development` and still merge. | Open |
+| [C1-1](100_Bugs.md#c1-1) | If the probe says the *current* cycle is "not yet published" (a proxy answering 403, a PC clock set ahead), the AIRAC Service waits forever with no error. | Agreed |
+| [C5-1](100_Bugs.md#c5-1) | DAT and SCT conversions overwrite each other's output when two sources share a name (`ZOB.sct` and `ZOB.sct2`), with no warning. | Agreed |
+| [C3-18](100_Bugs.md#c3-18) | `Combined_Alias.txt` can be written empty. Uploading it would wipe the facility's aliases. | Agreed |
+| [W3-15](100_Bugs.md#w3-15) | The Reset window says settings backups are always deleted. A reset that keeps settings keeps them. | Agreed |
+| [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4) | A settings file that can't be written (antivirus lock, read-only folder) crashes the app on several GUI paths. The crash handler only catches UI-thread exceptions, so a background crash leaves no crash file. | W7-3, W2-11: Agreed, changed; W7-4: Open |
+| [O1-1](100_Bugs.md#o1-1) | Pull requests that only change docs skip the Test job, but the tests read `docs/*.md` (link anchors, file encoding). A doc-only PR can break `v3-development` and still merge. | Agreed, changed |
 | [C1-5](100_Bugs.md#c1-5) | After an update, FE-Buddy relaunched **elevated** from inside msiexec, as the admin who approved it. | Fixed ([#377](https://github.com/Nikolai558/FE-BUDDY/pull/377)) |
 | [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | Declining the administrator prompt during an update makes setup say FE-Buddy is up to date. Comes from the [C1-5](100_Bugs.md#c1-5) fix. See [Related issues](#related-issues). | Open |
+
+[C3-17](100_Bugs.md#c3-17) was deferred and lowered to Low: the GUI rejects a non-http(s) address before a run can reach it.
 
 <a id="s2"></a>
 
@@ -157,6 +158,7 @@ Deferred by the decisions. Each finding's Status says what was agreed. S11 adds 
 | One Core constant for the d-TPP timing, and a look for other values hard-coded in more than one place | [C7-9](200_Comments-Core.md#c7-9) (the wording itself is fixed before 3.0) | [D4](010_Decisions.md#d4) |
 | Handle a new AIRAC cycle during a session without a restart | [C1-4](100_Bugs.md#c1-4) | [Q2](010_Decisions.md#q2) |
 | A wrong DAT or SCT file fails | [C5-22](100_Bugs.md#c5-22) | [Q3](010_Decisions.md#q3) |
+| Keep a secret in a non-http(s) custom alias address out of the error message, if non-web sources are ever allowed | [C3-17](100_Bugs.md#c3-17) | Re-check at `4773137` |
 | GUI framework simplifications | [W4-18](140_Unused-Code.md#w4-18), [W4-19](140_Unused-Code.md#w4-19), [W4-20](140_Unused-Code.md#w4-20) | [Q6](010_Decisions.md#q6) |
 | Delete the alpha.1 News stub | [C7-1](130_Old-Version-Code.md#c7-1) | [D1](010_Decisions.md#d1) |
 

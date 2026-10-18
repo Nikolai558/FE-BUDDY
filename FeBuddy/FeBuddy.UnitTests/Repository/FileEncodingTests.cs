@@ -7,10 +7,13 @@ namespace FeBuddy.UnitTests.Repository;
 /// </summary>
 public sealed class FileEncodingTests
 {
-	/// <summary>Build output and tool folders: not the repository's own files.</summary>
+	/// <summary>
+	/// Build output and tool folders, among them <c>build.ps1</c>'s output (<c>publish</c> and
+	/// <c>releases</c>): not the repository's own files.
+	/// </summary>
 	private static readonly HashSet<string> SkippedFolders = new(StringComparer.OrdinalIgnoreCase)
 	{
-		".git", ".vs", "bin", "obj", "TestResults",
+		".git", ".vs", "bin", "obj", "TestResults", "publish", "releases",
 	};
 
 	/// <summary>

@@ -2,21 +2,28 @@
 
 setlocal enabledelayedexpansion
 
+rem Every bin and obj folder under .\FeBuddy, however deep, so a new project is covered too.
+rem .\FeBuddy\releases holds the built MSI, so nothing under it is touched.
+for /d /r ".\FeBuddy" %%d in (bin obj) do (
+    if exist "%%d\" (
+        set "folder=%%d"
+        if /i "!folder:\FeBuddy\releases\=!"=="!folder!" (
+            echo Deleting %%d
+            rmdir /s /q "%%d"
+        )
+    )
+)
+
+rem build.ps1's publish output and coverage.ps1's results.
 for %%d in (
-    ".\FeBuddy\FeBuddy.Core\bin"
-    ".\FeBuddy\FeBuddy.Wpf\bin"
-    ".\FeBuddy\FeBuddy.Harness\bin"
-    ".\FeBuddy\FeBuddy.UnitTests\bin"
-    ".\FeBuddy\FeBuddy.Versioning\bin"
-    ".\FeBuddy\FeBuddy.Installer.CustomActions\bin"
-    ".\FeBuddy\FeBuddy.Installer\bin"
+    ".\FeBuddy\publish"
+    ".\FeBuddy\TestResults"
 ) do (
-    if exist "%%d" (
-        echo Deleting all files and folders in %%d
-        for /D %%i in ("%%d\*") do rmdir "%%i" /s /q
-        del /q "%%d\*.*"
+    if exist "%%~d\" (
+        echo Deleting %%~d
+        rmdir /s /q "%%~d"
     ) else (
-        echo %%d does not exist.
+        echo %%~d does not exist.
     )
 )
 

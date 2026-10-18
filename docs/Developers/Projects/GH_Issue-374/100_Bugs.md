@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
 
-**47 findings** (2 High, 11 Med, 34 Low), 23 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**47 findings** (2 High, 11 Med, 34 Low), 28 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -24,7 +24,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Fixed | S1 |
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
 | [C3-17](#c3-17) | Bug | Low | A custom alias file's address with a secret is echoed when it isn't http(s) | Deferred | After 3.0 |
-| [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Open | S2 |
+| [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Fixed | S2 |
 | [C1-2](#c1-2) | Bug | Low | A cancelled run can leave a cycle's parse permanently "cancelled" for the session | Fixed | S2 |
 | [C1-3](#c1-3) | Bug | Low | Procedure Charts' optional previous-cycle NASR load can fail the whole run; GetAsync's exception doc is incomplete | Fixed | S2 |
 | [C2-3](#c2-3) | Bug | Low | Waypoint buffering can remove an airway from Airways.txt, and runs on alias-only runs | Fixed | S2 |
@@ -39,7 +39,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [C7-10](#c7-10) | Bug | Low | A 404 for the previous cycle is logged as "not published by the FAA yet" | Fixed | S2 |
 | [O1-30](#o1-30) | Bug | Low | A failure building the setup window cancels the install instead of falling back | Open | S2 |
 | [O1-23](#o1-23) | Bug | Low | Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM | Open | S2 |
-| [T1c-26](#t1c-26) | Bug | Low | Two tests read the clock twice and can fail at 0000Z | Open | S2 |
+| [T1c-26](#t1c-26) | Bug | Low | Two tests read the clock twice and can fail at 0000Z | Fixed | S2 |
 | [W7-4](#w7-4) | Bug | Low | The "last-chance" crash handler only sees exceptions on the UI thread | Fixed | S1 |
 | [W6-3](#w6-3) | Bug | Low | The "Towered Airports" layer would include any airport whose tower code has no display mapping, e.g. `TRACON` | Open | S2 |
 | [W7-22](#w7-22) | Bug | Low | Card.Popup casts its shadow upwards, onto the map toolbar for the two map menus | Open | S2 |
@@ -54,9 +54,9 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W4-7](#w4-7) | Bug | Low | A folder that exists but can't be listed is reported as "does not exist" | Open | S2 |
 | [W1-7](#w1-7) | Bug | Low | Telephony's "real operator" note counts expired U.S. special call signs, which the run drops | Open | S2 |
 | [W5-3](#w5-3) | Bug | Low | Error tooltips never show on CRC ERAM Defaults drop-downs or on the fan-marker style box | Open | S2 |
-| [O1-2](#o1-2) | Bug | Low | Any CPU never builds FeBuddy.UnitTests | Open | S2 |
-| [T2-8](#t2-8) | Bug | Low | NasrCsvParserMappingTests computes expected numbers with the PC's culture | Open | S2 |
-| [T2-9](#t2-9) | Bug | Low | FileEncodingTests walks build.ps1's `publish\` and `releases\` output | Open | S2 |
+| [O1-2](#o1-2) | Bug | Low | Any CPU never builds FeBuddy.UnitTests | Fixed | S2 |
+| [T2-8](#t2-8) | Bug | Low | NasrCsvParserMappingTests computes expected numbers with the PC's culture | Fixed | S2 |
+| [T2-9](#t2-9) | Bug | Low | FileEncodingTests walks build.ps1's `publish\` and `releases\` output | Fixed | S2 |
 
 ## High
 
@@ -242,7 +242,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### O1-42 · Bug · Low · DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), the loop: it deletes every `bin` and `obj` folder under `.\FeBuddy`, however deep, then `publish` and `TestResults`, and leaves `releases` (the MSI) alone. It still echoes what it deletes and pauses. The Developers README says so too ([D1b-18](500_Developer-Docs.md#d1b-18)). No test (a batch file); checked on a copy of the folder layout · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`DEV-CleanBuild.bat:5-13`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/DEV-CleanBuild.bat#L5-L13)
 
@@ -426,7 +426,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### T1c-26 · Bug · Low · Two tests read the clock twice and can fail at 0000Z
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: both tests read the date before and after the call, check the date falls in that range, and accept the cycle for either date. Test code only · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Application/Launch/AppEnvironmentTests.cs:31-38`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Launch/AppEnvironmentTests.cs#L31-L38); [`FeBuddy/FeBuddy.UnitTests/Domain/Airac/AiracCycleResolverTests.cs:137-144`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Domain/Airac/AiracCycleResolverTests.cs#L137-L144)
 
@@ -614,7 +614,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### O1-2 · Bug · Low · Any CPU never builds FeBuddy.UnitTests
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: the `Release|Any CPU.Build.0` line is added for FeBuddy.UnitTests; the x64 and x86 platforms stay. `dotnet build FeBuddy/FeBuddy.sln -c Release` now builds the tests. No test (a solution file) · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.sln:37-38`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.sln#L37-L38)
 
@@ -626,7 +626,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### T2-8 · Bug · Low · NasrCsvParserMappingTests computes expected numbers with the PC's culture
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: `Convert` parses with the invariant culture and `NasrCsvReader`'s own number styles. Test code only · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Nasr/Parsers/NasrCsvParserMappingTests.cs:222-251`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Infrastructure/Nasr/Parsers/NasrCsvParserMappingTests.cs#L222-L251)
 
@@ -638,7 +638,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### T2-9 · Bug · Low · FileEncodingTests walks build.ps1's `publish\` and `releases\` output
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: `SkippedFolders` adds `publish` and `releases`, and its summary names them as `build.ps1`'s output. Test code only · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Repository/FileEncodingTests.cs:10-14`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Repository/FileEncodingTests.cs#L10-L14)
 

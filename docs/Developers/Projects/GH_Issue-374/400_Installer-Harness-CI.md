@@ -19,20 +19,20 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 | [O1-37](#o1-37) | Wrong doc | Low | Test-ReleaseReadiness: skipped step "reported, as a warning" | Open | S10 |
 | [O1-38](#o1-38) | Stale doc | Low | Coverage comments: Core only, and "the map logic" | Open | S10 |
 | [O1-39](#o1-39) | Minor | Low | Release PRs build the MSI twice | Open | S10 |
-| [O1-4](#o1-4) | Unused | Med | Harness runners are switched by commented-out code that no longer compiles when uncommented | Open | S10 |
-| [O1-13](#o1-13) | Unused | Low | Stopwatches started and never read in three runners | Open | S10 |
-| [O1-15](#o1-15) | Unused | Low | AirwayAliasRunner / AliasOnlySettings duplicate what the unit tests cover | Open | S10 |
-| [O1-10](#o1-10) | Stale doc | Low | Harness class summaries: "airway-related output", "all console formatting", "every toggle" | Open | S10 |
-| [O1-11](#o1-11) | Wrong doc | Low | ConsoleReport printer docs don't match the printing | Open | S10 |
-| [O1-14](#o1-14) | Unused | Low | Harness references NetTopologySuite packages it never uses | Open | S10 |
-| [O1-17](#o1-17) | Minor | Low | Harness hard-codes one developer's machine paths and literal file keys | Open | S10 |
-| [O1-5](#o1-5) | History wording | Low | Planning-doc phase numbers in HarnessSettings (the TODO.md item) | Open | S10 |
-| [O1-6](#o1-6) | Wrong doc | Low | "omit any of these and the parser uses the same default" is wrong for the designation lists | Open | S10 |
-| [O1-7](#o1-7) | History wording | Low | History/planning phrases in HarnessSettings | Open | S10 |
-| [O1-8](#o1-8) | Wrong doc | Low | HarnessSettings summaries say every key is "listed with its default value" | Open | S10 |
-| [O1-9](#o1-9) | Wrong doc | Low | ARTCC Boundaries "HighLowUnlimited adds a third, Unlimited-only file" | Open | S10 |
-| [O1-16](#o1-16) | Minor | Low | Harness members without XML docs (the TODO.md standard) | Open | S10 |
-| [O1-12](#o1-12) | Wrong doc | Low | WxStationRunner: "Unlike every other runner" | Open | S10 |
+| [O1-4](#o1-4) | Unused | Med | Harness runners are switched by commented-out code that no longer compiles when uncommented | Deferred | After 3.0 |
+| [O1-13](#o1-13) | Unused | Low | Stopwatches started and never read in three runners | Deferred | After 3.0 |
+| [O1-15](#o1-15) | Unused | Low | AirwayAliasRunner / AliasOnlySettings duplicate what the unit tests cover | Deferred | After 3.0 |
+| [O1-10](#o1-10) | Stale doc | Low | Harness class summaries: "airway-related output", "all console formatting", "every toggle" | Deferred | After 3.0 |
+| [O1-11](#o1-11) | Wrong doc | Low | ConsoleReport printer docs don't match the printing | Deferred | After 3.0 |
+| [O1-14](#o1-14) | Unused | Low | Harness references NetTopologySuite packages it never uses | Deferred | After 3.0 |
+| [O1-17](#o1-17) | Minor | Low | Harness hard-codes one developer's machine paths and literal file keys | Deferred | After 3.0 |
+| [O1-5](#o1-5) | History wording | Low | Planning-doc phase numbers in HarnessSettings (the TODO.md item) | Deferred | After 3.0 |
+| [O1-6](#o1-6) | Wrong doc | Low | "omit any of these and the parser uses the same default" is wrong for the designation lists | Deferred | After 3.0 |
+| [O1-7](#o1-7) | History wording | Low | History/planning phrases in HarnessSettings | Deferred | After 3.0 |
+| [O1-8](#o1-8) | Wrong doc | Low | HarnessSettings summaries say every key is "listed with its default value" | Deferred | After 3.0 |
+| [O1-9](#o1-9) | Wrong doc | Low | ARTCC Boundaries "HighLowUnlimited adds a third, Unlimited-only file" | Deferred | After 3.0 |
+| [O1-16](#o1-16) | Minor | Low | Harness members without XML docs (the TODO.md standard) | Deferred | After 3.0 |
+| [O1-12](#o1-12) | Wrong doc | Low | WxStationRunner: "Unlike every other runner" | Deferred | After 3.0 |
 | [O1-20](#o1-20) | History wording | Low | "This is what our previous attempt was missing." | Open | S10 |
 | [O1-22](#o1-22) | Wrong doc | Low | Get-InstallerVersion says it counts releases; it counts every build | Open | S10 |
 | [O1-19](#o1-19) | Unused | Low | Unused localization string DowngradeError | Open | S10 |
@@ -210,7 +210,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-4 · Unused · Med · Harness runners are switched by commented-out code that no longer compiles when uncommented
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/Program.cs:3-6`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/Program.cs#L3-L6), 43-68, 73-74; [`docs/Developers/README.md:114-115`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/README.md?plain=1#L114-L115)
 
@@ -226,7 +226,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-13 · Unused · Low · Stopwatches started and never read in three runners
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/AirportRunner.cs:1`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/AirportRunner.cs#L1), 24, 28; [`FeBuddy/FeBuddy.Harness/AirwayAliasRunner.cs:1`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/AirwayAliasRunner.cs#L1), 17, 21; [`FeBuddy/FeBuddy.Harness/AirwayGeojsonRunner.cs:1`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/AirwayGeojsonRunner.cs#L1), 18, 22
 
@@ -240,7 +240,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-15 · Unused · Low · AirwayAliasRunner / AliasOnlySettings duplicate what the unit tests cover
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/AirwayAliasRunner.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/AirwayAliasRunner.cs) (whole file); [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:552-562`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L552-L562); [`FeBuddy/FeBuddy.Harness/Program.cs:46-47`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/Program.cs#L46-L47)
 
@@ -254,7 +254,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-10 · Stale doc · Low · Harness class summaries: "airway-related output", "all console formatting", "every toggle"
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/ConsoleReport.cs:19-22`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/ConsoleReport.cs#L19-L22); [`FeBuddy/FeBuddy.Harness/Program.cs:10-14`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/Program.cs#L10-L14); [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:5-9`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L5-L9)
 
@@ -268,7 +268,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-11 · Wrong doc · Low · ConsoleReport printer docs don't match the printing
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/ConsoleReport.cs:112-113`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/ConsoleReport.cs#L112-L113), 167-168, 433-436, 460-462
 
@@ -282,7 +282,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-14 · Unused · Low · Harness references NetTopologySuite packages it never uses
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/FeBuddy.Harness.csproj:12-13`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/FeBuddy.Harness.csproj#L12-L13)
 
@@ -296,7 +296,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-17 · Minor · Low · Harness hard-codes one developer's machine paths and literal file keys
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:13`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L13), 16, 19, 27, 33-35, 137, 209, 272, 322, 370, 417
 
@@ -310,7 +310,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-5 · History wording · Low · Planning-doc phase numbers in HarnessSettings (the TODO.md item)
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:71-73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L71-L73), 81, 84, 85
 
@@ -326,7 +326,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-6 · Wrong doc · Low · "omit any of these and the parser uses the same default" is wrong for the designation lists
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:71-72`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L71-L72), 77-79
 
@@ -340,7 +340,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-7 · History wording · Low · History/planning phrases in HarnessSettings
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:87-88`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L87-L88), 552-555
 
@@ -354,7 +354,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-8 · Wrong doc · Low · HarnessSettings summaries say every key is "listed with its default value"
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:110-112`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L110-L112), 161-163, 223-225, 286-288, 344-346, 389-391, 438-439, 476-478
 
@@ -368,7 +368,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-9 · Wrong doc · Low · ARTCC Boundaries "HighLowUnlimited adds a third, Unlimited-only file"
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/HarnessSettings.cs:354-357`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L354-L357)
 
@@ -382,7 +382,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-16 · Minor · Low · Harness members without XML docs (the TODO.md standard)
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/Program.cs:17`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/Program.cs#L17); [`AirwayAliasRunner.cs:15`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/AirwayAliasRunner.cs#L15); [`AirwayGeojsonRunner.cs:16`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/AirwayGeojsonRunner.cs#L16); [`ConsoleReport.cs:25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/ConsoleReport.cs#L25), 27, 32, 484; [`HarnessSettings.cs:868`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/HarnessSettings.cs#L868)
 
@@ -398,7 +398,7 @@ The installer, the setup window, the custom actions, the Harness ([D6](010_Decis
 
 ### O1-12 · Wrong doc · Low · WxStationRunner: "Unlike every other runner"
 
-**Status:** Open · **Session:** [S10](020_Work-Plan.md#s10)
+**Status:** Deferred: the Harness stays, and its cleanup waits until after 3.0 ([D6](010_Decisions.md#d6)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Harness/WxStationRunner.cs:14-17`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Harness/WxStationRunner.cs#L14-L17)
 

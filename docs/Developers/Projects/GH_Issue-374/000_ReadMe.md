@@ -36,7 +36,7 @@ And the user manuals: they should be very short. Anything that isn't common sens
 
 ## Where we are
 
-As of 2026-10-16: the review is done and the team is settling the decisions. **1 of 664 findings fixed** so far.
+As of 2026-10-17: the review is done and Nikolas has answered every decision and question in [010_Decisions.md](010_Decisions.md). **1 of 664 findings fixed** so far; 21 are deferred to [after 3.0](020_Work-Plan.md#after-30).
 
 | File | Findings | High | Med | Low | Done | Session |
 |---|---:|---:|---:|---:|---:|---|
@@ -59,15 +59,15 @@ As of 2026-10-16: the review is done and the team is settling the decisions. **1
 
 **Since the review:** Nikolas opened [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) (a side effect of the [C1-5](100_Bugs.md#c1-5) fix, now part of [S1](020_Work-Plan.md#s1)) and [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) (low risk; timing is [Q9](010_Decisions.md#q9)). See [020_Work-Plan.md](020_Work-Plan.md#related-issues).
 
-**Next:** the team settles [010_Decisions.md](010_Decisions.md); then the sessions in [020_Work-Plan.md](020_Work-Plan.md) start, S1 first.
+**Next:** Kyle confirms the one open detail ([D3](010_Decisions.md#d3)); then the sessions in [020_Work-Plan.md](020_Work-Plan.md) start, S1 first.
 
 ## The files
 
 | File | What it's for |
 |---|---|
 | `000_ReadMe.md` | This page: what the project is, how the files work, how to take part. |
-| [010_Decisions.md](010_Decisions.md) | Kyle's proposed decisions (D1 to D7), the open questions (Q1 to Q10), proposed house rules (H1 to H4), and the log of what was decided. **Read this first.** |
-| [020_Work-Plan.md](020_Work-Plan.md) | The work split into sessions S1 to S13, each one Claude Code brief and one pull request; the Fix-first bugs; notes on the related issues. |
+| [010_Decisions.md](010_Decisions.md) | Kyle's proposed decisions (D1 to D7), the questions (Q1 to Q10), the house rules (H1 to H5), and the log of what was decided. **Read this first.** |
+| [020_Work-Plan.md](020_Work-Plan.md) | The work split into sessions S1 to S13, each one Claude Code brief and one pull request; the Fix-first bugs; what was deferred to after 3.0; notes on the related issues. |
 | [100_Bugs.md](100_Bugs.md) | Things that behave wrongly. |
 | [110_GUI-Lag.md](110_GUI-Lag.md) | Work done on the UI thread. |
 | [120_Logic-In-GUI.md](120_Logic-In-GUI.md) | Business rules in view-models that belong in Core. |
@@ -125,7 +125,7 @@ An ID is the review slice that found it, then a number: `C6-30` is the 30th find
 | D2 | User manuals (findings are sections of the manuals) |
 | N1 | Found after the review, in code merged since |
 
-Decisions (`D1` to `D7`), questions (`Q1` to `Q10`), house rules (`H1` to `H4`) and sessions (`S1` to `S13`) have no hyphen, so `D2` (a decision) and `D2-46` (a user-docs finding) can't be confused.
+Decisions (`D1` to `D7`), questions (`Q1` to `Q10`), house rules (`H1` to `H5`) and sessions (`S1` to `S13`) have no hyphen, so `D2` (a decision) and `D2-46` (a user-docs finding) can't be confused.
 
 ### Kinds
 
@@ -157,13 +157,14 @@ The user-docs proposal uses verdicts instead: Cut, Move into the GUI, Keep (shor
 | Open | Not settled yet. Every finding starts here. |
 | Agreed | The team agreed with the proposal; it's ready for its session. |
 | Agreed, changed | Agreed with a different fix; the Status line says what changed. |
+| Deferred | Agreed, but done after 3.0; the Status line says what was agreed. Listed under [After 3.0](020_Work-Plan.md#after-30). |
 | Won't fix | Leaving it, with the reason. |
 | Fixed | Done, with the pull request (and commit). |
 | Partly fixed | Some done; the Status line says what's left. |
 
 ### Session
 
-The session in [020_Work-Plan.md](020_Work-Plan.md) that will fix it.
+The session in [020_Work-Plan.md](020_Work-Plan.md) that will fix it, or After 3.0.
 
 ## Which code the review read
 

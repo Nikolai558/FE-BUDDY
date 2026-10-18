@@ -20,7 +20,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1b-5](#d1b-5) | History wording | Low | "still parses all 24" | Open | S11 |
 | [D1b-6](#d1b-6) | Wrong doc | Low | Output layout bullet leaves out Publication_Docs and the duplicate report | Open | S11 |
 | [D1b-7](#d1b-7) | Minor | Low | Designation rule names no class in a list where "each rule lives in one class" | Open | S11 |
-| [D1b-10](#d1b-10) | Minor | Low | Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root | Open | S11 |
+| [D1b-10](#d1b-10) | Minor | Low | Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root | Agreed | S6 |
 | [D1b-9](#d1b-9) | Stale doc | Low | Code-Structure's folder maps miss some major types | Open | S11 |
 | [W5-22](#w5-22) | Stale doc | Low | Code-Structure's folder map leaves out Views/Models | Open | S11 |
 | [W7-26](#w7-26) | Stale doc | Low | Code-Structure's Shell/ list misses the window-placement files | Open | S11 |
@@ -45,7 +45,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1a-8](#d1a-8) | Wrong doc | Low | "Adding a setting" step 3 doesn't fit Add Custom Aliases, SCT2, the numbered lists, or the harness | Open | S11 |
 | [D1b-16](#d1b-16) | Stale doc | Low | TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests | Open | S11 |
 | [O1-36](#o1-36) | Wrong doc | Low | VERSIONING.md: the version check keeps only "the user's channel" | Open | S11 |
-| [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Open | S11 |
+| [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Agreed, changed | S6 |
 
 ## docs
 
@@ -210,7 +210,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-10 · Minor · Low · Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Code-Structure.md:111`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L111); [`FeBuddy/FeBuddy.Core/Application/Launch/DevLaunchSettings.cs:24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/DevLaunchSettings.cs#L24)
 
@@ -583,7 +583,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-1 · Unused · High · Remove CRC's AliasParser.cs from the repository before the public release
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Agreed, changed: delete it because nothing needs it any more. The CRC developer gave permission to host it, so it is not a licensing problem, and git history is left alone ([D2](010_Decisions.md#d2), [Q10](010_Decisions.md#q10)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Reference/AliasParser.cs:1-554`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Reference/AliasParser.cs#L1-L554); [`docs/Developers/Reference/README.md:1-15`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Reference/README.md?plain=1#L1-L15); [`docs/README.md:25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/README.md?plain=1#L25)
 

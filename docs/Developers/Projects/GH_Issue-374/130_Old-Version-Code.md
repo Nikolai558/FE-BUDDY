@@ -10,23 +10,23 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
-| [C3-1](#c3-1) | Old-version code | Med | The old single `vatsim_radar_airlines.json` (3.0.0-beta.4 and earlier): full inventory, remove it | Open | S6 |
-| [C6-2](#c6-2) | Old-version code | Med | beta.1-beta.3's single `%APPDATA%\FE-Buddy\UserConfig.json` moved in as the Default profile | Open | S6 |
-| [C6-3](#c6-3) | Old-version code | Med | AdoptSharedSettings only ever meets a beta.2/beta.3 file | Open | S6 |
-| [C6-1](#c6-1) | Old-version code | Med | Settings layout 1 -> 2 step (the only UserConfigMigration step): beta.2-beta.5 settings | Open | S6 |
-| [T1a-20](#t1a-20) | Old-version code | Med | Tests for settings blocks written before the Area setting (3.0.0-beta.5 and earlier) | Open | S6 |
-| [C4-12](#c4-12) | Old-version code | Low | Parser still reads IncludeRoiAirports for a block without Area (3.0.0-beta.5 and earlier) | Open | S6 |
-| [C1-16](#c1-16) | Old-version code | Low | 2.x upgrade steps at launch - keep for the public release | Open | S6 |
-| [C1-17](#c1-17) | Old-version code | Low | REINSTALLMODE=amus on the update command line only matters for going back to a 2.x MSI - keep | Open | S6 |
-| [T3-30](#t3-30) | Old-version code | Low | A tab with no saved area works it out from pre-Area settings | Open | S6 |
-| [C6-5](#c6-5) | Old-version code | Low | TempWorkspace deletes the crash report 3.0.0-alpha.1/alpha.2 left in %TEMP% | Open | S6 |
-| [C7-1](#c7-1) | Old-version code | Low | `FeBuddy.Core/News.md` stub is read only by 3.0.0-alpha.1. Keep it until 3.0.0 ships, then delete it | Open | S6 |
-| [O1-24](#o1-24) | Old-version code | Low | Installer window falls back to the 32-bit registry view no MSI ever wrote | Open | S6 |
-| [T1b-6](#t1b-6) | Old-version code | Low | CombinedAliasFileWriterTests cover a combined file uploaded from 3.0.0-alpha.2 or earlier | Open | S6 |
+| [C3-1](#c3-1) | Old-version code | Med | The old single `vatsim_radar_airlines.json` (3.0.0-beta.4 and earlier): full inventory, remove it | Agreed | S6 |
+| [C6-2](#c6-2) | Old-version code | Med | beta.1-beta.3's single `%APPDATA%\FE-Buddy\UserConfig.json` moved in as the Default profile | Agreed | S6 |
+| [C6-3](#c6-3) | Old-version code | Med | AdoptSharedSettings only ever meets a beta.2/beta.3 file | Agreed | S6 |
+| [C6-1](#c6-1) | Old-version code | Med | Settings layout 1 -> 2 step (the only UserConfigMigration step): beta.2-beta.5 settings | Agreed | S6 |
+| [T1a-20](#t1a-20) | Old-version code | Med | Tests for settings blocks written before the Area setting (3.0.0-beta.5 and earlier) | Agreed | S6 |
+| [C4-12](#c4-12) | Old-version code | Low | Parser still reads IncludeRoiAirports for a block without Area (3.0.0-beta.5 and earlier) | Agreed | S6 |
+| [C1-16](#c1-16) | Old-version code | Low | 2.x upgrade steps at launch - keep for the public release | Agreed | S6 |
+| [C1-17](#c1-17) | Old-version code | Low | REINSTALLMODE=amus on the update command line only matters for going back to a 2.x MSI - keep | Agreed | S6 |
+| [T3-30](#t3-30) | Old-version code | Low | A tab with no saved area works it out from pre-Area settings | Agreed | S6 |
+| [C6-5](#c6-5) | Old-version code | Low | TempWorkspace deletes the crash report 3.0.0-alpha.1/alpha.2 left in %TEMP% | Agreed | S6 |
+| [C7-1](#c7-1) | Old-version code | Low | `FeBuddy.Core/News.md` stub is read only by 3.0.0-alpha.1. Keep it until 3.0.0 ships, then delete it | Agreed, changed | S6 |
+| [O1-24](#o1-24) | Old-version code | Low | Installer window falls back to the 32-bit registry view no MSI ever wrote | Agreed | S6 |
+| [T1b-6](#t1b-6) | Old-version code | Low | CombinedAliasFileWriterTests cover a combined file uploaded from 3.0.0-alpha.2 or earlier | Agreed | S6 |
 | [T3-31](#t3-31) | Old-version code | Low | Saved keys keep beta names (CombineAliasFiles, ConcatenateAliases, Procedures) | Open | S6 |
 | [W1-20](#w1-20) | Old-version code | Low | AddCustomAliasFiles is saved under its 3.0.0-beta.2-to-beta.6 name, and the comment narrates that history | Open | S6 |
-| [W1-18](#w1-18) | Old-version code | Low | Saved full procedure names are converted to root names (3.0.0-beta.8 and earlier) | Open | S6 |
-| [T2-7](#t2-7) | Old-version code | Low | Credential entry with the old `useForFeBuddyGitHub` marker | Open | S6 |
+| [W1-18](#w1-18) | Old-version code | Low | Saved full procedure names are converted to root names (3.0.0-beta.8 and earlier) | Agreed | S6 |
+| [T2-7](#t2-7) | Old-version code | Low | Credential entry with the old `useForFeBuddyGitHub` marker | Agreed | S6 |
 
 ## Med
 
@@ -34,7 +34,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C3-1 · Old-version code · Med · The old single `vatsim_radar_airlines.json` (3.0.0-beta.4 and earlier): full inventory, remove it
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Telephony/VatsimRadarVirtualAirlines.cs:125-162`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Telephony/VatsimRadarVirtualAirlines.cs#L125-L162) ; [`FeBuddy/FeBuddy.Core/Application/Airac/Telephony/Models/VatsimRadarSelection.cs:19-20`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Telephony/Models/VatsimRadarSelection.cs#L19-L20) ; [`FeBuddy/FeBuddy.Core/Infrastructure/Telephony/TelephonyFiles.cs:15-16`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Telephony/TelephonyFiles.cs#L15-L16),45-50,90-91 ; [`FeBuddy/FeBuddy.Core/Infrastructure/Telephony/TelephonyDownloader.cs:85`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Telephony/TelephonyDownloader.cs#L85),93,101-104,110,134-162 ; [`FeBuddy/FeBuddy.Core/Infrastructure/Telephony/Models/VirtualAirlineListRefreshResult.cs:5-24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Telephony/Models/VirtualAirlineListRefreshResult.cs#L5-L24) ; [`FeBuddy/FeBuddy.Core/Infrastructure/Telephony/Parsers/VatsimRadarAirlineParser.cs:19-29`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Telephony/Parsers/VatsimRadarAirlineParser.cs#L19-L29),58-81 ; [`FeBuddy/FeBuddy.Core/Application/Airac/AiracSharedDataLoader.cs:183`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracSharedDataLoader.cs#L183),200,216-230 ; [`FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs:266-267`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L266-L267),300,312-315,821 ; [`docs/Developers/Architecture.md:116-118`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L116-L118)
 
@@ -54,7 +54,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C6-2 · Old-version code · Med · beta.1-beta.3's single `%APPDATA%\FE-Buddy\UserConfig.json` moved in as the Default profile
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:34-35`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L34-L35), 40-42, 340-377; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:46-49`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L46-L49), 56, 59-60, 157; [`FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/AppDataReset.cs:83-85`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/AppDataReset.cs#L83-L85); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs:446-455`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs#L446-L455)
 
@@ -82,7 +82,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C6-3 · Old-version code · Med · AdoptSharedSettings only ever meets a beta.2/beta.3 file
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:181-184`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L181-L184), 723-751
 
@@ -104,7 +104,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C6-1 · Old-version code · Med · Settings layout 1 -> 2 step (the only UserConfigMigration step): beta.2-beta.5 settings
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigMigrations.cs:30-33`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigMigrations.cs#L30-L33); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigAreas.cs:9-15`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigAreas.cs#L9-L15), 93-96, 101-120; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigVersion.cs:16-18`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigVersion.cs#L16-L18), 31, 34; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:838-855`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L838-L855) (TakeVersion), 864-909 (BringForward); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs:24-25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs#L24-L25), 240-242
 
@@ -136,7 +136,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### T1a-20 · Old-version code · Med · Tests for settings blocks written before the Area setting (3.0.0-beta.5 and earlier)
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Arrivals/ArrivalSettingsParserTests.cs:217-228`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Arrivals/ArrivalSettingsParserTests.cs#L217-L228); [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Procedures/ProcedureSettingsParserTests.cs:9-10`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Procedures/ProcedureSettingsParserTests.cs#L9-L10), 271-295
 
@@ -157,7 +157,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C4-12 · Old-version code · Low · Parser still reads IncludeRoiAirports for a block without Area (3.0.0-beta.5 and earlier)
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs:42`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs#L42), 48, 184-195
 
@@ -173,7 +173,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C1-16 · Old-version code · Low · 2.x upgrade steps at launch - keep for the public release
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed: keep ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Launch/LaunchSequence.cs:122-157`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/LaunchSequence.cs#L122-L157); [`LegacyGitHubTokenNotice.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/LegacyGitHubTokenNotice.cs) (whole); [`Models/LaunchProgress.cs:18-34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/Models/LaunchProgress.cs#L18-L34); [`Models/OptionalLaunchStep.cs:39-46`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/Models/OptionalLaunchStep.cs#L39-L46); [`OptionalLaunchSteps.cs:21-23`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/OptionalLaunchSteps.cs#L21-L23), 38-40, 58-60
 
@@ -187,7 +187,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C1-17 · Old-version code · Low · REINSTALLMODE=amus on the update command line only matters for going back to a 2.x MSI - keep
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed: keep ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Updates/UpdateInstaller.cs:114-126`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Updates/UpdateInstaller.cs#L114-L126)
 
@@ -201,7 +201,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### T3-30 · Old-version code · Low · A tab with no saved area works it out from pre-Area settings
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy.Core/Infrastructure/Configuration/UserConfigAreas.cs:67-115`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigAreas.cs#L67-L115); [`FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs:937-956`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs#L937-L956); tests [`AreaTests.cs:156-173`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AreaTests.cs#L156-L173), [`WhatYoullGetTests.cs:209-228`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/WhatYoullGetTests.cs#L209-L228), 304-313
 
@@ -217,7 +217,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C6-5 · Old-version code · Low · TempWorkspace deletes the crash report 3.0.0-alpha.1/alpha.2 left in %TEMP%
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/TempWorkspace.cs:12-13`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/TempWorkspace.cs#L12-L13), 30-36, 49-53, 59-71
 
@@ -233,7 +233,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### C7-1 · Old-version code · Low · `FeBuddy.Core/News.md` stub is read only by 3.0.0-alpha.1. Keep it until 3.0.0 ships, then delete it
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed, changed: keep the stub through 3.0.0 and delete it in the first release after, as proposed here; the `Link` rename can go in S6 ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/News.md:1-27`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/News.md?plain=1#L1-L27); [`FeBuddy/FeBuddy.Core/FeBuddy.Core.csproj:14`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/FeBuddy.Core.csproj#L14); [`FeBuddy/FeBuddy.Core/Application/News/NewsService.cs:27-31`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/News/NewsService.cs#L27-L31); [`docs/Developers/README.md:175-177`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/README.md?plain=1#L175-L177)
 
@@ -254,7 +254,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### O1-24 · Old-version code · Low · Installer window falls back to the 32-bit registry view no MSI ever wrote
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Installer.UI/Setup/InstalledFeBuddy.cs:46-53`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Installer.UI/Setup/InstalledFeBuddy.cs#L46-L53)
 
@@ -270,7 +270,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### T1b-6 · Old-version code · Low · CombinedAliasFileWriterTests cover a combined file uploaded from 3.0.0-alpha.2 or earlier
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Application/Airac/ConcatenateAliases/CombinedAliasFileWriterTests.cs:13-14`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/ConcatenateAliases/CombinedAliasFileWriterTests.cs#L13-L14) (summary "in either layout"), 105-130 (`an_old_combined_alias_file_with_the_fe_buddy_section_last_loses_it`)
 
@@ -318,7 +318,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### W1-18 · Old-version code · Low · Saved full procedure names are converted to root names (3.0.0-beta.8 and earlier)
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:1143-1149`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L1143-L1149), 1782-1814
 
@@ -334,7 +334,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 
 ### T2-7 · Old-version code · Low · Credential entry with the old `useForFeBuddyGitHub` marker
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Agreed ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Credentials/CredentialStoreTests.cs:262-273`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Infrastructure/Credentials/CredentialStoreTests.cs#L262-L273)
 

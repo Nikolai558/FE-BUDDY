@@ -8,27 +8,28 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 2. Each session below becomes one Claude Code brief and one pull request. A big session can be split. A brief is written from these files once the decisions it depends on are in, and covers only findings whose Status is Open or Agreed.
 3. When the pull request merges, the Status of every finding it closed is updated, and the session is ticked on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
-**Order.** S1 first. S3 to S5 move code into Core, and S6 deletes code, so do them before S7 and S8: fixing comments on code that moves or goes is wasted work. S12 comes late because S3 to S5 may change GUI text. S13 is last.
+**Order.** S1 first. S3 to S5 move code into Core, and S6 deletes code and does the [H4](010_Decisions.md#h4) renames, so do them before S7 and S8: fixing comments on code that moves, goes or is renamed is wasted work. S12 comes late because S3 to S5 may change GUI text. S13 is last. What was deferred is listed under [After 3.0](#after-30).
 
 ## Sessions
 
 | Session | What | Findings | Files |
 |---|---|---:|---|
 | [S1](#s1) | Fix-first bugs, plus [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | 14 + [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | [100](100_Bugs.md) |
-| [S2](#s2) | The other bugs | 31 | [100](100_Bugs.md) |
+| [S2](#s2) | The other bugs, plus [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) and [Q7](010_Decisions.md#q7) | 29 + 2 | [100](100_Bugs.md) |
 | [S3](#s3) | GUI lag: AIRAC Service and File Conversions | 15 | [110](110_GUI-Lag.md) |
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | 14 | [110](110_GUI-Lag.md) |
-| [S5](#s5) | Business logic from the GUI into Core | 24 | [120](120_Logic-In-GUI.md) |
-| [S6](#s6) | Old-version code (D1) and unused code | 95 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
-| [S7](#s7) | Comments and XML docs: Core and NASR | 165 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
-| [S8](#s8) | Comments and XML docs: GUI | 97 | [220](220_Comments-GUI.md) |
+| [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | 24 + 1 | [120](120_Logic-In-GUI.md) |
+| [S6](#s6) | Old-version code (D1), unused code and the H4 renames | 102 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
+| [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
+| [S8](#s8) | Comments and XML docs: GUI | 94 | [220](220_Comments-GUI.md) |
 | [S9](#s9) | Unit tests | 101 | [300](300_Unit-Tests.md) |
-| [S10](#s10) | Installer, Harness (D6), Versioning, CI and build scripts | 55 | [400](400_Installer-Harness-CI.md) |
-| [S11](#s11) | Developer docs and house rules | 36 | [500](500_Developer-Docs.md) |
+| [S10](#s10) | Installer, Versioning, CI and build scripts | 41 | [400](400_Installer-Harness-CI.md) |
+| [S11](#s11) | Developer docs and house rules | 34 | [500](500_Developer-Docs.md) |
 | [S12](#s12) | User docs and on-screen text | 85 | [600](600_User-Docs-Proposal.md), [610](610_On-Screen-Text.md) |
 | [S13](#s13) | Final pass | - | - |
+| [After 3.0](#after-30) | Deferred by the decisions | 21 | - |
 
-Counts are open findings, duplicates left out. S12 includes the 69 sections of the user-docs proposal.
+Counts are the findings each session still has to do, duplicates and deferred findings left out; "+ n" is work the decisions added that isn't a finding. S12 includes the 69 sections of the user-docs proposal.
 
 <a id="s1"></a>
 
@@ -38,7 +39,7 @@ The bugs to fix before anything else, each with a regression test.
 
 | ID | Bug | Status |
 |---|---|---|
-| [W2-1](100_Bugs.md#w2-1) | The General tab saves and undoes the whole `Services.AiracService` settings node. Saving any other tab (or setting a default ROI on the Map) turns on the General tab's **Undo last save**, and clicking it wipes every saved AIRAC Service setting. See [Q1](010_Decisions.md#q1). | Open |
+| [W2-1](100_Bugs.md#w2-1) | The General tab saves and undoes the whole `Services.AiracService` settings node. Saving any other tab (or setting a default ROI on the Map) turns on the General tab's **Undo last save**, and clicking it wipes every saved AIRAC Service setting. Decided ([Q1](010_Decisions.md#q1)): the General tab gets its own node, with no settings-layout step, and a test for [H5](010_Decisions.md#h5). | Agreed, changed |
 | [U1-3](100_Bugs.md#u1-3) | Settings are read on a background thread at launch, after the temp folder is cleared. File Conversions is built from settings when the window goes idle, and nothing reloads it. If it's built first it shows defaults, and saving it can overwrite the user's saved settings with them. | Open |
 | [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10) | Switching the cycle on the General tab quietly throws away unsaved ticks in the lists built from the cycle. The tab still shows as unsaved. | Open |
 | [W1-13](100_Bugs.md#w1-13) | Unticking every Procedures.json field sends `JsonFields=""`, which Core reads as "use the 8 defaults". The run writes the fields the user turned off. | Open |
@@ -58,7 +59,14 @@ The bugs to fix before anything else, each with a regression test.
 
 Every other bug in [100_Bugs.md](100_Bugs.md), High and Med first.
 
-**Findings:** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C1-4](100_Bugs.md#c1-4), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C4-11](100_Bugs.md#c4-11), [C5-8](100_Bugs.md#c5-8), [C5-22](100_Bugs.md#c5-22), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [W1-7](100_Bugs.md#w1-7), [W1-15](100_Bugs.md#w1-15), [W2-5](100_Bugs.md#w2-5), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-7](100_Bugs.md#w4-7), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W6-3](100_Bugs.md#w6-3), [W7-22](100_Bugs.md#w7-22)
+**Findings:** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C4-11](100_Bugs.md#c4-11), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [W1-7](100_Bugs.md#w1-7), [W1-15](100_Bugs.md#w1-15), [W2-5](100_Bugs.md#w2-5), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-7](100_Bugs.md#w4-7), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W6-3](100_Bugs.md#w6-3), [W7-22](100_Bugs.md#w7-22)
+
+**Also:**
+
+- [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) ([Q9](010_Decisions.md#q9)): a restart notice when FE-Buddy is updated from another Windows account. See [Related issues](#related-issues).
+- Save the General tab's cycle position, not the cycle ID ([Q7](010_Decisions.md#q7), [D2-46](600_User-Docs-Proposal.md#d2-46)), under its new node from S1.
+
+[C1-4](100_Bugs.md#c1-4) and [C5-22](100_Bugs.md#c5-22) are deferred ([Q2](010_Decisions.md#q2), [Q3](010_Decisions.md#q3)).
 
 <a id="s3"></a>
 
@@ -84,23 +92,27 @@ Every finding in [120_Logic-In-GUI.md](120_Logic-In-GUI.md). Several overlap S3 
 
 **Findings:** [U1-17](120_Logic-In-GUI.md#u1-17), [W1-6](120_Logic-In-GUI.md#w1-6), [W3-9](120_Logic-In-GUI.md#w3-9), [C2-6](120_Logic-In-GUI.md#c2-6), [W1-8](120_Logic-In-GUI.md#w1-8), [W1-9](120_Logic-In-GUI.md#w1-9), [W1-10](120_Logic-In-GUI.md#w1-10), [W1-11](120_Logic-In-GUI.md#w1-11), [W1-12](120_Logic-In-GUI.md#w1-12), [W2-7](120_Logic-In-GUI.md#w2-7), [W2-18](120_Logic-In-GUI.md#w2-18), [W2-19](120_Logic-In-GUI.md#w2-19), [W2-20](120_Logic-In-GUI.md#w2-20), [W2-21](120_Logic-In-GUI.md#w2-21), [W2-22](120_Logic-In-GUI.md#w2-22), [W2-23](120_Logic-In-GUI.md#w2-23), [W2-25](120_Logic-In-GUI.md#w2-25), [W3-10](120_Logic-In-GUI.md#w3-10), [W3-12](120_Logic-In-GUI.md#w3-12), [W3-13](120_Logic-In-GUI.md#w3-13), [W3-14](120_Logic-In-GUI.md#w3-14), [W4-6](120_Logic-In-GUI.md#w4-6), [W6-8](120_Logic-In-GUI.md#w6-8), [W7-6](120_Logic-In-GUI.md#w7-6)
 
+**Also:** move the Settings page's keys (the Facility, the coordinate precision and the default ROI) out of `Services.AiracService` into the Settings page's own node ([Q1](010_Decisions.md#q1), [H5](010_Decisions.md#h5)), with no settings-layout step. Do it with [W3-10](120_Logic-In-GUI.md#w3-10), [C6-13](200_Comments-Core.md#c6-13) and [D1a-3](500_Developer-Docs.md#d1a-3), which flag the copies of the Facility key.
+
 <a id="s6"></a>
 
 ### S6 · Old-version code (D1) and unused code
 
-Every finding in [130_Old-Version-Code.md](130_Old-Version-Code.md) (as [D1](010_Decisions.md#d1) decides) and [140_Unused-Code.md](140_Unused-Code.md) ([Q5](010_Decisions.md#q5) decides the test-only ones). Includes [D2](010_Decisions.md#d2), deleting `AliasParser.cs`.
+Every finding in [130_Old-Version-Code.md](130_Old-Version-Code.md) (as [D1](010_Decisions.md#d1) decides) and [140_Unused-Code.md](140_Unused-Code.md) ([Q5](010_Decisions.md#q5) decides the test-only ones). Includes [D2](010_Decisions.md#d2), deleting `AliasParser.cs`. [W4-18](140_Unused-Code.md#w4-18) to [W4-20](140_Unused-Code.md#w4-20) are deferred ([Q6](010_Decisions.md#q6)); the News stub ([C7-1](130_Old-Version-Code.md#c7-1)) stays until after 3.0.
+
+**Also:** the [H4](010_Decisions.md#h4) renames and file moves, here rather than in the comment sessions: [C2-20](200_Comments-Core.md#c2-20), [C3-22](200_Comments-Core.md#c3-22), [C1-34](200_Comments-Core.md#c1-34), [C1-35](200_Comments-Core.md#c1-35), [C6-34](200_Comments-Core.md#c6-34), [W6-29](220_Comments-GUI.md#w6-29), [W7-12](220_Comments-GUI.md#w7-12), [W4-36](220_Comments-GUI.md#w4-36), [D1b-10](500_Developer-Docs.md#d1b-10).
 
 <a id="s7"></a>
 
 ### S7 · Comments and XML docs: Core and NASR
 
-Every finding in [200_Comments-Core.md](200_Comments-Core.md) and [210_Comments-NASR.md](210_Comments-NASR.md). Mostly mechanical. Probably two pull requests.
+Every finding in [200_Comments-Core.md](200_Comments-Core.md) and [210_Comments-NASR.md](210_Comments-NASR.md), apart from the H4 renames (S6) and [C2-29](200_Comments-Core.md#c2-29) and [C5-25](200_Comments-Core.md#c5-25), which are deferred ([D7](010_Decisions.md#d7)). Mostly mechanical, though some findings change code. Probably two pull requests.
 
 <a id="s8"></a>
 
 ### S8 · Comments and XML docs: GUI
 
-Every finding in [220_Comments-GUI.md](220_Comments-GUI.md).
+Every finding in [220_Comments-GUI.md](220_Comments-GUI.md), apart from the H4 renames (S6).
 
 <a id="s9"></a>
 
@@ -110,15 +122,15 @@ Every finding in [300_Unit-Tests.md](300_Unit-Tests.md). Tests for code removed 
 
 <a id="s10"></a>
 
-### S10 · Installer, Harness (D6), Versioning, CI and build scripts
+### S10 · Installer, Versioning, CI and build scripts
 
-Every finding in [400_Installer-Harness-CI.md](400_Installer-Harness-CI.md), plus the Harness switch ([D6](010_Decisions.md#d6)).
+Every finding in [400_Installer-Harness-CI.md](400_Installer-Harness-CI.md) except its `FeBuddy.Harness` section, which is deferred ([D6](010_Decisions.md#d6)).
 
 <a id="s11"></a>
 
 ### S11 · Developer docs and house rules
 
-Every finding in [500_Developer-Docs.md](500_Developer-Docs.md), the agreed house rules ([010_Decisions.md](010_Decisions.md#proposed-house-rules)), and the [D7](010_Decisions.md#d7) item in `TODO.md`.
+Every finding in [500_Developer-Docs.md](500_Developer-Docs.md) apart from [D1b-1](500_Developer-Docs.md#d1b-1) (S6) and [D1b-10](500_Developer-Docs.md#d1b-10) (S6), the agreed house rules H1 to H5 ([010_Decisions.md](010_Decisions.md#proposed-house-rules)), and a `TODO.md` item for each entry under [After 3.0](#after-30).
 
 <a id="s12"></a>
 
@@ -131,6 +143,22 @@ Shrink the user manuals as [600_User-Docs-Proposal.md](600_User-Docs-Proposal.md
 ### S13 · Final pass
 
 Build, run every test, and search the code for history wording and issue numbers the sessions missed. Then decide what happens to this folder ([000_ReadMe.md](000_ReadMe.md#when-the-project-is-done)).
+
+<a id="after-30"></a>
+
+### After 3.0
+
+Deferred by the decisions. Each finding's Status says what was agreed. S11 adds each line to `TODO.md`.
+
+| What | Findings | Decision |
+|---|---|---|
+| The Harness: a switch for its runs, XML docs, no machine-specific paths | [O1-4](400_Installer-Harness-CI.md#o1-4) to [O1-17](400_Installer-Harness-CI.md#o1-17) (400's `FeBuddy.Harness` section, 14 findings) | [D6](010_Decisions.md#d6) |
+| Share the Departures/Arrivals code and other copies | [C2-29](200_Comments-Core.md#c2-29), [C5-25](200_Comments-Core.md#c5-25) | [D7](010_Decisions.md#d7) |
+| One Core constant for the d-TPP timing, and a look for other values hard-coded in more than one place | [C7-9](200_Comments-Core.md#c7-9) (the wording itself is fixed before 3.0) | [D4](010_Decisions.md#d4) |
+| Handle a new AIRAC cycle during a session without a restart | [C1-4](100_Bugs.md#c1-4) | [Q2](010_Decisions.md#q2) |
+| A wrong DAT or SCT file fails | [C5-22](100_Bugs.md#c5-22) | [Q3](010_Decisions.md#q3) |
+| GUI framework simplifications | [W4-18](140_Unused-Code.md#w4-18), [W4-19](140_Unused-Code.md#w4-19), [W4-20](140_Unused-Code.md#w4-20) | [Q6](010_Decisions.md#q6) |
+| Delete the alpha.1 News stub | [C7-1](130_Old-Version-Code.md#c7-1) | [D1](010_Decisions.md#d1) |
 
 ## Related issues
 
@@ -148,7 +176,7 @@ Opened by Nikolas on 2026-10-16. A side effect of the [C1-5](100_Bugs.md#c1-5) f
 
 ### [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) · FE-Buddy left open in another account keeps running the old version
 
-Opened by Nikolas on 2026-10-16. Low risk: it needs two Windows accounts, one with FE-Buddy left open while the other updates. Nikolas proposes watching `FE-BUDDY.dll` with a `FileSystemWatcher` and showing a Restart notice when its version changes. That is cheap. The watcher's events arrive on a thread-pool thread, so only the notice itself should go to the UI thread. A simpler option: compare the version on disk only when a run starts. Whether it goes in before 3.0 is [Q9](010_Decisions.md#q9).
+Opened by Nikolas on 2026-10-16. Low risk: it needs two Windows accounts, one with FE-Buddy left open while the other updates. Nikolas proposes watching `FE-BUDDY.dll` with a `FileSystemWatcher` and showing a Restart notice when its version changes. That is cheap. The watcher's events arrive on a thread-pool thread, so only the notice itself should go to the UI thread. A simpler option: compare the version on disk only when a run starts. Decided ([Q9](010_Decisions.md#q9)): before 3.0, in [S2](#s2).
 
 ### [#375](https://github.com/Nikolai558/FE-BUDDY/issues/375) · The installer's shortcuts showed a cached 2.x icon
 

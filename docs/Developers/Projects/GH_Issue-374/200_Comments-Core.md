@@ -14,7 +14,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C7-3](#c7-3) | Wrong doc | Low | csproj comment says unused usings "are reported", but nothing in the build reports them | Open | S7 |
 | [C1-18](#c1-18) | Wrong doc | Low | "Never blocking readiness": the d-TPP Metafile download sits in front of each cycle's parse | Open | S7 |
 | [C1-20](#c1-20) | Wrong doc | Low | Shared-data refresh rules overstated in the cache remarks and the load result doc | Open | S7 |
-| [C1-34](#c1-34) | Minor | Low | AiracCycleDataCacheEntry: public ParseTask nobody outside uses, and a public data class outside Models/ | Open | S7 |
+| [C1-34](#c1-34) | Minor | Low | AiracCycleDataCacheEntry: public ParseTask nobody outside uses, and a public data class outside Models/ | Agreed | S6 |
 | [T1b-11](#t1b-11) | Wrong doc | Low | PrepareCyclesAsync "Never throws" - the tests show it throws on cancellation | Open | S7 |
 | [C1-25](#c1-25) | History wording | Low | Issue numbers that only point at the feature request | Open | S7 |
 | [C1-36](#c1-36) | Minor | Low | DuplicateAliasReport.CommandOf: "up to its first space" (tab too) | Open | S7 |
@@ -23,10 +23,10 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C2-18](#c2-18) | Wrong doc | Low | Exception docs name only the main NASR group | Open | S7 |
 | [C2-5](#c2-5) | Wrong doc | Low | AirportService remark: "every other type in this folder is a step of this pipeline" | Open | S7 |
 | [C2-23](#c2-23) | Minor | Low | AirportFebProperty: remark paragraph outside &lt;para>, and gaps in the enum values | Open | S7 |
-| [C2-20](#c2-20) | Minor | Low | "service" used for non-entry-point types, against the naming rule | Open | S7 |
+| [C2-20](#c2-20) | Minor | Low | "service" used for non-entry-point types, against the naming rule | Agreed | S6 |
 | [C2-2](#c2-2) | Wrong doc | Med | AirwayBuilder.BuildAll says airways outside the ROI are excluded | Open | S7 |
 | [C2-4](#c2-4) | Stale doc | Low | AirwayAliasWriter says Combined_Alias.txt needs "Concatenate Aliases" | Open | S7 |
-| [C2-11](#c2-11) | Wrong doc | Low | "The final point of an airway never appears as a FromPoint" (likely untrue for NASR) | Open | S7 |
+| [C2-11](#c2-11) | Wrong doc | Low | "The final point of an airway never appears as a FromPoint" (likely untrue for NASR) | Agreed | S7 |
 | [C2-12](#c2-12) | Minor | Low | ResolveOrderedPoints sends border markers to the waypoint lookup | Open | S7 |
 | [C2-8](#c2-8) | Wrong doc | Low | AirwayGeometryBuilder does not collect "every unresolved ID" | Open | S7 |
 | [C2-10](#c2-10) | Wrong doc | Low | NeedsCrcDefaults remark: designation files' "rest are written as per-feature overrides" | Open | S7 |
@@ -38,10 +38,10 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C2-16](#c2-16) | Wrong doc | Low | RoiAirways scope is not "exactly the airways the GeoJSON draws" | Open | S7 |
 | [C2-14](#c2-14) | History wording | Low | ArrivalAliasWriter.CommandName "as in FE-Buddy 2.x" | Open | S7 |
 | [C2-21](#c2-21) | Minor | Low | Arrivals file-key summaries omit `_STAR_` | Open | S7 |
-| [C2-29](#c2-29) | Minor | Low | Arrivals is a copy of Departures - duplicated logic that could be shared | Open | S7 |
+| [C2-29](#c2-29) | Minor | Low | Arrivals is a copy of Departures - duplicated logic that could be shared | Deferred | After 3.0 |
 | [C2-30](#c2-30) | Minor | Low | ArrivalSettings.ArtccFilter is per airport, not per procedure | Open | S7 |
 | [C3-9](#c3-9) | Wrong doc | Low | `ArtccBoundaryFilter` / `NavaidFilter` say they match ignoring case; they use the passed collection's own comparison | Open | S7 |
-| [C3-22](#c3-22) | Minor | Low | "every other ... service consumes this typed object" - they are types, not services | Open | S7 |
+| [C3-22](#c3-22) | Minor | Low | "every other ... service consumes this typed object" - they are types, not services | Agreed | S6 |
 | [C3-14](#c3-14) | History wording | Low | "A file from before the end line existed" in CombinedAliasFileWriter | Open | S7 |
 | [C3-23](#c3-23) | Minor | Low | `CombinedAliasFileWriter` docs: layout sample and exceptions | Open | S7 |
 | [C3-13](#c3-13) | History wording | Low | "as the code still calls it" in ConcatenateAliasesSettingsParser | Open | S7 |
@@ -91,10 +91,10 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C1-23](#c1-23) | Wrong doc | Low | UpdateChannelSetting says the channel is saved in UserConfig.json; it is in Shared.json | Open | S7 |
 | [C1-26](#c1-26) | History wording | Low | UpdateInstaller remarks narrate 2.x's updater | Open | S7 |
 | [C1-27](#c1-27) | Wrong doc | Low | ReleaseSummary.IsPrerelease says "alpha or beta"; it is any pre-release, rc included | Open | S7 |
-| [C1-35](#c1-35) | Minor | Low | DownloadProgress lives in VersionCheckResult.cs | Open | S7 |
+| [C1-35](#c1-35) | Minor | Low | DownloadProgress lives in VersionCheckResult.cs | Agreed | S6 |
 | [C5-3](#c5-3) | Wrong doc | Med | AiracCycleResolver: "about one year in nine has 14" cycles is wrong | Open | S7 |
-| [C5-25](#c5-25) | Minor | Low | Copied code the house rules say to share | Open | S7 |
-| [C5-12](#c5-12) | Wrong doc | Low | xOffset/yOffset "any integer (CRC spec)" contradicts the linked spec | Open | S7 |
+| [C5-25](#c5-25) | Minor | Low | Copied code the house rules say to share | Deferred | After 3.0 |
+| [C5-12](#c5-12) | Wrong doc | Low | xOffset/yOffset "any integer (CRC spec)" contradicts the linked spec | Agreed | S7 |
 | [C5-14](#c5-14) | Wrong doc | Low | CrcSymbolDefaults says "Every one is required" but Style is nullable | Open | S7 |
 | [C5-13](#c5-13) | Wrong doc | Low | Crc*Properties: "no filters assigned (via this or a per-feature override)": these records are the per-feature override | Open | S7 |
 | [C5-27](#c5-27) | Minor | Low | Time-relative data claims that will go stale | Open | S7 |
@@ -125,7 +125,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C6-15](#c6-15) | Wrong doc | Low | UserConfigTransfer remarks describe only a Replace import | Open | S7 |
 | [C6-8](#c6-8) | Wrong doc | Low | "Layout 1 is the one beta.2 and beta.3 saved, before files were stamped": beta.4 and beta.5 saved it too, stamped | Open | S7 |
 | [C6-24](#c6-24) | Minor | Low | CredentialStore.TargetPrefix: the uninstaller keeps its own copy, and nothing checks they match | Open | S7 |
-| [C7-9](#c7-9) | Wrong doc | Med | "The FAA publishes the d-TPP Metafile 15-18 days before the cycle", but the FAA says 20 days | Open | S7 |
+| [C7-9](#c7-9) | Wrong doc | Med | "The FAA publishes the d-TPP Metafile 15-18 days before the cycle", but the FAA says 20 days | Agreed, changed | S7 |
 | [C7-11](#c7-11) | Wrong doc | Low | The XML parsers throw `XmlException` for malformed files, but docs say `InvalidDataException` | Open | S7 |
 | [C7-12](#c7-12) | Minor | Low | DtppDownloader is an instance class with no state; its remark explains why there is nothing to memoize | Open | S7 |
 | [C7-13](#c7-13) | Minor | Low | "any amount of whitespace" in the effective-date docs, but the pattern needs at least one | Open | S7 |
@@ -136,7 +136,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C6-22](#c6-22) | Wrong doc | Low | AppDataResetResult.NotDeleted can also hold "saved credentials" | Open | S7 |
 | [C6-33](#c6-33) | Minor | Low | FeBuddyHttp.DownloadToFileAsync: the exception doc says "ended before" but any size mismatch throws | Open | S7 |
 | [C6-18](#c6-18) | Wrong doc | Low | AppLog.StartFileSink: "Call once from the launch sequence" | Open | S7 |
-| [C6-34](#c6-34) | Minor | Low | LogLevel lives in LogEntry.cs | Open | S7 |
+| [C6-34](#c6-34) | Minor | Low | LogLevel lives in LogEntry.cs | Agreed | S6 |
 | [C7-19](#c7-19) | Wrong doc | Low | MarkdownParser class summary: misses the What's New caller, overstates its fit to the content, and two claims are loose | Open | S7 |
 | [C7-20](#c7-20) | Stale doc | Low | MarkdownParser `linkBase` example uses the path from before News.md moved to the root | Open | S7 |
 | [C7-7](#c7-7) | Wrong doc | Low | `NasrCsvReader.ProcessLines` documents an exception it can't throw | Open | S7 |
@@ -217,7 +217,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C1-34 · Minor · Low · AiracCycleDataCacheEntry: public ParseTask nobody outside uses, and a public data class outside Models/
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs:16-59`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs#L16-L59)
 
@@ -348,7 +348,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C2-20 · Minor · Low · "service" used for non-entry-point types, against the naming rule
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Airports/Models/AirportSettings.cs:11`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airports/Models/AirportSettings.cs#L11); [`Airways/Models/AirwaySettings.cs:9`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/Models/AirwaySettings.cs#L9),12; [`Arrivals/Models/ArrivalSettings.cs:10`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/Models/ArrivalSettings.cs#L10); [`Departures/Models/DepartureSettings.cs:10`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Departures/Models/DepartureSettings.cs#L10); [`Airways/AirwayService.cs:15`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayService.cs#L15); [`Airways/Models/AirwayServiceResult.cs:6`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/Models/AirwayServiceResult.cs#L6); [`Airways/Models/AirwayGeojsonOutputBy.cs:4`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/Models/AirwayGeojsonOutputBy.cs#L4)
 
@@ -392,7 +392,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C2-11 · Wrong doc · Low · "The final point of an airway never appears as a FromPoint" (likely untrue for NASR)
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Agreed: not a bug. In cycles 2609 to 2611 every airway ends with a terminator row, so use the replacement comment and make no code change ([Q8](010_Decisions.md#q8)) · **Session:** [S7](020_Work-Plan.md#s7)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayBuilder.cs:190-197`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayBuilder.cs#L190-L197); [`FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayGeojsonWriter.cs:22-27`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayGeojsonWriter.cs#L22-L27) (also [`Domain/Airways/Models/AirwayPoint.cs:8-11`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Airways/Models/AirwayPoint.cs#L8-L11), other scope)
 
@@ -566,7 +566,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C2-29 · Minor · Low · Arrivals is a copy of Departures - duplicated logic that could be shared
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Deferred: share the code after 3.0; S11 adds the TODO.md item ([D7](010_Decisions.md#d7)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** `FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/{ArrivalFilter.cs`, [`ArrivalAliasWriter.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalAliasWriter.cs), [`ArrivalGeojsonWriter.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalGeojsonWriter.cs), [`ArrivalSettingsParser.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalSettingsParser.cs), [`ArrivalBuilder.cs:30-40`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalBuilder.cs#L30-L40), 272-363, 493-513, [`Models/ArrivalAmendmentFilter.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/Models/ArrivalAmendmentFilter.cs), [`Models/ArrivalRoiMode.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/Models/ArrivalRoiMode.cs)} vs the same Departures files
 
@@ -618,7 +618,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C3-22 · Minor · Low · "every other ... service consumes this typed object" - they are types, not services
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/ArtccBoundaries/Models/ArtccBoundarySettings.cs:10-11`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/ArtccBoundaries/Models/ArtccBoundarySettings.cs#L10-L11) ; [`FeBuddy/FeBuddy.Core/Application/Airac/Fixes/Models/FixSettings.cs:10-11`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Fixes/Models/FixSettings.cs#L10-L11) ; [`FeBuddy/FeBuddy.Core/Application/Airac/Navaids/Models/NavaidSettings.cs:10-11`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Navaids/Models/NavaidSettings.cs#L10-L11)
 
@@ -1370,7 +1370,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C1-35 · Minor · Low · DownloadProgress lives in VersionCheckResult.cs
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Updates/Models/VersionCheckResult.cs:155-162`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Updates/Models/VersionCheckResult.cs#L155-L162)
 
@@ -1402,7 +1402,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C5-25 · Minor · Low · Copied code the house rules say to share
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Deferred: share the code after 3.0; S11 adds the TODO.md item ([D7](010_Decisions.md#d7)) · **Session:** [After 3.0](020_Work-Plan.md#after-30)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Domain/Arrivals/ArrivalNaming.cs:36-118`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Arrivals/ArrivalNaming.cs#L36-L118); [`FeBuddy/FeBuddy.Core/Domain/Departures/DepartureNaming.cs:35-117`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Departures/DepartureNaming.cs#L35-L117); [`FeBuddy/FeBuddy.Core/Application/Conversions/EramToGeojson/EramGeojsonWriter.cs:594-605`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/EramToGeojson/EramGeojsonWriter.cs#L594-L605) (vs [`ConversionFiles.cs:94-112`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/ConversionFiles.cs#L94-L112))
 
@@ -1420,7 +1420,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C5-12 · Wrong doc · Low · xOffset/yOffset "any integer (CRC spec)" contradicts the linked spec
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Agreed: comment only; CRC_Geojsons.md is outside this repository ([D5](010_Decisions.md#d5)) · **Session:** [S7](020_Work-Plan.md#s7)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Domain/Crc/CrcPropertyValidator.cs:194`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Crc/CrcPropertyValidator.cs#L194); [`FeBuddy/FeBuddy.Core/Domain/Crc/Models/CrcDefaults.cs:95-99`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Crc/Models/CrcDefaults.cs#L95-L99); [`FeBuddy/FeBuddy.Core/Domain/Crc/Models/CrcTextProperties.cs:40-44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Crc/Models/CrcTextProperties.cs#L40-L44)
 
@@ -1894,7 +1894,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C7-9 · Wrong doc · Med · "The FAA publishes the d-TPP Metafile 15-18 days before the cycle", but the FAA says 20 days
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Agreed, changed: correct the wording to "approximately 20 days prior to" before 3.0; the single Core constant waits until after 3.0 ([D4](010_Decisions.md#d4)) · **Session:** [S7](020_Work-Plan.md#s7)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/DtppDownloader.cs:29-30`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/DtppDownloader.cs#L29-L30); [`FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/DtppFiles.cs:31-33`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/DtppFiles.cs#L31-L33); [`FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/Models/DtppDownloadOutcome.cs:15-16`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/Models/DtppDownloadOutcome.cs#L15-L16); [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureService.cs:23`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureService.cs#L23), 81; [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:484-491`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L484-L491); [`docs/Developers/Architecture.md:122-123`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Architecture.md?plain=1#L122-L123); [`docs/Users/User-Guide.md:201`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Users/User-Guide.md?plain=1#L201); [`docs/Users/Glossary.md:33`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Users/Glossary.md?plain=1#L33)
 
@@ -2064,7 +2064,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C6-34 · Minor · Low · LogLevel lives in LogEntry.cs
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Logging/Models/LogEntry.cs:5-30`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Logging/Models/LogEntry.cs#L5-L30)
 

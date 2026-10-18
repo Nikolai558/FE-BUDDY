@@ -24,7 +24,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S8](#s8) | Comments and XML docs: GUI | 94 | [220](220_Comments-GUI.md) |
 | [S9](#s9) | Unit tests | 101 | [300](300_Unit-Tests.md) |
 | [S10](#s10) | Installer, Versioning, CI and build scripts | 41 | [400](400_Installer-Harness-CI.md) |
-| [S11](#s11) | Developer docs and house rules | 34 | [500](500_Developer-Docs.md) |
+| [S11](#s11) | Developer docs and house rules | 28 | [500](500_Developer-Docs.md) |
 | [S12](#s12) | User docs and on-screen text | 85 | [600](600_User-Docs-Proposal.md), [610](610_On-Screen-Text.md) |
 | [S13](#s13) | Final pass | - | - |
 | [After 3.0](#after-30) | Deferred by the decisions | 22 | - |
@@ -136,6 +136,8 @@ Every finding in [400_Installer-Harness-CI.md](400_Installer-Harness-CI.md) exce
 
 Every finding in [500_Developer-Docs.md](500_Developer-Docs.md) apart from [D1b-1](500_Developer-Docs.md#d1b-1) (S6) and [D1b-10](500_Developer-Docs.md#d1b-10) (S6), the agreed house rules H1 to H5 ([010_Decisions.md](010_Decisions.md#proposed-house-rules)), and a `TODO.md` item for each entry under [After 3.0](#after-30).
 
+**Fixed (not yet merged):** the house rules H1 to H5, written into `Code-Structure.md`; the `TODO.md` items; [D1b-2](500_Developer-Docs.md#d1b-2), [D1b-3](500_Developer-Docs.md#d1b-3), [D1b-9](500_Developer-Docs.md#d1b-9), [W5-22](500_Developer-Docs.md#w5-22), [W7-26](500_Developer-Docs.md#w7-26), [D1b-16](500_Developer-Docs.md#d1b-16)
+
 <a id="s12"></a>
 
 ### S12 · User docs and on-screen text
@@ -152,7 +154,7 @@ Build, run every test, and search the code for history wording and issue numbers
 
 ### After 3.0
 
-Deferred by the decisions. Each finding's Status says what was agreed. S11 adds each line to `TODO.md`.
+Deferred by the decisions. Each finding's Status says what was agreed. Each item below now has a line in `TODO.md`'s "After 3.0" section.
 
 | What | Findings | Decision |
 |---|---|---|

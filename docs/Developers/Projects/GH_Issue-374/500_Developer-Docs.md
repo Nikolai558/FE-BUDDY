@@ -11,8 +11,8 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
 | [D1b-11](#d1b-11) | Wrong doc | Med | SECURITY.md: 2.x Beta channel already gets 3.0 betas; the support table goes stale at 3.0.0 | Open | S11 |
-| [D1b-2](#d1b-2) | Wrong doc | Med | "A new NASR CSV group" steps miss the Group() arm, the Code arm, the parse method and the test fixtures | Open | S11 |
-| [D1b-3](#d1b-3) | Wrong doc | Med | "Adding a sub-service" misses the steps that wire a new sub-service's files into the run | Open | S11 |
+| [D1b-2](#d1b-2) | Wrong doc | Med | "A new NASR CSV group" steps miss the Group() arm, the Code arm, the parse method and the test fixtures | Fixed | S11 |
+| [D1b-3](#d1b-3) | Wrong doc | Med | "Adding a sub-service" misses the steps that wire a new sub-service's files into the run | Fixed | S11 |
 | [D1a-1](#d1a-1) | Wrong doc | Med | "Adding a setting" step 4: LocalKeys also makes a setting shared by every profile | Open | S11 |
 | [C1-32](#c1-32) | Wrong doc | Low | Architecture.md: "one left unloaded is NotLoaded" mixes up a cycle's state and the service's readiness | Open | S11 |
 | [C1-33](#c1-33) | Wrong doc | Low | Architecture.md's launch steps leave out the GitHub token check | Open | S11 |
@@ -21,9 +21,9 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1b-6](#d1b-6) | Wrong doc | Low | Output layout bullet leaves out Publication_Docs and the duplicate report | Open | S11 |
 | [D1b-7](#d1b-7) | Minor | Low | Designation rule names no class in a list where "each rule lives in one class" | Open | S11 |
 | [D1b-10](#d1b-10) | Minor | Low | Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root | Agreed | S6 |
-| [D1b-9](#d1b-9) | Stale doc | Low | Code-Structure's folder maps miss some major types | Open | S11 |
-| [W5-22](#w5-22) | Stale doc | Low | Code-Structure's folder map leaves out Views/Models | Open | S11 |
-| [W7-26](#w7-26) | Stale doc | Low | Code-Structure's Shell/ list misses the window-placement files | Open | S11 |
+| [D1b-9](#d1b-9) | Stale doc | Low | Code-Structure's folder maps miss some major types | Fixed | S11 |
+| [W5-22](#w5-22) | Stale doc | Low | Code-Structure's folder map leaves out Views/Models | Fixed | S11 |
+| [W7-26](#w7-26) | Stale doc | Low | Code-Structure's Shell/ list misses the window-placement files | Fixed | S11 |
 | [N1-1](#n1-1) | Stale doc | Low | The developer README describes the custom-actions project without its new launch action | Open | S11 |
 | [D1b-15](#d1b-15) | Minor | Low | RELEASING-QuickRef.md: wrong snippet under NEWS.md, wrong branch and version casing, typos, and not linked from anywhere | Open | S11 |
 | [D1b-12](#d1b-12) | Stale doc | Low | Release-day staleness in RELEASING.md and VERSIONING.md | Open | S11 |
@@ -43,7 +43,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1a-6](#d1a-6) | Wrong doc | Low | `HelpCommandName` is sent only while `IncludeHelpCommand` is also `Y`, and `RenameHelpCommand` has no row | Open | S11 |
 | [D1a-7](#d1a-7) | Wrong doc | Low | NAVAIDs: missing that the merged Symbols file's `style` isn't read while styled by type | Open | S11 |
 | [D1a-8](#d1a-8) | Wrong doc | Low | "Adding a setting" step 3 doesn't fit Add Custom Aliases, SCT2, the numbered lists, or the harness | Open | S11 |
-| [D1b-16](#d1b-16) | Stale doc | Low | TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests | Open | S11 |
+| [D1b-16](#d1b-16) | Stale doc | Low | TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests | Fixed | S11 |
 | [O1-36](#o1-36) | Wrong doc | Low | VERSIONING.md: the version check keeps only "the user's channel" | Open | S11 |
 | [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Agreed, changed | S6 |
 
@@ -69,7 +69,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-2 · Wrong doc · Med · "A new NASR CSV group" steps miss the Group() arm, the Code arm, the parse method and the test fixtures
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). `Code-Structure.md`'s "A new NASR CSV group" is now the five steps proposed. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Code-Structure.md:220-223`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L220-L223)
 
@@ -98,7 +98,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-3 · Wrong doc · Med · "Adding a sub-service" misses the steps that wire a new sub-service's files into the run
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). Step 1 of "Adding a sub-service" now names `anySelected`, `aliasOutputs`, `AiracServiceResult`, `OutputFileNamesParser.CanRename` and the Settings reference. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Code-Structure.md:236-240`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L236-L240)
 
@@ -224,7 +224,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-9 · Stale doc · Low · Code-Structure's folder maps miss some major types
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The Core and app folder maps add the missing types, with the settings layout as `UserConfigVersion`, `UserConfigMigrations` and their steps. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Code-Structure.md:54-59`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L54-L59), 73-74, 79-81, 95, 130-137
 
@@ -238,7 +238,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### W5-22 · Stale doc · Low · Code-Structure's folder map leaves out Views/Models
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The Views/ map adds `Models/` with `ConfirmChoice`. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Code-Structure.md:146-156`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L146-L156)
 
@@ -252,7 +252,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### W7-26 · Stale doc · Low · Code-Structure's Shell/ list misses the window-placement files
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). The Shell/ list adds `SettingsWrites`, `CrashReport` and the main window's placement types. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Code-Structure.md:136-137`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L136-L137)
 
@@ -551,7 +551,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-16 · Stale doc · Low · TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged). `TODO.md`'s Harness item is now under a new "After 3.0" section, and its `FeBuddy.Wpf` item lists what isn't tested yet. · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/TODO.md:7-8`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/TODO.md?plain=1#L7-L8), 12-22
 

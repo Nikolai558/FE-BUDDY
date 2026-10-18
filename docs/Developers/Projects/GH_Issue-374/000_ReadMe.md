@@ -36,7 +36,7 @@ And the user manuals: they should be very short. Anything that isn't common sens
 
 ## Where we are
 
-As of 2026-10-18: the review is done and Nikolas has answered every decision and question in [010_Decisions.md](010_Decisions.md). **28 of 665 findings fixed** so far; 22 are deferred to [after 3.0](020_Work-Plan.md#after-30).
+As of 2026-10-18: the review is done and Nikolas has answered every decision and question in [010_Decisions.md](010_Decisions.md). **34 of 665 findings fixed** so far; 22 are deferred to [after 3.0](020_Work-Plan.md#after-30).
 
 | File | Findings | High | Med | Low | Done | Session |
 |---|---:|---:|---:|---:|---:|---|
@@ -50,16 +50,16 @@ As of 2026-10-18: the review is done and Nikolas has answered every decision and
 | [220_Comments-GUI.md](220_Comments-GUI.md) | 97 |  | 2 | 95 |  | [S8](020_Work-Plan.md#s8) |
 | [300_Unit-Tests.md](300_Unit-Tests.md) | 101 |  | 7 | 94 |  | [S9](020_Work-Plan.md#s9) |
 | [400_Installer-Harness-CI.md](400_Installer-Harness-CI.md) | 55 |  | 1 | 54 |  | [S10](020_Work-Plan.md#s10) |
-| [500_Developer-Docs.md](500_Developer-Docs.md) | 36 | 1 | 4 | 31 |  | [S11](020_Work-Plan.md#s11) |
+| [500_Developer-Docs.md](500_Developer-Docs.md) | 36 | 1 | 4 | 31 | 6 | [S11](020_Work-Plan.md#s11) |
 | [600_User-Docs-Proposal.md](600_User-Docs-Proposal.md) | 69 sections | | | | | [S12](020_Work-Plan.md#s12) |
 | [610_On-Screen-Text.md](610_On-Screen-Text.md) | 16 |  | 1 | 15 |  | [S12](020_Work-Plan.md#s12) |
-| **Total** | **665** | **5** | **58** | **602** | **28** | |
+| **Total** | **665** | **5** | **58** | **602** | **34** | |
 
-**Done so far:** [C1-5](100_Bugs.md#c1-5), fixed by Nikolas ([#377](https://github.com/Nikolai558/FE-BUDDY/pull/377)). Fixed, not yet merged: [W2-1](100_Bugs.md#w2-1), [N1-4](100_Bugs.md#n1-4), [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4), [C3-18](100_Bugs.md#c3-18), [U1-3](100_Bugs.md#u1-3), [C1-1](100_Bugs.md#c1-1), [C5-1](100_Bugs.md#c5-1), [W1-13](100_Bugs.md#w1-13), [O1-1](100_Bugs.md#o1-1), [W3-15](100_Bugs.md#w3-15), [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9).
+**Done so far:** [C1-5](100_Bugs.md#c1-5), fixed by Nikolas ([#377](https://github.com/Nikolai558/FE-BUDDY/pull/377)). Fixed, not yet merged: [W2-1](100_Bugs.md#w2-1), [N1-4](100_Bugs.md#n1-4), [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4), [C3-18](100_Bugs.md#c3-18), [U1-3](100_Bugs.md#u1-3), [C1-1](100_Bugs.md#c1-1), [C5-1](100_Bugs.md#c5-1), [W1-13](100_Bugs.md#w1-13), [O1-1](100_Bugs.md#o1-1), [W3-15](100_Bugs.md#w3-15), [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [D1b-2](500_Developer-Docs.md#d1b-2), [D1b-3](500_Developer-Docs.md#d1b-3), [D1b-9](500_Developer-Docs.md#d1b-9), [W5-22](500_Developer-Docs.md#w5-22), [W7-26](500_Developer-Docs.md#w7-26), [D1b-16](500_Developer-Docs.md#d1b-16). The house rules [H1 to H5](010_Decisions.md#proposed-house-rules) are written into `Code-Structure.md`.
 
 **Since the review:** Nikolas opened [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) (a side effect of the [C1-5](100_Bugs.md#c1-5) fix, now part of [S1](020_Work-Plan.md#s1)) and [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) (low risk; timing is [Q9](010_Decisions.md#q9)). See [020_Work-Plan.md](020_Work-Plan.md#related-issues).
 
-**Next:** the rest of [S2](020_Work-Plan.md#s2). Kyle has confirmed [D3](010_Decisions.md#d3), the last open detail.
+**Next:** the rest of [S2](020_Work-Plan.md#s2) and [S11](020_Work-Plan.md#s11). Kyle has confirmed [D3](010_Decisions.md#d3), the last open detail.
 
 ## The files
 

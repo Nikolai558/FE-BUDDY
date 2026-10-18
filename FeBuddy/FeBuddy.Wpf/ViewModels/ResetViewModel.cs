@@ -25,12 +25,11 @@ public sealed class ResetViewModel : ObservableObject
 		"The AIRAC data FE-Buddy has downloaded (every cycle)",
 		"The Telephony and Wx Station data it has downloaded",
 		"Its logs",
-		"The backups of your settings (the copies Undo last save and Import keep)",
 	];
 
-	/// <summary>What deleting the settings loses.</summary>
+	/// <summary>What deleting the settings loses. Their backups live beside them, so they go only with them.</summary>
 	public const string SettingsLoss =
-		"Every settings profile - your output folder and facility, the default Region of Interest, every " +
+		"Every settings profile and its backups (the copies Undo last save and Import keep) - your output folder and facility, the default Region of Interest, every " +
 		"AIRAC Service tab's choices (CRC ERAM defaults and file names included), your custom alias files, " +
 		"the File Conversions' folders and options, the Map's files and layers - and your update channel, " +
 		"which GitHub token FE-Buddy uses, and which News posts you have read. FE-Buddy starts with its defaults.";

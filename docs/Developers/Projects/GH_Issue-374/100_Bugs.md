@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
 
-**47 findings** (2 High, 11 Med, 34 Low), 11 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**47 findings** (2 High, 11 Med, 34 Low), 13 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -12,7 +12,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 |---|---|---|---|---|---|
 | [W2-1](#w2-1) | Bug | High | General tab's Save and "Undo last save" act on the whole `Services.AiracService` subtree | Fixed | S1 |
 | [N1-4](#n1-4) | Bug | High | A save can wipe the settings file when it can't read it for a moment | Fixed | S1 |
-| [O1-1](#o1-1) | Bug | Med | Docs-only PRs skip Test and Installer, but the tests and the MSI read docs/*.md and LICENSE.md | Agreed, changed | S1 |
+| [O1-1](#o1-1) | Bug | Med | Docs-only PRs skip Test and Installer, but the tests and the MSI read docs/*.md and LICENSE.md | Fixed | S1 |
 | [C1-1](#c1-1) | Bug | Med | A current cycle the probe calls "not yet published" leaves the AIRAC Service "Waiting" forever | Fixed | S1 |
 | [C3-18](#c3-18) | Bug | Med | An empty `Combined_Alias.txt` can be written | Fixed | S1 |
 | [C5-1](#c5-1) | Bug | Med | DAT and SCT conversions silently overwrite a file when two sources share a name | Fixed | S1 |
@@ -21,7 +21,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W2-11](#w2-11) | Bug | Med | An exception before the run's `try` crashes the app | Fixed | S1 |
 | [W1-14](#w1-14) | Bug | Med | Switching the cycle silently undoes unsaved ticks in the cycle-built lists | Open | S1 |
 | [W1-13](#w1-13) | Bug | Med | Unticking every Procedures.json field gives the 8 default fields | Fixed | S1 |
-| [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Agreed | S1 |
+| [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Fixed | S1 |
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
 | [C3-17](#c3-17) | Bug | Low | A custom alias file's address with a secret is echoed when it isn't http(s) | Deferred | After 3.0 |
 | [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Open | S2 |
@@ -90,7 +90,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### O1-1 · Bug · Med · Docs-only PRs skip Test and Installer, but the tests and the MSI read docs/*.md and LICENSE.md
 
-**Status:** Agreed, changed: remove the docs-only skip, so every pull request runs every check (that also covers the encoding test on ChangeLog.md and README.md, which this fix's allow-list would have missed); re-checked at `4773137` · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), as agreed: `ci.yml` has no `Changes` job any more, so Build, Test and Installer run on every pull request; its header comment and the developer README's Continuous integration section say so. No unit test: it is workflow configuration, and the next docs-only pull request shows it. If the rulesets list a `Changes` check as required, take it off · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`.github/workflows/ci.yml:12-17`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/.github/workflows/ci.yml#L12-L17), [`.github/workflows/ci.yml:66-73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/.github/workflows/ci.yml#L66-L73)
 
@@ -204,7 +204,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W3-15 · Bug · Med · Reset window says settings backups are always deleted, but a reset that keeps settings keeps them
 
-**Status:** Agreed: the second option, fix the text rather than the code; re-checked at `4773137` · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), the second option: the backups line is gone from `AlwaysDeleted`, and `SettingsLoss` starts "Every settings profile and its backups (the copies Undo last save and Import keep)". Tests: `ResetViewModelTests.every_reset_lists_what_always_goes`, and `AppDataResetTests.keeping_the_settings_keeps_each_profiles_backups` with the profile backups' real names · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ResetViewModel.cs:22-29`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ResetViewModel.cs#L22-L29)
 

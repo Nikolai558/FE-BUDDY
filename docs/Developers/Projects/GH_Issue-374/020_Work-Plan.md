@@ -47,9 +47,9 @@ The bugs to fix before anything else, each with a regression test.
 | [C1-1](100_Bugs.md#c1-1) | If the probe says the *current* cycle is "not yet published" (a proxy answering 403, a PC clock set ahead), the AIRAC Service waits forever with no error. | Fixed (not yet merged) |
 | [C5-1](100_Bugs.md#c5-1) | DAT and SCT conversions overwrite each other's output when two sources share a name (`ZOB.sct` and `ZOB.sct2`), with no warning. | Fixed (not yet merged) |
 | [C3-18](100_Bugs.md#c3-18) | `Combined_Alias.txt` can be written empty. Uploading it would wipe the facility's aliases. | Fixed (not yet merged) |
-| [W3-15](100_Bugs.md#w3-15) | The Reset window says settings backups are always deleted. A reset that keeps settings keeps them. | Agreed |
+| [W3-15](100_Bugs.md#w3-15) | The Reset window says settings backups are always deleted. A reset that keeps settings keeps them. | Fixed (not yet merged) |
 | [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4) | A settings file that can't be written (antivirus lock, read-only folder) crashes the app on several GUI paths. The crash handler only catches UI-thread exceptions, so a background crash leaves no crash file. | Fixed (not yet merged) |
-| [O1-1](100_Bugs.md#o1-1) | Pull requests that only change docs skip the Test job, but the tests read `docs/*.md` (link anchors, file encoding). A doc-only PR can break `v3-development` and still merge. | Agreed, changed |
+| [O1-1](100_Bugs.md#o1-1) | Pull requests that only change docs skip the Test job, but the tests read `docs/*.md` (link anchors, file encoding). A doc-only PR can break `v3-development` and still merge. | Fixed (not yet merged) |
 | [C1-5](100_Bugs.md#c1-5) | After an update, FE-Buddy relaunched **elevated** from inside msiexec, as the admin who approved it. | Fixed ([#377](https://github.com/Nikolai558/FE-BUDDY/pull/377)) |
 | [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | Declining the administrator prompt during an update makes setup say FE-Buddy is up to date. Comes from the [C1-5](100_Bugs.md#c1-5) fix. See [Related issues](#related-issues). | Fixed (not yet merged); needs a test on a VM |
 

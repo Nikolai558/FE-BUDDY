@@ -56,17 +56,23 @@ public static class ProcedureSettingsParser
 
 	/// <summary>
 	/// Whether a Procedures block will use the procedures-with-a-fix-in-my-facility rule: it is on
-	/// (the default) and names a facility. For the AIRAC Service, which loads the previous cycle's
-	/// NASR data only then.
+	/// (the default), names a facility, a document is on, and the area isn't Everything. For the
+	/// AIRAC Service, which loads the previous cycle's NASR data only then.
 	/// </summary>
 	/// <param name="procedureSettings">The raw settings dictionary.</param>
 	/// <returns><see langword="true"/> when the rule may run.</returns>
+	/// <exception cref="ArgumentException">Thrown when one of those settings has a value <see cref="Parse"/> would refuse.</exception>
 	public static bool IncludesProceduresWithFixInFacility(IReadOnlyDictionary<string, string> procedureSettings)
 	{
 		ArgumentNullException.ThrowIfNull(procedureSettings);
 
+		// Read as Parse reads them, with the same defaults: the rule only adds to what the documents
+		// cover, and Everything already covers every airport.
 		return SettingsValueReader.YesNo(procedureSettings, IncludeFixInFacilityKey, defaultValue: true)
-			&& SettingsValueReader.OptionalString(procedureSettings, "PrimaryFacility") is not null;
+			&& SettingsValueReader.OptionalString(procedureSettings, "PrimaryFacility") is not null
+			&& (SettingsValueReader.YesNo(procedureSettings, "GenerateChangesDocument", defaultValue: true)
+				|| SettingsValueReader.YesNo(procedureSettings, "GenerateProceduresJson", defaultValue: true))
+			&& ReadArea(procedureSettings) != SubServiceArea.Everything;
 	}
 
 	/// <summary>The areas Procedures offers: the facilities, the ROI, every airport, or none.</summary>

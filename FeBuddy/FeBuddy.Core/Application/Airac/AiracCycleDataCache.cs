@@ -388,8 +388,13 @@ public sealed class AiracCycleDataCache(
 	/// second one. If the cycle has not been downloaded/parsed yet, this kicks that off.
 	/// </summary>
 	/// <param name="cycleId">The cycle ID to get.</param>
-	/// <param name="cancellationToken">Cancels a parse this call starts.</param>
-	/// <returns>The parsed NASR data for the cycle.</returns>
+	/// <param name="cancellationToken">
+	/// Stops this call waiting. A parse it starts is shared, so it carries on and finishes for every caller.
+	/// </param>
+	/// <returns>
+	/// The parsed NASR data for the cycle. The task faults with <see cref="InvalidOperationException"/>
+	/// when the cycle couldn't be prepared, or with the parse's own exception when its parse failed.
+	/// </returns>
 	/// <exception cref="InvalidOperationException">The cycle is not tracked, or it is not published.</exception>
 	public Task<NasrCsvDataCollection> GetAsync(string cycleId, CancellationToken cancellationToken = default)
 	{
@@ -479,26 +484,28 @@ public sealed class AiracCycleDataCache(
 	{
 		try
 		{
+			// The parse is shared by every caller, so it never gets a caller's token: cancelling only
+			// stops this call waiting, and the parse finishes for everyone.
 			if (entry.ParseTask is { } inFlightParse)
 			{
-				return await inFlightParse.ConfigureAwait(false);
+				return await inFlightParse.WaitAsync(cancellationToken).ConfigureAwait(false);
 			}
 
 			await WaitForDownloadAsync(entry, retryFailed: true, cancellationToken).ConfigureAwait(false);
 
-			if (StartParse(entry, cancellationToken) is { } started)
+			if (StartParse(entry, CancellationToken.None) is { } started)
 			{
-				await ObserveParseAsync(entry, started).ConfigureAwait(false);
+				await ObserveParseAsync(entry, started).WaitAsync(cancellationToken).ConfigureAwait(false);
 			}
 			else if (entry.ParseTask is { } queued)
 			{
 				// The launch pipeline queued this cycle's parse while the download above was waited for.
-				return await queued.ConfigureAwait(false);
+				return await queued.WaitAsync(cancellationToken).ConfigureAwait(false);
 			}
 
 			if (entry.State == CycleDataState.Ready && entry.ParseTask is { } parsed)
 			{
-				return await parsed.ConfigureAwait(false);
+				return await parsed.WaitAsync(cancellationToken).ConfigureAwait(false);
 			}
 
 			// Found only now, when the download asked first: a dev launch that left out downloading

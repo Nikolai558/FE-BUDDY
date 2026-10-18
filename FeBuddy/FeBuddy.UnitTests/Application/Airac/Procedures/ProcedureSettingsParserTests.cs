@@ -421,6 +421,28 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Throws<ArgumentNullException>(() => ProcedureSettingsParser.IncludesProceduresWithFixInFacility(null!));
 	}
 
+	/// <summary>
+	/// The rule adds only to what the documents cover, so with Everything, or with only the alias file
+	/// on, it never runs and the run needn't load the previous cycle for it.
+	/// </summary>
+	[Theory]
+	[InlineData("Artccs", "Y", "Y", true)]
+	[InlineData("Artccs", "Y", "N", true)]
+	[InlineData("Artccs", "N", "Y", true)]
+	[InlineData("Everything", "Y", "Y", false)]
+	[InlineData("Artccs", "N", "N", false)]
+	public void includes_procedures_with_a_fix_in_the_facility_needs_a_document_and_an_area_short_of_everything(
+		string area, string changesDocument, string proceduresJson, bool expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["PrimaryFacility"] = "ZDC";
+		settings["Area"] = area;
+		settings["GenerateChangesDocument"] = changesDocument;
+		settings["GenerateProceduresJson"] = proceduresJson;
+
+		Assert.Equal(expected, ProcedureSettingsParser.IncludesProceduresWithFixInFacility(settings));
+	}
+
 	// ---- AirportProcedures parsing ----
 
 	[Theory]

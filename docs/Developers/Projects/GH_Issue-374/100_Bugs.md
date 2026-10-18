@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
 
-**47 findings** (2 High, 11 Med, 34 Low), 13 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**47 findings** (2 High, 11 Med, 34 Low), 16 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -25,11 +25,11 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
 | [C3-17](#c3-17) | Bug | Low | A custom alias file's address with a secret is echoed when it isn't http(s) | Deferred | After 3.0 |
 | [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Open | S2 |
-| [C1-2](#c1-2) | Bug | Low | A cancelled run can leave a cycle's parse permanently "cancelled" for the session | Open | S2 |
-| [C1-3](#c1-3) | Bug | Low | Procedure Charts' optional previous-cycle NASR load can fail the whole run; GetAsync's exception doc is incomplete | Open | S2 |
+| [C1-2](#c1-2) | Bug | Low | A cancelled run can leave a cycle's parse permanently "cancelled" for the session | Fixed | S2 |
+| [C1-3](#c1-3) | Bug | Low | Procedure Charts' optional previous-cycle NASR load can fail the whole run; GetAsync's exception doc is incomplete | Fixed | S2 |
 | [C2-3](#c2-3) | Bug | Low | Waypoint buffering can remove an airway from Airways.txt, and runs on alias-only runs | Open | S2 |
 | [C3-16](#c3-16) | Bug | Low | NAVAIDs' "nothing written" advisory: one branch unreachable, wrong text when NASR has no NAVAIDs | Open | S2 |
-| [C4-11](#c4-11) | Bug | Low | IncludesProceduresWithFixInFacility returns true when the rule can't run, so the run loads (or waits for) the previous cycle's NASR for nothing | Open | S2 |
+| [C4-11](#c4-11) | Bug | Low | IncludesProceduresWithFixInFacility returns true when the rule can't run, so the run loads (or waits for) the previous cycle's NASR for nothing | Fixed | S2 |
 | [C5-8](#c5-8) | Bug | Low | Card-mode warning says elements "carry only their filters", but they carry filter 0 | Open | S2 |
 | [C1-4](#c1-4) | Bug | Low | AppEnvironment.RecheckAsync moves the AIRAC date, so the GUI can name a cycle the cache doesn't track | Deferred | After 3.0 |
 | [C5-23](#c5-23) | Bug | Low | ROI validation accepts "NaN" | Open | S2 |
@@ -192,7 +192,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W1-13 · Bug · Med · Unticking every Procedures.json field gives the 8 default fields
 
-**Status:** Fixed (not yet merged), allowing "none" as Nikolas leans; Kyle still to agree. Core uses the defaults only when `JsonFields` is absent and reads a blank one as no optional field; the tab reads a saved blank `JsonFields` (and `ChartTypes`) back as blank. The Harness now sends the default list itself, so its runs are unchanged. If "none" shouldn't be allowed after all, keep the Core change and add a `Validate` rule. Settings-Reference.md updated. Tests: `ProcedureSettingsParserTests.blank_json_fields_mean_none_of_the_optional_fields`, `ProceduresViewModelTests.every_json_field_unticked_stays_unticked_and_is_sent_blank` · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), allowing "none" as Nikolas leans. Core uses the defaults only when `JsonFields` is absent and reads a blank one as no optional field; the tab reads a saved blank `JsonFields` (and `ChartTypes`) back as blank. The Harness now sends the default list itself, so its runs are unchanged. If "none" shouldn't be allowed after all, keep the Core change and add a `Validate` rule. Settings-Reference.md updated. Tests: `ProcedureSettingsParserTests.blank_json_fields_mean_none_of_the_optional_fields`, `ProceduresViewModelTests.every_json_field_unticked_stays_unticked_and_is_sent_blank` · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:991`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L991), 1157-1175, 1211
 
@@ -256,7 +256,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C1-2 · Bug · Low · A cancelled run can leave a cycle's parse permanently "cancelled" for the session
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: `RunFlightAsync` starts the shared parse with `CancellationToken.None` and stops waiting with `WaitAsync(cancellationToken)`, so a cancelled run no longer cancels the parse for everyone. Test: `AiracCycleDataCacheTests.a_cancelled_run_never_leaves_the_parse_it_started_cancelled` (fails on the old code) · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs:482-497`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs#L482-L497), 774-800, 825-834
 
@@ -268,7 +268,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C1-3 · Bug · Low · Procedure Charts' optional previous-cycle NASR load can fail the whole run; GetAsync's exception doc is incomplete
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed, keeping the previous-cycle check (Kyle, [decision log](010_Decisions.md#decision-log)): `TryGetCachedNasrAsync` catches everything but cancellation, warns, and the run goes on without the data. `GetAsync` and the first `RunAsync` now document the parse's own exception. Test: `AiracServicePreviousNasrTests.a_previous_cycle_whose_parse_fails_while_the_run_waits_only_warns` (fails on the old code) · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/AiracService.cs:223-245`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracService.cs#L223-L245); [`FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs:393`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs#L393), 482-485
 
@@ -304,7 +304,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### C4-11 · Bug · Low · IncludesProceduresWithFixInFacility returns true when the rule can't run, so the run loads (or waits for) the previous cycle's NASR for nothing
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: it also returns false with the Everything area or with neither document on, reading them as `Parse` does, and its summary says so. Test: `ProcedureSettingsParserTests.includes_procedures_with_a_fix_in_the_facility_needs_a_document_and_an_area_short_of_everything` (fails on the old code) · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs:57-70`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs#L57-L70); [`FeBuddy/FeBuddy.Core/Application/Airac/AiracService.cs:186-189`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracService.cs#L186-L189)
 

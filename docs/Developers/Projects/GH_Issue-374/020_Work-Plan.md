@@ -15,7 +15,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | Session | What | Findings | Files |
 |---|---|---:|---|
 | [S1](#s1) | Fix-first bugs, plus [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | 14 + [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | [100](100_Bugs.md) |
-| [S2](#s2) | The other bugs, plus [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) and [Q7](010_Decisions.md#q7) | 19 + 2 | [100](100_Bugs.md) |
+| [S2](#s2) | The other bugs, plus [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) and [Q7](010_Decisions.md#q7) | 14 + 2 | [100](100_Bugs.md) |
 | [S3](#s3) | GUI lag: AIRAC Service and File Conversions | 15 | [110](110_GUI-Lag.md) |
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | 14 | [110](110_GUI-Lag.md) |
 | [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | 24 + 1 | [120](120_Logic-In-GUI.md) |
@@ -61,9 +61,9 @@ The bugs to fix before anything else, each with a regression test.
 
 Every other bug in [100_Bugs.md](100_Bugs.md), High and Med first.
 
-**Fixed (not yet merged):** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10)
+**Fixed (not yet merged):** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9)
 
-**Still to do:** [O1-2](100_Bugs.md#o1-2), [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [W1-7](100_Bugs.md#w1-7), [W1-15](100_Bugs.md#w1-15), [W2-5](100_Bugs.md#w2-5), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-7](100_Bugs.md#w4-7), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W6-3](100_Bugs.md#w6-3), [W7-22](100_Bugs.md#w7-22)
+**Still to do:** [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30), [W1-7](100_Bugs.md#w1-7), [W1-15](100_Bugs.md#w1-15), [W2-5](100_Bugs.md#w2-5), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-7](100_Bugs.md#w4-7), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W6-3](100_Bugs.md#w6-3), [W7-22](100_Bugs.md#w7-22)
 
 **Also:**
 

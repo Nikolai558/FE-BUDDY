@@ -219,9 +219,15 @@ public sealed class NasrCsvParserMappingTests
 				.ToUpperInvariant();
 	}
 
-	/// <summary>What the parser should produce for a raw CSV value, mirroring <see cref="NasrCsvReader"/>.</summary>
+	/// <summary>
+	/// What the parser should produce for a raw CSV value, mirroring <see cref="NasrCsvReader"/>: its
+	/// number styles and the invariant culture, so a PC whose decimal separator is a comma agrees.
+	/// </summary>
 	private static object? Convert(string raw, Type type)
 	{
+		const NumberStyles IntegerStyle = NumberStyles.Integer;
+		const NumberStyles DecimalStyle = NumberStyles.Float | NumberStyles.AllowThousands;
+
 		if (type == typeof(string))
 		{
 			return raw;
@@ -229,22 +235,22 @@ public sealed class NasrCsvParserMappingTests
 
 		if (type == typeof(int))
 		{
-			return int.Parse(raw);
+			return int.Parse(raw, IntegerStyle, CultureInfo.InvariantCulture);
 		}
 
 		if (type == typeof(int?))
 		{
-			return int.TryParse(raw, out int i) ? i : null;
+			return int.TryParse(raw, IntegerStyle, CultureInfo.InvariantCulture, out int i) ? i : null;
 		}
 
 		if (type == typeof(double))
 		{
-			return double.Parse(raw);
+			return double.Parse(raw, DecimalStyle, CultureInfo.InvariantCulture);
 		}
 
 		if (type == typeof(double?))
 		{
-			return double.TryParse(raw, out double d) ? d : null;
+			return double.TryParse(raw, DecimalStyle, CultureInfo.InvariantCulture, out double d) ? d : null;
 		}
 
 		throw new NotSupportedException($"No conversion for {type}.");

@@ -170,8 +170,9 @@ and every file's encoding).
 
 ## Odds and ends
 
-- **`DEV-CleanBuild.bat`** (repository root) empties every project's `bin\` folder, for when a build
-  gets confused.
+- **`DEV-CleanBuild.bat`** (repository root) deletes every `bin\` and `obj\` folder under `FeBuddy\`,
+  and `publish\` and `TestResults\`, for when a build gets confused. It leaves `releases\` (the built
+  MSI) alone.
 - **News** is `News.md` at the repository root (its format is at the top of the file); the app reads
   it from `v3-development`. `FeBuddy/FeBuddy.Core/News.md` is not News: it is a final notice for
   3.0.0-alpha.1, which reads that path.

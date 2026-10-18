@@ -45,6 +45,8 @@ the user's. A step that fails is logged and only disables what needs it; launch 
 4. Delete FE-Buddy 2.x's dead Desktop and Start menu shortcuts (`LegacySquirrelShortcuts`).
 5. Get the UTC time and check the internet connection.
 6. In parallel: the version check, the AIRAC data (below) and News.
+7. Once launch is done and FE-Buddy is online, the shell checks the saved GitHub tokens
+   (`OptionalLaunchStep.CheckGitHubTokens`).
 
 Results land on `AppEnvironment`, and the AIRAC cache raises `StateChanged` as each cycle moves on.
 The view-models listen, so the window fills in as launch goes: the status narrates the downloads,
@@ -55,8 +57,8 @@ only the optional steps chosen on Settings' Developer card. `App.OnStartup` read
 `DevLaunchSettings`, and publishes a `LaunchOptions` (`LaunchSequence.UseOptions`) before the window
 is built; Core never reads the command line. `LaunchSequence` skips what it leaves out and logs it,
 and hands the AIRAC cache an `AiracLaunchPlan` (download, parse, prune). The three cycles are always
-tracked; one left unloaded is `NotLoaded` until something asks for it (`GetAsync`), which probes,
-downloads and parses it then.
+tracked. One left unloaded loads when something asks for it (`GetAsync`), probing first if launch
+didn't. While that's the current cycle, the service's readiness is `NotLoaded`.
 
 ## The AIRAC data
 
@@ -75,7 +77,7 @@ downloads and parses it then.
 5. **Only the NASR groups FE-Buddy reads** are parsed: `NasrCsvGroups.InUse`, 9 of the 24. The
    others stay `null` in the `NasrCsvDataCollection`, and reading one through its `Require…` method
    (`RequireIls()`) throws an error that names it. To use another group, add it to `InUse`: its
-   parser and models are already there. `NasrCsvParser.ParseAllAsync` still parses all 24, for the
+   parser and models are already there. `NasrCsvParser.ParseAllAsync` parses all 24, for the
    Harness and tests. The log says how long each cycle's parse took and how many groups it parsed.
 
 | Readiness | When | AIRAC Service |
@@ -115,7 +117,9 @@ Procedure Charts waits for the previous cycle's d-TPP Metafile, which its change
   or added at the end. Each part is kept, checked (GNG: `rows` numbers `records`, at least 100; GitHub:
   an array with a virtual airline) and fallen back on by itself, so one part failing never cuts the
   other short. A run uses a copy under 24 hours old without downloading (`SharedDataRefreshResult.Reused`);
-  the Telephony tab's button always downloads. The single `vatsim_radar_airlines.json` that
+  the Telephony tab's button always downloads. VATSIM-Radar's own merged list
+  (`data.vatsim-radar.com`) isn't used because it only takes TLS 1.3, which Windows 10 can't do.
+  The single `vatsim_radar_airlines.json` that
   3.0.0-beta.4 and earlier kept (beta.4's from `data.vatsim-radar.com`, which only takes TLS 1.3 -
   Windows 10 can't) is read only while neither part has a copy, and deleted once both have one.
 - **`Telephony.txt` writes only the first operator for each 3LD and telephony** (`TelephonyBuilder`):
@@ -185,8 +189,9 @@ Not every sub-service has all four steps:
   alphabetically, then `TELEPHONY`, then `OTHER` (airways, NAVAIDs, and anything with no known
   ARTCC). It is written whenever an
   alias file was written, even with no duplicates, so an old report never misleads.
-- **Every file is ready for vNAS**, so nothing is marked for upload: GeoJSON goes in `Geojson`,
-  alias files in `Aliases`.
+- **Every file is ready for vNAS.** In the cycle folder (`AiracOutputPaths`), GeoJSON goes in
+  `Geojson`, alias files in `Aliases`, Procedure Charts' documents in `Publication_Docs`, and
+  `Duplicate_Alias_Commands.txt` sits at the top.
 - **`Combined_Alias.txt`** is written last, into `Aliases`, by every run that writes an alias file
   (or has Add Custom Aliases in it). vNAS takes one alias file per facility, so
   `CombinedAliasFileWriter` writes:
@@ -250,9 +255,9 @@ The FAA's data has quirks. Each rule lives in one class.
   (18,000 ft or more is High). It sets each airway's CRC defaults in a designation file. It doesn't
   pick the High and Low files: those go by designation, as the user chooses, because NASR publishes
   some V airways under one ID in both the contiguous U.S. and Hawaii, and Hawaii's 45,000 ft would put
-  the mainland airway on the high map (issue #241).
-- **Designation** comes from the airway ID's leading letters (`J` in `J3`), never NASR's
-  `AWY_DESIGNATION` (a `Q` airway can be listed as `RN`).
+  the mainland airway on the high map.
+- **Designation** (`AirwayClassifier.DeriveDesignation`) comes from the airway ID's leading letters
+  (`J` in `J3`), never NASR's `AWY_DESIGNATION` (a `Q` airway can be listed as `RN`).
 - **Border markers** (`AirwayReferenceOnlyPoints`, `AirwayNormalizer`): points like
   `U.S. CANADIAN BORDER-4` aren't navigable. They have a blank `FROM_PT_TYPE` and are dropped, so the
   airway runs straight between real waypoints.

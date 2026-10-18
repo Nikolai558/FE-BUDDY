@@ -11,10 +11,8 @@ using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
-using FeBuddy.Core.Domain.Airways;
 using FeBuddy.Core.Domain.Airways.Models;
 using FeBuddy.Core.Domain.Crc.Models;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -205,22 +203,23 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= parent hooks =================
 
 	/// <inheritdoc />
-	/// <remarks>Builds the designation toggle list from the cycle's airways.</remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	/// <remarks>
+	/// Builds the designation toggle list from the cycle's airways. A designation already listed keeps
+	/// what is ticked on screen; a new one starts as saved.
+	/// </remarks>
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
-		HashSet<string> excluded = ParseExcludedFromConfig();
+		ArgumentNullException.ThrowIfNull(lists);
 
-		string[] designations = [.. data.RequireAwy().AwyBase
-			.Select(a => AirwayClassifier.DeriveDesignation(a.AwyId))
-			.Where(d => !string.IsNullOrWhiteSpace(d))
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.OrderBy(d => d, StringComparer.OrdinalIgnoreCase)];
+		HashSet<string> excluded = ParseExcludedFromConfig();
+		Dictionary<string, bool> shown = Designations.ToDictionary(t => t.Designation, t => t.Included, StringComparer.OrdinalIgnoreCase);
 
 		Designations.Clear();
-		foreach (string d in designations)
+		foreach (string d in lists.AirwayDesignations)
 		{
+			bool included = shown.TryGetValue(d, out bool onScreen) ? onScreen : !excluded.Contains(d);
 			Designations.Add(new DesignationToggle(
-				d, included: !excluded.Contains(d), _strata.TryGetValue(d, out AirwayStratum stratum) ? stratum : null, OnDesignationChanged));
+				d, included, _strata.TryGetValue(d, out AirwayStratum stratum) ? stratum : null, OnDesignationChanged));
 		}
 
 		OnPropertyChanged(nameof(ShowsStrata));

@@ -10,7 +10,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
-| [U1-1](#u1-1) | GUI lag | High | Every tab's cycle-dependent lists are built on the UI thread on each cycle load/switch | Open | S3 |
+| [U1-1](#u1-1) | GUI lag | High | Every tab's cycle-dependent lists are built on the UI thread on each cycle load/switch | Fixed | S3 |
 | [U1-2](#u1-2) | GUI lag | High | Telephony reads and merges the virtual-airline list on the UI thread with O(N²) Core code | Open | S3 |
 | [C6-30](#c6-30) | GUI lag | Med | UserConfigFile.CanUndo reads and parses a file on every command requery | Open | S3 |
 | [C7-4](#c7-4) | GUI lag | Med | NasrCycleDownloader has no `ConfigureAwait(false)`, so unzipping a cycle can run on the UI thread | Open | S4 |
@@ -19,7 +19,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W1-3](#w1-3) | GUI lag | Med | Add Custom Aliases reads and stats custom alias files on every keystroke and validation pass | Open | S3 |
 | [W3-3](#w3-3) | GUI lag | Med | Dashboard activity log is O(n) per entry and never trimmed | Open | S4 |
 | [W3-1](#w3-1) | GUI lag | Med | Every map click does a full, synchronous settings-file round trip (and logs a line) | Open | S4 |
-| [W1-1](#w1-1) | GUI lag | Med | Procedure Charts indexes the whole d-TPP Metafile on the UI thread, again on every General-tab click | Open | S3 |
+| [W1-1](#w1-1) | GUI lag | Med | Procedure Charts indexes the whole d-TPP Metafile on the UI thread, again on every General-tab click | Fixed | S3 |
 | [U1-6](#u1-6) | GUI lag | Med | File Conversions counts (and opens) source files on the UI thread per keystroke and at startup | Open | S3 |
 | [U1-7](#u1-7) | GUI lag | Med | Run review message lists are not virtualized and format every message on the UI thread | Open | S3 |
 | [W7-2](#w7-2) | GUI lag | Low | A pending reset runs on the UI thread before any window: up to 15 s wait plus deleting all app data, with nothing on screen | Open | S4 |
@@ -46,7 +46,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### U1-1 · GUI lag · High · Every tab's cycle-dependent lists are built on the UI thread on each cycle load/switch
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged), as proposed: Core's `AiracCycleOptionListBuilder` works out every tab's option lists (`AiracCycleOptionLists`) once per cycle and keeps them with its data; `LoadCycleDataAsync` builds them with `Task.Run` before it goes to the UI thread, and `ISubServiceRunTarget.LoadCycleDependentLists` now takes the lists, so the tabs only fill their toggles. Switching back to a cycle reuses its lists. Tests: `AiracCycleOptionListBuilderTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:419-440`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L419-L440); [`FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs:239-338`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs#L239-L338); [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:888-952`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L888-L952); [`FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs:126-168`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L126-L168); [`FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs:209-237`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs#L209-L237); [`FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs:149-179`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L149-L179); [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:240-260`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L240-L260); [`FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs:243-262`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs#L243-L262)
 
@@ -172,7 +172,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W1-1 · GUI lag · Med · Procedure Charts indexes the whole d-TPP Metafile on the UI thread, again on every General-tab click
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged): Core's `ProcedureNameIndex` indexes the metafile (airports by FAA/ICAO ID, departures and arrivals by name, root and airport, the counts), built with `Task.Run` in `LoadProceduresDataAsync` and kept per metafile; `SetDtppData` takes the index. The screen reads the metafile again only when the cycle or the previous cycle's state changes, not on every General-tab click. Core still parses it fresh per request, as it documents, rather than keep three 16 MB metafiles in memory. Tests: `ProcedureNameIndexTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:553-634`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L553-L634)
 

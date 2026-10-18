@@ -1,5 +1,6 @@
 using FeBuddy.Wpf.ViewModels;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -178,7 +179,7 @@ public sealed class ProceduresViewModelTests : IDisposable
 		}
 
 		ProceduresViewModel procedures = new();
-		procedures.LoadCycleDependentLists(new NasrCsvDataCollection { Apt = new AptCsvDataCollection { AptBase = airports } });
+		procedures.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(new NasrCsvDataCollection { Apt = new AptCsvDataCollection { AptBase = airports } }));
 		return procedures;
 	}
 

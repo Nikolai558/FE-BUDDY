@@ -15,7 +15,6 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Crc.Models;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -239,21 +238,22 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= parent hooks =================
 
 	/// <inheritdoc />
-	/// <remarks>Builds the ARTCC toggle list from the cycle's <c>DP_BASE</c>.</remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	/// <remarks>
+	/// Builds the ARTCC toggle list from the cycle's <c>DP_BASE</c>. An ARTCC already listed keeps
+	/// what is ticked on screen; a new one starts as saved (or as the Settings facility).
+	/// </remarks>
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
-		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
+		ArgumentNullException.ThrowIfNull(lists);
 
-		string[] artccs = [.. data.RequireDp().DpBase
-			.Select(d => d.Artcc?.Trim().ToUpperInvariant() ?? string.Empty)
-			.Where(a => a.Length > 0)
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.OrderBy(a => a, StringComparer.OrdinalIgnoreCase)];
+		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
+		Dictionary<string, bool> shown = Artccs.ToDictionary(t => t.Artcc, t => t.IsSelected, StringComparer.OrdinalIgnoreCase);
 
 		Artccs.Clear();
-		foreach (string artcc in artccs)
+		foreach (string artcc in lists.DepartureArtccs)
 		{
-			Artccs.Add(new ArtccToggle(artcc, _savedArtccFilter.Contains(artcc), OnArtccToggled));
+			bool selected = shown.TryGetValue(artcc, out bool onScreen) ? onScreen : _savedArtccFilter.Contains(artcc);
+			Artccs.Add(new ArtccToggle(artcc, selected, OnArtccToggled));
 		}
 
 		// The list was empty when this tab snapshotted itself at construction; re-take the

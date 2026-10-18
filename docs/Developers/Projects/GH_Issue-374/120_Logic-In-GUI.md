@@ -10,7 +10,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
-| [U1-17](#u1-17) | Logic in GUI | Med | NASR-derived option lists and their rules live in the tab view models | Open | S5 |
+| [U1-17](#u1-17) | Logic in GUI | Med | NASR-derived option lists and their rules live in the tab view models | Partly fixed | S5 |
 | [W3-9](#w3-9) | Logic in GUI | Med | GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI | Open | S5 |
 | [W1-6](#w1-6) | Logic in GUI | Med | Procedure Charts re-implements Core's selection and name-matching rules | Open | S5 |
 | [W6-8](#w6-8) | Logic in GUI | Low | The GUI guesses which words in Core's messages are file names | Open | S5 |
@@ -41,7 +41,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### U1-17 · Logic in GUI · Med · NASR-derived option lists and their rules live in the tab view models
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Partly fixed (not yet merged), with [U1-1](110_GUI-Lag.md#u1-1): the tabs' lists and their rules - normalizing, STAR_BASE.ARTCC split, shut-down NAVAIDs (`NavaidBuilder.IsShutDown`), the known fix-use and NAVAID-type order, the boundary altitude order (`ArtccBoundaryAltitude`) - are in `AiracCycleOptionListBuilder`, and the GUI copies (`KnownFixUseOrder`, `KnownTypeOrder`, `ShutdownStatus`, `AltitudeOrder`) are gone. Left: the Settings page's facility list, with [U1-13](110_GUI-Lag.md#u1-13) in S4 · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs:244-282`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs#L244-L282),611; [`FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs:34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L34),153-159,438; [`FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs:150-157`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L150-L157),367; [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:244-249`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L244-L249); [`FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs:247-251`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs#L247-L251); [`FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs:213-217`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs#L213-L217); [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:895-899`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L895-L899); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:1131-1136`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L1131-L1136)
 

@@ -3,6 +3,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -61,7 +62,7 @@ public sealed class AirwaysViewModelTests : IDisposable
 	private static AirwaysViewModel NewTab(params string[] designations)
 	{
 		AirwaysViewModel tab = new();
-		tab.LoadCycleDependentLists(Cycle(designations));
+		tab.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(Cycle(designations)));
 		return tab;
 	}
 

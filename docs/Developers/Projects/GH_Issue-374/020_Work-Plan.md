@@ -42,7 +42,7 @@ The bugs to fix before anything else, each with a regression test.
 | [N1-4](100_Bugs.md#n1-4) | Found while fixing W7-3: a save that meets a settings file locked for a moment (antivirus, a sync tool) wrote back an almost empty file, wiping every other setting. | Fixed (not yet merged) |
 | [W2-1](100_Bugs.md#w2-1) | The General tab saves and undoes the whole `Services.AiracService` settings node. Saving any other tab (or setting a default ROI on the Map) turns on the General tab's **Undo last save**, and clicking it wipes every saved AIRAC Service setting. Decided ([Q1](010_Decisions.md#q1)): the General tab gets its own node, with no settings-layout step, and a test for [H5](010_Decisions.md#h5). | Fixed (not yet merged) |
 | [U1-3](100_Bugs.md#u1-3) | Settings are read on a background thread at launch, after the temp folder is cleared. File Conversions is built from settings when the window goes idle, and nothing reloads it. If it's built first it shows defaults, and saving it can overwrite the user's saved settings with them. | Fixed (not yet merged) |
-| [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10) | Switching the cycle on the General tab quietly throws away unsaved ticks in the lists built from the cycle. The tab still shows as unsaved. | Open |
+| [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10) | Switching the cycle on the General tab quietly throws away unsaved ticks in the lists built from the cycle. The tab still shows as unsaved. | Fixed (not yet merged), with U1-1 in S3 |
 | [W1-13](100_Bugs.md#w1-13) | Unticking every Procedures.json field sends `JsonFields=""`, which Core reads as "use the 8 defaults". The run writes the fields the user turned off. | Fixed (not yet merged); allows "none", agreed by Kyle |
 | [C1-1](100_Bugs.md#c1-1) | If the probe says the *current* cycle is "not yet published" (a proxy answering 403, a PC clock set ahead), the AIRAC Service waits forever with no error. | Fixed (not yet merged) |
 | [C5-1](100_Bugs.md#c5-1) | DAT and SCT conversions overwrite each other's output when two sources share a name (`ZOB.sct` and `ZOB.sct2`), with no warning. | Fixed (not yet merged) |
@@ -63,7 +63,7 @@ Every other bug in [100_Bugs.md](100_Bugs.md), High and Med first.
 
 **Fixed (not yet merged):** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9)
 
-**Still to do:** [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30), [W1-7](100_Bugs.md#w1-7), [W1-15](100_Bugs.md#w1-15), [W2-5](100_Bugs.md#w2-5), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-7](100_Bugs.md#w4-7), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W6-3](100_Bugs.md#w6-3), [W7-22](100_Bugs.md#w7-22)
+**Still to do:** [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30), [W1-7](100_Bugs.md#w1-7), [W2-5](100_Bugs.md#w2-5), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-7](100_Bugs.md#w4-7), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W6-3](100_Bugs.md#w6-3), [W7-22](100_Bugs.md#w7-22)
 
 **Also:**
 
@@ -79,6 +79,8 @@ Every other bug in [100_Bugs.md](100_Bugs.md), High and Med first.
 The AIRAC Service screen and File Conversions: the per-cycle option lists, the d-TPP index, the Telephony list, the Undo check, Add Custom Aliases and the source-folder scans. Build these in Core, off the UI thread, and cache them.
 
 **Findings:** [U1-1](110_GUI-Lag.md#u1-1), [U1-2](110_GUI-Lag.md#u1-2), [C6-30](110_GUI-Lag.md#c6-30), [U1-6](110_GUI-Lag.md#u1-6), [U1-7](110_GUI-Lag.md#u1-7), [W1-1](110_GUI-Lag.md#w1-1), [W1-3](110_GUI-Lag.md#w1-3), [U1-14](110_GUI-Lag.md#u1-14), [U1-15](110_GUI-Lag.md#u1-15), [W1-5](110_GUI-Lag.md#w1-5), [W2-6](110_GUI-Lag.md#w2-6), [W2-27](110_GUI-Lag.md#w2-27), [W4-4](110_GUI-Lag.md#w4-4), [W4-5](110_GUI-Lag.md#w4-5), [W6-6](110_GUI-Lag.md#w6-6)
+
+**Done** (not yet merged): [U1-1](110_GUI-Lag.md#u1-1), with the tabs' lists and their rules in Core ([U1-17](120_Logic-In-GUI.md#u1-17), all but the Settings page's facility list), [W1-1](110_GUI-Lag.md#w1-1), and the cycle-switch bugs [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9) and [W1-15](100_Bugs.md#w1-15).
 
 <a id="s4"></a>
 

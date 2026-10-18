@@ -19,7 +19,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [U1-3](#u1-3) | Bug | Med | Pages can be built from empty settings before the launch sequence has read them | Fixed | S1 |
 | [W7-3](#w7-3) | Bug | Med | A settings file that can't be written crashes FE-Buddy when the default ROI is saved or cleared (and the write runs on the UI thread) | Fixed | S1 |
 | [W2-11](#w2-11) | Bug | Med | An exception before the run's `try` crashes the app | Fixed | S1 |
-| [W1-14](#w1-14) | Bug | Med | Switching the cycle silently undoes unsaved ticks in the cycle-built lists | Open | S1 |
+| [W1-14](#w1-14) | Bug | Med | Switching the cycle silently undoes unsaved ticks in the cycle-built lists | Fixed | S1 |
 | [W1-13](#w1-13) | Bug | Med | Unticking every Procedures.json field gives the 8 default fields | Fixed | S1 |
 | [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Fixed | S1 |
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
@@ -43,14 +43,14 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W7-4](#w7-4) | Bug | Low | The "last-chance" crash handler only sees exceptions on the UI thread | Fixed | S1 |
 | [W6-3](#w6-3) | Bug | Low | The "Towered Airports" layer would include any airport whose tower code has no display mapping, e.g. `TRACON` | Open | S2 |
 | [W7-22](#w7-22) | Bug | Low | Card.Popup casts its shadow upwards, onto the map toolbar for the two map menus | Open | S2 |
-| [W2-8](#w2-8) | Bug | Low | A run can start before the selected cycle's lists exist, and silently drops CRC defaults | Open | S2 |
-| [W2-9](#w2-9) | Bug | Low | Picking a cycle the FAA hasn't published leaves every tab on "Loading AIRAC &lt;id>…" for good | Open | S2 |
-| [W2-10](#w2-10) | Bug | Low | A cycle switch rebuilds the ARTCC / NAVAID-type toggles from the saved filter, losing unsaved ticks | Open | S1 |
+| [W2-8](#w2-8) | Bug | Low | A run can start before the selected cycle's lists exist, and silently drops CRC defaults | Fixed | S2 |
+| [W2-9](#w2-9) | Bug | Low | Picking a cycle the FAA hasn't published leaves every tab on "Loading AIRAC &lt;id>…" for good | Fixed | S2 |
+| [W2-10](#w2-10) | Bug | Low | A cycle switch rebuilds the ARTCC / NAVAID-type toggles from the saved filter, losing unsaved ticks | Fixed | S1 |
 | [W2-37](#w2-37) | Bug | Low | Review summaries name the default alias file and always mention the ROI | Open | S2 |
 | [W2-5](#w2-5) | Bug | Low | Review tab reports alias files that a run stopped at the duplicate review deleted | Open | S2 |
 | [W3-16](#w3-16) | Bug | Low | Dashboard can miss log entries written while it is being built | Open | S2 |
 | [W4-8](#w4-8) | Bug | Low | CRC defaults rows accept any non-blank bcg/style/thickness/size, so an imported or hand-edited bad value passes the tab and fails the run | Open | S2 |
-| [W1-15](#w1-15) | Bug | Low | Procedure Charts keeps the previous cycle's d-TPP lookups after a cycle switch | Open | S2 |
+| [W1-15](#w1-15) | Bug | Low | Procedure Charts keeps the previous cycle's d-TPP lookups after a cycle switch | Fixed | S2 |
 | [W4-7](#w4-7) | Bug | Low | A folder that exists but can't be listed is reported as "does not exist" | Open | S2 |
 | [W1-7](#w1-7) | Bug | Low | Telephony's "real operator" note counts expired U.S. special call signs, which the run drops | Open | S2 |
 | [W5-3](#w5-3) | Bug | Low | Error tooltips never show on CRC ERAM Defaults drop-downs or on the fan-marker style box | Open | S2 |
@@ -178,7 +178,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W1-14 · Bug · Med · Switching the cycle silently undoes unsaved ticks in the cycle-built lists
 
-**Status:** Open: Nikolas asks why the lists are rebuilt at all. The parse is cached; each cycle's option lists differ and are re-derived on the UI thread ([U1-1](110_GUI-Lag.md#u1-1)). Likely done with U1-1, keeping the on-screen ticks when the cached lists are swapped in. Re-checked at `4773137` · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), with [U1-1](110_GUI-Lag.md#u1-1) as planned: a rebuilt list keeps what is ticked on screen for every entry the new cycle still has, a new entry starts as saved, and `ResyncSavedState` works out again whether a tab with unsaved edits still differs from its saved settings. Tests: `CycleSwitchTests` · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs:245-261`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs#L245-L261); [`FixesViewModel.cs:241-303`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs#L241-L303); [`AirwaysViewModel.cs:211-224`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs#L211-L224); [`ProceduresViewModel.cs:892-922`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L892-L922)
 
@@ -478,7 +478,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W2-8 · Bug · Low · A run can start before the selected cycle's lists exist, and silently drops CRC defaults
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: Run is enabled only once the picked cycle's lists are in (`IsSelectedCycleLoaded`), re-checked whenever the tabs' readiness changes. Test: `CycleSwitchTests.picking_a_cycle_that_wont_load_says_why_and_the_run_waits` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:67`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L67), 543-566; [`ArtccBoundariesViewModel.cs:325-348`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L325-L348)
 
@@ -490,7 +490,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W2-9 · Bug · Low · Picking a cycle the FAA hasn't published leaves every tab on "Loading AIRAC &lt;id>…" for good
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged): the tabs say why a cycle won't load - not published, or failed - instead of "Loading"; the screen stops asking for it on every cache change (asking for a failed cycle downloaded it again, and each failure was another change); picking a failed cycle again tries it once more. Test: `CycleSwitchTests.picking_a_cycle_that_wont_load_says_why_and_the_run_waits` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:442-446`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L442-L446)
 
@@ -502,7 +502,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W2-10 · Bug · Low · A cycle switch rebuilds the ARTCC / NAVAID-type toggles from the saved filter, losing unsaved ticks
 
-**Status:** Open · **Session:** [S1](020_Work-Plan.md#s1)
+**Status:** Fixed (not yet merged), with [W1-14](#w1-14): the same change covers Arrivals, NAVAIDs and ARTCC Boundaries. Tests: `CycleSwitchTests` · **Session:** [S1](020_Work-Plan.md#s1)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:242-259`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L242-L259); [`NavaidsViewModel.cs:151-177`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L151-L177); [`ArtccBoundariesViewModel.cs:128-167`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L128-L167)
 
@@ -564,7 +564,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W1-15 · Bug · Low · Procedure Charts keeps the previous cycle's d-TPP lookups after a cycle switch
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: picking another cycle drops the old cycle's chart data and NASR airport lookups until the new cycle's arrive; the facility toggles stay. Test: `ProcedureNameCardsTests.picking_another_cycle_drops_the_old_cycles_chart_data` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:102`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L102), 492-499, 558-565
 

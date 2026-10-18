@@ -15,7 +15,6 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Crc.Models;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -231,27 +230,23 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// Builds the ARTCC toggle list from the cycle's <c>STAR_BASE</c>. <c>STAR_BASE.ARTCC</c> can
-	/// list several centres space-separated (e.g. <c>"ZDC ZNY"</c>) when a STAR is shared between
-	/// them, so each value is split on whitespace before the pieces are trimmed, upper-cased,
-	/// deduplicated and sorted. A STAR shared by two ARTCCs still follows each airport's own ARTCC
-	/// when filtering - this list only decides which toggles to offer.
+	/// Builds the ARTCC toggle list from the cycle's <c>STAR_BASE</c>. An ARTCC already listed keeps
+	/// what is ticked on screen; a new one starts as saved (or as the Settings facility).
+	/// <c>STAR_BASE.ARTCC</c> can name several centres for a STAR they share; each is offered, and a
+	/// shared STAR still follows each airport's own ARTCC when filtering.
 	/// </remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
-		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
+		ArgumentNullException.ThrowIfNull(lists);
 
-		string[] artccs = [.. data.RequireStar().StarBase
-			.SelectMany(s => (s.Artcc ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
-			.Select(a => a.Trim().ToUpperInvariant())
-			.Where(a => a.Length > 0)
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.OrderBy(a => a, StringComparer.OrdinalIgnoreCase)];
+		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
+		Dictionary<string, bool> shown = Artccs.ToDictionary(t => t.Artcc, t => t.IsSelected, StringComparer.OrdinalIgnoreCase);
 
 		Artccs.Clear();
-		foreach (string artcc in artccs)
+		foreach (string artcc in lists.StarArtccs)
 		{
-			Artccs.Add(new ArtccToggle(artcc, _savedArtccFilter.Contains(artcc), OnArtccToggled));
+			bool selected = shown.TryGetValue(artcc, out bool onScreen) ? onScreen : _savedArtccFilter.Contains(artcc);
+			Artccs.Add(new ArtccToggle(artcc, selected, OnArtccToggled));
 		}
 
 		// The list was empty when this tab snapshotted itself at construction; re-take the

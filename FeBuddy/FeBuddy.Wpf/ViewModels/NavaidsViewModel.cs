@@ -13,7 +13,6 @@ using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Navaids;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -31,7 +30,6 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
 	private const string Node = "Services.AiracService.Navaids";
-	private const string ShutdownStatus = "SHUTDOWN";
 
 	private NavaidOutputBy _outputBy = NavaidOutputBy.All;
 	private NavaidSymbolStyleBy _symbolStyleBy = NavaidSymbolStyleBy.Type;
@@ -145,26 +143,25 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= parent hooks =================
 
 	/// <inheritdoc />
-	/// <remarks>Builds the NAVAID type toggle list from the cycle's <c>NAV_BASE</c>.</remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	/// <remarks>
+	/// Builds the NAVAID type toggle list from the cycle's <c>NAV_BASE</c>. A type already listed keeps
+	/// what is ticked on screen; a new one starts as saved.
+	/// </remarks>
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
-		_savedExcludedTypes = ParseList(Get("ExcludedTypes"));
+		ArgumentNullException.ThrowIfNull(lists);
 
-		string[] types = [.. data.RequireNav().NavBase
-			.Where(n => !(n.NavStatus?.Trim() ?? string.Empty).Equals(ShutdownStatus, StringComparison.OrdinalIgnoreCase))
-			.Select(n => (n.NavType ?? string.Empty).Trim().ToUpperInvariant())
-			.Where(t => t.Length > 0)
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.OrderBy(KnownTypeOrder)
-			.ThenBy(t => t, StringComparer.OrdinalIgnoreCase)];
+		_savedExcludedTypes = ParseList(Get("ExcludedTypes"));
+		Dictionary<string, bool> shown = Types.ToDictionary(t => t.Type, t => t.IsSelected, StringComparer.OrdinalIgnoreCase);
 
 		_suppressTypeChanges = true;
 		try
 		{
 			Types.Clear();
-			foreach (string type in types)
+			foreach (string type in lists.NavaidTypes)
 			{
-				Types.Add(new NavaidTypeToggle(type, !_savedExcludedTypes.Contains(type), OnTypeToggled));
+				bool selected = shown.TryGetValue(type, out bool onScreen) ? onScreen : !_savedExcludedTypes.Contains(type);
+				Types.Add(new NavaidTypeToggle(type, selected, OnTypeToggled));
 			}
 		}
 		finally
@@ -433,20 +430,6 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		new(NavaidOutputFiles.AllClass, kind, MarkDirty),
 		.. NavaidTypes.All.Select(type => new EramClassDefault(NavaidTypes.Token(type), kind, MarkDirty)),
 	];
-
-	/// <summary>A type's position in <see cref="NavaidTypes.All"/>, or last (alphabetically) when it is not one FE-Buddy recognizes.</summary>
-	private static int KnownTypeOrder(string type)
-	{
-		for (int i = 0; i < NavaidTypes.All.Count; i++)
-		{
-			if (NavaidTypes.All[i].Equals(type, StringComparison.OrdinalIgnoreCase))
-			{
-				return i;
-			}
-		}
-
-		return int.MaxValue;
-	}
 
 	/// <summary>
 	/// The types the run includes: the ticked toggles, or - before the cycle's list is built -

@@ -7,7 +7,6 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Settings;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.WxStations;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -88,11 +87,9 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= parent hooks =================
 
 	/// <inheritdoc />
-	/// <remarks>
-	/// Does nothing: Wx Stations has no lists built from the selected cycle's NASR data. Its own
-	/// data is downloaded by the run itself.
-	/// </remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	/// <remarks>Does nothing: Wx Stations has no lists built from the selected cycle's NASR data. Its own
+	/// data is downloaded by the run itself.</remarks>
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
 	}
 

@@ -84,6 +84,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private string _neLat = string.Empty;
 	private string _neLon = string.Empty;
 	private bool _isCycleReady;
+	private string? _cycleUnavailable;
 
 	/// <summary>Wires the ROI picker and follows the shared default ROI.</summary>
 	protected GeojsonSubServiceViewModel()
@@ -396,15 +397,29 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		private set => SetProperty(ref _isCycleReady, value);
 	}
 
-	/// <summary>What a list built from the cycle says until <see cref="IsCycleReady"/>, e.g. <c>Loading AIRAC 2611…</c>.</summary>
-	public string CycleWaitingText => SelectedCycle is { } cycle ? $"Loading AIRAC {cycle.AiracCycleId}…" : "Waiting for AIRAC data…";
+	/// <summary>
+	/// What a list built from the cycle says until <see cref="IsCycleReady"/>: e.g. <c>Loading AIRAC 2611…</c>,
+	/// or why the cycle won't load.
+	/// </summary>
+	public string CycleWaitingText => _cycleUnavailable
+		?? (SelectedCycle is { } cycle ? $"Loading AIRAC {cycle.AiracCycleId}…" : "Waiting for AIRAC data…");
 
 	/// <summary>
 	/// Called by the parent whenever the selected cycle's data is ready or not (see
 	/// <see cref="ISubServiceRunTarget"/>).
 	/// </summary>
 	/// <param name="ready">Whether the selected cycle's data has loaded.</param>
-	public void SetReadiness(bool ready) => IsCycleReady = ready;
+	/// <param name="unavailableReason">Why the selected cycle won't load, or <see langword="null"/> while it is loading or loaded.</param>
+	public void SetReadiness(bool ready, string? unavailableReason = null)
+	{
+		IsCycleReady = ready;
+
+		if (_cycleUnavailable != unavailableReason)
+		{
+			_cycleUnavailable = unavailableReason;
+			OnPropertyChanged(nameof(CycleWaitingText));
+		}
+	}
 
 	// ================= for the derived tab =================
 

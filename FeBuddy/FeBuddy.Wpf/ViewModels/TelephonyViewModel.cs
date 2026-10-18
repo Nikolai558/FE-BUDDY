@@ -15,7 +15,6 @@ using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Domain.Telephony;
 using FeBuddy.Core.Infrastructure.Configuration;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.SharedData.Models;
 using FeBuddy.Core.Infrastructure.Telephony;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
@@ -489,7 +488,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 
 	/// <inheritdoc />
 	/// <remarks>Does nothing: Telephony has no lists built from the selected cycle's NASR data.</remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
 	}
 

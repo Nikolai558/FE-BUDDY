@@ -10,7 +10,6 @@ using FeBuddy.Core.Application.Airac.ArtccBoundaries;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -121,25 +120,24 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	/// <inheritdoc />
 	/// <remarks>
 	/// Builds the ARTCC toggle list and the (LocationId, Altitude) pairs from the cycle's
-	/// <c>ARB_SEG</c>, then adds a CRC defaults row for each pair (used by ArtccAltitude mode).
+	/// <c>ARB_SEG</c>, then adds a CRC defaults row for each pair (used by ArtccAltitude mode). An ARTCC
+	/// already listed keeps what is ticked on screen; a new one starts as saved (or as the Settings facility).
 	/// </remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
-		_savedLocationFilter = ParseArtccListOrFacility(Get("LocationFilter"));
+		ArgumentNullException.ThrowIfNull(lists);
 
-		string[] locationIds = [.. data.RequireArb().ArbSeg
-			.Select(s => (s.LocationId ?? string.Empty).Trim().ToUpperInvariant())
-			.Where(id => id.Length > 0)
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.OrderBy(id => id, StringComparer.OrdinalIgnoreCase)];
+		_savedLocationFilter = ParseArtccListOrFacility(Get("LocationFilter"));
+		Dictionary<string, bool> shown = Locations.ToDictionary(t => t.Artcc, t => t.IsSelected, StringComparer.OrdinalIgnoreCase);
 
 		_suppressLocationChanges = true;
 		try
 		{
 			Locations.Clear();
-			foreach (string locationId in locationIds)
+			foreach (string locationId in lists.BoundaryLocations)
 			{
-				Locations.Add(new ArtccToggle(locationId, _savedLocationFilter.Contains(locationId), OnLocationToggled));
+				bool selected = shown.TryGetValue(locationId, out bool onScreen) ? onScreen : _savedLocationFilter.Contains(locationId);
+				Locations.Add(new ArtccToggle(locationId, selected, OnLocationToggled));
 			}
 		}
 		finally
@@ -147,14 +145,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 			_suppressLocationChanges = false;
 		}
 
-		_locationAltitudePairs = [.. data.RequireArb().ArbSeg
-			.Select(s => (
-				LocationId: (s.LocationId ?? string.Empty).Trim().ToUpperInvariant(),
-				Altitude: (s.Altitude ?? string.Empty).Trim().ToUpperInvariant()))
-			.Where(p => p.LocationId.Length > 0 && p.Altitude is "HIGH" or "LOW" or "UNLIMITED")
-			.Distinct()
-			.OrderBy(p => p.LocationId, StringComparer.OrdinalIgnoreCase)
-			.ThenBy(p => AltitudeOrder(p.Altitude))];
+		_locationAltitudePairs = [.. lists.BoundaryLocationAltitudes];
 
 		AddCrcRows(_locationAltitudePairs.Select(p => new EramClassDefault($"{p.LocationId}-{p.Altitude}", EramFieldKind.Line, MarkDirty)));
 
@@ -363,13 +354,6 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 		string key = ArtccBoundaryOutputFiles.KeyFor(group);
 		return new OutputFileOption(key, group, "Lines", key, IsGeojson: true, [(group, EramFieldKind.Line)]);
 	}
-
-	private static int AltitudeOrder(string altitude) => altitude switch
-	{
-		"HIGH" => 0,
-		"LOW" => 1,
-		_ => 2,
-	};
 
 	/// <summary>
 	/// The ARTCCs the filter holds, sorted. Before the cycle's list is built there are no toggles

@@ -129,12 +129,17 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	/// the tab marked as edited.
 	/// </summary>
 	/// <remarks>
-	/// Deliberately does nothing while the tab has unsaved edits - re-snapshotting then would
-	/// adopt those edits as the saved state and lose the warning.
+	/// While the tab has unsaved edits it doesn't re-snapshot - that would adopt the edits as the
+	/// saved state and lose the warning - but works out again whether they still differ from it: a
+	/// list rebuilt for another cycle keeps what is ticked on screen, but can gain or lose entries.
 	/// </remarks>
 	protected void ResyncSavedState()
 	{
-		if (!IsDirty)
+		if (IsDirty)
+		{
+			MarkDirty();
+		}
+		else
 		{
 			ClearDirty();
 		}

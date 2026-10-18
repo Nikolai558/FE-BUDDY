@@ -25,7 +25,6 @@ using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
 using FeBuddy.Core.Infrastructure.GitHub;
 using FeBuddy.Core.Infrastructure.Logging;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -198,13 +197,13 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 	/// <inheritdoc />
 	/// <remarks>Does nothing: the custom alias files do not come from the AIRAC data.</remarks>
-	public void SetReadiness(bool ready)
+	public void SetReadiness(bool ready, string? unavailableReason = null)
 	{
 	}
 
 	/// <inheritdoc />
 	/// <remarks>Does nothing: nothing on this tab is built from the selected cycle.</remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
 	}
 

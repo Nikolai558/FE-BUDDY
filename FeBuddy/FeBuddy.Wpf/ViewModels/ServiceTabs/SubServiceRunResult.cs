@@ -16,7 +16,9 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// Errors and advisories (<see cref="ServiceMessage.IsAdvisory"/>) are left out: the run's review
 /// already lists them in its own ERRORS and ADVISORIES cards, for every sub-service at once.
 /// The warnings and routine notices both start collapsed on every run, like the Dashboard
-/// activity log - a run can report hundreds of them.
+/// activity log - a run can report thousands of them. Each list is shown flat
+/// (<see cref="AttentionRows"/>, <see cref="InfoRows"/>), each group's heading then its messages,
+/// so the view can virtualize it and build only the rows on screen.
 /// </remarks>
 public sealed class SubServiceRunResult : ObservableObject
 {
@@ -48,6 +50,8 @@ public sealed class SubServiceRunResult : ObservableObject
 		Info = Group(shown.Where(m => m.Level < LogLevel.Warning), key);
 		AttentionMessageCount = Attention.Sum(g => g.Count);
 		InfoMessageCount = Info.Sum(g => g.Count);
+		AttentionRows = Flatten(Attention);
+		InfoRows = Flatten(Info);
 
 		ToggleAttentionCommand = new RelayCommand(() => IsAttentionExpanded = !IsAttentionExpanded);
 		ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
@@ -61,6 +65,12 @@ public sealed class SubServiceRunResult : ObservableObject
 
 	/// <summary>The warnings, grouped; shown behind <see cref="ToggleAttentionCommand"/>.</summary>
 	public IReadOnlyList<SubServiceMessageGroup> Attention { get; }
+
+	/// <summary>
+	/// <see cref="Attention"/> as the view lists it: each group's heading (a <see cref="SubServiceMessageGroup"/>),
+	/// then its messages (each a <see cref="SubServiceMessageRow"/>).
+	/// </summary>
+	public IReadOnlyList<object> AttentionRows { get; }
 
 	/// <summary>Whether there is any warning to show.</summary>
 	public bool HasAttention => Attention.Count > 0;
@@ -86,6 +96,9 @@ public sealed class SubServiceRunResult : ObservableObject
 	/// <summary>The routine notices, grouped; shown behind <see cref="ToggleInfoCommand"/>.</summary>
 	public IReadOnlyList<SubServiceMessageGroup> Info { get; }
 
+	/// <summary><see cref="Info"/> as the view lists it, as <see cref="AttentionRows"/> lists the warnings.</summary>
+	public IReadOnlyList<object> InfoRows { get; }
+
 	/// <summary>Whether there is any routine notice to show.</summary>
 	public bool HasInfo => Info.Count > 0;
 
@@ -106,6 +119,24 @@ public sealed class SubServiceRunResult : ObservableObject
 
 	/// <summary>Expands or collapses the routine notices.</summary>
 	public ICommand ToggleInfoCommand { get; }
+
+	/// <summary>Each group's heading, then its messages, the last of each marked.</summary>
+	private static IReadOnlyList<object> Flatten(IReadOnlyList<SubServiceMessageGroup> groups)
+	{
+		List<object> rows = new(groups.Count + groups.Sum(g => g.Count));
+
+		foreach (SubServiceMessageGroup group in groups)
+		{
+			rows.Add(group);
+
+			for (int i = 0; i < group.Messages.Count; i++)
+			{
+				rows.Add(new SubServiceMessageRow(group.Messages[i], i == group.Messages.Count - 1));
+			}
+		}
+
+		return rows;
+	}
 
 	private static IReadOnlyList<SubServiceMessageGroup> Group(
 		IEnumerable<ServiceMessage> messages,

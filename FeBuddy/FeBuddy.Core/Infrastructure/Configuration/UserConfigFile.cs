@@ -105,6 +105,16 @@ public static partial class UserConfigFile
 	private static string? _profileInMemory;
 
 	/// <summary>
+	/// The undo snapshot (<see cref="PreviousFilePath"/>) as it is on disk, so <see cref="CanUndo"/> - which
+	/// WPF asks on every key press and click - never reads the file. Read once per profile, then kept up to
+	/// date wherever this class writes or deletes the file; <see langword="null"/> until then.
+	/// </summary>
+	private static JsonObject? _undoSnapshot;
+
+	/// <summary>The file <see cref="_undoSnapshot"/> was read from or written to.</summary>
+	private static string? _undoSnapshotPath;
+
+	/// <summary>
 	/// The directory holding every settings file: <c>%APPDATA%\FE-Buddy\User Configurations</c> by default.
 	/// </summary>
 	public static string Directory
@@ -416,6 +426,8 @@ public static partial class UserConfigFile
 			{
 				AppLog.Warning(LogSource, $"Could not delete '{Path.GetFileName(PreviousFilePath)}', so Undo last save may put back a setting from before the import.");
 			}
+
+			ForgetUndoSnapshot();
 		}
 
 		ReadAll();
@@ -469,6 +481,7 @@ public static partial class UserConfigFile
 			JsonNode? currentSubtree = GetNodeAtPath(onDisk, nodePath);
 			SetNodeAtPath(previous, nodePath, currentSubtree?.DeepClone());
 			WriteObject(PreviousFilePath, previous);
+			KeepUndoSnapshot(previous);
 
 			// Replace the subtree on disk with the in-memory version built from the flat dict.
 			JsonNode? newSubtree = BuildSubtree(ProfileValues(Values), nodePath);
@@ -542,19 +555,23 @@ public static partial class UserConfigFile
 	/// Indicates whether <see cref="Undo(string)"/> can restore a previous value for
 	/// <paramref name="nodePath"/> - i.e. a snapshot for that exact node exists.
 	/// </summary>
+	/// <remarks>
+	/// Answers from memory: the snapshot is read once per profile, and kept up to date by
+	/// <see cref="Save(string)"/>, <see cref="Undo(string)"/> and the writes that delete it. WPF asks on
+	/// every key press and click, so this must not touch the disk.
+	/// </remarks>
 	/// <param name="nodePath">The dotted path that was previously saved.</param>
 	/// <returns><see langword="true"/> if a one-step undo is available for that node.</returns>
 	public static bool CanUndo(string nodePath)
 	{
-		if (string.IsNullOrWhiteSpace(nodePath) || !File.Exists(PreviousFilePath))
+		if (string.IsNullOrWhiteSpace(nodePath))
 		{
 			return false;
 		}
 
 		lock (Gate)
 		{
-			JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
-			return NodeExistsAtPath(previous, nodePath);
+			return NodeExistsAtPath(UndoSnapshot(), nodePath);
 		}
 	}
 
@@ -602,6 +619,7 @@ public static partial class UserConfigFile
 			// Consume the snapshot: undo depth is exactly one.
 			RemoveNodeAtPath(previous, nodePath);
 			WriteObject(PreviousFilePath, previous);
+			KeepUndoSnapshot(previous);
 		}
 
 		ReadAll();
@@ -626,6 +644,7 @@ public static partial class UserConfigFile
 			_sharedStampVersion = UserConfigMigrations.CurrentVersion;
 			_profileUnreadable = false;
 			_profileInMemory = null;
+			ForgetUndoSnapshot();
 		}
 	}
 
@@ -1007,6 +1026,37 @@ public static partial class UserConfigFile
 		File.WriteAllText(path, root.ToJsonString(WriteOptions));
 	}
 
+	/// <summary>The active profile's undo snapshot, read from disk only the first time it is asked for. Call under <see cref="Gate"/>.</summary>
+	private static JsonObject UndoSnapshot()
+	{
+		string path = PreviousFilePath;
+
+		if (_undoSnapshot is null || !string.Equals(_undoSnapshotPath, path, StringComparison.Ordinal))
+		{
+			_undoSnapshot = LoadObjectOrEmpty(path);
+			_undoSnapshotPath = path;
+		}
+
+		return _undoSnapshot;
+	}
+
+	/// <summary>
+	/// Keeps what was just written to <see cref="PreviousFilePath"/>, as reading it back would give it. Call
+	/// under <see cref="Gate"/>, after the write.
+	/// </summary>
+	private static void KeepUndoSnapshot(JsonObject written)
+	{
+		_undoSnapshot = JsonNode.Parse(written.ToJsonString()) as JsonObject;
+		_undoSnapshotPath = PreviousFilePath;
+	}
+
+	/// <summary>Has the next <see cref="CanUndo"/> read the snapshot again: it was deleted, or couldn't be. Call under <see cref="Gate"/>.</summary>
+	private static void ForgetUndoSnapshot()
+	{
+		_undoSnapshot = null;
+		_undoSnapshotPath = null;
+	}
+
 	/// <summary>Writes a whole settings file, stamped with its layout version at the top.</summary>
 	private static void WriteConfig(string path, JsonObject root, int version)
 	{
@@ -1097,6 +1147,8 @@ public static partial class UserConfigFile
 		{
 			AppLog.Warning(LogSource, $"Could not delete '{Path.GetFileName(PreviousFilePath)}', so Undo last save may put back a setting in the old layout.");
 		}
+
+		ForgetUndoSnapshot();
 
 		AppLog.Info(LogSource, $"Brought the settings up from layout {version} to layout {UserConfigMigrations.CurrentVersion}: " +
 			$"{string.Join("; ", result.Applied)}. The file as it was is kept as '{Path.GetFileName(keptAs)}'.");

@@ -31,6 +31,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	private string? _summary;
 	private string? _outputDirectory;
 	private double _elapsedSeconds;
+	private int _filesWrittenCount;
 
 	private readonly Stopwatch _stopwatch = new();
 
@@ -42,7 +43,6 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 		// Keeps the Has* flags honest however the collections are filled.
 		Errors.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasErrors));
 		Advisories.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAdvisories));
-		FilesWritten.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasFiles));
 		Results.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasResults));
 	}
 
@@ -79,11 +79,24 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	/// <summary>Whether any sub-service reported results.</summary>
 	public bool HasResults => Results.Count > 0;
 
-	/// <summary>Every file the run wrote, across sub-services. The tab shows how many.</summary>
-	public ObservableCollection<string> FilesWritten { get; } = [];
+	/// <summary>
+	/// How many files the run wrote, across sub-services. A count, set once, not a list: a Departures
+	/// run alone writes thousands, and the output folder shows them better.
+	/// </summary>
+	public int FilesWrittenCount
+	{
+		get => _filesWrittenCount;
+		private set
+		{
+			if (SetProperty(ref _filesWrittenCount, value))
+			{
+				OnPropertyChanged(nameof(HasFiles));
+			}
+		}
+	}
 
 	/// <summary>Whether the run wrote anything.</summary>
-	public bool HasFiles => FilesWritten.Count > 0;
+	public bool HasFiles => FilesWrittenCount > 0;
 
 	/// <summary>Whether a run is in progress.</summary>
 	public bool IsRunning
@@ -152,7 +165,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 		Errors.Clear();
 		Advisories.Clear();
 		Results.Clear();
-		FilesWritten.Clear();
+		FilesWrittenCount = 0;
 
 		foreach (string name in subServiceNames)
 		{
@@ -205,7 +218,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	/// <param name="result">The run's result: an AIRAC Service run's aggregate, or one conversion's.</param>
 	/// <param name="summary">The one-line summary of what was produced.</param>
 	/// <param name="subServiceResults">Each sub-service's block, in run order.</param>
-	/// <param name="filesWritten">Every file written, across sub-services.</param>
+	/// <param name="filesWritten">Every file written, across sub-services; the tab shows how many.</param>
 	/// <param name="outputDirectory">The folder to offer to open.</param>
 	public void CompleteRun(
 		ServiceResult result,
@@ -237,10 +250,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 			Results.Add(subServiceResult);
 		}
 
-		foreach (string file in filesWritten)
-		{
-			FilesWritten.Add(file);
-		}
+		FilesWrittenCount = filesWritten.Count();
 
 		// Anything still mid-flight when the run ended never reported its completion.
 		foreach (RunStep step in Steps.Where(s => s.Status == RunStepStatus.Working))
@@ -267,10 +277,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 		ElapsedSeconds = _stopwatch.Elapsed.TotalSeconds;
 		Errors.Add(error);
 
-		foreach (string file in filesWritten ?? [])
-		{
-			FilesWritten.Add(file);
-		}
+		FilesWrittenCount = filesWritten?.Count() ?? 0;
 
 		if (outputDirectory is not null)
 		{

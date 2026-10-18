@@ -80,7 +80,7 @@ The AIRAC Service screen and File Conversions: the per-cycle option lists, the d
 
 **Findings:** [U1-1](110_GUI-Lag.md#u1-1), [U1-2](110_GUI-Lag.md#u1-2), [C6-30](110_GUI-Lag.md#c6-30), [U1-6](110_GUI-Lag.md#u1-6), [U1-7](110_GUI-Lag.md#u1-7), [W1-1](110_GUI-Lag.md#w1-1), [W1-3](110_GUI-Lag.md#w1-3), [U1-14](110_GUI-Lag.md#u1-14), [U1-15](110_GUI-Lag.md#u1-15), [W1-5](110_GUI-Lag.md#w1-5), [W2-6](110_GUI-Lag.md#w2-6), [W2-27](110_GUI-Lag.md#w2-27), [W4-4](110_GUI-Lag.md#w4-4), [W4-5](110_GUI-Lag.md#w4-5), [W6-6](110_GUI-Lag.md#w6-6)
 
-**Done** (not yet merged): [U1-1](110_GUI-Lag.md#u1-1), with the tabs' lists and their rules in Core ([U1-17](120_Logic-In-GUI.md#u1-17), all but the Settings page's facility list), [W1-1](110_GUI-Lag.md#w1-1), [U1-2](110_GUI-Lag.md#u1-2), [W1-3](110_GUI-Lag.md#w1-3), [U1-14](110_GUI-Lag.md#u1-14), [U1-6](110_GUI-Lag.md#u1-6), and the cycle-switch bugs [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9) and [W1-15](100_Bugs.md#w1-15).
+**Done** (not yet merged): [U1-1](110_GUI-Lag.md#u1-1), with the tabs' lists and their rules in Core ([U1-17](120_Logic-In-GUI.md#u1-17), all but the Settings page's facility list), [W1-1](110_GUI-Lag.md#w1-1), [U1-2](110_GUI-Lag.md#u1-2), [W1-3](110_GUI-Lag.md#w1-3), [U1-14](110_GUI-Lag.md#u1-14), [U1-6](110_GUI-Lag.md#u1-6), [C6-30](110_GUI-Lag.md#c6-30), [U1-7](110_GUI-Lag.md#u1-7), [W4-5](110_GUI-Lag.md#w4-5), and the cycle-switch bugs [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9) and [W1-15](100_Bugs.md#w1-15).
 
 <a id="s4"></a>
 

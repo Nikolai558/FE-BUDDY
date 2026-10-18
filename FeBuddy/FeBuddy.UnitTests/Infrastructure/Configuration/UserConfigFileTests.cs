@@ -260,6 +260,35 @@ public sealed class UserConfigFileTests : IDisposable
 		}
 	}
 
+	/// <summary>
+	/// <see cref="UserConfigFile.CanUndo"/> answers from memory, never the snapshot file, since WPF asks on every
+	/// key press: a snapshot locked by another program still counts, and a profile's own snapshot is read on switching.
+	/// </summary>
+	[Fact]
+	public void can_undo_answers_from_memory_not_the_file()
+	{
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+		UserConfigFile.Save(AirwaysNode);
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "Designation");
+		UserConfigFile.Save(AirwaysNode);
+
+		using (new FileStream(UserConfigFile.PreviousFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			Assert.True(UserConfigFile.CanUndo(AirwaysNode));
+			Assert.False(UserConfigFile.CanUndo(GeneralNode));
+		}
+
+		UserConfigFile.CreateProfile("Other", null);
+		UserConfigFile.SwitchProfile("Other");
+		Assert.False(UserConfigFile.CanUndo(AirwaysNode));
+
+		UserConfigFile.SwitchProfile(UserConfigFile.DefaultProfile);
+		Assert.True(UserConfigFile.CanUndo(AirwaysNode));
+
+		UserConfigFile.RenameProfile(UserConfigFile.DefaultProfile, "Renamed");
+		Assert.True(UserConfigFile.CanUndo(AirwaysNode));
+	}
+
 	/// <summary>Undo with no snapshot for the node is a no-op returning <see langword="false"/>.</summary>
 	[Fact]
 	public void undo_with_no_snapshot_returns_false()

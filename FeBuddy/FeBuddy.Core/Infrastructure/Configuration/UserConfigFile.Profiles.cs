@@ -184,6 +184,8 @@ public static partial class UserConfigFile
 				MoveQuietly(path, BackupFilePath(renamed, kind));
 			}
 
+			ForgetUndoSnapshot();
+
 			if (_profile.Equals(profile, StringComparison.OrdinalIgnoreCase))
 			{
 				_profile = renamed;
@@ -371,6 +373,8 @@ public static partial class UserConfigFile
 				MoveQuietly(path, BackupFilePath(DefaultProfile, match.Groups[1].Value.ToLowerInvariant()));
 			}
 		}
+
+		ForgetUndoSnapshot();
 
 		AppLog.Info(LogSource, string.Create(CultureInfo.InvariantCulture,
 			$"Moved '{LegacyConfigFileName}' into '{ProfilesFolderName}' as the settings profile '{DefaultProfile}'."));

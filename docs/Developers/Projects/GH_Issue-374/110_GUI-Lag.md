@@ -12,7 +12,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 |---|---|---|---|---|---|
 | [U1-1](#u1-1) | GUI lag | High | Every tab's cycle-dependent lists are built on the UI thread on each cycle load/switch | Fixed | S3 |
 | [U1-2](#u1-2) | GUI lag | High | Telephony reads and merges the virtual-airline list on the UI thread with O(N²) Core code | Fixed | S3 |
-| [C6-30](#c6-30) | GUI lag | Med | UserConfigFile.CanUndo reads and parses a file on every command requery | Open | S3 |
+| [C6-30](#c6-30) | GUI lag | Med | UserConfigFile.CanUndo reads and parses a file on every command requery | Fixed | S3 |
 | [C7-4](#c7-4) | GUI lag | Med | NasrCycleDownloader has no `ConfigureAwait(false)`, so unzipping a cycle can run on the UI thread | Open | S4 |
 | [U1-9](#u1-9) | GUI lag | Med | Map panning rebuilds all visible geometry on every mouse move | Open | S4 |
 | [W7-1](#w7-1) | GUI lag | Med | Base map GeoJSON (1.5 MB) is parsed on the UI thread the first time any map opens | Open | S4 |
@@ -21,7 +21,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W3-1](#w3-1) | GUI lag | Med | Every map click does a full, synchronous settings-file round trip (and logs a line) | Open | S4 |
 | [W1-1](#w1-1) | GUI lag | Med | Procedure Charts indexes the whole d-TPP Metafile on the UI thread, again on every General-tab click | Fixed | S3 |
 | [U1-6](#u1-6) | GUI lag | Med | File Conversions counts (and opens) source files on the UI thread per keystroke and at startup | Fixed | S3 |
-| [U1-7](#u1-7) | GUI lag | Med | Run review message lists are not virtualized and format every message on the UI thread | Open | S3 |
+| [U1-7](#u1-7) | GUI lag | Med | Run review message lists are not virtualized and format every message on the UI thread | Fixed | S3 |
 | [W7-2](#w7-2) | GUI lag | Low | A pending reset runs on the UI thread before any window: up to 15 s wait plus deleting all app data, with nothing on screen | Open | S4 |
 | [W6-6](#w6-6) | GUI lag | Low | The Alias Command Guide and News visual trees are rebuilt and re-parsed every time their page opens | Open | S3 |
 | [W7-7](#w7-7) | GUI lag | Low | Opening any file or folder picker checks folder existence on the UI thread; an offline network folder stalls it | Open | S4 |
@@ -32,7 +32,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W3-5](#w3-5) | GUI lag | Low | Output picker filter and listing do per-item work on the UI thread | Open | S4 |
 | [W3-8](#w3-8) | GUI lag | Low | ROI state properties reload the saved ROI 4-5 times per change | Open | S4 |
 | [W1-5](#w1-5) | GUI lag | Low | Getters and CanExecute recompute the same lookups several times per keystroke | Open | S3 |
-| [W4-5](#w4-5) | GUI lag | Low | Review tab adds every written file to an ObservableCollection one by one, but only shows the count | Open | S3 |
+| [W4-5](#w4-5) | GUI lag | Low | Review tab adds every written file to an ObservableCollection one by one, but only shows the count | Fixed | S3 |
 | [W4-4](#w4-4) | GUI lag | Low | What You'll Get is built twice and its card rebuilt on every edit, even when nothing in it changed | Open | S3 |
 | [T3-6](#t3-6) | GUI lag | Low | Switching, creating, renaming or deleting a settings profile does file I/O and reloads every page on the UI thread | Open | S4 |
 | [C6-31](#c6-31) | GUI lag | Low | Settings import reads and plans on the UI thread (Core work, Wpf call site) | Open | S4 |
@@ -76,7 +76,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### C6-30 · GUI lag · Med · UserConfigFile.CanUndo reads and parses a file on every command requery
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged), as proposed: `UserConfigFile` keeps the undo snapshot in memory, read once per profile, and `Save`, `Undo`, `ReplaceAll`, bringing a file forward, renaming the profile and moving an older FE-Buddy's file in keep it up to date. `CanUndo` reads no file. Tests: `UserConfigFileTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:486-498`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L486-L498); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/TabbedServiceViewModel.cs:41-43`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/TabbedServiceViewModel.cs#L41-L43); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:41`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L41), 58
 
@@ -200,7 +200,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### U1-7 · GUI lag · Med · Run review message lists are not virtualized and format every message on the UI thread
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged): each sub-service's warnings and routine messages are one flat list, each group's heading then its messages (`SubServiceRunResult.AttentionRows`, `InfoRows`), in a virtualized `ItemsControl` with the same 320 px cap, so only the rows on screen are built and formatted. The group panels look as before (`Radius.Chip.Top`, `Radius.Chip.Bottom`). `FilesWritten` is a count, set once ([W4-5](#w4-5)). The messages are still grouped on the UI thread when the run finishes: it takes milliseconds (50,000 messages in well under a second), and several tabs' `DescribeRunResult` read the tab's own settings, which must not be read from another thread. The inline-code formatting stays in the Wpf: it decides how text looks. Tests: `ServiceRunReviewTabViewModelTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/ServiceRunReviewTabView.xaml:78-84`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/ServiceRunReviewTabView.xaml#L78-L84),110-122; [`FeBuddy/FeBuddy.Wpf/Behaviors/InlineCode.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Behaviors/InlineCode.cs); [`FeBuddy/FeBuddy.Wpf/Converters/FileNamesAsCodeConverter.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Converters/FileNamesAsCodeConverter.cs); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceRunReviewTabViewModel.cs:240-243`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceRunReviewTabViewModel.cs#L240-L243),272; [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:605-607`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L605-L607)
 
@@ -340,7 +340,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W4-5 · GUI lag · Low · Review tab adds every written file to an ObservableCollection one by one, but only shows the count
 
-**Status:** Open · **Session:** [S3](020_Work-Plan.md#s3)
+**Status:** Fixed (not yet merged), as proposed, with [U1-7](#u1-7): `FilesWrittenCount`, set once in `BeginRun`, `CompleteRun` and `FailRun`, raises `HasFiles`; the view binds it. Tests: `ServiceRunReviewTabViewModelTests` · **Session:** [S3](020_Work-Plan.md#s3)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceRunReviewTabViewModel.cs:45`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceRunReviewTabViewModel.cs#L45), 82-86, 240-243, 270-273; [`FeBuddy/FeBuddy.Wpf/Views/ServiceRunReviewTabView.xaml:193`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/ServiceRunReviewTabView.xaml#L193), 202
 

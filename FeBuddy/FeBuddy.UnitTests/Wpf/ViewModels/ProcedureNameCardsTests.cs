@@ -84,7 +84,6 @@ public sealed class ProcedureNameCardsTests : IDisposable
 
 		tab.SetSelectedCycle(AiracCycleResolver.GetCycle(AiracCyclePosition.Next, new DateOnly(2026, 11, 2)));
 
-		Assert.False(tab.IsDtppKnown);
 		Assert.Null(tab.DtppCycleId);
 		Assert.Empty(tab.ProcedureNameOptions);
 		Assert.Null(tab.DtppWarning);

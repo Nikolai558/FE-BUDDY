@@ -171,13 +171,16 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	protected override (string? Lines, string? Symbols, string? Text) EmitKeys => (null, null, null);
 
 	/// <inheritdoc />
+	protected override bool HasGeojson => false;
+
+	/// <inheritdoc />
 	/// <remarks>None: Telephony's one output is on whenever it is included on the General tab.</remarks>
 	public override string? WhatYoullGetFooter => null;
 
 	// ================= telephony data =================
 
 	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copies of the FAA pages.</summary>
-	public string TelephonyDataStatus => _telephonyDataStatus;
+	private string TelephonyDataStatus => _telephonyDataStatus;
 
 	/// <summary>
 	/// Re-reads how old FE-Buddy's kept copy of the FAA telephony register is
@@ -228,7 +231,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		}
 
 		_telephonyDataStatus = status;
-		OnPropertyChanged(nameof(TelephonyDataStatus));
 	}
 
 	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the FAA pages.</summary>

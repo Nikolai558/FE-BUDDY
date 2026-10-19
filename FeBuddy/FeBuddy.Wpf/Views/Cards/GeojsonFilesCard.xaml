@@ -5,8 +5,8 @@
     supplies only the wording, and ShowLines="False" for a sub-service with no Lines file.
     Under each option: the file's name (code look, bhv:InlineCode) indented one step past the
     label, then what goes in it indented once more - the way What You'll Get lists files.
-    Footnote shows folder names between backticks in the code look too; Footer takes anything longer
-    (Departures and Arrivals: where their files are saved and how they're named).
+    Footer takes anything more under the options (Departures and Arrivals: where their files are
+    saved and how they're named).
 
     Usage:
         <cards:GeojsonFilesCard LinesFile="*_Lines.geojson"
@@ -37,24 +37,20 @@
     <ctl:Card Header="What Files Do You Want?" Outputs="Geojson" bhv:FieldState.Error="{Binding FieldErrors[GeojsonFiles]}">
         <StackPanel>
             <StackPanel Margin="0,4,0,0" Visibility="{Binding ShowLines, ElementName=Self, Converter={StaticResource BoolToVis}}">
-                <CheckBox Content="{Binding LinesLabel, ElementName=Self}" IsChecked="{Binding EmitLines}" />
+                <CheckBox Content="Lines" IsChecked="{Binding EmitLines}" />
                 <TextBlock Style="{StaticResource FileName}" bhv:InlineCode.Text="{Binding LinesFile, ElementName=Self, StringFormat='`{0}`'}" />
                 <TextBlock Style="{StaticResource FileDescription}" bhv:InlineCode.Text="{Binding LinesDescription, ElementName=Self}" />
             </StackPanel>
             <StackPanel Margin="0,10,0,0">
-                <CheckBox Content="{Binding SymbolsLabel, ElementName=Self}" IsChecked="{Binding EmitSymbols}" />
+                <CheckBox Content="Symbols" IsChecked="{Binding EmitSymbols}" />
                 <TextBlock Style="{StaticResource FileName}" bhv:InlineCode.Text="{Binding SymbolsFile, ElementName=Self, StringFormat='`{0}`'}" />
                 <TextBlock Style="{StaticResource FileDescription}" bhv:InlineCode.Text="{Binding SymbolsDescription, ElementName=Self}" />
             </StackPanel>
             <StackPanel Margin="0,10,0,0">
-                <CheckBox Content="{Binding TextLabel, ElementName=Self}" IsChecked="{Binding EmitText}" />
+                <CheckBox Content="Text" IsChecked="{Binding EmitText}" />
                 <TextBlock Style="{StaticResource FileName}" bhv:InlineCode.Text="{Binding TextFile, ElementName=Self, StringFormat='`{0}`'}" />
                 <TextBlock Style="{StaticResource FileDescription}" bhv:InlineCode.Text="{Binding TextDescription, ElementName=Self}" />
             </StackPanel>
-            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       bhv:InlineCode.Text="{Binding Footnote, ElementName=Self}"
-                       Visibility="{Binding Footnote, ElementName=Self, Converter={StaticResource StringToVis}}" />
             <ContentPresenter Margin="0,14,0,0" Content="{Binding Footer, ElementName=Self}">
                 <ContentPresenter.Style>
                     <Style TargetType="ContentPresenter">

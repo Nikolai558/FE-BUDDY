@@ -78,12 +78,6 @@ public abstract class ServiceTabViewModel : ObservableObject
 	public ServiceFieldErrors FieldErrors { get; } = new();
 
 	/// <summary>
-	/// <see langword="false"/> for a tab the run cannot act on - the Review tab. Such a tab is never
-	/// counted as blocking a run.
-	/// </summary>
-	public virtual bool IsRunnable => true;
-
-	/// <summary>
 	/// Whether the tab takes part: <see langword="false"/> for a sub-service left out on the General
 	/// tab. Such a tab stays in the rail, greyed out and unclickable, with
 	/// <see cref="UnavailableToolTip"/> saying what it is and how to bring it in; it is skipped by
@@ -193,8 +187,8 @@ public abstract class ServiceTabViewModel : ObservableObject
 
 	/// <summary>
 	/// Re-runs validation and recomputes <see cref="Status"/>, and announces <see cref="WhatYoullGet"/>
-	/// again, since whatever needed re-checking may have changed it. Called automatically by
-	/// <see cref="MarkDirty"/>; call it directly after loading values from config.
+	/// again, since whatever needed re-checking may have changed it. Called automatically by a settings
+	/// tab's <see cref="SubServiceSettingsViewModel.MarkDirty"/>; call it directly after loading values from config.
 	/// </summary>
 	public void Revalidate()
 	{
@@ -252,28 +246,6 @@ public abstract class ServiceTabViewModel : ObservableObject
 	/// <param name="validation">The collector to add failures to.</param>
 	protected virtual void Validate(ServiceValidation validation)
 	{
-	}
-
-	/// <summary>
-	/// Re-evaluates the tab after a setting changed, and re-validates. Call from every bound
-	/// setting's setter.
-	/// </summary>
-	/// <remarks>
-	/// The base takes the pessimistic view - anything that reports a change leaves the tab
-	/// dirty. A tab that can compare itself against what it last saved overrides this and
-	/// answers honestly, so putting a value back the way it was clears the flag again.
-	/// </remarks>
-	protected virtual void MarkDirty()
-	{
-		IsDirty = true;
-		Revalidate();
-	}
-
-	/// <summary>Clears the dirty flag (after a successful save or a reload) and re-validates.</summary>
-	protected virtual void ClearDirty()
-	{
-		IsDirty = false;
-		Revalidate();
 	}
 
 	private void UpdateStatus() =>

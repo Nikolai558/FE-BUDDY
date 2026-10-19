@@ -290,7 +290,7 @@ public sealed class AliasGuideDocumentView : Decorator
 
 		foreach (IReadOnlyList<string> row in table.Rows)
 		{
-			panel.Children.Add(Divider(new Thickness(0)));
+			panel.Children.Add(Divider());
 			panel.Children.Add(TableRow(table.Headers.Count, [.. row.Select(cell => TextOrCommand(cell, "Text.Body"))]));
 		}
 
@@ -491,9 +491,9 @@ public sealed class AliasGuideDocumentView : Decorator
 		return chip;
 	}
 
-	private static Border Divider(Thickness margin)
+	private static Border Divider()
 	{
-		Border rule = new() { Margin = margin };
+		Border rule = new();
 		rule.SetResourceReference(StyleProperty, "Divider");
 		return rule;
 	}

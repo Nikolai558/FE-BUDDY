@@ -109,9 +109,9 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		airports.Alias = false;
 		fixes.Geojson = false;
 
-		Assert.False(general.IsIncluded(AiracSubServices.AirportsKey));
+		Assert.False(general.RowFor(AiracSubServices.AirportsKey)!.IsIncluded);
 		Assert.Equal(SubServiceOutputKinds.None, airports.OutputsOn);
-		Assert.False(general.IsIncluded(AiracSubServices.FixesKey));
+		Assert.False(general.RowFor(AiracSubServices.FixesKey)!.IsIncluded);
 		Assert.Equal(3, changes);
 	}
 
@@ -125,7 +125,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		airports.IsIncluded = false;
 
-		Assert.False(general.IsIncluded(AiracSubServices.AirportsKey));
+		Assert.False(general.RowFor(AiracSubServices.AirportsKey)!.IsIncluded);
 		Assert.False(airports.Alias);
 		Assert.False(airports.Geojson);
 		Assert.True(airports.OffersAlias);
@@ -157,7 +157,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		airports.Geojson = true;
 
-		Assert.True(general.IsIncluded(AiracSubServices.AirportsKey));
+		Assert.True(general.RowFor(AiracSubServices.AirportsKey)!.IsIncluded);
 		Assert.Equal(SubServiceOutputKinds.Geojson, airports.OutputsOn);
 		Assert.Equal(1, changes);
 	}
@@ -179,7 +179,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.Null(UserConfigFile.GetValue($"{Node}.Outputs.Fixes.Alias"));
 
 		AiracGeneralTabViewModel reloaded = new();
-		Assert.False(reloaded.IsIncluded(AiracSubServices.WxStationsKey));
+		Assert.False(reloaded.RowFor(AiracSubServices.WxStationsKey)!.IsIncluded);
 		Assert.Equal(SubServiceOutputKinds.None, Row(reloaded, AiracSubServices.WxStationsKey).OutputsOn);
 		Assert.False(Row(reloaded, AiracSubServices.AirportsKey).Geojson);
 		Assert.False(Row(reloaded, AiracSubServices.ProceduresKey).ProceduresJson);
@@ -210,7 +210,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.True(general.Save());
 		general.UndoLastSave();
 
-		Assert.False(general.IsIncluded(AiracSubServices.FixesKey));
+		Assert.False(general.RowFor(AiracSubServices.FixesKey)!.IsIncluded);
 		Assert.Equal("2", UserConfigFile.GetValue(airwaysKey));
 		Assert.Equal("Y", UserConfigFile.GetValue(UserConfigKeys.DefaultRoiFilter));
 	}
@@ -330,7 +330,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.False(general.IsDirty);
 
 		general.SelectedCyclePosition = AiracCyclePosition.Next;
-		general.RefreshCycleOptions();
+		general.SetReadiness(general.IsReady, general.WaitingMessage);
 
 		Assert.Equal(AiracCyclePosition.Next, general.SelectedCyclePosition);
 		Assert.Equal(1, cycleChanges);

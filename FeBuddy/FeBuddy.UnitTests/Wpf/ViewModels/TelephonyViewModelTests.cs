@@ -678,6 +678,15 @@ public sealed class TelephonyViewModelTests : IDisposable
 			result.Settings.VirtualAirlines);
 	}
 
+	/// <summary>Telephony writes no GeoJSON, so the block leaves out the GeoJSON settings its parser would only ignore.</summary>
+	[Fact]
+	public void the_settings_block_leaves_out_the_geojson_settings()
+	{
+		IReadOnlyDictionary<string, string> block = new TelephonyViewModel().BuildSettingsBlock();
+
+		Assert.DoesNotContain(block.Keys, key => key is "CoordinatePrecision" or "IncludeFebCustomProperties" or "FebProperties" or "CrcDefaultsFor");
+	}
+
 	[Fact]
 	public void with_no_virtual_airlines_the_settings_block_has_no_virtual_airline_keys()
 	{
@@ -1081,11 +1090,11 @@ public sealed class TelephonyViewModelTests : IDisposable
 		release.Set();
 		await older;
 
-		Assert.Equal("The newer look.", tab.TelephonyDataStatus);
+		Assert.Equal("The newer look.", tab.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Telephony data").Value);
 
 		tab.DescribeTelephonyCopy = _ => throw new IOException("boom");
 		await tab.RefreshTelephonyDataAsync();
 
-		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.TelephonyDataStatus);
+		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Telephony data").Value);
 	}
 }

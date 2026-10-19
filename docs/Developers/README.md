@@ -65,7 +65,7 @@ in a release; the release checks fail if it's on.
 A dev launch skips the launch steps you aren't testing, so FE-Buddy is ready in moments.
 
 - **Start it** by choosing **FE-Buddy (Dev launch)** from Visual Studio's Start drop-down
-  (`Properties/launchSettings.json`), or with `--dev` or `--devmode` in any case:
+  (`Properties/launchSettings.json`), or with `--dev` in any case:
 
   ```bash
   dotnet run --project FeBuddy/FeBuddy.Wpf -- --dev

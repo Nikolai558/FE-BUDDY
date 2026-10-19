@@ -28,7 +28,7 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class DashboardViewModel : ObservableObject
 {
 	/// <summary>The FE-Buddy description shown in the description box, word for word.</summary>
-	public const string DescriptionText =
+	private const string DescriptionText =
 		"An application designed to assist VATUSA Facility Engineers with routine, " +
 		"tedious, and sometimes complex tasks, including the production and maintenance " +
 		"of AIRAC cycle release resources, alias files, and GeoJSON files, ERAM and STARS " +
@@ -118,9 +118,6 @@ public sealed class DashboardViewModel : ObservableObject
 	/// <summary>Hides the cycle-day banner for the rest of the session.</summary>
 	public ICommand DismissCycleDayCommand { get; }
 
-	/// <summary>The Discord invite the description box links to.</summary>
-	public string DiscordUrl => Links.Discord;
-
 	/// <summary>The description-box body: <see cref="DescriptionText"/>.</summary>
 	public string Description => DescriptionText;
 
@@ -172,10 +169,10 @@ public sealed class DashboardViewModel : ObservableObject
 	}
 
 	/// <summary>The active level filter, or <see langword="null"/> for "All".</summary>
-	public LogLevel? LevelFilter
+	private LogLevel? LevelFilter
 	{
 		get => _levelFilter;
-		private set
+		set
 		{
 			if (SetProperty(ref _levelFilter, value))
 			{

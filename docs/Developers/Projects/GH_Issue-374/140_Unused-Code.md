@@ -12,7 +12,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 |---|---|---|---|---|---|
 | [C1-6](#c1-6) | Test-only | Med | Launch progress and LaunchResult exist only for tests | Fixed | S6 |
 | [C5-2](#c5-2) | Test-only | Med | Location's DMS half and GeoMath's DMS helpers are used only by tests, and they cost a string format for every Location | Fixed | S6 |
-| [W5-1](#w5-1) | Unused | Med | ShellWindow maps AirwaysViewModel to AirwaysView, but the shell never shows it | Open | S6 |
+| [W5-1](#w5-1) | Unused | Med | ShellWindow maps AirwaysViewModel to AirwaysView, but the shell never shows it | Fixed | S6 |
 | [C1-8](#c1-8) | Test-only | Low | AiracCycleDataCache.PrepareCyclesAsync(previous, current, next, ct) is used only by tests | Fixed | S6 |
 | [C1-7](#c1-7) | Unused | Low | AiracSharedDataLoader.LoadTelephonyAsync(CancellationToken) has no caller; its 3-arg internal twin is test-only | Fixed | S6 |
 | [C2-26](#c2-26) | Test-only | Low | Model members filled by these builders but read only by tests | Fixed | S6 |
@@ -47,47 +47,47 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 | [C7-16](#c7-16) | Test-only | Low | `InstalledProduct.ProductSemVer` is read only by tests | Fixed | S6 |
 | [C7-17](#c7-17) | Test-only | Low | `TelephonyHtmlParser.Parse(registerPath, specialCallSignsPath)` is used only by tests | Fixed | S6 |
 | [C7-15](#c7-15) | Test-only | Low | Row-model fields that production code never reads (Wx stations, d-TPP) | Fixed | S6 |
-| [W6-25](#w6-25) | Unused | Low | AliasGuideDocumentView.Divider always gets the same margin | Open | S6 |
-| [W6-20](#w6-20) | Unused | Low | BesideOrBelow.HorizontalSpacing is never set | Open | S6 |
-| [W6-21](#w6-21) | Unused | Low | CommandTablePanel's four spacing dependency properties are set only by a test, to their defaults | Open | S6 |
-| [W6-22](#w6-22) | Test-only | Low | CommandTablePanel.Rules exists only for the tests | Open | S6 |
-| [W6-19](#w6-19) | Unused | Low | FilterPicker.Minimum and Maximum are never set | Open | S6 |
-| [W6-23](#w6-23) | Unused | Low | StringToVisibilityConverter's "Invert" parameter is never used | Open | S6 |
-| [W6-24](#w6-24) | Unused | Low | GeoJsonReader's InvalidOperationException catch can't be reached | Open | S6 |
-| [W7-27](#w7-27) | Unused | Low | The `--devmode` spelling of the dev-launch argument has no user | Open | S6 |
-| [W7-15](#w7-15) | Unused | Low | The implicit Calendar and ComboBoxItem styles apply to nothing | Open | S6 |
-| [W7-14](#w7-14) | Unused | Low | Unused `ctl` namespace in Typography.xaml (also linked into the installer) | Open | S6 |
-| [W2-15](#w2-15) | Test-only | Low | `AiracGeneralTabViewModel.IsIncluded(string)` is used only by tests | Open | S6 |
-| [W2-17](#w2-17) | Unused | Low | General tab's `IsReady` setter re-validates a tab that has nothing to validate | Open | S6 |
-| [W2-16](#w2-16) | Unused | Low | Public members and change notifications nothing binds to | Open | S6 |
-| [W2-14](#w2-14) | Unused | Low | `SubServiceDescriptor.Order` duplicates the list order | Open | S6 |
-| [W3-18](#w3-18) | Unused | Low | DashboardViewModel.DiscordUrl is never bound | Open | S6 |
-| [W3-23](#w3-23) | Unused | Low | Public members only their own class reads | Open | S6 |
-| [W3-21](#w3-21) | Unused | Low | Unreachable catch in MapLayersState.CurrentCycleId | Open | S6 |
-| [W4-21](#w4-21) | Test-only | Low | AliasSourceRow.CheckFailed is read only by a test | Open | S6 |
-| [W1-16](#w1-16) | Unused | Low | Procedure Charts and Telephony have unbound properties and raises nothing listens to | Open | S6 |
-| [W1-17](#w1-17) | Test-only | Low | DtppPreviousStatus is read only by a test, and two of its three messages are never shown | Open | S6 |
+| [W6-25](#w6-25) | Unused | Low | AliasGuideDocumentView.Divider always gets the same margin | Fixed | S6 |
+| [W6-20](#w6-20) | Unused | Low | BesideOrBelow.HorizontalSpacing is never set | Fixed | S6 |
+| [W6-21](#w6-21) | Unused | Low | CommandTablePanel's four spacing dependency properties are set only by a test, to their defaults | Fixed | S6 |
+| [W6-22](#w6-22) | Test-only | Low | CommandTablePanel.Rules exists only for the tests | Kept | S6 |
+| [W6-19](#w6-19) | Unused | Low | FilterPicker.Minimum and Maximum are never set | Fixed | S6 |
+| [W6-23](#w6-23) | Unused | Low | StringToVisibilityConverter's "Invert" parameter is never used | Fixed | S6 |
+| [W6-24](#w6-24) | Unused | Low | GeoJsonReader's InvalidOperationException catch can't be reached | Fixed | S6 |
+| [W7-27](#w7-27) | Unused | Low | The `--devmode` spelling of the dev-launch argument has no user | Fixed | S6 |
+| [W7-15](#w7-15) | Unused | Low | The implicit Calendar and ComboBoxItem styles apply to nothing | Fixed | S6 |
+| [W7-14](#w7-14) | Unused | Low | Unused `ctl` namespace in Typography.xaml (also linked into the installer) | Fixed | S6 |
+| [W2-15](#w2-15) | Test-only | Low | `AiracGeneralTabViewModel.IsIncluded(string)` is used only by tests | Fixed | S6 |
+| [W2-17](#w2-17) | Unused | Low | General tab's `IsReady` setter re-validates a tab that has nothing to validate | Fixed | S6 |
+| [W2-16](#w2-16) | Unused | Low | Public members and change notifications nothing binds to | Fixed | S6 |
+| [W2-14](#w2-14) | Unused | Low | `SubServiceDescriptor.Order` duplicates the list order | Fixed | S6 |
+| [W3-18](#w3-18) | Unused | Low | DashboardViewModel.DiscordUrl is never bound | Fixed | S6 |
+| [W3-23](#w3-23) | Unused | Low | Public members only their own class reads | Fixed | S6 |
+| [W3-21](#w3-21) | Unused | Low | Unreachable catch in MapLayersState.CurrentCycleId | Fixed | S6 |
+| [W4-21](#w4-21) | Test-only | Low | AliasSourceRow.CheckFailed is read only by a test | Fixed | S6 |
+| [W1-16](#w1-16) | Unused | Low | Procedure Charts and Telephony have unbound properties and raises nothing listens to | Fixed | S6 |
+| [W1-17](#w1-17) | Test-only | Low | DtppPreviousStatus is read only by a test, and two of its three messages are never shown | Fixed | S6 |
 | [W4-19](#w4-19) | Unused | Low | ConversionTabViewModel is an extra layer with exactly one subclass | Deferred | After 3.0 |
-| [W4-12](#w4-12) | Unused | Low | Unused members on the conversion page base: HasSourceFiles, EmitLines, and the Emit* no-op setters | Open | S6 |
-| [D1a-17](#d1a-17) | Unused | Low | Procedure Charts and Telephony save four settings nothing reads, and send four the parser ignores | Open | S6 |
-| [W4-13](#w4-13) | Unused | Low | Duplicate properties on GeojsonSubServiceViewModel: WritesAliasFile and HasGeojsonFiles | Open | S6 |
-| [W4-14](#w4-14) | Unused | Low | Virtual members nobody overrides: GenerateGeojson, IsAreaInUse | Open | S6 |
-| [W4-22](#w4-22) | Test-only | Low | GeojsonSubServiceViewModel.EveryOutput is only ever used by tabs built in tests | Open | S6 |
+| [W4-12](#w4-12) | Unused | Low | Unused members on the conversion page base: HasSourceFiles, EmitLines, and the Emit* no-op setters | Fixed | S6 |
+| [D1a-17](#d1a-17) | Unused | Low | Procedure Charts and Telephony save four settings nothing reads, and send four the parser ignores | Kept | S6 |
+| [W4-13](#w4-13) | Unused | Low | Duplicate properties on GeojsonSubServiceViewModel: WritesAliasFile and HasGeojsonFiles | Fixed | S6 |
+| [W4-14](#w4-14) | Unused | Low | Virtual members nobody overrides: GenerateGeojson, IsAreaInUse | Fixed | S6 |
+| [W4-22](#w4-22) | Test-only | Low | GeojsonSubServiceViewModel.EveryOutput is only ever used by tabs built in tests | Kept | S6 |
 | [W4-20](#w4-20) | Unused | Low | Card interfaces with a single implementer, used only for design-time DataContext | Deferred | After 3.0 |
-| [W4-17](#w4-17) | Unused | Low | ISubServiceOutputs.IsIncluded is never read through the interface | Open | S6 |
-| [W4-9](#w4-9) | Unused | Low | ServicePreviewSection.Note is never set | Open | S6 |
-| [W4-10](#w4-10) | Unused | Low | SubServiceDescriptor.AliasFileName is set for 7 sub-services and never read | Open | S6 |
-| [W4-15](#w4-15) | Unused | Low | ServiceTabViewModel's base MarkDirty/ClearDirty never run, and the remark describes behaviour no tab has | Open | S6 |
-| [W4-16](#w4-16) | Unused | Low | ServiceTabViewModel.IsRunnable only feeds a count that IncludedRunTargets already gives; its doc claims more | Open | S6 |
-| [W4-11](#w4-11) | Unused | Low | ServiceValidation.HasErrors is unused | Open | S6 |
+| [W4-17](#w4-17) | Unused | Low | ISubServiceOutputs.IsIncluded is never read through the interface | Fixed | S6 |
+| [W4-9](#w4-9) | Unused | Low | ServicePreviewSection.Note is never set | Fixed | S6 |
+| [W4-10](#w4-10) | Unused | Low | SubServiceDescriptor.AliasFileName is set for 7 sub-services and never read | Fixed | S6 |
+| [W4-15](#w4-15) | Unused | Low | ServiceTabViewModel's base MarkDirty/ClearDirty never run, and the remark describes behaviour no tab has | Fixed | S6 |
+| [W4-16](#w4-16) | Unused | Low | ServiceTabViewModel.IsRunnable only feeds a count that IncludedRunTargets already gives; its doc claims more | Fixed | S6 |
+| [W4-11](#w4-11) | Unused | Low | ServiceValidation.HasErrors is unused | Fixed | S6 |
 | [W4-18](#w4-18) | Unused | Low | TabbedServiceViewModel's optional parts have one user, which supplies all of them | Deferred | After 3.0 |
-| [W3-19](#w3-19) | Unused | Low | SettingsViewModel.IsOnline is never bound or read | Open | S6 |
-| [W3-22](#w3-22) | Unused | Low | Redundant "no entries" guards before ComputeReadiness | Open | S6 |
-| [W3-20](#w3-20) | Unused | Low | ShellViewModel.VersionBrushKey and IsOnline are bindable properties nothing binds | Open | S6 |
-| [W5-17](#w5-17) | Unused | Low | Six x:Name elements are never referenced | Open | S6 |
-| [W5-18](#w5-18) | Unused | Low | GeojsonFilesCard: Footnote and the three *Label properties are never set | Open | S6 |
-| [W7-16](#w7-16) | Unused | Low | Five explicit `Themed.ComboBox` references repeat what the implicit style already does | Open | S6 |
-| [W5-19](#w5-19) | Unused | Low | Dashboard log row trigger for Info sets the default again | Open | S6 |
+| [W3-19](#w3-19) | Unused | Low | SettingsViewModel.IsOnline is never bound or read | Fixed | S6 |
+| [W3-22](#w3-22) | Unused | Low | Redundant "no entries" guards before ComputeReadiness | Fixed | S6 |
+| [W3-20](#w3-20) | Unused | Low | ShellViewModel.VersionBrushKey and IsOnline are bindable properties nothing binds | Fixed | S6 |
+| [W5-17](#w5-17) | Unused | Low | Six x:Name elements are never referenced | Fixed | S6 |
+| [W5-18](#w5-18) | Unused | Low | GeojsonFilesCard: Footnote and the three *Label properties are never set | Fixed | S6 |
+| [W7-16](#w7-16) | Unused | Low | Five explicit `Themed.ComboBox` references repeat what the implicit style already does | Fixed | S6 |
+| [W5-19](#w5-19) | Unused | Low | Dashboard log row trigger for Info sets the default again | Fixed | S6 |
 
 ## Med
 
@@ -125,7 +125,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W5-1 · Unused · Med · ShellWindow maps AirwaysViewModel to AirwaysView, but the shell never shows it
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The AirwaysViewModel DataTemplate is deleted from ShellWindow.xaml · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml:54-56`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml#L54-L56)
 
@@ -639,7 +639,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W6-25 · Unused · Low · AliasGuideDocumentView.Divider always gets the same margin
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Divider()` takes no margin and sets only the `Divider` style · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Controls/AliasGuideDocumentView.cs:293`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/AliasGuideDocumentView.cs#L293), 487-492
 
@@ -653,7 +653,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W6-20 · Unused · Low · BesideOrBelow.HorizontalSpacing is never set
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `HorizontalSpacing` is a private constant of 16 · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Controls/BesideOrBelow.cs:39-42`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/BesideOrBelow.cs#L39-L42), 63-68
 
@@ -667,7 +667,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W6-21 · Unused · Low · CommandTablePanel's four spacing dependency properties are set only by a test, to their defaults
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The four spacing properties are private constants with the same values; the test no longer sets them · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Controls/CommandTablePanel.cs:33-51`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/CommandTablePanel.cs#L33-L51), 67-93
 
@@ -681,7 +681,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W6-22 · Test-only · Low · CommandTablePanel.Rules exists only for the tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Kept (not yet merged): the rules are drawn, not child elements, so `Rules` is the tests' only way to see them; it stays internal, for the tests · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Controls/CommandTablePanel.cs:105-106`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/CommandTablePanel.cs#L105-L106)
 
@@ -697,7 +697,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W6-19 · Unused · Low · FilterPicker.Minimum and Maximum are never set
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Minimum` and `Maximum` are deleted; the picker offers exactly what `CrcPropertyValidator` accepts · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Controls/FilterPicker.xaml.cs:39-47`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/FilterPicker.xaml.cs#L39-L47), 66-78, 97-98
 
@@ -711,7 +711,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W6-23 · Unused · Low · StringToVisibilityConverter's "Invert" parameter is never used
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The "Invert" parameter is deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Converters/StringToVisibilityConverter.cs:9-10`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Converters/StringToVisibilityConverter.cs#L9-L10), 18-21
 
@@ -725,7 +725,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W6-24 · Unused · Low · GeoJsonReader's InvalidOperationException catch can't be reached
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The catch and its "Not laid out as GeoJSON" message are deleted from the reader, now `GeojsonFileReader` in Core · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Map/GeoJsonReader.cs:54-61`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/GeoJsonReader.cs#L54-L61)
 
@@ -741,7 +741,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W7-27 · Unused · Low · The `--devmode` spelling of the dev-launch argument has no user
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). Only `--dev` asks for a dev launch; `--devmode` is now an unknown argument, and the developer README and the XML docs name only `--dev` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/DevLaunchArgs.cs:4`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/DevLaunchArgs.cs#L4),14,19-21; [`FeBuddy/FeBuddy.UnitTests/Wpf/Shell/DevLaunchArgsTests.cs:16`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Wpf/Shell/DevLaunchArgsTests.cs#L16); [`docs/Developers/README.md:68`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/README.md?plain=1#L68)
 
@@ -755,7 +755,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W7-15 · Unused · Low · The implicit Calendar and ComboBoxItem styles apply to nothing
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The implicit Calendar and ComboBoxItem styles are deleted, with the header line; the comment names the DatePicker's drop-down as the calendar look's user · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Theme/Controls.Inputs.xaml:26-27`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Theme/Controls.Inputs.xaml#L26-L27),873,899,428
 
@@ -769,7 +769,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W7-14 · Unused · Low · Unused `ctl` namespace in Typography.xaml (also linked into the installer)
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The unused `ctl` namespace is deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml:23`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml#L23)
 
@@ -783,7 +783,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W2-15 · Test-only · Low · `AiracGeneralTabViewModel.IsIncluded(string)` is used only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `IsIncluded(string)` is deleted; the tests read the row's `IsIncluded` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:99-102`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L99-L102)
 
@@ -797,7 +797,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W2-17 · Unused · Low · General tab's `IsReady` setter re-validates a tab that has nothing to validate
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `IsReady`'s setter only sets it · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:143-153`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L143-L153)
 
@@ -811,7 +811,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W2-16 · Unused · Low · Public members and change notifications nothing binds to
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Readiness`, `IsReady`, `StationDataStatus` and `RefreshCycleOptions` are private, without their change notifications, and the two `IncludedSubServices` ones are deleted; `Node` is internal, for the settings layout test · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:133-141`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L133-L141), 367-368; [`WxStationsViewModel.cs:67-68`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/WxStationsViewModel.cs#L67-L68), 85; [`AiracGeneralTabViewModel.cs:172-173`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L172-L173), 218, 268; [`DuplicateAliasesCardViewModel.cs:26-27`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DuplicateAliasesCardViewModel.cs#L26-L27)
 
@@ -825,7 +825,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W2-14 · Unused · Low · `SubServiceDescriptor.Order` duplicates the list order
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Order` is deleted: the catalogue's order is the rail's. Its test is deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracSubServices.cs:72-75`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracSubServices.cs#L72-L75) (and every entry's 10..110); [`AiracServiceViewModel.cs:246`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L246), 276; [`AiracGeneralTabViewModel.cs:59`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L59)
 
@@ -839,7 +839,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W3-18 · Unused · Low · DashboardViewModel.DiscordUrl is never bound
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `DiscordUrl` is deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:100-101`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L100-L101)
 
@@ -853,7 +853,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W3-23 · Unused · Low · Public members only their own class reads
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `LevelFilter`, `DescriptionText` and `ReloadAll` are private; `HasCustomHome` is folded into the Reset Home command's CanExecute · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:153-169`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L153-L169) (`LevelFilter` getter); [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:169-170`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L169-L170) (`HasCustomHome`); [`FeBuddy/FeBuddy.Wpf/ViewModels/ConfigPages.cs:44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ConfigPages.cs#L44) (`ReloadAll`); [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:29-34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L29-L34) (`DescriptionText`)
 
@@ -867,7 +867,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W3-21 · Unused · Low · Unreachable catch in MapLayersState.CurrentCycleId
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The unreachable catch is deleted; `CurrentCycleId` reads the cycle directly · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:505-515`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L505-L515)
 
@@ -881,7 +881,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-21 · Test-only · Low · AliasSourceRow.CheckFailed is read only by a test
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `CheckFailed` is deleted; the test checks `HasCheckMessage` and `CheckSucceeded` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/Models/AliasSourceRow.cs:232`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/Models/AliasSourceRow.cs#L232), 249, 255-256
 
@@ -895,7 +895,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W1-16 · Unused · Low · Procedure Charts and Telephony have unbound properties and raises nothing listens to
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `IsDtppKnown`, `HasAirports` and `HasProcedureNames` are deleted with their change notifications; `GeneratesDocument`, `DtppStatus` and `TelephonyDataStatus` are private, without theirs. The tests read `DtppCycleId` and the Telephony data preview row · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:493`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L493), 650, 723, 128, 131, 1748, 190, 199, 1750; [`TelephonyViewModel.cs:119`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L119), 136
 
@@ -909,7 +909,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W1-17 · Test-only · Low · DtppPreviousStatus is read only by a test, and two of its three messages are never shown
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `DtppPreviousStatus` and the two messages never shown are deleted; the test checks only that no warning shows while the previous cycle loads · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:501-502`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L501-L502), 624-629
 
@@ -937,7 +937,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-12 · Unused · Low · Unused members on the conversion page base: HasSourceFiles, EmitLines, and the Emit* no-op setters
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `HasSourceFiles` and `EmitLines` are deleted; `EmitSymbols` and `EmitText` are the private `WritesSymbols` and `WritesText` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs:62`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs#L62), 146-147, 184-191
 
@@ -951,7 +951,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### D1a-17 · Unused · Low · Procedure Charts and Telephony save four settings nothing reads, and send four the parser ignores
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Kept (not yet merged): the saved keys stay, as dropping them needs a settings layout step, and a comment says so. The run is no longer sent the four keys the parsers ignore · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs:662-668`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs#L662-L668), 696-715
 
@@ -967,7 +967,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-13 · Unused · Low · Duplicate properties on GeojsonSubServiceViewModel: WritesAliasFile and HasGeojsonFiles
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `WritesAliasFile` is deleted and the AIRAC Service reads `GenerateAliasFile`; `HasGeojsonFiles` is private · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs:108`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs#L108), 142-143, 207-212, 463
 
@@ -981,7 +981,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-14 · Unused · Low · Virtual members nobody overrides: GenerateGeojson, IsAreaInUse
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `GenerateGeojson` is not virtual, and its remark says it is off for a sub-service that doesn't offer GeoJSON; `IsAreaInUse` is private · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs:110-112`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs#L110-L112), 428-432
 
@@ -995,7 +995,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-22 · Test-only · Low · GeojsonSubServiceViewModel.EveryOutput is only ever used by tabs built in tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Kept (not yet merged): every tab the app builds is attached to the General tab's row, and the default lets a tab built on its own, as most tab tests build one, work without one · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs:73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs#L73), 100-104, 1009-1021
 
@@ -1023,7 +1023,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-17 · Unused · Low · ISubServiceOutputs.IsIncluded is never read through the interface
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `IsIncluded` is deleted from `ISubServiceOutputs` and its default; `SubServiceRow` keeps its own · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ISubServiceOutputs.cs:12-13`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ISubServiceOutputs.cs#L12-L13); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs:1012`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs#L1012)
 
@@ -1037,7 +1037,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-9 · Unused · Low · ServicePreviewSection.Note is never set
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Note` and its TextBlock are deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/Models/ServicePreviewSection.cs:6-7`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/Models/ServicePreviewSection.cs#L6-L7); [`FeBuddy/FeBuddy.Wpf/Views/ServicePreviewTabView.xaml:39-41`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/ServicePreviewTabView.xaml#L39-L41)
 
@@ -1051,7 +1051,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-10 · Unused · Low · SubServiceDescriptor.AliasFileName is set for 7 sub-services and never read
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `AliasFileName` is deleted, with the seven entries' alias file arguments · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/Models/SubServiceDescriptor.cs:20-23`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/Models/SubServiceDescriptor.cs#L20-L23), 34; [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracSubServices.cs:84`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracSubServices.cs#L84), 92, 100, 107, 114, 127, 136
 
@@ -1067,7 +1067,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-15 · Unused · Low · ServiceTabViewModel's base MarkDirty/ClearDirty never run, and the remark describes behaviour no tab has
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `MarkDirty` and `ClearDirty` are on `SubServiceSettingsViewModel` only; the "pessimistic" remark is deleted and the crefs point there · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceTabViewModel.cs:224-244`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceTabViewModel.cs#L224-L244); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:105-117`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L105-L117)
 
@@ -1081,7 +1081,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-16 · Unused · Low · ServiceTabViewModel.IsRunnable only feeds a count that IncludedRunTargets already gives; its doc claims more
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `IsRunnable` is deleted with the Review tab's override; a run checks `IncludedRunTargets`, read once · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceTabViewModel.cs:69-73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceTabViewModel.cs#L69-L73); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceRunReviewTabViewModel.cs:53`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceRunReviewTabViewModel.cs#L53); [`AiracServiceViewModel.cs:530-537`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L530-L537)
 
@@ -1095,7 +1095,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W4-11 · Unused · Low · ServiceValidation.HasErrors is unused
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `HasErrors` is deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceValidation.cs:17-18`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/ServiceValidation.cs#L17-L18)
 
@@ -1123,7 +1123,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W3-19 · Unused · Low · SettingsViewModel.IsOnline is never bound or read
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `IsOnline` and its change notification are deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:573-574`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L573-L574), 1104
 
@@ -1137,7 +1137,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W3-22 · Unused · Low · Redundant "no entries" guards before ComputeReadiness
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). Settings and the shell call `ComputeReadiness()` without the "no entries" check, and so does the AIRAC Service's `Readiness` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:1098-1100`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L1098-L1100); [`FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs:716-718`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs#L716-L718)
 
@@ -1151,7 +1151,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W3-20 · Unused · Low · ShellViewModel.VersionBrushKey and IsOnline are bindable properties nothing binds
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `VersionBrushKey` is deleted: `VersionIsWarning` is worked out from `IsUpdateAvailable` and the declined flag. `IsOnline` is a local · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs:66-67`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs#L66-L67), 218-243, 590-651
 
@@ -1165,7 +1165,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W5-17 · Unused · Low · Six x:Name elements are never referenced
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The six names are deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/AirwaysView.xaml:23`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/AirwaysView.xaml#L23) (`Root`); [`MapWorkspace.xaml:342`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/MapWorkspace.xaml#L342) (`OutputGear`); [`ResetWindow.xaml:38`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/ResetWindow.xaml#L38) (`Body`); [`ShellWindow.xaml:300`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml#L300) (`MinimizeButton`), 310 (`CloseButton`), 327 (`NavRail`)
 
@@ -1179,7 +1179,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W5-18 · Unused · Low · GeojsonFilesCard: Footnote and the three *Label properties are never set
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Footnote`, its TextBlock and the three labels are deleted; the check boxes say Lines, Symbols and Text · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/Cards/GeojsonFilesCard.xaml:8`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/Cards/GeojsonFilesCard.xaml#L8),40,45,50,54-57; [`GeojsonFilesCard.xaml.cs:9-10`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/Cards/GeojsonFilesCard.xaml.cs#L9-L10),18-19,27-28,36-37,50-51,59-60,68-69,77-78
 
@@ -1193,7 +1193,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W7-16 · Unused · Low · Five explicit `Themed.ComboBox` references repeat what the implicit style already does
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The five explicit references are deleted; the implicit style still applies · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/ConcatenateAliasesView.xaml:147`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/ConcatenateAliasesView.xaml#L147); [`Views/SettingsView.xaml:86`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/SettingsView.xaml#L86),105,289; [`Views/AirwaysView.xaml:122`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/AirwaysView.xaml#L122)
 
@@ -1207,7 +1207,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### W5-19 · Unused · Low · Dashboard log row trigger for Info sets the default again
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The Info trigger is deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/DashboardView.xaml:72-74`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/DashboardView.xaml#L72-L74)
 

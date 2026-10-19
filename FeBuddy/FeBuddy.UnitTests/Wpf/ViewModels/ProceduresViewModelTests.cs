@@ -59,6 +59,15 @@ public sealed class ProceduresViewModelTests : IDisposable
 		Assert.Equal(string.Empty, procedures.CaptureCurrentValues()["JsonFields"]);
 	}
 
+	/// <summary>Procedure Charts writes no GeoJSON, so the block leaves out the GeoJSON settings its parser would only ignore.</summary>
+	[Fact]
+	public void the_settings_block_leaves_out_the_geojson_settings()
+	{
+		IReadOnlyDictionary<string, string> block = new ProceduresViewModel().BuildSettingsBlock();
+
+		Assert.DoesNotContain(block.Keys, key => key is "CoordinatePrecision" or "IncludeFebCustomProperties" or "FebProperties" or "CrcDefaultsFor");
+	}
+
 	[Fact]
 	public void a_pasted_list_adds_every_airport_in_order_by_its_faa_id()
 	{

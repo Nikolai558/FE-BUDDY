@@ -18,7 +18,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 ///   <item>returns its subtree path from <see cref="NodePath"/> (e.g. <c>Services.AiracService.Airways</c>),</item>
 ///   <item>returns its rail label from <see cref="ServiceTabViewModel.Title"/>,</item>
 ///   <item>calls <see cref="LoadFromConfig"/> from its own constructor,</item>
-///   <item>calls <see cref="ServiceTabViewModel.MarkDirty"/> from every bound setting's setter,</item>
+///   <item>calls <see cref="MarkDirty"/> from every bound setting's setter,</item>
 ///   <item>implements <see cref="WriteToConfig"/> (push fields into <see cref="UserConfigFile"/> via <c>TrySetValue</c>)
 ///         and <see cref="ServiceTabViewModel.BuildPreviewSummary"/>, and optionally
 ///         <see cref="ServiceTabViewModel.Validate"/>.</item>
@@ -101,20 +101,23 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 		return true;
 	}
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Re-evaluates the tab after a setting changed, and re-validates. Call from every bound
+	/// setting's setter.
+	/// </summary>
 	/// <remarks>
 	/// Compares the tab's current values against the snapshot taken when it was last saved or
 	/// loaded, so changing a setting and changing it straight back leaves the tab clean rather
 	/// than permanently marked as edited.
 	/// </remarks>
-	protected override void MarkDirty()
+	protected virtual void MarkDirty()
 	{
 		IsDirty = _savedState is null || !MatchesSavedState();
 		Revalidate();
 	}
 
-	/// <inheritdoc />
-	protected override void ClearDirty()
+	/// <summary>Clears the dirty flag (after a successful save or a reload) and re-validates.</summary>
+	protected virtual void ClearDirty()
 	{
 		_savedState = SavedStateSnapshot.Of(CaptureCurrentValues());
 		IsDirty = false;

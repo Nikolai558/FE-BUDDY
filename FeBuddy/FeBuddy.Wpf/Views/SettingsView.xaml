@@ -83,7 +83,7 @@
                                         ToolTip="Switch to another profile, then delete this one."
                                         Command="{Binding DeleteCommand}" />
                             </StackPanel>
-                            <ComboBox Style="{StaticResource Themed.ComboBox}" Width="300" HorizontalAlignment="Left"
+                            <ComboBox Width="300" HorizontalAlignment="Left"
                                       ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" IsEnabled="{Binding CanChooseProfile}"
                                       ToolTip="The profile in use. Choose another to switch to it." />
                         </DockPanel>
@@ -102,8 +102,7 @@
 
                         <StackPanel Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}}">
                             <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Facility" Margin="0,4,0,4" />
-                            <ComboBox Style="{StaticResource Themed.ComboBox}"
-                                      ItemsSource="{Binding Facilities}"
+                            <ComboBox ItemsSource="{Binding Facilities}"
                                       SelectedValuePath="ArtccId" SelectedValue="{Binding SelectedFacility}"
                                       Width="300" HorizontalAlignment="Left">
                                 <ComboBox.ItemTemplate>
@@ -286,7 +285,7 @@
                                 <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="New GitHub token…" Margin="8,0,0,0"
                                         ToolTip="Add a GitHub token in Credentials and use it here."
                                         Command="{Binding NewGitHubTokenCommand}" />
-                                <ComboBox Style="{StaticResource Themed.ComboBox}" ItemsSource="{Binding GitHubTokens}"
+                                <ComboBox ItemsSource="{Binding GitHubTokens}"
                                           SelectedValuePath="Id" SelectedValue="{Binding GitHubCredentialId}">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>

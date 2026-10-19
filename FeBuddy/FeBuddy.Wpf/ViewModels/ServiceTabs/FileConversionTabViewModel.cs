@@ -68,11 +68,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		SymbolDefaults = writesSymbols ? [new(crcClassName, EramFieldKind.Symbol, MarkDirty)] : [];
 		TextDefaults = writesText ? [new(crcClassName, EramFieldKind.Text, MarkDirty)] : [];
 
-		SourceFiles.CollectionChanged += (_, _) =>
-		{
-			OnPropertyChanged(nameof(HasSourceFiles));
-			RaiseRunBlockerChanged();
-		};
+		SourceFiles.CollectionChanged += (_, _) => RaiseRunBlockerChanged();
 
 		_countAfterTyping = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(400) };
 		_countAfterTyping.Tick += (_, _) => _ = CountFolderAsync();
@@ -168,9 +164,6 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	/// <inheritdoc />
 	public ObservableCollection<SourceFileItem> SourceFiles { get; } = [];
 
-	/// <summary>Whether any file has been picked.</summary>
-	public bool HasSourceFiles => SourceFiles.Count > 0;
-
 	/// <inheritdoc />
 	public ICommand BrowseFolderCommand { get; }
 
@@ -206,14 +199,11 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		set { if (SetProperty(ref _includeCrcTextDefaults, value)) MarkDirty(); }
 	}
 
-	/// <summary>Every conversion writes lines; always <see langword="true"/>.</summary>
-	public bool EmitLines { get => true; set { } }
-
 	/// <summary>Whether the conversion writes symbols; fixed by the page.</summary>
-	public bool EmitSymbols { get => SymbolDefaults.Count > 0; set { } }
+	private bool WritesSymbols => SymbolDefaults.Count > 0;
 
 	/// <summary>Whether the conversion writes labels; fixed by the page.</summary>
-	public bool EmitText { get => TextDefaults.Count > 0; set { } }
+	private bool WritesText => TextDefaults.Count > 0;
 
 	/// <summary>The Line defaults: one row, for the conversion's CRC class.</summary>
 	public ObservableCollection<EramClassDefault> LineDefaults { get; }
@@ -293,12 +283,12 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 			settings["SourceFiles"] = string.Join(ConversionSettingsReader.SourceFileSeparator, SourceFiles.Select(f => f.Path));
 		}
 
-		if (EmitSymbols)
+		if (WritesSymbols)
 		{
 			settings["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults);
 		}
 
-		if (EmitText)
+		if (WritesText)
 		{
 			settings["IncludeCrcTextDefaults"] = YesNo(IncludeCrcTextDefaults);
 		}
@@ -396,12 +386,12 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		Set("SourceFolder", SourceFolder);
 		Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
 
-		if (EmitSymbols)
+		if (WritesSymbols)
 		{
 			Set("IncludeCrcSymbolDefaults", YesNo(IncludeCrcSymbolDefaults));
 		}
 
-		if (EmitText)
+		if (WritesText)
 		{
 			Set("IncludeCrcTextDefaults", YesNo(IncludeCrcTextDefaults));
 		}

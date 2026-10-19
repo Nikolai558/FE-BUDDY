@@ -3,6 +3,7 @@ using System.Diagnostics;
 using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -45,6 +46,25 @@ public static class EramToGeojsonService
 	public static readonly IReadOnlyList<string> Extensions = [".xml"];
 
 	private const string LogSource = "EramToGeojsonService";
+
+	/// <summary>
+	/// The folder a run with <paramref name="settings"/> would empty first, when an earlier run left
+	/// anything in it: each run empties <see cref="EramGeojsonWriter.RootFolder"/>, as the original tool
+	/// did, so the GUI asks before it does. <see langword="null"/> when there is nothing to lose.
+	/// </summary>
+	/// <param name="settings">The run's settings block (<c>OutputDirectory</c>, <c>AddFeBuddyOutputFolder</c>).</param>
+	/// <returns>The folder, or <see langword="null"/>.</returns>
+	/// <exception cref="ArgumentException">The block has no output folder.</exception>
+	public static string? ExistingOutput(IReadOnlyDictionary<string, string> settings)
+	{
+		ArgumentNullException.ThrowIfNull(settings);
+
+		string folder = EramGeojsonWriter.OutputDirectory(
+			SettingsValueReader.RequiredString(settings, "OutputDirectory"),
+			SettingsValueReader.YesNo(settings, "AddFeBuddyOutputFolder", defaultValue: true));
+
+		return Directory.Exists(folder) && Directory.EnumerateFileSystemEntries(folder).Any() ? folder : null;
+	}
 
 	/// <summary>Runs the conversion.</summary>
 	/// <param name="settings">The raw settings dictionary (see <see cref="EramToGeojsonSettingsParser"/>).</param>

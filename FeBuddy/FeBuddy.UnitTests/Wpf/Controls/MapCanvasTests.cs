@@ -302,8 +302,10 @@ public sealed class MapCanvasTests
 		StaThread.Run(() =>
 		{
 			MapCanvas map = Looking(Layer(new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]])));
-			DrawingVisual world = (DrawingVisual)VisualTreeHelper.GetChild(map, 0);
+			DrawingVisual world = (DrawingVisual)VisualTreeHelper.GetChild(map, 1);
+			DrawingVisual gridLabels = (DrawingVisual)VisualTreeHelper.GetChild(map, 2);
 			TranslateTransform shift = Assert.IsType<TranslateTransform>(world.Transform);
+			Rect labelsBefore = gridLabels.ContentBounds;
 			int drawn = map.Redraws;
 
 			map.PanBy(50, -20);
@@ -313,6 +315,11 @@ public sealed class MapCanvasTests
 			Assert.Equal(drawn, map.Redraws);
 			Assert.Equal(60, shift.X, 6);
 			Assert.Equal(-20, shift.Y, 6);
+
+			// The gridline labels aren't moved with the drawing: they are drawn again, still on the map's bottom edge.
+			Assert.Null(gridLabels.Transform);
+			Assert.False(labelsBefore.IsEmpty);
+			Assert.InRange(gridLabels.ContentBounds.Bottom, labelsBefore.Bottom - 1, labelsBefore.Bottom + 1);
 
 			map.SettlePan();
 
@@ -362,7 +369,7 @@ public sealed class MapCanvasTests
 				new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]]),
 				new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(40, -99.5)]], "CLE"));
 			MapCanvas map = Looking(layer);
-			DrawingVisual highlight = (DrawingVisual)VisualTreeHelper.GetChild(map, 1);
+			DrawingVisual highlight = (DrawingVisual)VisualTreeHelper.GetChild(map, 3);
 
 			map.Highlighted = [.. map.HitTest(Middle), new MapHit(layer, layer.Geometries[1], new GeoPoint(40, -99.5)) { Index = 1 }];
 			Assert.NotNull(highlight.Drawing);

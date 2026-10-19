@@ -15,21 +15,21 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 | [W1-6](#w1-6) | Logic in GUI | Med | Procedure Charts re-implements Core's selection and name-matching rules | Open | S5 |
 | [W6-8](#w6-8) | Logic in GUI | Low | The GUI guesses which words in Core's messages are file names | Open | S5 |
 | [C2-6](#c2-6) | Logic in GUI | Low | The Map's "towered" test copies AirportFieldMaps' display string | Open | S5 |
-| [W7-6](#w7-6) | Logic in GUI | Low | The coordinate-precision rule (0-15, default 6) is restated in the GUI twice | Open | S5 |
+| [W7-6](#w7-6) | Logic in GUI | Low | The coordinate-precision rule (0-15, default 6) is restated in the GUI twice | Fixed | S5 |
 | [W2-7](#w2-7) | Logic in GUI | Low | Per-sub-service result knowledge lives in the GUI three times | Open | S5 |
 | [W2-23](#w2-23) | Logic in GUI | Low | Sub-service keys, node paths and order are defined in the GUI and again in Core | Open | S5 |
 | [W1-11](#w1-11) | Logic in GUI | Low | Airways parses Core's message text and file keys, and spells Core's enum as string literals | Open | S5 |
 | [W2-18](#w2-18) | Logic in GUI | Low | Arrivals copies Core's parser limits, ARTCC splitting and file naming | Open | S5 |
-| [W2-20](#w2-20) | Logic in GUI | Low | ARTCC Boundaries repeats Core's altitude vocabulary and builds the per-ARTCC file list itself | Open | S5 |
+| [W2-20](#w2-20) | Logic in GUI | Low | ARTCC Boundaries repeats Core's altitude vocabulary and builds the per-ARTCC file list itself | Fixed | S5 |
 | [W1-8](#w1-8) | Logic in GUI | Low | Add Custom Aliases keeps its own copy of the parser's and loader's rules, and its doc says they're the same | Open | S5 |
 | [W1-9](#w1-9) | Logic in GUI | Low | Numbered-key lists are parsed by hand in two tabs, beside Core's parsers | Open | S5 |
-| [W2-21](#w2-21) | Logic in GUI | Low | DAT cropping-distance validation copies Core's parse rule | Open | S5 |
+| [W2-21](#w2-21) | Logic in GUI | Low | DAT cropping-distance validation copies Core's parse rule | Fixed | S5 |
 | [W1-12](#w1-12) | Logic in GUI | Low | Departures repeats the parser's limits, date format and file layout | Open | S5 |
-| [W2-25](#w2-25) | Logic in GUI | Low | ERAM's "would this run delete anything" check parses the settings block in the GUI | Open | S5 |
+| [W2-25](#w2-25) | Logic in GUI | Low | ERAM's "would this run delete anything" check parses the settings block in the GUI | Fixed | S5 |
 | [W2-22](#w2-22) | Logic in GUI | Low | The "no two files share a name" rule is only half in Core | Open | S5 |
-| [W1-10](#w1-10) | Logic in GUI | Low | Fixes re-implements combination parsing and file naming | Open | S5 |
-| [W2-19](#w2-19) | Logic in GUI | Low | NAVAIDs repeats NavaidBuilder's SHUTDOWN rule | Open | S5 |
-| [W3-12](#w3-12) | Logic in GUI | Low | Profile-name "already taken" rule duplicated from Core | Open | S5 |
+| [W1-10](#w1-10) | Logic in GUI | Low | Fixes re-implements combination parsing and file naming | Fixed | S5 |
+| [W2-19](#w2-19) | Logic in GUI | Low | NAVAIDs repeats NavaidBuilder's SHUTDOWN rule | Fixed | S5 |
+| [W3-12](#w3-12) | Logic in GUI | Low | Profile-name "already taken" rule duplicated from Core | Fixed | S5 |
 | [W4-6](#w4-6) | Logic in GUI | Low | Which folder files a conversion reads is decided twice, in the page and in Core | Open | S5 |
 | [W3-10](#w3-10) | Logic in GUI | Low | Facility key duplicated as a literal; doc names only one reader | Open | S5 |
 | [W3-13](#w3-13) | Logic in GUI | Low | Settings backup before reset/uninstall is file logic in the view-model | Open | S5 |
@@ -109,7 +109,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W7-6 · Logic in GUI · Low · The coordinate-precision rule (0-15, default 6) is restated in the GUI twice
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `GeojsonFileWriter.DefaultPrecision` and `MaxPrecision` sit beside `NoRounding`, and `SubServiceSettingsReader.CoordinatePrecisionOrDefault` reads a saved value for `OutputPreferences` and the Settings page; `ReadCoordinatePrecision` uses the same constants. Tests: `SubServiceSettingsReaderTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs:20-21`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs#L20-L21),48-56; [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:758`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L758); [`FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs:135-136`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs#L135-L136)
 
@@ -173,7 +173,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-20 · Logic in GUI · Low · ARTCC Boundaries repeats Core's altitude vocabulary and builds the per-ARTCC file list itself
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), with [U1-1](110_GUI-Lag.md#u1-1) in S3: the ARTCCs and their altitudes come from Core's `AiracCycleOptionListBuilder`, which uses `ArtccBoundaryAltitudes`, off the UI thread; the tab no longer walks ARB_SEG · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs:130-157`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L130-L157), 367-372
 
@@ -209,7 +209,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-21 · Logic in GUI · Low · DAT cropping-distance validation copies Core's parse rule
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `SettingsValueReader.TryParsePositiveDecimal`, used by `OptionalPositiveDecimal` and the DAT page. Tests: `SettingsValueReaderTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DatToGeojsonViewModel.cs:85-97`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DatToGeojsonViewModel.cs#L85-L97)
 
@@ -233,7 +233,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-25 · Logic in GUI · Low · ERAM's "would this run delete anything" check parses the settings block in the GUI
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `EramToGeojsonService.ExistingOutput(settings)` names the folder a run would empty when it has anything in it, reading the block with `SettingsValueReader`; the page only asks. Tests: `EramToGeojsonServiceTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/EramToGeojsonViewModel.cs:159-165`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/EramToGeojsonViewModel.cs#L159-L165)
 
@@ -257,7 +257,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-10 · Logic in GUI · Low · Fixes re-implements combination parsing and file naming
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: Core's `FixCombination.TryParse` reads a `Combinations` entry for both `FixSettingsParser` and the Fixes tab, and the tab names a combination's files with `FixOutputFiles.GroupKey`. The fix use order went with [U1-1](110_GUI-Lag.md#u1-1). Tests: `FixSettingsParserTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs:973-1007`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs#L973-L1007), 924, 611-622
 
@@ -269,7 +269,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-19 · Logic in GUI · Low · NAVAIDs repeats NavaidBuilder's SHUTDOWN rule
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), with [U1-1](110_GUI-Lag.md#u1-1) in S3: the NAVAID types come from Core's `AiracCycleOptionListBuilder`, which uses `NavaidBuilder.IsShutDown`; the tab's copy is gone · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs:34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L34), 153-159
 
@@ -281,7 +281,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-12 · Logic in GUI · Low · Profile-name "already taken" rule duplicated from Core
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: Core's `UserConfigFile.NewProfileNameProblem` is the rule, used by `CheckNewName` and by the name windows (`ProfileNameViewModel`, and so the import's). One wording now: "There is already a profile called X." Tests: `UserConfigProfilesTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProfileNameViewModel.cs:143-155`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProfileNameViewModel.cs#L143-L155)
 

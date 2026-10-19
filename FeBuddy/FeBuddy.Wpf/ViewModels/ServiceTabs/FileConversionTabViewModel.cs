@@ -136,8 +136,10 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 			{
 				MarkDirty();
 
-				// Counted once the typing stops; until then the page says it is counting.
+				// Counted once the typing stops; until then the page says it is counting. A count still
+				// running, or finished but not yet shown, is for the old folder: it is stopped and never shown.
 				_folderCountStop?.Cancel();
+				_folderCountStop = null;
 				_countingFolder = true;
 				RaiseFolderChanged();
 				_countAfterTyping.Stop();

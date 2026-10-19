@@ -271,24 +271,37 @@ public static partial class UserConfigFile
 	private static string? ExistingName(string? name) =>
 		ProfileNames().FirstOrDefault(profile => profile.Equals(name?.Trim(), StringComparison.OrdinalIgnoreCase));
 
-	/// <summary>The trimmed new name, once it is checked: usable, and no other profile's.</summary>
-	/// <exception cref="ArgumentException">It isn't.</exception>
-	private static string CheckNewName(string name, string? renaming)
+	/// <summary>
+	/// Why a new profile - or a profile being renamed - can't be called <paramref name="name"/>: a name no
+	/// file can have (<see cref="ProfileNameProblem"/>), or another profile's in any case. What the name
+	/// windows say, and what creating or renaming a profile refuses.
+	/// </summary>
+	/// <param name="name">The name typed.</param>
+	/// <param name="profiles">Every profile now.</param>
+	/// <param name="renaming">The profile being renamed, which may keep its own name in any case; <see langword="null"/> for a new one.</param>
+	/// <returns>A sentence saying what is wrong, or <see langword="null"/>.</returns>
+	public static string? NewProfileNameProblem(string? name, IReadOnlyCollection<string> profiles, string? renaming)
 	{
+		ArgumentNullException.ThrowIfNull(profiles);
+
 		if (ProfileNameProblem(name) is { } problem)
 		{
-			throw new ArgumentException(problem, nameof(name));
+			return problem;
 		}
 
-		string trimmed = name.Trim();
+		string trimmed = name!.Trim();
+		string? taken = profiles.FirstOrDefault(profile => profile.Equals(trimmed, StringComparison.OrdinalIgnoreCase)
+			&& !profile.Equals(renaming, StringComparison.OrdinalIgnoreCase));
 
-		if (ExistingName(trimmed) is { } taken && !taken.Equals(renaming, StringComparison.OrdinalIgnoreCase))
-		{
-			throw new ArgumentException($"There is already a settings profile called '{taken}'.", nameof(name));
-		}
-
-		return trimmed;
+		return taken is null ? null : $"There is already a profile called {taken}.";
 	}
+
+	/// <summary>The trimmed new name, once it is checked: usable, and no other profile's.</summary>
+	/// <exception cref="ArgumentException">It isn't.</exception>
+	private static string CheckNewName(string name, string? renaming) =>
+		NewProfileNameProblem(name, ProfileNames(), renaming) is { } problem
+			? throw new ArgumentException(problem, nameof(name))
+			: name.Trim();
 
 	/// <summary>A profile's backup files that exist, with the kind each is.</summary>
 	/// <remarks>

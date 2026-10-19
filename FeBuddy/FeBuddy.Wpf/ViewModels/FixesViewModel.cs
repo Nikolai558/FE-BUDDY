@@ -6,6 +6,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Fixes;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Models;
@@ -887,7 +888,9 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		}
 	}
 
-	private static string CombinationFileNames(string group) => $"Fix_{group}_Symbols / _Text";
+	/// <summary>A combination's two files as its row names them, e.g. <c>Fix_ENROUTE-LOW-WYPNT_Symbols / _Text</c>.</summary>
+	private static string CombinationFileNames(string group) =>
+		$"{FixOutputFiles.GroupKey(group, CrcFeatureKind.Symbol)} / _{AiracOutputPaths.FileKindSuffix(CrcFeatureKind.Text)}";
 
 	/// <summary>A chart token's NASR name once the cycle's data is known, otherwise the token itself.</summary>
 	private string ChartLabel(string chartToken) =>
@@ -946,26 +949,10 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		foreach (string entry in entries)
 		{
-			string[] parts = entry.Split('+');
-
-			if (parts.Length != 2)
+			// Read as the run reads it (FixCombination.TryParse); one it would refuse is left out here.
+			if (FixCombination.TryParse(entry, out FixCombination? combination) && seen.Add((combination.Chart, combination.FixUse)))
 			{
-				continue;
-			}
-
-			// Tokenized the way the parser does, so a hand-edited "ENROUTE LOW+wypnt" still names
-			// the same files and CRC class.
-			string chart = FixCharts.Token(parts[0]);
-			string fixUse = DomainFixUses.Token(parts[1]);
-
-			if (chart.Length == 0 || fixUse.Length == 0)
-			{
-				continue;
-			}
-
-			if (seen.Add((chart, fixUse)))
-			{
-				result.Add((chart, fixUse));
+				result.Add((combination.Chart, combination.FixUse));
 			}
 		}
 

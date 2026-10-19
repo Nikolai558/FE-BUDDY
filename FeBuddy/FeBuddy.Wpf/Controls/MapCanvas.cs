@@ -84,6 +84,11 @@ public sealed partial class MapCanvas : FrameworkElement
 
 	// --- rendering -----------------------------------------------------------
 	private readonly VisualCollection _visuals;
+
+	// The background and the gridlines, under the layers, and the gridlines' labels, over them: drawn for
+	// the view as it is, on every mouse move of a pan too - they are few - so the labels stay on the edges.
+	private readonly DrawingVisual _gridVisual = new();
+	private readonly DrawingVisual _gridLabelVisual = new();
 	private readonly DrawingVisual _worldVisual = new();
 	private readonly DrawingVisual _roiVisual = new();
 	private readonly DrawingVisual _overlayVisual = new();
@@ -107,9 +112,9 @@ public sealed partial class MapCanvas : FrameworkElement
 	/// <summary>Creates an empty map; it frames the contiguous US on its first layout.</summary>
 	public MapCanvas()
 	{
-		_visuals = new VisualCollection(this) { _worldVisual, _highlightVisual, _roiVisual, _overlayVisual };
+		_visuals = new VisualCollection(this) { _gridVisual, _worldVisual, _gridLabelVisual, _highlightVisual, _roiVisual, _overlayVisual };
 
-		// The scale bar stays put; everything drawn on the map moves with a pan.
+		// What is drawn on the map moves with a pan; the grid and the scale bar are drawn for the view as it is.
 		_worldVisual.Transform = _panShift;
 		_highlightVisual.Transform = _panShift;
 		_roiVisual.Transform = _panShift;
@@ -927,6 +932,8 @@ public sealed partial class MapCanvas : FrameworkElement
 			return;
 		}
 
+		RedrawGrid();
+
 		_panSettle.Stop();
 		_panSettle.Start();
 	}
@@ -984,14 +991,10 @@ public sealed partial class MapCanvas : FrameworkElement
 		_dotsHeldBack.Clear();
 		_placedLabels.Clear();
 
+		RedrawGrid();
+
 		using (DrawingContext dc = _worldVisual.RenderOpen())
 		{
-			// A map's size past every edge, so a pan moving the drawing never shows a gap at one.
-			dc.DrawRectangle(Theme("Brush.Bg.Sunken", Color.FromRgb(0x07, 0x0B, 0x10)), null,
-				new Rect(-ActualWidth, -ActualHeight, ActualWidth * 3, ActualHeight * 3));
-
-			GraticuleLines? grid = ShowGridlines ? DrawGraticule(dc) : null;
-
 			if (BaseLayers is { } baseLayers)
 			{
 				dc.PushOpacity(Math.Clamp(BaseOpacity, 0.0, 1.0));
@@ -1012,12 +1015,6 @@ public sealed partial class MapCanvas : FrameworkElement
 			}
 
 			DrawNullIsland(dc);
-
-			// Over the layers, so no line hides a grid label.
-			if (grid is { } lines)
-			{
-				DrawGraticuleLabels(dc, lines);
-			}
 		}
 
 		string hint = heldBack.Count == 0 ? string.Empty : "Zoom in to see " + string.Join(", ", heldBack.Distinct());
@@ -1257,6 +1254,33 @@ public sealed partial class MapCanvas : FrameworkElement
 	}
 
 	// ---- graticule ----
+
+	/// <summary>
+	/// Draws the background and the gridlines under the layers, and the gridlines' labels over them, for the
+	/// view as it is. A pan calls it on every mouse move, so the labels stay on the map's edges as it moves.
+	/// </summary>
+	private void RedrawGrid()
+	{
+		GraticuleLines? grid = null;
+
+		using (DrawingContext dc = _gridVisual.RenderOpen())
+		{
+			dc.DrawRectangle(Theme("Brush.Bg.Sunken", Color.FromRgb(0x07, 0x0B, 0x10)), null, new Rect(0, 0, ActualWidth, ActualHeight));
+
+			if (ShowGridlines)
+			{
+				grid = DrawGraticule(dc);
+			}
+		}
+
+		// Over the layers, so no line hides a grid label.
+		using DrawingContext labels = _gridLabelVisual.RenderOpen();
+
+		if (grid is { } lines)
+		{
+			DrawGraticuleLabels(labels, lines);
+		}
+	}
 
 	private readonly record struct GraticuleLines(double Step, List<(double Lon, double X)> Meridians, List<(double Lat, double Y)> Parallels);
 

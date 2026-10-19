@@ -866,4 +866,26 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 	{
 		public void Report(ConversionProgress value) => report(value);
 	}
+
+	/// <summary>The folder a run would empty first is named only when an earlier run left something in it.</summary>
+	[Fact]
+	public void existing_output_is_the_folder_a_run_would_empty_when_it_has_anything()
+	{
+		Dictionary<string, string> settings = new() { ["OutputDirectory"] = Output, ["AddFeBuddyOutputFolder"] = "N" };
+		string folder = EramGeojsonWriter.OutputDirectory(Output, addFeBuddyOutputFolder: false);
+
+		Assert.Null(EramToGeojsonService.ExistingOutput(settings));
+
+		Directory.CreateDirectory(folder);
+		Assert.Null(EramToGeojsonService.ExistingOutput(settings));
+
+		File.WriteAllText(Path.Combine(folder, "old.geojson"), "{}");
+		Assert.Equal(folder, EramToGeojsonService.ExistingOutput(settings));
+
+		settings["AddFeBuddyOutputFolder"] = "Y";
+		Assert.Null(EramToGeojsonService.ExistingOutput(settings));
+
+		Assert.Throws<ArgumentException>(() => EramToGeojsonService.ExistingOutput(new Dictionary<string, string>()));
+		Assert.Throws<ArgumentNullException>(() => EramToGeojsonService.ExistingOutput(null!));
+	}
 }

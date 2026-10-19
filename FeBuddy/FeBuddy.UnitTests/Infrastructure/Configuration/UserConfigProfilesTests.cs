@@ -258,7 +258,7 @@ public sealed class UserConfigProfilesTests : IDisposable
 		UserConfigFile.CreateProfile("ZOB", null);
 
 		ArgumentException taken = Assert.Throws<ArgumentException>(() => UserConfigFile.CreateProfile("zob", null));
-		Assert.StartsWith("There is already a settings profile called 'ZOB'.", taken.Message, StringComparison.Ordinal);
+		Assert.StartsWith("There is already a profile called ZOB.", taken.Message, StringComparison.Ordinal);
 		Assert.Throws<ArgumentException>(() => UserConfigFile.CreateProfile("bad:name", null));
 		Assert.Throws<ArgumentException>(() => UserConfigFile.SwitchProfile("Nobody"));
 		Assert.True(UserConfigFile.ProfileExists(" zob "));
@@ -380,4 +380,16 @@ public sealed class UserConfigProfilesTests : IDisposable
 		Assert.Equal("ZNY", UserConfigFile.ActiveProfile);
 		Assert.Equal(["ZNY"], UserConfigFile.Profiles());
 	}
+
+	/// <summary>
+	/// Why a new or renamed profile can't have a name: one no file can have, or another profile's in any
+	/// case - though a profile being renamed may keep its own in another case. What the name windows say.
+	/// </summary>
+	[Theory]
+	[InlineData("ZOB", null, null)]
+	[InlineData(" zny ", null, "There is already a profile called ZNY.")]
+	[InlineData("zny", "ZNY", null)]
+	[InlineData("a/b", null, @"A profile name can't contain \ / : * ? "" < > |.")]
+	public void a_new_profile_name_must_be_usable_and_not_taken(string name, string? renaming, string? problem) =>
+		Assert.Equal(problem, UserConfigFile.NewProfileNameProblem(name, ["Default", "ZNY"], renaming));
 }

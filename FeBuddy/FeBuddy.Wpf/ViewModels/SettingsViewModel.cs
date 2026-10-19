@@ -16,6 +16,7 @@ using FeBuddy.Wpf.Views;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
@@ -101,7 +102,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	private bool _importing;
 	private string _outputDir = string.Empty;
 	private bool _addFeBuddyFolder = true;
-	private int _coordinatePrecision = 6;
+	private int _coordinatePrecision = GeojsonFileWriter.DefaultPrecision;
 	private bool _prettyPrintGeojson;
 	private RegionOfInterest? _defaultRoi;
 	private RegionOfInterest? _savedRoi;
@@ -765,7 +766,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		SelectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
 		OutputDirectory = OutputPreferences.Directory;
 		AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder;
-		CoordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
+		CoordinatePrecision = SubServiceSettingsReader.CoordinatePrecisionOrDefault(UserConfigFile.GetValue(PrecisionKey));
 		PrettyPrintGeojson = string.Equals(
 			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
 		GitHubCredentialId = Guid.TryParse(UserConfigFile.GetValue(UserConfigKeys.FeBuddyGitHubCredentialId), out Guid gitHubId) ? gitHubId : Guid.Empty;

@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Windows;
 
 using FeBuddy.Wpf.ViewModels.Models;
@@ -156,10 +155,7 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 	{
 		ArgumentNullException.ThrowIfNull(settings);
 
-		string folder = EramGeojsonWriter.OutputDirectory(
-			settings["OutputDirectory"], string.Equals(settings["AddFeBuddyOutputFolder"], "Y", StringComparison.OrdinalIgnoreCase));
-
-		if (!Directory.Exists(folder) || !Directory.EnumerateFileSystemEntries(folder).Any())
+		if (EramToGeojsonService.ExistingOutput(settings) is not { } folder)
 		{
 			return true;
 		}

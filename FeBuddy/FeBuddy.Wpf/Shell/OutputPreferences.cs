@@ -1,6 +1,5 @@
-using System.Globalization;
-
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.FileSystem;
 
@@ -18,9 +17,6 @@ namespace FeBuddy.Wpf.Shell;
 /// </remarks>
 public static class OutputPreferences
 {
-	/// <summary>The coordinate precision used when none is saved.</summary>
-	private const int DefaultCoordinatePrecision = 6;
-
 	/// <summary>The output directory used when none is saved: the user's Desktop.</summary>
 	public static string DefaultDirectory =>
 		Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
@@ -56,10 +52,7 @@ public static class OutputPreferences
 	/// Do not round (<see cref="Core.Infrastructure.Geojson.GeojsonFileWriter.NoRounding"/>).
 	/// </summary>
 	public static int CoordinatePrecision =>
-		int.TryParse(UserConfigFile.GetValue(UserConfigKeys.CoordinatePrecision), NumberStyles.Integer, CultureInfo.InvariantCulture, out int saved)
-		&& saved is >= 0 and <= 15
-			? saved
-			: DefaultCoordinatePrecision;
+		SubServiceSettingsReader.CoordinatePrecisionOrDefault(UserConfigFile.GetValue(UserConfigKeys.CoordinatePrecision));
 
 	/// <summary>The folder a run of a cycle writes into, e.g. <c>…\Desktop\FE-Buddy_Output\AIRAC_2610</c>.</summary>
 	/// <param name="cycleId">The four-digit cycle ID.</param>

@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 
 namespace FeBuddy.UnitTests.Application.Settings;
 
@@ -133,4 +134,16 @@ public sealed class SubServiceSettingsReaderTests
 			SubServiceSettingsReader.ReadAreaArtccs(Settings(("ArtccFilter", " ")), SubServiceArea.Artccs, "ArtccFilter"));
 		Assert.Contains("'ArtccFilter' lists none", ex.Message, StringComparison.Ordinal);
 	}
+
+	/// <summary>A saved precision the Settings page and every run use, or the default for one that isn't 0 to 15.</summary>
+	[Theory]
+	[InlineData("8", 8)]
+	[InlineData("0", GeojsonFileWriter.NoRounding)]
+	[InlineData("15", GeojsonFileWriter.MaxPrecision)]
+	[InlineData("16", GeojsonFileWriter.DefaultPrecision)]
+	[InlineData("-1", GeojsonFileWriter.DefaultPrecision)]
+	[InlineData("six", GeojsonFileWriter.DefaultPrecision)]
+	[InlineData(null, GeojsonFileWriter.DefaultPrecision)]
+	public void a_saved_precision_or_the_default(string? saved, int precision) =>
+		Assert.Equal(precision, SubServiceSettingsReader.CoordinatePrecisionOrDefault(saved));
 }

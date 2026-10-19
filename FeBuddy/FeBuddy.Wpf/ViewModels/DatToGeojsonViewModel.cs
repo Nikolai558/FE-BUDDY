@@ -1,11 +1,10 @@
-using System.Globalization;
-
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 using FeBuddy.Core.Application.Conversions.DatToGeojson;
 using FeBuddy.Core.Application.Conversions.DatToGeojson.Models;
 using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Application.Settings;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -86,10 +85,7 @@ public sealed class DatToGeojsonViewModel : FileConversionTabViewModel
 	{
 		string distance = CroppingDistance.Trim();
 
-		if (distance.Length > 0
-			&& (!double.TryParse(distance, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double nm)
-				|| nm <= 0
-				|| nm > DatToGeojsonSettingsParser.MaxCroppingDistanceNm))
+		if (distance.Length > 0 && !SettingsValueReader.TryParsePositiveDecimal(distance, DatToGeojsonSettingsParser.MaxCroppingDistanceNm, out _))
 		{
 			validation.AddField(nameof(CroppingDistance),
 				$"Enter a distance in NM greater than 0 and at most {DatToGeojsonSettingsParser.MaxCroppingDistanceNm:0}, or leave it blank to keep every line.");

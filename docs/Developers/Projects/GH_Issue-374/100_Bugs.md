@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
 
-**47 findings** (2 High, 11 Med, 34 Low), 28 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**47 findings** (2 High, 11 Med, 34 Low), 36 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -41,7 +41,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [O1-23](#o1-23) | Bug | Low | Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM | Open | S2 |
 | [T1c-26](#t1c-26) | Bug | Low | Two tests read the clock twice and can fail at 0000Z | Fixed | S2 |
 | [W7-4](#w7-4) | Bug | Low | The "last-chance" crash handler only sees exceptions on the UI thread | Fixed | S1 |
-| [W6-3](#w6-3) | Bug | Low | The "Towered Airports" layer would include any airport whose tower code has no display mapping, e.g. `TRACON` | Open | S2 |
+| [W6-3](#w6-3) | Bug | Low | The "Towered Airports" layer would include any airport whose tower code has no display mapping, e.g. `TRACON` | Fixed | S2 |
 | [W7-22](#w7-22) | Bug | Low | Card.Popup casts its shadow upwards, onto the map toolbar for the two map menus | Open | S2 |
 | [W2-8](#w2-8) | Bug | Low | A run can start before the selected cycle's lists exist, and silently drops CRC defaults | Fixed | S2 |
 | [W2-9](#w2-9) | Bug | Low | Picking a cycle the FAA hasn't published leaves every tab on "Loading AIRAC &lt;id>…" for good | Fixed | S2 |
@@ -452,7 +452,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W6-3 · Bug · Low · The "Towered Airports" layer would include any airport whose tower code has no display mapping, e.g. `TRACON`
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), in [S5](020_Work-Plan.md#s5) with [C2-6](120_Logic-In-GUI.md#c2-6): Core decides it from the code (`Airport.IsTowered`, set by `AirportBuilder`): `TWR_TYPE_CODE` is `ATCT` or starts with it. A plain `TRACON`, `NON-ATCT`, a blank and any code NASR adds later aren't towered. Tests: `AirportBuilderTests` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs:101-102`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs#L101-L102)
 

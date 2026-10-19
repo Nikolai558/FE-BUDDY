@@ -17,7 +17,7 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 [Collection("AppLog")]
 public sealed class SettingsProfilesViewModelTests : IDisposable
 {
-	private const string Artcc = "Services.AiracService.UserArtccId";
+	private const string Artcc = UserConfigKeys.Facility;
 
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_ProfileCard_" + Guid.NewGuid().ToString("N"));
 	private readonly List<string> _asked = [];

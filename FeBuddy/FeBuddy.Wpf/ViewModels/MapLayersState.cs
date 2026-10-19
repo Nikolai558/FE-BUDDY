@@ -11,8 +11,11 @@ using System.Windows.Threading;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Map.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Domain.Map.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Wpf.Map;
@@ -1008,7 +1011,7 @@ public sealed class MapLayersState : ObservableObject
 		{
 			MapLayer layer = await Task.Run(() =>
 			{
-				IReadOnlyList<MapGeometry> geometries = GeoJsonReader.Read(File.ReadAllText(path));
+				IReadOnlyList<MapGeometry> geometries = GeojsonFileReader.ReadFile(path);
 				MapLayer built = new(item.Name, geometries, item.Swatch, thickness: 1.1, pointRadius: 2.4);
 				ProjectedLayer.For(built);   // project off the UI thread, not on first draw
 				return built;

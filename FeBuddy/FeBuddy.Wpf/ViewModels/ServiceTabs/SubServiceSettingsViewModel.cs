@@ -272,7 +272,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 			return ParseList(saved);
 		}
 
-		string? facility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim();
+		string? facility = UserConfigFile.GetValue(UserConfigKeys.Facility)?.Trim();
 
 		return string.IsNullOrEmpty(facility) ? ParseList(null) : ParseList(facility);
 	}

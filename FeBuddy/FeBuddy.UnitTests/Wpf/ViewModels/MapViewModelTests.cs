@@ -1,6 +1,8 @@
 using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.ViewModels;
 
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>

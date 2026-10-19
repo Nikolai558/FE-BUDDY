@@ -196,7 +196,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		UserConfigFile.TrySetValue(airwaysKey, "2");
 		UserConfigFile.Save("Services.AiracService.Airways");
 		UserConfigFile.TrySetValue(UserConfigAreas.DefaultRoiKey, "Y");
-		UserConfigFile.Save("Services.AiracService.DefaultRoi");
+		UserConfigFile.Save("General.DefaultRoi");
 
 		Assert.False(general.CanUndo);
 

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Core.Infrastructure.Configuration;
@@ -302,6 +303,49 @@ public static partial class UserConfigFile
 		NewProfileNameProblem(name, ProfileNames(), renaming) is { } problem
 			? throw new ArgumentException(problem, nameof(name))
 			: name.Trim();
+
+	/// <summary>
+	/// Copies the profile in use to <paramref name="path"/>, and every other profile beside it, named after the
+	/// copy with the profile's name in brackets (<c>Backup (ZNY).json</c>): each the file as saved - a full
+	/// backup of that profile, which an import reads back. For before a reset or an uninstall empties FE-Buddy's
+	/// folder, so a copy can't be saved inside it.
+	/// </summary>
+	/// <param name="path">Where the profile in use goes.</param>
+	/// <returns>How many profiles were copied.</returns>
+	/// <exception cref="ArgumentException">The path is inside <see cref="AppDataReset.RootDirectory"/>, which a reset empties.</exception>
+	/// <exception cref="IOException">A file could not be copied.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	public static int CopyProfilesTo(string path)
+	{
+		ArgumentNullException.ThrowIfNull(path);
+
+		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+		string full = Path.GetFullPath(path);
+
+		if (full.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
+		{
+			throw new ArgumentException($"A copy inside {AppDataReset.RootDirectory} would be deleted with it. Choose another folder.", nameof(path));
+		}
+
+		string active = ActiveProfile;
+		string stem = Path.Combine(Path.GetDirectoryName(full)!, Path.GetFileNameWithoutExtension(full));
+		string extension = Path.GetExtension(full);
+		int copied = 0;
+
+		foreach (string profile in Profiles())
+		{
+			string from = ProfileFilePath(profile);
+
+			if (File.Exists(from))
+			{
+				bool inUse = profile.Equals(active, StringComparison.OrdinalIgnoreCase);
+				File.Copy(from, inUse ? full : $"{stem} ({profile}){extension}", overwrite: true);
+				copied++;
+			}
+		}
+
+		return copied;
+	}
 
 	/// <summary>A profile's backup files that exist, with the kind each is.</summary>
 	/// <remarks>

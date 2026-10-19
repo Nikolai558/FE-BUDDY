@@ -127,7 +127,6 @@ public sealed class UserConfigLayoutTests : IDisposable
 		.. typeof(UserConfigKeys).GetFields(BindingFlags.Public | BindingFlags.Static)
 			.Where(field => field.IsLiteral && field.FieldType == typeof(string))
 			.Select(field => (string)field.GetRawConstantValue()!),
-		SettingsViewModel.ArtccKey,
 		DefaultRoiStore.FilterKey,
 		DefaultRoiStore.SwLatKey,
 		DefaultRoiStore.SwLonKey,
@@ -141,14 +140,18 @@ public sealed class UserConfigLayoutTests : IDisposable
 	];
 
 	/// <summary>
-	/// Settings left behind with no layout step, on purpose: the General tab's, which moved from
-	/// <c>Services.AiracService</c> into its own <c>Services.AiracService.General</c> node. A file
-	/// that still has them opens the General tab on its defaults: every sub-service included, every
-	/// output on.
+	/// Settings left behind with no layout step, on purpose (Q1, H5): the General tab's, which moved from
+	/// <c>Services.AiracService</c> into its own <c>Services.AiracService.General</c> node - a file that still
+	/// has them opens the General tab on its defaults, every sub-service included, every output on - and the
+	/// Settings page's Facility, coordinate precision and default ROI, which moved from
+	/// <c>Services.AiracService</c> into <c>General</c>: a file that still has them opens Settings with no
+	/// facility, 6 decimal places and no default ROI.
 	/// </summary>
 	private static bool LeftBehindOnPurpose(string key) =>
 		key is "Services.AiracService.AiracCycleId" or "Services.AiracService.SelectedSubServices"
-		|| key.StartsWith("Services.AiracService.Outputs.", StringComparison.Ordinal);
+			or "Services.AiracService.UserArtccId" or "Services.AiracService.CoordinatePrecision"
+		|| key.StartsWith("Services.AiracService.Outputs.", StringComparison.Ordinal)
+		|| key.StartsWith("Services.AiracService.DefaultRoi.", StringComparison.Ordinal);
 
 	/// <summary>
 	/// Every page and tab saves under a node of its own, and no node sits inside another's: a save or

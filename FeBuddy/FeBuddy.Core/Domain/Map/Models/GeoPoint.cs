@@ -1,4 +1,4 @@
-namespace FeBuddy.Wpf.Map.Models;
+namespace FeBuddy.Core.Domain.Map.Models;
 
 /// <summary>A WGS84 point. GeoJSON stores <c>[lon, lat]</c>; this keeps them named.</summary>
 /// <param name="Lat">Latitude in decimal degrees.</param>

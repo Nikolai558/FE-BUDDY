@@ -1,6 +1,6 @@
-using FeBuddy.Wpf.Map;
+using FeBuddy.Core.Domain.Geo;
 
-namespace FeBuddy.UnitTests.Wpf.Map;
+namespace FeBuddy.UnitTests.Domain.Geo;
 
 /// <summary>
 /// Covers <see cref="WebMercator"/>: the world square's edges, longitude folding, and the one-step

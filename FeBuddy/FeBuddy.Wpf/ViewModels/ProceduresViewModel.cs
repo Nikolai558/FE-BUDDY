@@ -48,7 +48,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// Its data comes from two places besides the selected cycle's NASR data: the FAA d-TPP Metafile
 /// (see <see cref="SetDtppData"/>), which may not be published yet, and the facility saved in
-/// Settings ▸ Facility (<see cref="SettingsViewModel.ArtccKey"/>), read fresh whenever it
+/// Settings ▸ Facility (<see cref="UserConfigKeys.Facility"/>), read fresh whenever it
 /// is needed rather than copied into this tab's own config.
 /// </para>
 /// <para>
@@ -240,7 +240,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	public const string ExternalProceduresChartRecallNote = "don't apply to `Faa_Chart_Recall.txt`";
 
 	/// <summary>The facility set in Settings ▸ Facility, e.g. <c>ZDC</c>, or <see langword="null"/> when none is.</summary>
-	private static string? SettingsFacility => NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey));
+	private static string? SettingsFacility => NormalizeFacility(UserConfigFile.GetValue(UserConfigKeys.Facility));
 
 	/// <summary>Whether a facility is set in Settings ▸ Facility: the option needs one.</summary>
 	private static bool HasSettingsFacility => SettingsFacility is not null;
@@ -850,7 +850,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		_savedFacilities = ParseList(Get("Facilities"));
 		Dictionary<string, bool> shown = Facilities.ToDictionary(t => t.Artcc, t => t.IsSelected, StringComparer.OrdinalIgnoreCase);
 
-		string? settingsFacility = NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey));
+		string? settingsFacility = NormalizeFacility(UserConfigFile.GetValue(UserConfigKeys.Facility));
 
 		_suppressListChanges = true;
 		try
@@ -920,7 +920,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			["GenerateChangesDocument"] = YesNo(GenerateChangesDocument),
 			["GenerateProceduresJson"] = YesNo(GenerateProceduresJson),
 			// Read fresh from Settings rather than this tab's own config - see the class remarks.
-			["PrimaryFacility"] = UserConfigFile.GetValue(SettingsViewModel.ArtccKey) ?? string.Empty,
+			["PrimaryFacility"] = UserConfigFile.GetValue(UserConfigKeys.Facility) ?? string.Empty,
 			["ChartTypes"] = string.Join(',', ChartTypeToggles.Where(t => t.IsSelected).Select(t => t.Token)),
 			["JsonFields"] = string.Join(',', JsonFieldToggles.Where(t => t.IsSelected).Select(t => t.Token)),
 			["IncludeHelpCommand"] = YesNo(IncludeHelpCommand),
@@ -1058,7 +1058,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 			if (Facilities.Count > 0)
 			{
-				string? settingsFacility = NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey));
+				string? settingsFacility = NormalizeFacility(UserConfigFile.GetValue(UserConfigKeys.Facility));
 
 				foreach (ArtccToggle toggle in Facilities)
 				{
@@ -1730,7 +1730,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private IEnumerable<string> FacilitiesTheListWillTick() =>
 		Get("Facilities") is not null
 			? _savedFacilities.OrderBy(a => a, StringComparer.OrdinalIgnoreCase)
-			: NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey)) is { } facility ? [facility] : [];
+			: NormalizeFacility(UserConfigFile.GetValue(UserConfigKeys.Facility)) is { } facility ? [facility] : [];
 
 	private static string? NormalizeFacility(string? value) =>
 		string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToUpperInvariant();
@@ -1774,7 +1774,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <summary>Which facility the documents list first: the user's own, from Settings ▸ Facility.</summary>
 	private static string DescribePrimaryFacility() =>
-		NormalizeFacility(UserConfigFile.GetValue(SettingsViewModel.ArtccKey)) is { } primary
+		NormalizeFacility(UserConfigFile.GetValue(UserConfigKeys.Facility)) is { } primary
 			? $"{primary} (Settings ▸ Facility), then the rest alphabetically"
 			: "Alphabetically (no facility set in Settings ▸ Facility)";
 

@@ -116,7 +116,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C6-36](#c6-36) | Minor | Low | UserConfigFile remarks list 3 of the 7 shared settings as if complete | Open | S7 |
 | [C6-37](#c6-37) | Minor | Low | `_stampVersion` starts from UserConfigVersion.Current but is reset everywhere else to UserConfigMigrations.CurrentVersion | Open | S7 |
 | [C6-12](#c6-12) | Wrong doc | Low | UserConfigKeys.CoordinatePrecision: 0 means "don't round", not "0 places" | Open | S7 |
-| [C6-13](#c6-13) | Wrong doc | Low | UserConfigKeys' stated rule ("keys read in more than one place") doesn't hold either way | Open | S7 |
+| [C6-13](#c6-13) | Wrong doc | Low | UserConfigKeys' stated rule ("keys read in more than one place") doesn't hold either way | Fixed | S7 |
 | [C6-9](#c6-9) | Wrong doc | Low | UserConfigMigration's example step is not safe to run twice, and reuses layout 2 | Open | S7 |
 | [C6-10](#c6-10) | History wording | Low | Move() example narrates beta.1's VnasAlias rename; profiles summary cites "(issue #324)" | Open | S7 |
 | [C6-7](#c6-7) | Stale doc | Low | UserConfigMigrations/UserConfigVersion still describe `UserConfig.json` and "before FE-Buddy has a second layout" | Open | S7 |
@@ -1748,7 +1748,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### C6-13 · Wrong doc · Low · UserConfigKeys' stated rule ("keys read in more than one place") doesn't hold either way
 
-**Status:** Open · **Session:** [S7](020_Work-Plan.md#s7)
+**Status:** Fixed (not yet merged), in [S5](020_Work-Plan.md#s5) with the Settings page's keys ([W3-10](120_Logic-In-GUI.md#w3-10)), as proposed: the summary says what `UserConfigKeys` holds; `UserConfigKeys.Facility` and `DefaultRoiFilter` are the facility and default-ROI keys `UserConfigAreas` and `DefaultRoiStore` use; the override key is `UserConfigAreas.OverrideRoiKey`, used by the GeoJSON tabs · **Session:** [S7](020_Work-Plan.md#s7)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigKeys.cs:3-6`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigKeys.cs#L3-L6); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigAreas.cs:41-45`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigAreas.cs#L41-L45), 98; [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:84`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L84); [`FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs:23`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs#L23); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs:63`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/GeojsonSubServiceViewModel.cs#L63)
 

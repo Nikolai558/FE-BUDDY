@@ -1,8 +1,8 @@
 using System.Text.Json;
 
-using FeBuddy.Wpf.Map.Models;
+using FeBuddy.Core.Domain.Map.Models;
 
-namespace FeBuddy.Wpf.Map;
+namespace FeBuddy.Core.Infrastructure.Geojson;
 
 /// <summary>
 /// A small, forgiving GeoJSON reader built on <see cref="System.Text.Json"/> -
@@ -23,7 +23,7 @@ namespace FeBuddy.Wpf.Map;
 /// coordinates are all unusable is reported as such rather than loading as nothing.
 /// </para>
 /// </summary>
-public static class GeoJsonReader
+public static class GeojsonFileReader
 {
 	private static readonly string[] DefaultsFlags = ["isLineDefaults", "isSymbolDefaults", "isTextDefaults"];
 
@@ -36,10 +36,44 @@ public static class GeoJsonReader
 	/// </exception>
 	public static IReadOnlyList<MapGeometry> Read(string json)
 	{
+		ArgumentNullException.ThrowIfNull(json);
+		return Read(() => JsonDocument.Parse(json));
+	}
+
+	/// <summary>
+	/// Reads a GeoJSON file into a flat list of map geometries, parsing it as it streams in - a run's output
+	/// can be tens of MB, which reading it into a string first would hold in memory twice.
+	/// </summary>
+	/// <param name="path">The file.</param>
+	/// <returns>Every Point, LineString and Polygon geometry found, in file order.</returns>
+	/// <exception cref="FormatException">The file is not usable GeoJSON (see <see cref="Read(string)"/>).</exception>
+	/// <exception cref="IOException">The file could not be read.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	public static IReadOnlyList<MapGeometry> ReadFile(string path)
+	{
+		ArgumentNullException.ThrowIfNull(path);
+
+		using FileStream stream = File.OpenRead(path);
+		return Read(stream);
+	}
+
+	/// <summary>Reads UTF-8 GeoJSON from <paramref name="stream"/> into a flat list of map geometries.</summary>
+	/// <param name="stream">The GeoJSON, read to its end; the caller disposes it.</param>
+	/// <returns>Every Point, LineString and Polygon geometry found, in file order.</returns>
+	/// <exception cref="FormatException">The stream is not usable GeoJSON (see <see cref="Read(string)"/>).</exception>
+	/// <exception cref="IOException">The stream could not be read.</exception>
+	public static IReadOnlyList<MapGeometry> Read(Stream stream)
+	{
+		ArgumentNullException.ThrowIfNull(stream);
+		return Read(() => JsonDocument.Parse(stream));
+	}
+
+	private static IReadOnlyList<MapGeometry> Read(Func<JsonDocument> parse)
+	{
 		JsonDocument doc;
 		try
 		{
-			doc = JsonDocument.Parse(json);
+			doc = parse();
 		}
 		catch (JsonException ex)
 		{

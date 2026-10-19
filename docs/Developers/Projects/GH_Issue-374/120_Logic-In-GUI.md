@@ -11,10 +11,10 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
 | [U1-17](#u1-17) | Logic in GUI | Med | NASR-derived option lists and their rules live in the tab view models | Fixed | S5 |
-| [W3-9](#w3-9) | Logic in GUI | Med | GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI | Open | S5 |
+| [W3-9](#w3-9) | Logic in GUI | Med | GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI | Fixed | S5 |
 | [W1-6](#w1-6) | Logic in GUI | Med | Procedure Charts re-implements Core's selection and name-matching rules | Fixed | S5 |
 | [W6-8](#w6-8) | Logic in GUI | Low | The GUI guesses which words in Core's messages are file names | Fixed | S5 |
-| [C2-6](#c2-6) | Logic in GUI | Low | The Map's "towered" test copies AirportFieldMaps' display string | Open | S5 |
+| [C2-6](#c2-6) | Logic in GUI | Low | The Map's "towered" test copies AirportFieldMaps' display string | Fixed | S5 |
 | [W7-6](#w7-6) | Logic in GUI | Low | The coordinate-precision rule (0-15, default 6) is restated in the GUI twice | Fixed | S5 |
 | [W2-7](#w2-7) | Logic in GUI | Low | Per-sub-service result knowledge lives in the GUI three times | Fixed | S5 |
 | [W2-23](#w2-23) | Logic in GUI | Low | Sub-service keys, node paths and order are defined in the GUI and again in Core | Fixed | S5 |
@@ -31,9 +31,9 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 | [W2-19](#w2-19) | Logic in GUI | Low | NAVAIDs repeats NavaidBuilder's SHUTDOWN rule | Fixed | S5 |
 | [W3-12](#w3-12) | Logic in GUI | Low | Profile-name "already taken" rule duplicated from Core | Fixed | S5 |
 | [W4-6](#w4-6) | Logic in GUI | Low | Which folder files a conversion reads is decided twice, in the page and in Core | Fixed | S5 |
-| [W3-10](#w3-10) | Logic in GUI | Low | Facility key duplicated as a literal; doc names only one reader | Open | S5 |
-| [W3-13](#w3-13) | Logic in GUI | Low | Settings backup before reset/uninstall is file logic in the view-model | Open | S5 |
-| [W3-14](#w3-14) | Logic in GUI | Low | Version-check status is worded by three separate ladders (and a failed check is called "offline") | Open | S5 |
+| [W3-10](#w3-10) | Logic in GUI | Low | Facility key duplicated as a literal; doc names only one reader | Fixed | S5 |
+| [W3-13](#w3-13) | Logic in GUI | Low | Settings backup before reset/uninstall is file logic in the view-model | Fixed | S5 |
+| [W3-14](#w3-14) | Logic in GUI | Low | Version-check status is worded by three separate ladders (and a failed check is called "offline") | Fixed | S5 |
 
 ## Med
 
@@ -53,7 +53,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-9 · Logic in GUI · Med · GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: the reader is Core's `GeojsonFileReader` (`Infrastructure/Geojson`), with `GeoPoint`, `MapGeometry`, `MapGeometryKind` and `MapFeature` in `Domain/Map/Models` and `WebMercator` in `Domain/Geo`. It reads a file as it streams in (`ReadFile`, `Read(Stream)`), so a big output file isn't held twice; the base map's resources use the same stream read. It parses synchronously, as it already runs off the UI thread. A file must now be UTF-8, as GeoJSON's own spec says; a UTF-16 file was read before. The layer catalog is `Application/Map/AiracMapData`: the kinds, names, descriptions and each layer's shapes. The map keeps colours, `MapLayer` and its styling, `ProjectedLayer` and `FrozenBrush`. Tests: `GeojsonFileReaderTests`, `AiracMapDataTests`, and `WebMercatorTests` and `MapFeatureTests`, moved to Core's test folders · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:601-610`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L601-L610), 980-991 (uses [`FeBuddy.Wpf/Map/GeoJsonReader.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/GeoJsonReader.cs), [`Map/AiracMapLayers.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs))
 
@@ -95,7 +95,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### C2-6 · Logic in GUI · Low · The Map's "towered" test copies AirportFieldMaps' display string
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), the first way proposed: `Airport.IsTowered`, set by `AirportBuilder` from `TWR_TYPE_CODE`, and `AiracMapData.ToweredAirports` filters on it. The rule is [W6-3](100_Bugs.md#w6-3)'s, fixed with it: the code is `ATCT` or starts with it, so a plain `TRACON` has no tower. The layer still builds the whole Airports model, which is the run's own builder, so the map shows what a run works from. Tests: `AirportBuilderTests`, `AiracMapDataTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs:101-102`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs#L101-L102); [`FeBuddy/FeBuddy.Core/Application/Airac/Airports/AirportFieldMaps.cs:28`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airports/AirportFieldMaps.cs#L28)
 
@@ -305,7 +305,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-10 · Logic in GUI · Low · Facility key duplicated as a literal; doc names only one reader
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed, with the key's move ([Q1](010_Decisions.md#q1)): `UserConfigKeys.Facility` (now `General.Facility`) is the one name; `UserConfigAreas.FacilityKey` uses it, `SettingsViewModel.ArtccKey` is gone, and Settings, Procedures, the AIRAC Service, a settings import and the tabs' settings read Core's constant. `UserConfigLayoutTests` covers it through `UserConfigKeys` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:79-84`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L79-L84); [`FeBuddy/FeBuddy.Wpf/ViewModels/ImportSettingsViewModel.cs:252`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ImportSettingsViewModel.cs#L252)
 
@@ -317,7 +317,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-13 · Logic in GUI · Low · Settings backup before reset/uninstall is file logic in the view-model
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `UserConfigFile.CopyProfilesTo(path)` copies the profile in use and every other one beside it, and refuses a path under `AppDataReset.RootDirectory`; Settings keeps the dialog and the toasts. Tests: `UserConfigProfilesTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:1031-1094`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L1031-L1094)
 
@@ -329,7 +329,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-14 · Logic in GUI · Low · Version-check status is worded by three separate ladders (and a failed check is called "offline")
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `VersionCheckResult.Status` (`VersionCheckStatus`) is decided once, and the title bar, System health and Settings' "Check now" switch on it; `DisplayVersion` is the one "dev" rule, used by the update window too. A failed check says "Could not check for updates" ("could not check" in System health) unless FE-Buddy is offline. Tests: `VersionCheckResultTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs:604-652`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs#L604-L652), 727-736; [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:655-693`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L655-L693); [`FeBuddy/FeBuddy.Wpf/ViewModels/UpdateWindowViewModel.cs:69`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/UpdateWindowViewModel.cs#L69)
 

@@ -62,7 +62,7 @@ public sealed class UpdateWindowViewModel : ObservableObject
 		_unfinishedWork = unfinishedWork;
 
 		IsGoingBack = !version.UpdateAvailable && version.CanGoBack;
-		CurrentVersion = string.IsNullOrWhiteSpace(version.CurrentVersion) ? "dev" : version.CurrentVersion.TrimStart('v', 'V');
+		CurrentVersion = version.DisplayVersion;
 		LatestVersion = version.LatestVersion ?? "unknown";
 		Channel = version.Channel.DisplayName();
 		ReleaseUrl = string.IsNullOrWhiteSpace(version.LatestReleaseUrl) ? ReleasesPage : version.LatestReleaseUrl!;

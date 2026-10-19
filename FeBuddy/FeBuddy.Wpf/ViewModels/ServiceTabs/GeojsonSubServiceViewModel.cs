@@ -59,8 +59,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private const string NoCrcFilesMessage =
 		"CRC-ERAM defaults are set to go on specific files, but none is ticked. Tick at least one, or choose No CRC-ERAM defaults.";
 
-	private const string OverrideRoiKey = "Roi.OverrideDefaultRoi";
-
 	private const string OverrideCornersNode = "Roi.OverrideCorners";
 
 	private const string CrcDefaultsScopeKey = "CrcDefaultsScope";
@@ -641,7 +639,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		if (Areas.Count > 0)
 		{
 			_area = SavedArea();
-			_overrideRoi = GetBool(OverrideRoiKey, false);
+			_overrideRoi = GetBool(UserConfigAreas.OverrideRoiKey, false);
 			_swLat = Get($"{OverrideCornersNode}.SwLat") ?? string.Empty;
 			_swLon = Get($"{OverrideCornersNode}.SwLon") ?? string.Empty;
 			_neLat = Get($"{OverrideCornersNode}.NeLat") ?? string.Empty;
@@ -690,7 +688,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		if (Areas.Count > 0)
 		{
 			Set(UserConfigAreas.AreaKey, Area.ToString());
-			Set(OverrideRoiKey, YesNo(OverrideRoi));
+			Set(UserConfigAreas.OverrideRoiKey, YesNo(OverrideRoi));
 			Set($"{OverrideCornersNode}.SwLat", SwLat);
 			Set($"{OverrideCornersNode}.SwLon", SwLon);
 			Set($"{OverrideCornersNode}.NeLat", NeLat);

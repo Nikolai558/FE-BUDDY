@@ -1,13 +1,13 @@
-using FeBuddy.Wpf.Map;
-using FeBuddy.Wpf.Map.Models;
+using FeBuddy.Core.Domain.Map.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 
-namespace FeBuddy.UnitTests.Wpf.Map;
+namespace FeBuddy.UnitTests.Infrastructure.Geojson;
 
 /// <summary>
-/// Covers <see cref="GeoJsonReader"/>: every geometry type, vNAS text labels, CRC's defaults
+/// Covers <see cref="GeojsonFileReader"/>: every geometry type, vNAS text labels, CRC's defaults
 /// features, what is dropped as undrawable, and the short reason a file cannot be drawn.
 /// </summary>
-public sealed class GeoJsonReaderTests
+public sealed class GeojsonFileReaderTests
 {
 	/// <summary>Anything the map cannot draw is refused with a reason short enough to show beside the file.</summary>
 	[Theory]
@@ -25,7 +25,7 @@ public sealed class GeoJsonReaderTests
 	[InlineData("""{"type":"Circle","coordinates":[1,2]}""", "No map features in this file")]
 	public void a_file_that_cannot_be_drawn_says_why(string json, string message)
 	{
-		FormatException ex = Assert.Throws<FormatException>(() => GeoJsonReader.Read(json));
+		FormatException ex = Assert.Throws<FormatException>(() => GeojsonFileReader.Read(json));
 
 		Assert.Equal(message, ex.Message);
 	}
@@ -33,7 +33,7 @@ public sealed class GeoJsonReaderTests
 	[Fact]
 	public void invalid_json_keeps_the_parser_detail()
 	{
-		FormatException ex = Assert.Throws<FormatException>(() => GeoJsonReader.Read("{ not json"));
+		FormatException ex = Assert.Throws<FormatException>(() => GeojsonFileReader.Read("{ not json"));
 
 		Assert.IsAssignableFrom<System.Text.Json.JsonException>(ex.InnerException);
 	}
@@ -41,7 +41,7 @@ public sealed class GeoJsonReaderTests
 	[Fact]
 	public void every_geometry_type_is_read()
 	{
-		IReadOnlyList<MapGeometry> read = GeoJsonReader.Read("""
+		IReadOnlyList<MapGeometry> read = GeojsonFileReader.Read("""
 			{"type":"FeatureCollection","features":[
 			  {"type":"Feature","geometry":{"type":"Point","coordinates":[-100,40]}},
 			  {"type":"Feature","geometry":{"type":"MultiPoint","coordinates":[[-100,40],[-90,41]]}},
@@ -66,7 +66,7 @@ public sealed class GeoJsonReaderTests
 	[Fact]
 	public void undrawable_points_and_runs_are_dropped()
 	{
-		IReadOnlyList<MapGeometry> read = GeoJsonReader.Read("""
+		IReadOnlyList<MapGeometry> read = GeojsonFileReader.Read("""
 			{"type":"GeometryCollection","geometries":[
 			  {"type":"LineString","coordinates":[[-100,40],[1,"x"],[-90,41],[0,999],[5]]},
 			  {"type":"MultiPoint","coordinates":[[-100,40],[1],[-90,41]]},
@@ -86,7 +86,7 @@ public sealed class GeoJsonReaderTests
 	[InlineData("7", null)]
 	public void a_text_features_lines_are_its_label(string text, string? label)
 	{
-		MapGeometry point = Assert.Single(GeoJsonReader.Read(
+		MapGeometry point = Assert.Single(GeojsonFileReader.Read(
 			$$$"""{"type":"Feature","properties":{"text":{{{text}}}},"geometry":{"type":"Point","coordinates":[-100,40]}}"""));
 
 		Assert.Equal(label, point.Label);
@@ -99,7 +99,7 @@ public sealed class GeoJsonReaderTests
 	[InlineData("isTextDefaults")]
 	public void crc_defaults_features_are_skipped(string flag)
 	{
-		IReadOnlyList<MapGeometry> read = GeoJsonReader.Read($$$"""
+		IReadOnlyList<MapGeometry> read = GeojsonFileReader.Read($$$"""
 			{"type":"FeatureCollection","features":[
 			  {"type":"Feature","properties":{"{{{flag}}}":true},"geometry":{"type":"Point","coordinates":[0,180]}},
 			  {"type":"Feature","properties":{"{{{flag}}}":false},"geometry":{"type":"Point","coordinates":[-100,40]}}
@@ -117,7 +117,7 @@ public sealed class GeoJsonReaderTests
 	[Fact]
 	public void each_shape_keeps_its_feature()
 	{
-		IReadOnlyList<MapGeometry> read = GeoJsonReader.Read("""
+		IReadOnlyList<MapGeometry> read = GeojsonFileReader.Read("""
 			{"type":"FeatureCollection","features":[
 			  {"type":"Feature","properties":{"isLineDefaults":true},"geometry":{"type":"Point","coordinates":[0,180]}},
 			  {"type":"Feature","properties":{"style":"solid","thickness":2},"geometry":{"type":"MultiLineString","coordinates":[[[0,0],[1,1]]]}},
@@ -138,8 +138,58 @@ public sealed class GeoJsonReaderTests
 		Assert.Empty(read[1].Feature!.Properties());
 		Assert.Empty(read[3].Feature!.Properties());
 
-		MapFeature bare = Assert.Single(GeoJsonReader.Read("""{"type":"LineString","coordinates":[[0,0],[1,1]]}""")).Feature!;
+		MapFeature bare = Assert.Single(GeojsonFileReader.Read("""{"type":"LineString","coordinates":[[0,0],[1,1]]}""")).Feature!;
 		Assert.Equal("LineString", bare.Kind);
 		Assert.Null(bare.Number);
+	}
+
+	/// <summary>A file is read as it streams in, BOM or not, and reads the same as its text does.</summary>
+	[Fact]
+	public void a_file_and_a_stream_read_as_their_text_does()
+	{
+		const string json = """{"type":"Feature","properties":{"text":["ZOB"]},"geometry":{"type":"Point","coordinates":[-81.5,41.4]}}""";
+		DirectoryInfo folder = Directory.CreateTempSubdirectory("febuddy-geojson-");
+
+		try
+		{
+			string path = Path.Combine(folder.FullName, "labels.geojson");
+			File.WriteAllText(path, json, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+
+			MapGeometry fromText = Assert.Single(GeojsonFileReader.Read(json));
+			MapGeometry fromFile = Assert.Single(GeojsonFileReader.ReadFile(path));
+			using MemoryStream stream = new(System.Text.Encoding.UTF8.GetBytes(json));
+			MapGeometry fromStream = Assert.Single(GeojsonFileReader.Read(stream));
+
+			foreach (MapGeometry read in new[] { fromFile, fromStream })
+			{
+				Assert.Equal(fromText.Kind, read.Kind);
+				Assert.Equal(fromText.Label, read.Label);
+				Assert.Equal(fromText.Parts[0], read.Parts[0]);
+			}
+		}
+		finally
+		{
+			folder.Delete(recursive: true);
+		}
+	}
+
+	/// <summary>A file that isn't there is the caller's to report, as an I/O error; one that isn't GeoJSON says why.</summary>
+	[Fact]
+	public void a_missing_or_unusable_file_throws_what_the_map_catches()
+	{
+		DirectoryInfo folder = Directory.CreateTempSubdirectory("febuddy-geojson-");
+
+		try
+		{
+			string bad = Path.Combine(folder.FullName, "bad.geojson");
+			File.WriteAllText(bad, "{ not json");
+
+			Assert.ThrowsAny<IOException>(() => GeojsonFileReader.ReadFile(Path.Combine(folder.FullName, "gone.geojson")));
+			Assert.Equal("Not valid JSON", Assert.Throws<FormatException>(() => GeojsonFileReader.ReadFile(bad)).Message);
+		}
+		finally
+		{
+			folder.Delete(recursive: true);
+		}
 	}
 }

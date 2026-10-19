@@ -1,4 +1,4 @@
-namespace FeBuddy.Wpf.Map;
+namespace FeBuddy.Core.Domain.Geo;
 
 /// <summary>
 /// Spherical Web-Mercator, expressed in "world units" where the whole globe maps
@@ -10,7 +10,7 @@ namespace FeBuddy.Wpf.Map;
 /// read from such an x back into -180..180.
 /// </para>
 /// </summary>
-internal static class WebMercator
+public static class WebMercator
 {
 	/// <summary>
 	/// The latitude of the square world map's top and bottom edges (85.0511287798°): beyond it,

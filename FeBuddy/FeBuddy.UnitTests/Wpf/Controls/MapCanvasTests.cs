@@ -8,6 +8,9 @@ using FeBuddy.Wpf.Controls;
 using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Map.Models;
 
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.UnitTests.Wpf.Controls;
 
 /// <summary>

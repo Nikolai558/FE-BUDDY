@@ -5,6 +5,7 @@ using System.Windows.Threading;
 
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
+using FeBuddy.Core.Domain.Map.Models;
 using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.Mvvm;
 

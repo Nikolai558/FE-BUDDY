@@ -14,7 +14,7 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 [Collection("AppLog")]
 public sealed class ImportSettingsViewModelTests
 {
-	private const string Artcc = "Services.AiracService.UserArtccId";
+	private const string Artcc = UserConfigKeys.Facility;
 	private const string Pretty = "General.PrettyPrintGeojson";
 	private const string Dat = "Services.FileConversions.DatToGeojson.SourceFolder";
 

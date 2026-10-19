@@ -4,6 +4,9 @@ using System.Windows.Media;
 using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Map.Models;
 
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.Wpf.Controls;
 
 /// <summary>

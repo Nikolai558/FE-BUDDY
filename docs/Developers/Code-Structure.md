@@ -60,7 +60,9 @@ FeBuddy.Core/
 │   │                     NavaidTypes, FixUses, TelephonyNaming, …) and its models
 │   ├── Crc/              CRC feature properties and CrcPropertyValidator
 │   ├── Geo/              GeoMath, AntimeridianSplitter, LineStringMerger, SegmentJoiner, RoiFilter,
-│   │                     RadiusFilter, Wgs84
+│   │                     RadiusFilter, Wgs84, WebMercator
+│   ├── Map/              the map's shapes, read from GeoJSON or built from a cycle: GeoPoint,
+│   │                     MapGeometry, MapFeature (Models/)
 │   └── Procedures/       ProcedureChartTypes, ProcedureNaming
 │       └── ChartRecall/  the FAA Chart Recall command rules: ChartRecallCodes, ApproachCodes,
 │                         SidStarCodes, ChartRecallText
@@ -72,8 +74,8 @@ FeBuddy.Core/
 │   ├── Credentials/      CredentialStore, ICredentialVault, WindowsCredentialVault, CredentialHosts,
 │   │                     CredentialKindNames, UrlSecrets (see Credentials.md)
 │   ├── FileSystem/       AppPaths, TempWorkspace, ServiceOutputPaths, AppDataReset
-│   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet, SymbolFeatureMerger,
-│   │                     AttributesSignature
+│   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileReader (the map's),
+│   │                     GeojsonFileSet, SymbolFeatureMerger, AttributesSignature
 │   ├── GitHub/           GitHubAuth, GitHubRepository, GitHubFileUrl, GitHubTokenExpiry
 │   ├── Http/ Logging/ Markdown/   FeBuddyHttp, AppLog, MarkdownParser
 │   ├── Platform/         AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable,
@@ -106,6 +108,7 @@ FeBuddy.Core/
     │                     SctToGeojson/ and EramToGeojson/
     ├── Launch/           LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice, WelcomeNotice, and a
     │                     dev launch's choices (OptionalLaunchSteps, DevLaunchSettings)
+    ├── Map/              AiracMapData: the Map screen's live AIRAC layers and the shapes each holds
     ├── News/             NewsService
     ├── Settings/         SubServiceSettingsReader, SubServiceArea, CrcDefaultsReader, SettingsValueReader
     ├── Updates/          VersionCheck, UpdateInstaller, UpdateChannelSetting, AppUninstall
@@ -146,8 +149,8 @@ FeBuddy.Wpf/
 │                        FilterPicker, FilterOption, MarkdownView, MapCanvas, AliasGuideDocumentView,
 │                        BesideOrBelow, CommandTablePanel, ChromeWindow, BrandMark
 ├── Converters/          one IValueConverter per file
-├── Map/                 GeoJsonReader, WebMercator, ProjectedLayer, AiracMapLayers, BaseMap,
-│                        FrozenBrush; Models/ for the map's records
+├── Map/                 how the map draws Core's shapes: ProjectedLayer, AiracMapLayers, BaseMap,
+│                        FrozenBrush; Models/ for the drawing's records (MapLayer, GeoBounds, …)
 ├── Mvvm/                ObservableObject, RelayCommand
 ├── Shell/               app-wide services: Toast, Links, BrowserLauncher, DefaultRoiStore,
 │                        OutputPreferences, AppRestart, DevLaunchArgs, SettingsWrites (every

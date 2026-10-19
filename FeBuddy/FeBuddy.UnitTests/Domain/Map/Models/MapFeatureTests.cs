@@ -1,6 +1,6 @@
-using FeBuddy.Wpf.Map.Models;
+using FeBuddy.Core.Domain.Map.Models;
 
-namespace FeBuddy.UnitTests.Wpf.Map.Models;
+namespace FeBuddy.UnitTests.Domain.Map.Models;
 
 /// <summary>
 /// Covers <see cref="MapFeature"/>: a file's properties shown one per row, each value as text, and

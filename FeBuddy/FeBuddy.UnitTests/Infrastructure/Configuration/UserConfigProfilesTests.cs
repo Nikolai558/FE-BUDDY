@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.UnitTests.Infrastructure.Configuration;
@@ -250,6 +251,31 @@ public sealed class UserConfigProfilesTests : IDisposable
 		UserConfigFile.ConfigureForTesting(_root);
 		UserConfigFile.ReadAll();
 		Assert.Equal("Blank", UserConfigFile.ActiveProfile);
+	}
+
+	// ---- a copy before a reset or an uninstall ----
+
+	/// <summary>
+	/// The profile in use is copied to the path chosen and every other one beside it, named after the copy (W3-13);
+	/// a copy can't go inside FE-Buddy's own folder, which a reset or an uninstall empties.
+	/// </summary>
+	[Fact]
+	public void every_profile_is_copied_beside_the_one_in_use_but_not_into_fe_buddys_folder()
+	{
+		UserConfigFile.TrySetValue(Artcc, "ZOB");
+		UserConfigFile.Write();
+		UserConfigFile.CreateProfile("ZNY", null);
+		string copies = Path.Combine(_root, "copies");
+		Directory.CreateDirectory(copies);
+
+		int copied = UserConfigFile.CopyProfilesTo(Path.Combine(copies, "Backup.json"));
+
+		Assert.Equal(2, copied);
+		Assert.Equal("ZOB", At(File(Path.Combine(copies, "Backup.json")), Artcc));
+		Assert.True(System.IO.File.Exists(Path.Combine(copies, "Backup (ZNY).json")));
+		Assert.Equal(["Backup (ZNY).json", "Backup.json"], Directory.GetFiles(copies).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+
+		Assert.Throws<ArgumentException>(() => UserConfigFile.CopyProfilesTo(Path.Combine(AppDataReset.RootDirectory, "Backup.json")));
 	}
 
 	[Fact]

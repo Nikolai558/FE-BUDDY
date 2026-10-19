@@ -37,7 +37,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1a-13](#d1a-13) | History wording | Low | "as the profiles did" / "no migration step was needed" (duplicated) | Fixed | S11 |
 | [D1a-14](#d1a-14) | History wording | Low | Import: "beta.3 `UserConfig.json`" | Fixed | S11 |
 | [D1a-18](#d1a-18) | Minor | Low | Readability: duplication and placement | Fixed | S11 |
-| [D1a-3](#d1a-3) | Wrong doc | Low | "keys read in more than one place are constants in UserConfigKeys" is not true for the facility and the default ROI | Open | S11 |
+| [D1a-3](#d1a-3) | Wrong doc | Low | "keys read in more than one place are constants in UserConfigKeys" is not true for the facility and the default ROI | Fixed | S11 |
 | [D1a-4](#d1a-4) | Wrong doc | Low | Procedure Charts and Telephony don't read `CoordinatePrecision`, `FebProperties` or `CrcDefaultsFor`, though the app sends them | Fixed | S11 |
 | [D1a-5](#d1a-5) | Wrong doc | Low | MapService: the base-map settings are saved by BaseMapSettings, and the opacity is saved only after the slider settles | Fixed | S11 |
 | [D1a-6](#d1a-6) | Wrong doc | Low | `HelpCommandName` is sent only while `IncludeHelpCommand` is also `Y`, and `RenameHelpCommand` has no row | Fixed | S11 |
@@ -463,7 +463,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-3 · Wrong doc · Low · "keys read in more than one place are constants in UserConfigKeys" is not true for the facility and the default ROI
 
-**Status:** Open · **Session:** [S11](020_Work-Plan.md#s11)
+**Status:** Fixed (not yet merged), in [S5](020_Work-Plan.md#s5), the preferred way: a code fix that makes the doc true. The facility is `UserConfigKeys.Facility` and the default ROI's switch is `UserConfigKeys.DefaultRoiFilter`, used by `UserConfigAreas` and `DefaultRoiStore`. The ROI's corners are read only by `DefaultRoiStore`, so they stay its own · **Session:** [S11](020_Work-Plan.md#s11)
 
 **Where:** [`docs/Developers/Settings-Reference.md:48-49`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L48-L49), 618-619
 

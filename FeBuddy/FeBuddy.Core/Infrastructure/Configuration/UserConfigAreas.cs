@@ -39,10 +39,13 @@ public static class UserConfigAreas
 	public const string AiracNode = "Services.AiracService";
 
 	/// <summary>The facility from Settings ▸ Facility.</summary>
-	public const string FacilityKey = $"{AiracNode}.UserArtccId";
+	public const string FacilityKey = UserConfigKeys.Facility;
 
 	/// <summary>Whether the default ROI is on.</summary>
-	public const string DefaultRoiKey = $"{AiracNode}.DefaultRoi.FilterByRoi";
+	public const string DefaultRoiKey = UserConfigKeys.DefaultRoiFilter;
+
+	/// <summary>The key under a GeoJSON tab's node that says it uses its own ROI rather than the default one: <c>Y</c> or <c>N</c>.</summary>
+	public const string OverrideRoiKey = "Roi.OverrideDefaultRoi";
 
 	/// <summary>The Procedures tab's node name.</summary>
 	public const string ProceduresTab = AiracTabs.Procedures;
@@ -95,7 +98,7 @@ public static class UserConfigAreas
 			return IsYes(get($"{node}.IncludeRoiAirports")) ? Roi : None;
 		}
 
-		return IsYes(get($"{node}.Roi.OverrideDefaultRoi")) || IsYes(get(DefaultRoiKey)) ? Roi : Everything;
+		return IsYes(get($"{node}.{OverrideRoiKey}")) || IsYes(get(DefaultRoiKey)) ? Roi : Everything;
 	}
 
 	/// <summary>

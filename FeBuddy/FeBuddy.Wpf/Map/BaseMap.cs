@@ -4,6 +4,8 @@ using System.Windows.Media;
 
 using FeBuddy.Wpf.Map.Models;
 
+using FeBuddy.Core.Domain.Map.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Wpf.Map;
@@ -91,8 +93,8 @@ public static class BaseMap
 				return null;
 			}
 
-			using StreamReader reader = new(info.Stream);
-			return GeoJsonReader.Read(reader.ReadToEnd());
+			using Stream stream = info.Stream;
+			return GeojsonFileReader.Read(stream);
 		}
 		catch (Exception ex)
 		{

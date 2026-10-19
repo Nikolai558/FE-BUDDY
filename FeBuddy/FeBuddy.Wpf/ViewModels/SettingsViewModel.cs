@@ -78,14 +78,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
 	private const string AddFolderKey = UserConfigKeys.AddFeBuddyOutputFolder;
 	/// <summary>
-	/// Where the selected facility persists. Internal (rather than private) so the Procedures tab
-	/// can read it directly at settings-build time, as <c>PrimaryFacility</c>, without copying the
-	/// value into its own config node.
-	/// </summary>
-	internal const string ArtccKey = "Services.AiracService.UserArtccId";
-
-	/// <summary>
-	/// Raised after Save writes the settings, the facility (<see cref="ArtccKey"/>) among them, so a page
+	/// Raised after Save writes the settings, the facility (<see cref="UserConfigKeys.Facility"/>) among them, so a page
 	/// that names the facility - Procedure Charts' option for other airports' procedures - can say it again.
 	/// </summary>
 	public static event EventHandler? FacilitySaved;
@@ -205,7 +198,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		[AddFolderKey] = AddFeBuddyOutputFolder ? "Y" : "N",
 		[PrecisionKey] = CoordinatePrecision.ToString(CultureInfo.InvariantCulture),
 		[UserConfigKeys.PrettyPrintGeojson] = PrettyPrintGeojson ? "Y" : "N",
-		[ArtccKey] = SelectedFacility ?? string.Empty,
+		[UserConfigKeys.Facility] = SelectedFacility ?? string.Empty,
 		[UserConfigKeys.FeBuddyGitHubCredentialId] = GitHubCredentialValue,
 	};
 
@@ -655,7 +648,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 
 		VersionCheckResult? version = AppEnvironment.Version;
-		if (version is null || !version.CheckSucceeded)
+		if (version is null or { Status: VersionCheckStatus.Failed or VersionCheckStatus.Skipped })
 		{
 			Toast.Warn("Could not check for updates", version?.Message ?? "The version service did not answer.");
 			return;
@@ -667,31 +660,33 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		// An update, or - running a pre-release on the more stable channel saved here - that channel's
 		// latest release to go back to (not while another channel waits to be saved).
-		if (version.UpdateAvailable || (version.CanGoBack && !isUnsaved))
+		if (version.Status == VersionCheckStatus.UpdateAvailable || (version.CanGoBack && !isUnsaved))
 		{
 			_openUpdateWindow?.Invoke();
 			return;
 		}
 
-		string current = version.CurrentVersion.TrimStart('v', 'V');
+		string current = version.DisplayVersion;
 
-		if (version.RunningPreReleaseChannel is { } running)
+		switch (version.Status)
 		{
-			Toast.Success("No update available",
-				$"v{current} is a {running.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
-		}
-		else if (version.IsAheadOfLatestRelease)
-		{
-			Toast.Success("No update available",
-				$"This development build (v{current}) is ahead of the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
-		}
-		else if (version.LatestVersion is null)
-		{
-			Toast.Success("No update available", $"There are no releases on the {version.Channel.DisplayName()} channel yet.{unsaved}");
-		}
-		else
-		{
-			Toast.Success("You're up to date", $"v{current} is the latest {version.Channel.DisplayName()} release.{unsaved}");
+			case VersionCheckStatus.RunningPreRelease:
+				Toast.Success("No update available",
+					$"v{current} is a {version.RunningPreReleaseChannel!.Value.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
+				break;
+
+			case VersionCheckStatus.AheadOfLatest:
+				Toast.Success("No update available",
+					$"This development build (v{current}) is ahead of the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
+				break;
+
+			case VersionCheckStatus.NoReleases:
+				Toast.Success("No update available", $"There are no releases on the {version.Channel.DisplayName()} channel yet.{unsaved}");
+				break;
+
+			default:
+				Toast.Success("You're up to date", $"v{current} is the latest {version.Channel.DisplayName()} release.{unsaved}");
+				break;
 		}
 	}
 
@@ -709,7 +704,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		UserConfigFile.TrySetValue(UserConfigKeys.FeBuddyGitHubCredentialId, GitHubCredentialValue);
 		if (!string.IsNullOrWhiteSpace(SelectedFacility))
 		{
-			UserConfigFile.TrySetValue(ArtccKey, SelectedFacility!);
+			UserConfigFile.TrySetValue(UserConfigKeys.Facility, SelectedFacility!);
 		}
 
 		if (!SettingsWrites.TryWrite("settings"))
@@ -763,7 +758,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	{
 		Channel = UpdateChannelSetting.Read(AppVersion.Current);
 		_savedChannel = Channel;
-		SelectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
+		SelectedFacility = Blank(UserConfigFile.GetValue(UserConfigKeys.Facility));
 		OutputDirectory = OutputPreferences.Directory;
 		AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder;
 		CoordinatePrecision = SubServiceSettingsReader.CoordinatePrecisionOrDefault(UserConfigFile.GetValue(PrecisionKey));
@@ -1098,35 +1093,17 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			return false;
 		}
 
-		// Both empty FE-Buddy's own folder, so a copy saved in it would go too.
-		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-		if (Path.GetFullPath(dialog.FileName).StartsWith(folder, StringComparison.OrdinalIgnoreCase))
-		{
-			Toast.Warn("Choose another folder", $"The {action} empties {AppDataReset.RootDirectory}, copy and all. Nothing was {done}.");
-			return false;
-		}
-
 		try
 		{
-			string active = UserConfigFile.ActiveProfile;
-			string stem = Path.Combine(Path.GetDirectoryName(dialog.FileName)!, Path.GetFileNameWithoutExtension(dialog.FileName));
-			string extension = Path.GetExtension(dialog.FileName);
-			int copied = 0;
-
-			foreach (string profile in UserConfigFile.Profiles())
-			{
-				string from = UserConfigFile.ProfileFilePath(profile);
-
-				if (File.Exists(from))
-				{
-					bool inUse = profile.Equals(active, StringComparison.OrdinalIgnoreCase);
-					File.Copy(from, inUse ? dialog.FileName : $"{stem} ({profile}){extension}", overwrite: true);
-					copied++;
-				}
-			}
-
+			int copied = UserConfigFile.CopyProfilesTo(dialog.FileName);
 			AppLog.Info("Settings", $"Saved a copy of {copied} settings profile(s) to '{dialog.FileName}' before the {action}.");
 			return true;
+		}
+		catch (ArgumentException)
+		{
+			// Both empty FE-Buddy's own folder, so a copy saved in it would go too.
+			Toast.Warn("Choose another folder", $"The {action} empties {AppDataReset.RootDirectory}, copy and all. Nothing was {done}.");
+			return false;
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
@@ -1190,7 +1167,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 				// when the page opens) finds the drop-down bound to an empty list, which clears the
 				// facility it couldn't find yet. The user can't have chosen one meanwhile - the list is
 				// hidden until it's ready - so the saved one is put back, and the page stays unchanged.
-				SelectedFacility ??= Blank(UserConfigFile.GetValue(ArtccKey));
+				SelectedFacility ??= Blank(UserConfigFile.GetValue(UserConfigKeys.Facility));
 			});
 		}
 		catch (Exception ex)

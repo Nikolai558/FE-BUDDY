@@ -69,6 +69,26 @@ public record VersionCheckResult(
 	/// </summary>
 	public bool WasSkipped { get; init; }
 
+	/// <summary>
+	/// Where the check left FE-Buddy, decided once in this order: skipped, failed, an update, a pre-release
+	/// ahead of the channel, a build ahead of every release, a channel with no release, or the latest.
+	/// </summary>
+	public VersionCheckStatus Status =>
+		WasSkipped ? VersionCheckStatus.Skipped
+		: !CheckSucceeded ? VersionCheckStatus.Failed
+		: UpdateAvailable && LatestVersion is not null ? VersionCheckStatus.UpdateAvailable
+		: RunningPreReleaseChannel is not null ? VersionCheckStatus.RunningPreRelease
+		: IsAheadOfLatestRelease ? VersionCheckStatus.AheadOfLatest
+		: LatestVersion is null ? VersionCheckStatus.NoReleases
+		: VersionCheckStatus.Latest;
+
+	/// <summary>
+	/// The running version as FE-Buddy shows it: <c>3.0.0</c>, without a leading <c>v</c>; <c>dev</c> for a
+	/// build with no version (blank, or <c>0.0.0</c>).
+	/// </summary>
+	public string DisplayVersion =>
+		string.IsNullOrWhiteSpace(CurrentVersion) || CurrentVersion.Trim() is "0.0.0" or "v0.0.0" ? "dev" : CurrentVersion.Trim().TrimStart('v', 'V');
+
 	/// <summary>The result when a dev launch leaves the check out.</summary>
 	/// <param name="currentVersion">The running application's version string.</param>
 	/// <param name="channel">The user's channel.</param>

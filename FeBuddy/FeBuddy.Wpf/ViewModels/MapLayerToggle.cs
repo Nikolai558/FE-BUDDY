@@ -1,8 +1,10 @@
 using System.Windows.Media;
 
-using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.Mvvm;
+
+using FeBuddy.Core.Application.Map;
+using FeBuddy.Core.Application.Map.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -23,10 +25,10 @@ public sealed class MapLayerToggle(AiracLayerKind kind, Brush swatch, bool isVis
 	public AiracLayerKind Kind { get; } = kind;
 
 	/// <summary>The name shown in the list.</summary>
-	public string Name => AiracMapLayers.Name(Kind);
+	public string Name => AiracMapData.Name(Kind);
 
 	/// <summary>What the layer shows, for its tooltip.</summary>
-	public string Description => AiracMapLayers.Description(Kind);
+	public string Description => AiracMapData.Description(Kind);
 
 	/// <summary>Legend swatch colour.</summary>
 	public Brush Swatch { get; } = swatch;

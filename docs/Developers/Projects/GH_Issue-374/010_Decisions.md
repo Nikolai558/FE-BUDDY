@@ -124,7 +124,7 @@ Raised by the review. Input wanted.
 
 ### Q1 · [W2-1](100_Bugs.md#w2-1): how to fix the General tab's save and undo
 
-**Status:** Answered (Nikolas, 2026-10-17)
+**Status:** Answered (Nikolas, 2026-10-17). Done (not yet merged): the General tab's node in [S1](020_Work-Plan.md#s1), the Settings page's keys in [S5](020_Work-Plan.md#s5)
 
 - **A (proposed):** give the General tab a settings node of its own, plus a settings-layout step that moves its keys.
 - **B:** make save and undo skip child nodes.

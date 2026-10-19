@@ -3,7 +3,8 @@
 	Builds FE-Buddy's MSI installer: publishes the app, then packages it with WiX.
 
 .DESCRIPTION
-	1. Publishes FeBuddy.Wpf (Release, win-x64, self-contained) into publish\.
+	1. Publishes FeBuddy.Wpf (Release, win-x64, self-contained, precompiled with ReadyToRun) into
+	   publish\.
 	2. Reads the real version from the built FE-BUDDY.dll's Product version - the csproj
 	   <Version>, e.g. 3.0.0-alpha.1 - and checks it is SemVer.
 	3. Gets the MSI's internal counter version from FeBuddy.Installer\Get-InstallerVersion.ps1,
@@ -37,6 +38,7 @@ dotnet publish (Join-Path $root 'FeBuddy.Wpf\FeBuddy.Wpf.csproj') `
 	-c Release `
 	-r win-x64 `
 	--self-contained `
+	-p:PublishReadyToRun=true `
 	-o $pubdir `
 	-v minimal
 if ($LASTEXITCODE -ne 0) { throw "FE-Buddy publish failed with exit code $LASTEXITCODE." }

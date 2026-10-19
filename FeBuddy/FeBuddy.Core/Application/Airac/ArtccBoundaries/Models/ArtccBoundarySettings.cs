@@ -7,7 +7,7 @@ namespace FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 /// <summary>
 /// Fully-parsed, typed settings for the ARTCC Boundaries sub-service. Built once by
 /// <c>ArtccBoundarySettingsParser.Parse</c> from the raw <c>Dictionary&lt;string, string&gt;</c>
-/// the GUI (or <c>FeBuddy.Harness</c>) supplies; every other ARTCC Boundaries service consumes
+/// the GUI (or <c>FeBuddy.Harness</c>) supplies; every other ARTCC Boundaries type consumes
 /// this typed object, never the raw dictionary.
 /// </summary>
 /// <remarks>

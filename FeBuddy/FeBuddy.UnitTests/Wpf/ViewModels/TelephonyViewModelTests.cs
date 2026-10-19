@@ -678,6 +678,15 @@ public sealed class TelephonyViewModelTests : IDisposable
 			result.Settings.VirtualAirlines);
 	}
 
+	/// <summary>Telephony writes no GeoJSON, so the block leaves out the GeoJSON settings its parser would only ignore.</summary>
+	[Fact]
+	public void the_settings_block_leaves_out_the_geojson_settings()
+	{
+		IReadOnlyDictionary<string, string> block = new TelephonyViewModel().BuildSettingsBlock();
+
+		Assert.DoesNotContain(block.Keys, key => key is "CoordinatePrecision" or "IncludeFebCustomProperties" or "FebProperties" or "CrcDefaultsFor");
+	}
+
 	[Fact]
 	public void with_no_virtual_airlines_the_settings_block_has_no_virtual_airline_keys()
 	{
@@ -790,6 +799,17 @@ public sealed class TelephonyViewModelTests : IDisposable
 	/// <summary>A refresh in which neither part could be downloaded, and FE-Buddy has no copy of either.</summary>
 	private static VirtualAirlineListRefreshResult Offline() =>
 		new(new SharedDataRefreshResult(null, null, "offline"), new SharedDataRefreshResult(null, null, "offline"));
+
+	/// <summary>Waits for the download ticking the box started: the list is read off the UI thread, so it finishes later.</summary>
+	private static async Task DownloadFinished(TelephonyViewModel tab)
+	{
+		for (int waited = 0; tab.IsDownloadingVatsimRadarList && waited < 5000; waited += 10)
+		{
+			await Task.Delay(10);
+		}
+
+		Assert.False(tab.IsDownloadingVatsimRadarList);
+	}
 
 	/// <summary>A tab using this copy of the list, whose downloads count how often they are asked for and never touch the network.</summary>
 	private static (TelephonyViewModel Tab, Func<int> Downloads) TabUsing(VatsimRadarCopy? copy, VirtualAirlineListRefreshResult? downloadResult = null)
@@ -922,38 +942,11 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.False(item.HasNote);
 	}
 
-	/// <summary>The real operators come from FE-Buddy's copies of the FAA's pages: the first of each 3LD (or identifier) and telephony.</summary>
-	[Fact]
-	public void the_real_operators_are_read_from_the_faa_pages()
-	{
-		Directory.CreateDirectory(_root);
-		string register = Path.Combine(_root, "register.html");
-		string special = Path.Combine(_root, "special.html");
-		File.WriteAllText(register,
-			"<table><thead><tr><th>Company</th><th>Country</th><th>Telephony</th><th>3-Ltr</th></tr></thead><tbody>" +
-			"<tr><td>AMERICAN AIRLINES INC.</td><td>UNITED STATES</td><td>AMERICAN</td><td>AAL</td></tr>" +
-			"<tr><td>ANOTHER AMERICAN</td><td>UNITED STATES</td><td>AMERICAN</td><td>aal</td></tr>" +
-			"<tr><td>NO DESIGNATOR</td><td>FRANCE</td><td>NOBODY</td><td>...</td></tr>" +
-			"</tbody></table>");
-		File.WriteAllText(special,
-			"<table><thead><tr><th>Telephony/Call Sign</th><th>Identifier</th><th>Company or Operating Agency</th><th>Expiration Date</th></tr></thead>" +
-			"<tbody><tr><td>AIR SIX</td><td>ARSIX</td><td>NYC Environmental Protection</td><td>N/A</td></tr></tbody></table>");
-
-		IReadOnlyDictionary<(string Designator, string Telephony), string> operators = TelephonyViewModel.ReadRealOperators(register, special);
-
-		Assert.Equal(2, operators.Count);
-		Assert.Equal("AMERICAN AIRLINES INC.", operators[("AAL", "AMERICAN")]);
-		Assert.Equal("NYC Environmental Protection", operators[("ARSIX", "AIR SIX")]);
-		Assert.Empty(TelephonyViewModel.ReadRealOperators(Path.Combine(_root, "none.html"), Path.Combine(_root, "none.html")));
-		Assert.Empty(TelephonyViewModel.ReadRealOperators(special, Path.Combine(_root, "none.html")));
-	}
-
 	[Fact]
 	public void the_lists_status_says_how_old_the_copies_are_and_how_many_they_have_or_that_there_is_none()
 	{
 		(TelephonyViewModel withCopy, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual"), ("OCN", "Ocean", "vOCN")));
 		(TelephonyViewModel withoutCopy, _) = TabUsing(null);
-		(TelephonyViewModel withOlderCopy, _) = TabUsing(ListOf(("OCN", "Ocean", "vOCN")) with { IsOlderCopy = true, GngDownloadedUtc = null, VatsimRadarDownloadedUtc = null });
 
 		Assert.Equal(
 			$"FE-Buddy's copy is from {ListDownloadedUtc.ToLocalTime():d MMM yyyy}: 2 virtual airlines.",
@@ -962,8 +955,6 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.Equal(
 			"FE-Buddy has no copy yet, so a virtual airline you add can't be checked against it.",
 			withoutCopy.VatsimRadarListStatus);
-		Assert.StartsWith("FE-Buddy's older copy of the list is from ", withOlderCopy.VatsimRadarListStatus, StringComparison.Ordinal);
-		Assert.Equal("Using FE-Buddy's older copy of the list until its two parts can be downloaded.", withOlderCopy.VatsimRadarListWarning);
 	}
 
 	/// <summary>A part FE-Buddy has no copy of is a warning, in amber, even before anything is downloaded.</summary>
@@ -978,13 +969,14 @@ public sealed class TelephonyViewModelTests : IDisposable
 
 	/// <summary>Ticking the box with no copy fetches one, so the editor has something to check against; with a copy it doesn't.</summary>
 	[Fact]
-	public void ticking_the_box_downloads_the_list_only_when_there_is_no_copy()
+	public async Task ticking_the_box_downloads_the_list_only_when_there_is_no_copy()
 	{
 		(TelephonyViewModel withoutCopy, Func<int> downloadsWithout) = TabUsing(null);
 		(TelephonyViewModel withCopy, Func<int> downloadsWith) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")));
 
 		withoutCopy.IncludeVatsimRadarList = true;
 		withCopy.IncludeVatsimRadarList = true;
+		await DownloadFinished(withoutCopy);
 
 		Assert.Equal(1, downloadsWithout());
 		Assert.Equal(0, downloadsWith());
@@ -1009,6 +1001,7 @@ public sealed class TelephonyViewModelTests : IDisposable
 			new SharedDataRefreshResult(vatsimRadar, keptUtc, "The SSL connection could not be established: TLS alert"));
 		(TelephonyViewModel tab, Func<int> downloads) = TabUsing(null, refreshed);
 		tab.IncludeVatsimRadarList = true;
+		await DownloadFinished(tab);
 
 		await tab.DownloadVatsimRadarListAsync();
 
@@ -1047,5 +1040,61 @@ public sealed class TelephonyViewModelTests : IDisposable
 		tab.IncludeVatsimRadarList = true;
 		Assert.StartsWith("Included. FE-Buddy's copy is from ", Row(), StringComparison.Ordinal);
 		Assert.EndsWith("FE-Buddy has no copy of the GNG fictional airline list yet, so the list is missing its airlines.", Row(), StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// A download that finishes while FE-Buddy's kept copies of the list are still being read keeps its own copy:
+	/// the read, finishing last, is dropped.
+	/// </summary>
+	[Fact]
+	public async Task a_download_finishing_during_the_kept_copy_read_keeps_its_copy()
+	{
+		Directory.CreateDirectory(_root);
+		string vatsimRadar = Path.Combine(_root, "vr.json");
+		File.WriteAllText(vatsimRadar, """[{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }]""");
+		(TelephonyViewModel tab, _) = TabUsing(null, new VirtualAirlineListRefreshResult(
+			new SharedDataRefreshResult(null, null, "offline"),
+			new SharedDataRefreshResult(vatsimRadar, DateTime.UtcNow, FailureReason: null)));
+		using ManualResetEventSlim release = new();
+		Task read = tab.LoadVatsimRadarCopyAsync(() =>
+		{
+			release.Wait();
+			return ListOf(("DAL", "Delta", "Fly Delta Virtual"), ("WAT", "Walker", "Walker Air"));
+		});
+
+		await tab.DownloadVatsimRadarListAsync();
+		release.Set();
+		await read;
+
+		Assert.Contains(": 1 virtual airlines.", tab.VatsimRadarListStatus, StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// An older look at FE-Buddy's copy of the FAA pages that finishes after a newer one - the tab's first, after a
+	/// run's, say - doesn't overwrite it; a look that fails says so, and why.
+	/// </summary>
+	[Fact]
+	public async Task an_older_look_at_the_faa_pages_copy_finishing_last_doesnt_win_and_a_failed_one_says_why()
+	{
+		TelephonyViewModel tab = new();
+		using ManualResetEventSlim release = new();
+		tab.DescribeTelephonyCopy = _ =>
+		{
+			release.Wait();
+			return "The older look.";
+		};
+		Task older = tab.RefreshTelephonyDataAsync();
+
+		tab.DescribeTelephonyCopy = _ => "The newer look.";
+		await tab.RefreshTelephonyDataAsync();
+		release.Set();
+		await older;
+
+		Assert.Equal("The newer look.", tab.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Telephony data").Value);
+
+		tab.DescribeTelephonyCopy = _ => throw new IOException("boom");
+		await tab.RefreshTelephonyDataAsync();
+
+		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Telephony data").Value);
 	}
 }

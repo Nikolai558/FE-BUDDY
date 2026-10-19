@@ -207,41 +207,6 @@ public sealed class TelephonyHtmlParserTests : IDisposable
 		Assert.Equal(string.Empty, row.Telephony);
 	}
 
-	// ---- Parse: register + optional special call signs ----
-
-	[Fact]
-	public void parse_with_a_null_special_call_signs_path_leaves_it_empty()
-	{
-		string registerPath = WriteFile(RegisterTable(AviancaRow));
-
-		TelephonyDataCollection data = TelephonyHtmlParser.Parse(registerPath, null);
-
-		Assert.Single(data.Assignments);
-		Assert.Empty(data.SpecialCallSigns);
-	}
-
-	[Fact]
-	public void parse_reads_both_pages_when_both_paths_are_given()
-	{
-		string registerPath = WriteFile(RegisterTable(AviancaRow));
-		string specialPath = WriteFile(SpecialTable(AirSixRow));
-
-		TelephonyDataCollection data = TelephonyHtmlParser.Parse(registerPath, specialPath);
-
-		Assert.Single(data.Assignments);
-		Assert.Single(data.SpecialCallSigns);
-	}
-
-	[Theory]
-	[InlineData("")]
-	[InlineData(" ")]
-	public void parse_rejects_a_blank_register_path(string path) =>
-		Assert.Throws<ArgumentException>(() => TelephonyHtmlParser.Parse(path, null));
-
-	[Fact]
-	public void parse_rejects_a_null_register_path() =>
-		Assert.Throws<ArgumentNullException>(() => TelephonyHtmlParser.Parse(null!, null));
-
 	// ---- file-based ParseRegister / ParseSpecialCallSigns ----
 
 	[Fact]

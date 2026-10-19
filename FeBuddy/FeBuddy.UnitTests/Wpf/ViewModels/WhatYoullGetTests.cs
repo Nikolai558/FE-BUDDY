@@ -4,6 +4,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Settings;
@@ -441,7 +442,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		}
 
 		AirwaysViewModel tab = new();
-		tab.LoadCycleDependentLists(new NasrCsvDataCollection { Awy = airways });
+		tab.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(new NasrCsvDataCollection { Awy = airways }));
 		return tab;
 	}
 
@@ -589,8 +590,8 @@ public sealed class WhatYoullGetTests : IDisposable
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.ArtccBoundaries.LocationFilter", "ZOB");
 		ArtccBoundariesViewModel tab = new() { OutputByArtccAltitude = true };
-		tab.LoadCycleDependentLists(ArtccBoundaryTestData.Build(
-			segRows: [.. ArtccBoundaryTestData.ZobHighRows(), .. ArtccBoundaryTestData.ZobLowRows(), .. ArtccBoundaryTestData.ZakCtaRows()]));
+		tab.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(ArtccBoundaryTestData.Build(
+			segRows: [.. ArtccBoundaryTestData.ZobHighRows(), .. ArtccBoundaryTestData.ZobLowRows(), .. ArtccBoundaryTestData.ZakCtaRows()])));
 
 		Assert.Equal(SubServiceArea.Artccs, tab.Area);
 		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
@@ -612,7 +613,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		fixes.FixBase.Add(new FixCsvDataModel.FixBase { FixId = "CCC", FixUseCode = "MW", Charts = null });
 
 		FixesViewModel tab = new();
-		tab.LoadCycleDependentLists(new NasrCsvDataCollection { Fix = fixes });
+		tab.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(new NasrCsvDataCollection { Fix = fixes }));
 		return tab;
 	}
 
@@ -770,8 +771,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	public void procedures_counts_a_long_airport_list_and_flags_no_chart_type()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW,CAK,PIT,ORD,MDW,BUF");
-		// Saved by an earlier FE-Buddy as full names: they read as their root names.
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE,CLVLD TWO (RNAV)");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ,CLVLD");
 		ProceduresViewModel tab = ProceduresTab(Json);
 
 		foreach (ProcedureOptionToggle type in tab.ChartTypeToggles)
@@ -822,7 +822,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Area", "Everything");
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW");
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ");
 		SummaryBlock block = Assert.Single(ProceduresTab(Json).WhatYoullGet);
 
 		Assert.Equal(["Charts for every airport in the d-TPP metafile"], Lines(block));
@@ -833,7 +833,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	[Fact]
 	public void procedures_picked_one_by_one_need_no_chart_types()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.AirportProcedures", "CLE|CLVLD TWO (RNAV)");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.AirportProcedures", "CLE|CLVLD");
 		ProceduresViewModel tab = ProceduresTab(Changes | Json);
 
 		SummaryBlock block = Assert.Single(tab.WhatYoullGet);

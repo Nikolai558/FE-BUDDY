@@ -369,9 +369,9 @@ public sealed class MarkdownParserTests
 	[InlineData("[sibling](Other.md)", "https://x.test/owner/repo/blob/main/app/core/Other.md")]
 	[InlineData("[section](#posts)", "https://x.test/owner/repo/blob/main/app/core/News.md#posts")]
 	[InlineData("[abs](https://y.test/a)", "https://y.test/a")]
-	public void parse_inlines_relative_links_resolve_against_the_link_base(string text, string expected)
+	public void parse_relative_links_resolve_against_the_link_base(string text, string expected)
 	{
-		var span = Assert.Single(MarkdownParser.ParseInlines(text, linkBase: new Uri("https://x.test/owner/repo/blob/main/app/core/News.md")));
+		var span = Assert.Single(ParagraphSpans(text, linkBase: new Uri("https://x.test/owner/repo/blob/main/app/core/News.md")));
 
 		Assert.Equal(expected, span.Url);
 	}
@@ -379,9 +379,9 @@ public sealed class MarkdownParserTests
 	[Theory]
 	[InlineData("[js](javascript:alert(1))")]
 	[InlineData("[file](file:///c:/x)")]
-	public void parse_inlines_unsafe_links_stay_unlinked_with_a_link_base(string text)
+	public void parse_unsafe_links_stay_unlinked_with_a_link_base(string text)
 	{
-		var spans = MarkdownParser.ParseInlines(text, linkBase: new Uri("https://x.test/a/News.md"));
+		var spans = ParagraphSpans(text, linkBase: new Uri("https://x.test/a/News.md"));
 
 		Assert.All(spans, s => Assert.Null(s.Url));
 	}
@@ -456,9 +456,9 @@ public sealed class MarkdownParserTests
 	}
 
 	[Fact]
-	public void parse_inlines_issue_references()
+	public void parse_issue_references()
 	{
-		var spans = MarkdownParser.ParseInlines("Bug #166, (#7) C#9 #12a #", Issues);
+		var spans = ParagraphSpans("Bug #166, (#7) C#9 #12a #", Issues);
 
 		Assert.Equal(
 			[
@@ -490,4 +490,8 @@ public sealed class MarkdownParserTests
 		Assert.Equal(level, heading.Level);
 		Assert.Equal(text, Text(heading.Spans));
 	}
+
+	/// <summary>The spans of a one-paragraph document, parsed with these link settings.</summary>
+	private static IReadOnlyList<MarkdownSpan> ParagraphSpans(string text, string? issueUrlBase = null, Uri? linkBase = null) =>
+		Assert.IsType<MarkdownParagraph>(Assert.Single(MarkdownParser.Parse(text, issueUrlBase, linkBase))).Spans;
 }

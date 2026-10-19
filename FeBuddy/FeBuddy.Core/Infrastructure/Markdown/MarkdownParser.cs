@@ -52,14 +52,12 @@ public static partial class MarkdownParser
 
 	/// <summary>Parses inline Markdown (one paragraph's worth) into styled spans.</summary>
 	/// <param name="text">The inline text.</param>
-	/// <param name="issueUrlBase">See <see cref="Parse"/>.</param>
-	/// <param name="linkBase">See <see cref="Parse"/>.</param>
-	/// <returns>The spans, with neighbours of the same style and link merged.</returns>
-	public static IReadOnlyList<MarkdownSpan> ParseInlines(string text, string? issueUrlBase = null, Uri? linkBase = null)
+	/// <returns>The spans, with neighbours of the same style and link merged. A <c>#123</c> reference and a relative link stay plain text.</returns>
+	public static IReadOnlyList<MarkdownSpan> ParseInlines(string text)
 	{
 		ArgumentNullException.ThrowIfNull(text);
 
-		return ParseSpans(text, new LinkContext(issueUrlBase, linkBase));
+		return ParseSpans(text, default);
 	}
 
 	/// <summary>Where <c>#123</c> references and relative links point, for one parse.</summary>

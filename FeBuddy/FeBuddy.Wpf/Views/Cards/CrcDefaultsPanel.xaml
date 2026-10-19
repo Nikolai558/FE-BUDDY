@@ -29,7 +29,8 @@
     panel is as wide as a Text panel with as many blocks. The conditional rows start Collapsed
     (FallbackValue) until their binding resolves: a row measured even once while visible keeps
     widening that shared column.
-    The per-field ToolTips are worded from the settings validator - keep them verbatim.
+    The per-field hints (bhv:FieldState.Hint, which a box's error replaces) are worded from the
+    settings validator - keep them verbatim.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.Cards.CrcDefaultsPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -44,13 +45,6 @@
              x:Name="Self"
              Visibility="Collapsed">
     <UserControl.Resources>
-        <!-- xOffset / yOffset box. The hint is a Style setter, not a local ToolTip, so the
-             implicit TextBox style's error trigger can still swap in the validation message
-             ("Must be a whole number, ...") - a local value would always win over it. -->
-        <Style x:Key="OffsetBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="ToolTip" Value="Any whole number of pixels. 0 for none." />
-        </Style>
-
         <!-- One property row of one class: its name (Header), then its control at a fixed width. -->
         <Style x:Key="Field" TargetType="HeaderedContentControl">
             <Setter Property="Focusable" Value="False" />
@@ -99,47 +93,47 @@
                     <HeaderedContentControl Style="{StaticResource Field}" Header="BCG">
                         <ComboBox ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
                                   bhv:FieldState.Error="{Binding BcgError}"
-                                  ToolTip="BCG group: an integer 1–40." />
+                                  bhv:FieldState.Hint="BCG group: an integer 1–40." />
                     </HeaderedContentControl>
                     <HeaderedContentControl Style="{StaticResource Field}" Header="Style"
                                             Visibility="{Binding AsksForStyle, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                         <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
                                   bhv:FieldState.Error="{Binding StyleError}"
-                                  ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                                  bhv:FieldState.Hint="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
                     </HeaderedContentControl>
                     <HeaderedContentControl Style="{StaticResource Field}" Header="Thickness"
                                             Visibility="{Binding ShowThickness, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                         <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
                                   bhv:FieldState.Error="{Binding ThicknessError}"
-                                  ToolTip="Thickness: an integer 1–3." />
+                                  bhv:FieldState.Hint="Thickness: an integer 1–3." />
                     </HeaderedContentControl>
                     <HeaderedContentControl Style="{StaticResource Field}" Header="Size"
                                             Visibility="{Binding ShowSize, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                         <ComboBox ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
                                   bhv:FieldState.Error="{Binding SizeError}"
-                                  ToolTip="Size: 1–4 for symbols, 0–5 for text." />
+                                  bhv:FieldState.Hint="Size: 1–4 for symbols, 0–5 for text." />
                     </HeaderedContentControl>
                     <HeaderedContentControl Style="{StaticResource Field}" Header="Opaque"
                                             Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                         <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
                                   bhv:FieldState.Error="{Binding OpaqueError}"
-                                  ToolTip="Opaque: Yes or No." />
+                                  bhv:FieldState.Hint="Opaque: Yes or No." />
                     </HeaderedContentControl>
                     <HeaderedContentControl Style="{StaticResource Field}" Header="Underline"
                                             Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                         <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Underline}"
                                   bhv:FieldState.Error="{Binding UnderlineError}"
-                                  ToolTip="Underline: Yes or No." />
+                                  bhv:FieldState.Hint="Underline: Yes or No." />
                     </HeaderedContentControl>
                     <HeaderedContentControl Style="{StaticResource Field}" Header="X offset"
                                             Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                        <TextBox Style="{StaticResource OffsetBox}"
+                        <TextBox bhv:FieldState.Hint="Any whole number of pixels. 0 for none."
                                  Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
                                  bhv:FieldState.Error="{Binding XOffsetError}" />
                     </HeaderedContentControl>
                     <HeaderedContentControl Style="{StaticResource Field}" Header="Y offset"
                                             Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                        <TextBox Style="{StaticResource OffsetBox}"
+                        <TextBox bhv:FieldState.Hint="Any whole number of pixels. 0 for none."
                                  Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
                                  bhv:FieldState.Error="{Binding YOffsetError}" />
                     </HeaderedContentControl>

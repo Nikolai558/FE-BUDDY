@@ -132,7 +132,7 @@ public static class ArrivalFilter
 		{
 			if (!inside.TryGetValue(airportProcedure.AirportId, out bool isInside))
 			{
-				(double waypointLat, double waypointLon, string foundIn)? location = WaypointLocator.Find(
+				(double waypointLat, double waypointLon)? location = WaypointLocator.Find(
 					allNasrCsvData, airportProcedure.AirportId, WaypointLocator.WaypointType.Airport);
 
 				if (location is { } found)

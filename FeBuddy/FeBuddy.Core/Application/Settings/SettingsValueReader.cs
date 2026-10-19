@@ -115,9 +115,7 @@ public static class SettingsValueReader
 			return null;
 		}
 
-		if (!double.TryParse(value.Trim(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double parsed)
-			|| parsed <= 0
-			|| parsed > maximum)
+		if (!TryParsePositiveDecimal(value, maximum, out double parsed))
 		{
 			throw new ArgumentException(
 				$"'{key}' value '{value}' is not valid. Must be a number greater than 0 and at most {maximum.ToString(CultureInfo.InvariantCulture)}.");
@@ -125,6 +123,20 @@ public static class SettingsValueReader
 
 		return parsed;
 	}
+
+	/// <summary>
+	/// Whether <paramref name="value"/> is a decimal number greater than zero and at most
+	/// <paramref name="maximum"/>, as <see cref="OptionalPositiveDecimal"/> takes one: digits and a point,
+	/// no sign or thousands separator, read the same on every PC. For a page that checks the value as typed.
+	/// </summary>
+	/// <param name="value">The value.</param>
+	/// <param name="maximum">Highest accepted value, inclusive.</param>
+	/// <param name="parsed">The number, when it is one.</param>
+	/// <returns><see langword="true"/> when it is.</returns>
+	public static bool TryParsePositiveDecimal(string? value, double maximum, out double parsed) =>
+		double.TryParse(value?.Trim(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out parsed)
+		&& parsed > 0
+		&& parsed <= maximum;
 
 	/// <summary>Reads a decimal number constrained to a range, falling back to a default.</summary>
 	/// <param name="settings">The raw settings block.</param>

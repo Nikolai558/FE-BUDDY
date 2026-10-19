@@ -113,6 +113,18 @@ public static class AiracService
 	/// <c>Duplicate_Alias_Commands.txt</c>.
 	/// </param>
 	/// <returns>The aggregated result.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// Thrown when the selected cycle is not tracked, not published or couldn't be prepared. When its
+	/// parse failed, the run fails with the parse's own exception instead.
+	/// </exception>
+	/// <exception cref="ArgumentException">
+	/// Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank, or a new name in
+	/// <see cref="AiracServiceSettings.FileNames"/> can't be used. Nothing is deleted or written then.
+	/// </exception>
+	/// <exception cref="IOException">
+	/// Thrown when <see cref="ExistingOutputAction.DeleteExisting"/> cannot delete the cycle
+	/// folder. Nothing is written in that case, but the files deleted before the failure stay deleted.
+	/// </exception>
 	public static async Task<AiracServiceResult> RunAsync(
 		AiracServiceSettings settings,
 		IProgress<AiracServiceProgress>? progress = null,
@@ -237,8 +249,9 @@ public static class AiracService
 		{
 			return await AiracCycleDataCache.Instance.GetAsync(cycleId, cancellationToken).ConfigureAwait(false);
 		}
-		catch (Exception ex) when (ex is InvalidOperationException or IOException)
+		catch (Exception ex) when (ex is not OperationCanceledException)
 		{
+			// Optional data: a parse that failed (its parser's own exception) mustn't fail the run.
 			AppLog.Warning(LogSource, $"Cycle {cycleId}'s NASR data couldn't be loaded for Procedure Charts: {ex.Message}");
 			return null;
 		}
@@ -433,6 +446,15 @@ public static class AiracService
 				}
 
 				string earlier = CombinedAliasFileWriter.DeleteEarlierFile(outputDirectory, combinedAliasFileName).Sentence;
+
+				// They're gone, so no sub-service's result names one: its review would list a file that isn't there.
+				airwaysResult = airwaysResult is null ? null : airwaysResult with { AliasFilePath = null };
+				airportsResult = airportsResult is null ? null : airportsResult with { AliasFilePath = null };
+				departuresResult = departuresResult is null ? null : departuresResult with { AliasFilePath = null };
+				arrivalsResult = arrivalsResult is null ? null : arrivalsResult with { AliasFilePath = null };
+				navaidsResult = navaidsResult is null ? null : navaidsResult with { AliasFilePath = null };
+				proceduresResult = proceduresResult is null ? null : proceduresResult with { AliasFilePath = null };
+				telephonyResult = telephonyResult is null ? null : telephonyResult with { AliasFilePath = null };
 
 				AddMessage(new ServiceMessage(LogLevel.Warning, LogSource,
 					$"You stopped the run at the duplicate alias commands, so it saved no alias file and no {combinedAliasFileName}.{earlier} " +

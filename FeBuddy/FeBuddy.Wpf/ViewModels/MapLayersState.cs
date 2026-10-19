@@ -11,8 +11,11 @@ using System.Windows.Threading;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Map.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Domain.Map.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Wpf.Map;
@@ -40,10 +43,11 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 public sealed class MapLayersState : ObservableObject
 {
-	private const string Node = "Services.MapService";
 	private const string OutputKey = UserConfigKeys.MapOutputGeojson;
 
-	// Internal so the unit tests can check every settings layout's keys are still the ones read here.
+	// Internal so the unit tests can check every settings layout's keys are still the ones read here,
+	// and that no other page's node sits inside the Map's.
+	internal const string Node = "Services.MapService";
 	internal const string AiracKey = Node + ".AiracLayers";
 	internal const string HomeKey = Node + ".Home";
 
@@ -76,9 +80,16 @@ public sealed class MapLayersState : ObservableObject
 	private bool _isOutputPickerOpen;
 	private string _outputDirectory = string.Empty;
 	private string _outputFilter = string.Empty;
+
+	// The filter as typed, split into its words once; and the picker's counts, worked out once per change
+	// (RaiseOutputSummary) rather than on every read of the line that shows them.
+	private OutputFileFilter _filter = OutputFileFilter.None;
+	private int _selectedOutputCount;
+	private int _matchingOutputCount;
 	private bool _isPanelOpen = true;
 	private MapHome? _home;
 	private bool _reloadingFromConfig;
+	private readonly DeferredSave _save;
 	private bool _settingUserFiles;
 	private ICollectionView _outputChoicesView = CollectionViewSource.GetDefaultView(Array.Empty<OutputFileChoice>());
 	private IReadOnlyList<AiracOutputGeojsonFile> _listedFiles = [];
@@ -87,10 +98,13 @@ public sealed class MapLayersState : ObservableObject
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
+		// Every map click changes a setting: saved a moment after the last, off the UI thread, and quietly.
+		_save = new DeferredSave(Node, "map settings", _dispatcher);
+
 		_selectedOutputs = new(Split(UserConfigFile.GetValue(OutputKey), '|'), StringComparer.OrdinalIgnoreCase);
 		HashSet<string> airacOn = new(Split(UserConfigFile.GetValue(AiracKey), ','), StringComparer.OrdinalIgnoreCase);
 		_home = MapHome.Parse(UserConfigFile.GetValue(HomeKey));
-		BaseMapSettings = new BaseMapSettings(_dispatcher);
+		BaseMapSettings = new BaseMapSettings(_save);
 
 		AiracToggles =
 		[
@@ -114,7 +128,7 @@ public sealed class MapLayersState : ObservableObject
 		OpenOutputFolderCommand = new RelayCommand(OpenOutputFolder, () => _outputDirectoryExists);
 		SelectAllOutputsCommand = new RelayCommand(() => SetAllOutputs(true), () => OutputChoices.Count > 0);
 		SelectNoOutputsCommand = new RelayCommand(() => SetAllOutputs(false), () => _selectedOutputs.Count > 0);
-		ResetHomeCommand = new RelayCommand(ResetHome, () => HasCustomHome);
+		ResetHomeCommand = new RelayCommand(ResetHome, () => Home is not null);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(OnCacheStateChanged);
 
@@ -136,6 +150,13 @@ public sealed class MapLayersState : ObservableObject
 	/// state is read fresh then.
 	/// </summary>
 	public static void ReloadFromConfigIfCreated() => _shared?.ReloadFromConfig();
+
+	/// <summary>
+	/// Saves the map's changes still waiting now, into the profile they were made in: before a profile change
+	/// or an import replaces the settings. Nothing waits until a map has been opened. Call on the UI thread.
+	/// </summary>
+	/// <returns>A task that completes once they are saved, or weren't.</returns>
+	internal static Task<bool> SaveWaitingChangesIfCreated() => _shared?._save.SaveNowAsync() ?? Task.FromResult(true);
 
 	/// <summary>Raised when the maps should frame some layers (a file just loaded, or its zoom button).</summary>
 	public event EventHandler<IReadOnlyList<MapLayer>>? FrameLayersRequested;
@@ -161,13 +182,9 @@ public sealed class MapLayersState : ObservableObject
 			if (SetProperty(ref _home, value))
 			{
 				OnPropertyChanged(nameof(HomeSummary));
-				OnPropertyChanged(nameof(HasCustomHome));
 			}
 		}
 	}
-
-	/// <summary>Whether the user has saved a home view of their own.</summary>
-	public bool HasCustomHome => Home is not null;
 
 	/// <summary>The home view on one line, e.g. <c>34.05, -118.25 at zoom 6.5</c>.</summary>
 	public string HomeSummary => Home is { } h
@@ -182,9 +199,8 @@ public sealed class MapLayersState : ObservableObject
 	public void SetHome(MapHome home)
 	{
 		Home = home;
-		UserConfigFile.TrySetValue(HomeKey, home.ToConfig());
-		UserConfigFile.Save(Node);
-		Toast.Success("Home view saved", "The home button (and every map that opens fresh) now starts here.");
+		_save.Set(HomeKey, () => Home?.ToConfig() ?? string.Empty);
+		_ = SaveHomeAsync();
 	}
 
 	/// <summary>Whether the side panel (ROI and layers) is shown; hiding it gives the map the room.</summary>
@@ -278,8 +294,9 @@ public sealed class MapLayersState : ObservableObject
 		{
 			if (SetProperty(ref _outputFilter, value ?? string.Empty))
 			{
+				_filter = new OutputFileFilter(_outputFilter);
 				OutputChoicesView.Refresh();
-				OnPropertyChanged(nameof(OutputSummary));
+				RaiseOutputSummary();
 			}
 		}
 	}
@@ -296,10 +313,10 @@ public sealed class MapLayersState : ObservableObject
 					: "No AIRAC cycle to show output for.";
 			}
 
-			string shown = $"{OutputChoices.Count(c => c.IsSelected):N0} of {OutputChoices.Count:N0} files on the map";
-			return string.IsNullOrWhiteSpace(OutputFilter)
+			string shown = $"{_selectedOutputCount:N0} of {OutputChoices.Count:N0} files on the map";
+			return _filter.IsEmpty
 				? shown
-				: $"{shown}  ·  {OutputChoicesView.Cast<object>().Count():N0} match the filter";
+				: $"{shown}  ·  {_matchingOutputCount:N0} match the filter";
 		}
 	}
 
@@ -388,6 +405,8 @@ public sealed class MapLayersState : ObservableObject
 
 	private void ReloadFromConfig()
 	{
+		// The file holds another profile's or an import's choices now: nothing of the old ones is saved over them.
+		_save.Forget();
 		Home = MapHome.Parse(UserConfigFile.GetValue(HomeKey));
 		BaseMapSettings.ReloadFromConfig();
 		HashSet<string> airacOn = new(Split(UserConfigFile.GetValue(AiracKey), ','), StringComparer.OrdinalIgnoreCase);
@@ -430,8 +449,16 @@ public sealed class MapLayersState : ObservableObject
 	private void ResetHome()
 	{
 		Home = null;
-		UserConfigFile.TrySetValue(HomeKey, string.Empty);
-		UserConfigFile.Save(Node);
+		_save.Set(HomeKey, () => Home?.ToConfig() ?? string.Empty);
+	}
+
+	/// <summary>Saves the new home view now, and says so once it is saved.</summary>
+	private async Task SaveHomeAsync()
+	{
+		if (await _save.SaveNowAsync())
+		{
+			Toast.Success("Home view saved", "The home button (and every map that opens fresh) now starts here.");
+		}
 	}
 
 	// ============================ cycles ================================
@@ -502,17 +529,7 @@ public sealed class MapLayersState : ObservableObject
 		}
 	}
 
-	private static string? CurrentCycleId()
-	{
-		try
-		{
-			return AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
-		}
-		catch (InvalidOperationException)
-		{
-			return null;
-		}
-	}
+	private static string CurrentCycleId() => AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
 
 	private void OnCacheStateChanged()
 	{
@@ -532,8 +549,7 @@ public sealed class MapLayersState : ObservableObject
 			return;
 		}
 
-		UserConfigFile.TrySetValue(AiracKey, string.Join(',', AiracToggles.Where(t => t.IsVisible).Select(t => t.Kind)));
-		UserConfigFile.Save(Node);
+		_save.Set(AiracKey, () => string.Join(',', AiracToggles.Where(t => t.IsVisible).Select(t => t.Kind)));
 
 		if (toggle.IsVisible && toggle.Layers is null)
 		{
@@ -684,21 +700,28 @@ public sealed class MapLayersState : ObservableObject
 		}
 
 		SyncOutputItems(files);
-		OnPropertyChanged(nameof(OutputSummary));
+		RaiseOutputSummary();
 		OnPropertyChanged(nameof(OutputHeader));
 		CommandManager.InvalidateRequerySuggested();
 	}
 
-	private bool MatchesOutputFilter(object item)
+	private bool MatchesOutputFilter(object item) => item is not OutputFileChoice choice || _filter.Matches(choice.Name, choice.Group);
+
+	/// <summary>Counts the picked files and those the filter shows, once, then says so on the picker's line.</summary>
+	private void RaiseOutputSummary()
 	{
-		if (string.IsNullOrWhiteSpace(OutputFilter) || item is not OutputFileChoice choice)
+		int selected = 0;
+		int matching = 0;
+
+		foreach (OutputFileChoice choice in OutputChoices)
 		{
-			return true;
+			selected += choice.IsSelected ? 1 : 0;
+			matching += _filter.Matches(choice.Name, choice.Group) ? 1 : 0;
 		}
 
-		return OutputFilter.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(word =>
-			choice.Name.Contains(word, StringComparison.OrdinalIgnoreCase)
-			|| choice.Group.Contains(word, StringComparison.OrdinalIgnoreCase));
+		_selectedOutputCount = selected;
+		_matchingOutputCount = matching;
+		OnPropertyChanged(nameof(OutputSummary));
 	}
 
 	private void OnOutputChoiceChanged(OutputFileChoice choice)
@@ -714,7 +737,7 @@ public sealed class MapLayersState : ObservableObject
 
 		SaveOutputChoices();
 		SyncOutputItems(_listedFiles);
-		OnPropertyChanged(nameof(OutputSummary));
+		RaiseOutputSummary();
 	}
 
 	/// <summary>
@@ -755,14 +778,11 @@ public sealed class MapLayersState : ObservableObject
 
 		SaveOutputChoices();
 		SyncOutputItems(_listedFiles);
-		OnPropertyChanged(nameof(OutputSummary));
+		RaiseOutputSummary();
 	}
 
-	private void SaveOutputChoices()
-	{
-		UserConfigFile.TrySetValue(OutputKey, string.Join('|', _selectedOutputs.Order(StringComparer.OrdinalIgnoreCase)));
-		UserConfigFile.Save(Node);
-	}
+	private void SaveOutputChoices() =>
+		_save.Set(OutputKey, () => string.Join('|', _selectedOutputs.Order(StringComparer.OrdinalIgnoreCase)));
 
 	/// <summary>
 	/// Brings <see cref="OutputFiles"/> in line with the picked paths: adds and loads new picks,
@@ -863,7 +883,7 @@ public sealed class MapLayersState : ObservableObject
 		_selectedOutputs.Remove(relative);
 		SaveOutputChoices();
 		SyncOutputItems(_listedFiles);
-		OnPropertyChanged(nameof(OutputSummary));
+		RaiseOutputSummary();
 	}
 
 	private void OpenOutputFolder()
@@ -984,7 +1004,7 @@ public sealed class MapLayersState : ObservableObject
 		{
 			MapLayer layer = await Task.Run(() =>
 			{
-				IReadOnlyList<MapGeometry> geometries = GeoJsonReader.Read(File.ReadAllText(path));
+				IReadOnlyList<MapGeometry> geometries = GeojsonFileReader.ReadFile(path);
 				MapLayer built = new(item.Name, geometries, item.Swatch, thickness: 1.1, pointRadius: 2.4);
 				ProjectedLayer.For(built);   // project off the UI thread, not on first draw
 				return built;

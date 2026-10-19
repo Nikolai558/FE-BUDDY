@@ -8,6 +8,9 @@ using System.Windows.Threading;
 using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Map.Models;
 
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.Wpf.Controls;
 
 /// <summary>
@@ -84,17 +87,47 @@ public sealed partial class MapCanvas : FrameworkElement
 
 	// --- rendering -----------------------------------------------------------
 	private readonly VisualCollection _visuals;
+
+	// The background and the gridlines, under the layers, and the gridlines' labels, over them: drawn for
+	// the view as it is, on every mouse move of a pan too - they are few - so the labels stay on the edges.
+	private readonly DrawingVisual _gridVisual = new();
+	private readonly DrawingVisual _gridLabelVisual = new();
 	private readonly DrawingVisual _worldVisual = new();
 	private readonly DrawingVisual _roiVisual = new();
 	private readonly DrawingVisual _overlayVisual = new();
 	private bool _renderQueued;
+
+	// While a drag pans the map, the drawing is moved rather than drawn again on every mouse move - with
+	// thousands of shapes on, drawing them all takes longer than a frame. It is drawn once the drag stops,
+	// pauses (_panSettle) or has gone a third of the way across; _drawnCenter and _drawnScale are the view
+	// it was last drawn for.
+	private readonly TranslateTransform _panShift = new();
+	private readonly DispatcherTimer _panSettle;
+	private double _drawnCenterX = 0.5;
+	private double _drawnCenterY = 0.5;
+	private double _drawnScale;
+
+	/// <summary>How many times the map has been drawn in full. Unit tests check a pan doesn't draw it.</summary>
+	internal int Redraws { get; private set; }
 	private readonly Dictionary<(string Text, Brush Brush), FormattedText> _textCache = [];
 	private Typeface? _labelFace;
 
 	/// <summary>Creates an empty map; it frames the contiguous US on its first layout.</summary>
 	public MapCanvas()
 	{
-		_visuals = new VisualCollection(this) { _worldVisual, _highlightVisual, _roiVisual, _overlayVisual };
+		_visuals = new VisualCollection(this) { _gridVisual, _worldVisual, _gridLabelVisual, _highlightVisual, _roiVisual, _overlayVisual };
+
+		// What is drawn on the map moves with a pan; the grid and the scale bar are drawn for the view as it is.
+		_worldVisual.Transform = _panShift;
+		_highlightVisual.Transform = _panShift;
+		_roiVisual.Transform = _panShift;
+		_panSettle = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(100) };
+		_panSettle.Tick += (_, _) =>
+		{
+			_panSettle.Stop();
+			InvalidateMap();
+		};
+
 		ClipToBounds = true;
 		Focusable = true;
 		FocusVisualStyle = null;
@@ -606,10 +639,7 @@ public sealed partial class MapCanvas : FrameworkElement
 		switch (_drag)
 		{
 			case DragMode.Pan:
-				_centerX -= dx;
-				_centerY -= dy;
-				ClampView();
-				InvalidateMap();
+				PanBy(dx * _scale, dy * _scale);
 				break;
 
 			case DragMode.DrawRoi:
@@ -678,6 +708,11 @@ public sealed partial class MapCanvas : FrameworkElement
 		_drag = DragMode.None;
 		ReleaseMouseCapture();
 
+		if (finished == DragMode.Pan)
+		{
+			SettlePan();
+		}
+
 		if (finished is DragMode.DrawRoi or DragMode.MoveRoi or DragMode.ResizeRoi && _dragMoved)
 		{
 			GeoBounds box = ToGeo(_draft);
@@ -705,7 +740,14 @@ public sealed partial class MapCanvas : FrameworkElement
 		base.OnLostMouseCapture(e);
 		if (_drag != DragMode.None)
 		{
+			bool panning = _drag == DragMode.Pan;
 			_drag = DragMode.None;   // e.g. a dialog stole the mouse: drop the gesture
+
+			if (panning)
+			{
+				SettlePan();
+			}
+
 			RedrawRoi();
 		}
 	}
@@ -867,6 +909,54 @@ public sealed partial class MapCanvas : FrameworkElement
 	private Brush Theme(string key, Color fallback)
 		=> TryFindResource(key) as Brush ?? FrozenBrush.Of(fallback);
 
+	/// <summary>
+	/// Moves what is drawn to where the panned view puts it, rather than drawing it all again; draws it
+	/// again once the pan pauses, or has gone far enough that the edges would show nothing.
+	/// </summary>
+	private void ShiftDrawing()
+	{
+		if (_scale != _drawnScale)
+		{
+			// Zoomed mid-drag: the drawing is for another scale, so moving it would put it in the wrong place.
+			InvalidateMap();
+			return;
+		}
+
+		// The world repeats sideways, so the centre wrapping round is no move.
+		double worldsAcross = _drawnCenterX - _centerX;
+		worldsAcross -= Math.Round(worldsAcross);
+
+		_panShift.X = worldsAcross * _scale;
+		_panShift.Y = (_drawnCenterY - _centerY) * _scale;
+
+		if (Math.Abs(_panShift.X) > ActualWidth / 3.0 || Math.Abs(_panShift.Y) > ActualHeight / 3.0)
+		{
+			InvalidateMap();
+			return;
+		}
+
+		RedrawGrid();
+
+		_panSettle.Stop();
+		_panSettle.Start();
+	}
+
+	/// <summary>Pans the view by a drag of <paramref name="screenDx"/>, <paramref name="screenDy"/> pixels, moving what is drawn with it.</summary>
+	internal void PanBy(double screenDx, double screenDy)
+	{
+		_centerX -= screenDx / _scale;
+		_centerY -= screenDy / _scale;
+		ClampView();
+		ShiftDrawing();
+	}
+
+	/// <summary>The pan is over: draws the map for where it ended, now.</summary>
+	internal void SettlePan()
+	{
+		_panSettle.Stop();
+		Redraw();
+	}
+
 	/// <summary>Queues one full redraw for the next frame, however many changes ask for it.</summary>
 	private void InvalidateMap()
 	{
@@ -882,6 +972,15 @@ public sealed partial class MapCanvas : FrameworkElement
 	private void Redraw()
 	{
 		_renderQueued = false;
+		Redraws++;
+
+		// Drawn for the view as it is now, so a pan moves it from here.
+		_panShift.X = 0;
+		_panShift.Y = 0;
+		_drawnCenterX = _centerX;
+		_drawnCenterY = _centerY;
+		_drawnScale = _scale;
+
 		if (ActualWidth < 1 || ActualHeight < 1)
 		{
 			return;
@@ -895,12 +994,10 @@ public sealed partial class MapCanvas : FrameworkElement
 		_dotsHeldBack.Clear();
 		_placedLabels.Clear();
 
+		RedrawGrid();
+
 		using (DrawingContext dc = _worldVisual.RenderOpen())
 		{
-			dc.DrawRectangle(Theme("Brush.Bg.Sunken", Color.FromRgb(0x07, 0x0B, 0x10)), null, new Rect(0, 0, ActualWidth, ActualHeight));
-
-			GraticuleLines? grid = ShowGridlines ? DrawGraticule(dc) : null;
-
 			if (BaseLayers is { } baseLayers)
 			{
 				dc.PushOpacity(Math.Clamp(BaseOpacity, 0.0, 1.0));
@@ -921,12 +1018,6 @@ public sealed partial class MapCanvas : FrameworkElement
 			}
 
 			DrawNullIsland(dc);
-
-			// Over the layers, so no line hides a grid label.
-			if (grid is { } lines)
-			{
-				DrawGraticuleLabels(dc, lines);
-			}
 		}
 
 		string hint = heldBack.Count == 0 ? string.Empty : "Zoom in to see " + string.Join(", ", heldBack.Distinct());
@@ -1166,6 +1257,33 @@ public sealed partial class MapCanvas : FrameworkElement
 	}
 
 	// ---- graticule ----
+
+	/// <summary>
+	/// Draws the background and the gridlines under the layers, and the gridlines' labels over them, for the
+	/// view as it is. A pan calls it on every mouse move, so the labels stay on the map's edges as it moves.
+	/// </summary>
+	private void RedrawGrid()
+	{
+		GraticuleLines? grid = null;
+
+		using (DrawingContext dc = _gridVisual.RenderOpen())
+		{
+			dc.DrawRectangle(Theme("Brush.Bg.Sunken", Color.FromRgb(0x07, 0x0B, 0x10)), null, new Rect(0, 0, ActualWidth, ActualHeight));
+
+			if (ShowGridlines)
+			{
+				grid = DrawGraticule(dc);
+			}
+		}
+
+		// Over the layers, so no line hides a grid label.
+		using DrawingContext labels = _gridLabelVisual.RenderOpen();
+
+		if (grid is { } lines)
+		{
+			DrawGraticuleLabels(labels, lines);
+		}
+	}
 
 	private readonly record struct GraticuleLines(double Step, List<(double Lon, double X)> Meridians, List<(double Lat, double Y)> Parallels);
 

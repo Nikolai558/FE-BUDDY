@@ -31,6 +31,7 @@ public sealed class WxStationServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Everything",
 		};
 
 		foreach ((string key, string value) in overrides)
@@ -70,7 +71,7 @@ public sealed class WxStationServiceTests : IDisposable
 
 		// A box around KDTW (42.212, -83.353) only - not KPHX (33.434, -112.012).
 		WxStationServiceResult result = WxStationService.Run(data, Settings(
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", "40.0"), ("RoiSwLon", "-85.0"), ("RoiNeLat", "44.0"), ("RoiNeLon", "-81.0")));
 
 		Assert.Equal(2, result.StationCount);
@@ -85,7 +86,7 @@ public sealed class WxStationServiceTests : IDisposable
 		// An ROI that excludes every station is the only way to survive building but leave the run
 		// with nothing written.
 		WxStationServiceResult result = WxStationService.Run(data, Settings(
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", "0.0"), ("RoiSwLon", "0.0"), ("RoiNeLat", "1.0"), ("RoiNeLon", "1.0")));
 
 		Assert.Equal(1, result.StationCount);

@@ -8,6 +8,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 
@@ -40,7 +41,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 {
-	private const string Node = "Services.AiracService.FileNames";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.FileNames}";
 	private const string RenameFilesKey = "RenameFiles";
 	private const string FilesKey = "Files";
 	private const string KeyField = "Key";
@@ -265,18 +266,15 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 			return;
 		}
 
-		foreach (IGrouping<string, FileNameRow> clash in rows
-			.GroupBy(WrittenName, StringComparer.OrdinalIgnoreCase)
-			.Where(clash => clash.Count() > 1))
-		{
-			foreach (FileNameRow row in clash.Where(row => IsRenamed(row) && row.Error is null))
-			{
-				FileNameRow other = clash.First(candidate => !ReferenceEquals(candidate, row));
+		// Two files in one folder ending up with one name, by the run's rule (OutputFileNames.Clashes): against
+		// the files listed, and every file the run checks a new name against, even one this run doesn't write.
+		IReadOnlyDictionary<string, string> clashes = OutputFileNames.Clashes(
+			rows.Where(IsRenamed).ToDictionary(row => row.Key, row => row.NewName.Trim(), StringComparer.OrdinalIgnoreCase),
+			rows.Select(row => row.Key).Concat(OutputFileNamesParser.KeptFileKeys));
 
-				row.Error = IsRenamed(other)
-					? $"{other.FileName} is being renamed {WrittenName(other)} too. Give each file its own name."
-					: $"{other.FileName} is already the name of another file. Give this file a name of its own.";
-			}
+		foreach (FileNameRow row in rows.Where(row => row.Error is null))
+		{
+			row.Error = clashes.GetValueOrDefault(row.Key);
 		}
 
 		FileNameRow[] invalid = [.. rows.Where(row => row.HasError)];

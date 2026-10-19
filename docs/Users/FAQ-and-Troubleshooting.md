@@ -20,12 +20,11 @@ separate counter. The real version is at the top of FE-Buddy's window.
 
 ### Does FE-Buddy send my data anywhere?
 
-No. It downloads public data (the FAA's, aviationweather.gov's and, if you choose it, the virtual
-airline list from GNG and VATSIM-Radar's GitHub), asks a public time service for the current UTC
-time, checks GitHub for updates and News, and downloads any custom alias file you point it at. Your
-settings stay in
-`%APPDATA%\FE-Buddy\User Configurations`. A saved token or password lives in Windows Credential Manager
-and is only sent to the websites you allow.
+No. It only downloads: the FAA's data, aviationweather.gov's station list, the virtual airline list
+(GNG's site and VATSIM-Radar's GitHub, if you tick it), the time from a public time service, updates
+and News from GitHub, and any custom alias file you point it at. Your settings stay in
+`%APPDATA%\FE-Buddy`; tokens and passwords stay in Windows Credential Manager and go only to the
+websites you allow.
 
 ### I set FEBUDDY_GITHUB_TOKEN for FE-Buddy 2.x
 

@@ -30,6 +30,7 @@ public sealed class ArtccBoundaryServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Everything",
 		};
 
 		foreach ((string key, string value) in overrides)
@@ -63,7 +64,7 @@ public sealed class ArtccBoundaryServiceTests : IDisposable
 	public void location_filter_narrows_the_location_count_and_every_output_file()
 	{
 		ArtccBoundaryServiceResult result = ArtccBoundaryService.Run(AllSamples(), Settings(
-			("LocationFilter", "ZOB"), ("OutputBy", "HighLowUnlimited")));
+			("Area", "Artccs"), ("LocationFilter", "ZOB"), ("OutputBy", "HighLowUnlimited")));
 
 		Assert.Equal(1, result.LocationCount);
 		Assert.Equal(2, result.RingCount); // ZOB High + ZOB Low
@@ -74,7 +75,7 @@ public sealed class ArtccBoundaryServiceTests : IDisposable
 	[Fact]
 	public void a_location_filter_matching_nothing_produces_the_advisory_and_writes_no_files()
 	{
-		ArtccBoundaryServiceResult result = ArtccBoundaryService.Run(AllSamples(), Settings(("LocationFilter", "ZZZZ")));
+		ArtccBoundaryServiceResult result = ArtccBoundaryService.Run(AllSamples(), Settings(("Area", "Artccs"), ("LocationFilter", "ZZZZ")));
 
 		Assert.Equal(0, result.LocationCount);
 		Assert.Equal(0, result.RingCount);

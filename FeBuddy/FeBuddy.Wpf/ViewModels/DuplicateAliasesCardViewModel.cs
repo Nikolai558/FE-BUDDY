@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
@@ -24,7 +25,7 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class DuplicateAliasesCardViewModel : ObservableObject, IPreviewOptions
 {
 	/// <summary>The settings node both values are saved under.</summary>
-	public const string Node = "Services.AiracService.DuplicateAliases";
+	internal const string Node = "Services.AiracService.DuplicateAliases";
 
 	private readonly Func<bool> _runWritesAliasFile;
 	private bool _reviewDuplicates;
@@ -53,7 +54,7 @@ public sealed class DuplicateAliasesCardViewModel : ObservableObject, IPreviewOp
 			if (SetProperty(ref _reviewDuplicates, value))
 			{
 				UserConfigFile.TrySetValue(UserConfigKeys.DuplicateAliasesReview, value ? "Y" : "N");
-				UserConfigFile.Save(Node);
+				SettingsWrites.TrySave(Node, "duplicate alias settings");
 			}
 		}
 	}
@@ -111,7 +112,7 @@ public sealed class DuplicateAliasesCardViewModel : ObservableObject, IPreviewOp
 	private void Write(IReadOnlyList<DuplicateAliasRule> choices)
 	{
 		UserConfigFile.TrySetValue(UserConfigKeys.DuplicateAliasesChoices, DuplicateAliasChoices.ToConfig(choices));
-		UserConfigFile.Save(Node);
+		SettingsWrites.TrySave(Node, "duplicate alias settings");
 		ShowChoices(choices);
 	}
 

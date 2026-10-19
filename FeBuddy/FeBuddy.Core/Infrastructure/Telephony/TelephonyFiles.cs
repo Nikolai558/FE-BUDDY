@@ -12,8 +12,8 @@ namespace FeBuddy.Core.Infrastructure.Telephony;
 /// (<c>server/routes/airlines/all.ts</c> in VATSIM-Radar/data) from the same two sources: GNG's
 /// fictional airlines (<see cref="GngAirlinesUrl"/>) and VATSIM-Radar's own additions
 /// (<see cref="VatsimRadarAirlinesUrl"/>). Each is kept in a copy of its own and merged when read,
-/// so one part that can't be downloaded never cuts the other short. (3.0.0-beta.4 downloaded the
-/// merged list from <c>data.vatsim-radar.com</c>, which only takes TLS 1.3 - which Windows 10 can't do.)
+/// so one part that can't be downloaded never cuts the other short. (VATSIM-Radar's merged list at
+/// <c>data.vatsim-radar.com</c> only takes TLS 1.3, which Windows 10 can't do.)
 /// </remarks>
 public static class TelephonyFiles
 {
@@ -41,13 +41,6 @@ public static class TelephonyFiles
 
 	/// <summary>The kept copy's name of VATSIM-Radar's own airline list (<see cref="VatsimRadarAirlinesUrl"/>).</summary>
 	public const string VatsimRadarAirlinesFileName = "vatsim_radar_custom_airlines.json";
-
-	/// <summary>
-	/// The name of the one copy of the list FE-Buddy 3.0.0-beta.4 and earlier kept: beta.4's merged list
-	/// from <c>data.vatsim-radar.com</c>, or, from beta.3 and earlier, VATSIM-Radar's GitHub list. Read
-	/// only while there is no copy of either part, and deleted once there is a copy of both.
-	/// </summary>
-	public const string OlderVatsimRadarAirlinesFileName = "vatsim_radar_airlines.json";
 
 	/// <summary>
 	/// The kept copy's name of Chapter 3, Section 1, "Aircraft Company/Telephony/Three-Letter
@@ -86,7 +79,4 @@ public static class TelephonyFiles
 
 	/// <summary>VATSIM-Radar's list's kept copy: <c>%APPDATA%\FE-Buddy\Telephony\vatsim_radar_custom_airlines.json</c>.</summary>
 	public static string VatsimRadarAirlinesFilePath => Path.Combine(SharedDirectory, VatsimRadarAirlinesFileName);
-
-	/// <summary>The older single copy (<see cref="OlderVatsimRadarAirlinesFileName"/>): <c>%APPDATA%\FE-Buddy\Telephony\vatsim_radar_airlines.json</c>.</summary>
-	public static string OlderVatsimRadarAirlinesFilePath => Path.Combine(SharedDirectory, OlderVatsimRadarAirlinesFileName);
 }

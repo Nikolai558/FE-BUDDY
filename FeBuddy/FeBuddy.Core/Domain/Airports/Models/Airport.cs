@@ -46,6 +46,14 @@ public sealed record Airport
 	/// <summary>Tower type, already mapped to its display form by <c>AirportFieldMaps</c> (e.g. <c>TWR</c>, <c>No-TWR</c>).</summary>
 	public required string TowerType { get; init; }
 
+	/// <summary>
+	/// Whether the field has a control tower: a <c>TWR_TYPE_CODE</c> of <c>ATCT</c> or one of its
+	/// <c>ATCT-</c> forms (<c>ATCT-A/C</c>, <c>ATCT-TRACON</c>...). <c>NON-ATCT</c> has none, and nor has a
+	/// plain <c>TRACON</c>, an approach control with no tower. Decided from NASR's code, so a change to
+	/// <see cref="TowerType"/>'s wording can't change it.
+	/// </summary>
+	public bool IsTowered { get; init; }
+
 	/// <summary>Facility type, already mapped to its display form by <c>AirportFieldMaps</c> (e.g. <c>AIRPORT</c>, <c>HELIPORT</c>).</summary>
 	public required string FacilityType { get; init; }
 

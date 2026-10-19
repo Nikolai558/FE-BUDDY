@@ -26,6 +26,9 @@ namespace FeBuddy.Wpf.Controls;
 /// </remarks>
 public sealed class BesideOrBelow : Panel
 {
+	/// <summary>The gap between the two children when they sit side by side.</summary>
+	private const double HorizontalSpacing = 16;
+
 	/// <summary>Identifies the <see cref="SideWidth"/> dependency property.</summary>
 	public static readonly DependencyProperty SideWidthProperty = DependencyProperty.Register(
 		nameof(SideWidth), typeof(double), typeof(BesideOrBelow),
@@ -35,11 +38,6 @@ public sealed class BesideOrBelow : Panel
 	public static readonly DependencyProperty MainMinWidthProperty = DependencyProperty.Register(
 		nameof(MainMinWidth), typeof(double), typeof(BesideOrBelow),
 		new FrameworkPropertyMetadata(300.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
-
-	/// <summary>Identifies the <see cref="HorizontalSpacing"/> dependency property.</summary>
-	public static readonly DependencyProperty HorizontalSpacingProperty = DependencyProperty.Register(
-		nameof(HorizontalSpacing), typeof(double), typeof(BesideOrBelow),
-		new FrameworkPropertyMetadata(16.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
 
 	/// <summary>Identifies the <see cref="VerticalSpacing"/> dependency property.</summary>
 	public static readonly DependencyProperty VerticalSpacingProperty = DependencyProperty.Register(
@@ -58,13 +56,6 @@ public sealed class BesideOrBelow : Panel
 	{
 		get => (double)GetValue(MainMinWidthProperty);
 		set => SetValue(MainMinWidthProperty, value);
-	}
-
-	/// <summary>The gap between the two children when they sit side by side.</summary>
-	public double HorizontalSpacing
-	{
-		get => (double)GetValue(HorizontalSpacingProperty);
-		set => SetValue(HorizontalSpacingProperty, value);
 	}
 
 	/// <summary>The gap between the two children when one is under the other.</summary>

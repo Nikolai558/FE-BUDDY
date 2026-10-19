@@ -6,7 +6,7 @@ using FeBuddy.Core.Infrastructure.Configuration;
 namespace FeBuddy.Wpf.Shell;
 
 /// <summary>
-/// The one saved default ROI (<c>Services.AiracService.DefaultRoi</c> in <c>UserConfig.json</c>),
+/// The one saved default ROI (<c>General.DefaultRoi</c> in the profile in use),
 /// read and written by both Settings and the Map page's inline editor.
 /// </summary>
 /// <remarks>
@@ -17,16 +17,16 @@ namespace FeBuddy.Wpf.Shell;
 /// </remarks>
 public static class DefaultRoiStore
 {
-	private const string Node = "Services.AiracService.DefaultRoi";
-
-	// Internal so the unit tests can check every settings layout's keys are still the ones read here.
-	internal const string FilterKey = $"{Node}.FilterByRoi";
+	// Internal so the unit tests can check every settings layout's keys are still the ones read here,
+	// and that no other page's node sits inside this one.
+	internal const string Node = "General.DefaultRoi";
+	internal const string FilterKey = UserConfigKeys.DefaultRoiFilter;
 	internal const string SwLatKey = $"{Node}.Corners.SwLat";
 	internal const string SwLonKey = $"{Node}.Corners.SwLon";
 	internal const string NeLatKey = $"{Node}.Corners.NeLat";
 	internal const string NeLonKey = $"{Node}.Corners.NeLon";
 
-	/// <summary>Raised after <see cref="Set"/> or <see cref="Clear"/> writes to disk.</summary>
+	/// <summary>Raised after <see cref="Set"/> or <see cref="Clear"/> saves, and by <see cref="NotifyReloaded"/> after a settings import or a switch to another profile.</summary>
 	public static event EventHandler? Changed;
 
 	/// <summary>Reads the current default ROI.</summary>
@@ -53,15 +53,15 @@ public static class DefaultRoiStore
 
 	/// <summary>Saves <paramref name="roi"/> as the default ROI and turns ROI filtering on.</summary>
 	/// <param name="roi">The new default ROI.</param>
-	public static void Set(RegionOfInterest roi)
+	/// <returns><see langword="false"/> when the settings file couldn't be written; the user has been told.</returns>
+	public static bool Set(RegionOfInterest roi)
 	{
 		UserConfigFile.TrySetValue(FilterKey, "Y");
 		UserConfigFile.TrySetValue(SwLatKey, roi.SwLat.ToString(CultureInfo.InvariantCulture));
 		UserConfigFile.TrySetValue(SwLonKey, roi.SwLon.ToString(CultureInfo.InvariantCulture));
 		UserConfigFile.TrySetValue(NeLatKey, roi.NeLat.ToString(CultureInfo.InvariantCulture));
 		UserConfigFile.TrySetValue(NeLonKey, roi.NeLon.ToString(CultureInfo.InvariantCulture));
-		UserConfigFile.Save(Node);
-		Changed?.Invoke(null, EventArgs.Empty);
+		return SaveAndAnnounce();
 	}
 
 	/// <summary>
@@ -71,10 +71,22 @@ public static class DefaultRoiStore
 	public static void NotifyReloaded() => Changed?.Invoke(null, EventArgs.Empty);
 
 	/// <summary>Turns the default ROI off. Its coordinates stay in the file (see <see cref="Load"/>).</summary>
-	public static void Clear()
+	/// <returns><see langword="false"/> when the settings file couldn't be written; the user has been told.</returns>
+	public static bool Clear()
 	{
 		UserConfigFile.TrySetValue(FilterKey, "N");
-		UserConfigFile.Save(Node);
+		return SaveAndAnnounce();
+	}
+
+	/// <summary>Saves the node, and raises <see cref="Changed"/> only once it is on disk.</summary>
+	private static bool SaveAndAnnounce()
+	{
+		if (!SettingsWrites.TrySave(Node, "default ROI"))
+		{
+			return false;
+		}
+
 		Changed?.Invoke(null, EventArgs.Empty);
+		return true;
 	}
 }

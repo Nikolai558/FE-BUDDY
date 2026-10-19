@@ -80,7 +80,7 @@ public sealed class RoutePointArtccResolverTests : IDisposable
 		Assert.True(resolver.IsInFacility(new ProcedureRoutePoint("SB", "VORTAC", null), "ZLA", useAirports: false));
 		Assert.False(resolver.IsInFacility(new ProcedureRoutePoint("SB", "VORTAC", null), "ZAU", useAirports: false));
 		Assert.True(resolver.IsInFacility(new ProcedureRoutePoint("SB", "NDB", null), "ZAU", useAirports: false));
-		Assert.Empty(resolver.AmbiguousPoints);
+		Assert.DoesNotContain(AppLog.Entries, entry => entry.Message.StartsWith("Route point ", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -94,7 +94,7 @@ public sealed class RoutePointArtccResolverTests : IDisposable
 
 		Assert.True(resolver.IsInFacility(new ProcedureRoutePoint("ALPHA", "WP", "K6"), "ZDC", useAirports: false));
 		Assert.False(resolver.IsInFacility(new ProcedureRoutePoint("ALPHA", "WP", "PA"), "ZDC", useAirports: false));
-		Assert.Empty(resolver.AmbiguousPoints);
+		Assert.DoesNotContain(AppLog.Entries, entry => entry.Message.StartsWith("Route point ", StringComparison.Ordinal));
 	}
 
 	/// <summary>With no region on the route to tell them apart, it is in any facility one of them is in, and logged once.</summary>
@@ -111,7 +111,6 @@ public sealed class RoutePointArtccResolverTests : IDisposable
 		Assert.True(resolver.IsInFacility(point, "ZLA", useAirports: false));
 		Assert.False(resolver.IsInFacility(point, "ZAU", useAirports: false));
 
-		Assert.Equal([point], resolver.AmbiguousPoints);
 		Assert.Single(AppLog.Entries, entry => entry.Message.StartsWith("Route point SB (NDB) matches 2 rows", StringComparison.Ordinal));
 	}
 
@@ -128,7 +127,7 @@ public sealed class RoutePointArtccResolverTests : IDisposable
 
 		Assert.True(resolver.IsInFacility(new ProcedureRoutePoint("ALPHA", "WP", null), "ZAN", useAirports: false));
 		Assert.True(resolver.IsInFacility(new ProcedureRoutePoint("BRAVO", "WP", "K6"), "ZNY", useAirports: false));
-		Assert.Equal([new ProcedureRoutePoint("ALPHA", "WP", null)], resolver.AmbiguousPoints);
+		Assert.Single(AppLog.Entries, entry => entry.Message.StartsWith("Route point ALPHA (WP) matches 2 rows", StringComparison.Ordinal));
 	}
 
 	/// <summary>Found, but in no ARTCC: in no facility, and never counted by an airport of the same name.</summary>

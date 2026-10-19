@@ -30,6 +30,7 @@ public sealed class FixServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Everything",
 		};
 
 		foreach ((string key, string value) in overrides)
@@ -63,7 +64,7 @@ public sealed class FixServiceTests : IDisposable
 
 		// A box around ACME only.
 		FixServiceResult result = FixService.Run(data, Settings(
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", "39.0"), ("RoiSwLon", "-101.0"), ("RoiNeLat", "40.5"), ("RoiNeLon", "-99.0")));
 
 		Assert.Equal(2, result.FixCount);

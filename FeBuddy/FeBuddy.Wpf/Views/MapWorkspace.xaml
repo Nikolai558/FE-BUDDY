@@ -339,7 +339,7 @@
                                 <ctl:SectionHeader.Aside>
                                     <!-- Not clickable while the picker is open: the click that closes it (StaysOpen=False)
                                          would otherwise land here and open it again. -->
-                                    <ToggleButton x:Name="OutputGear" Style="{StaticResource Toggle.Icon}"
+                                    <ToggleButton Style="{StaticResource Toggle.Icon}"
                                                   IsHitTestVisible="{Binding IsOpen, ElementName=OutputPopup, Converter={StaticResource InverseBool}}"
                                                   Content="{StaticResource Icon.Settings}"
                                                   IsChecked="{Binding State.IsOutputPickerOpen}"

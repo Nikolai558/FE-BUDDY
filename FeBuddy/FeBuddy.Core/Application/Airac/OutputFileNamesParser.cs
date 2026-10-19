@@ -29,9 +29,13 @@ public static class OutputFileNamesParser
 {
 	private const string LogSource = "OutputFileNamesParser";
 
-	// Every file a run writes that is not GeoJSON: the alias files, the Procedures documents, and the
-	// two files the run itself writes. Each one's key is its name.
-	private static readonly HashSet<string> OtherFileKeys = new(
+	/// <summary>
+	/// Every file a run can write that is not GeoJSON, by its key (its name): the alias files, the Procedures
+	/// documents, and the two files the run itself writes. A new name may not be one of these files' names in
+	/// the same folder, whether or not this run writes it: every run of a cycle writes into the same folder,
+	/// so the file may be there from another. The File Names tab checks against them too.
+	/// </summary>
+	public static IReadOnlySet<string> KeptFileKeys { get; } = new HashSet<string>(
 	[
 		AirwayOutputFiles.Alias, AirportOutputFiles.Alias, DepartureOutputFiles.Alias, ArrivalOutputFiles.Alias,
 		NavaidOutputFiles.Alias, ProcedureOutputFiles.Alias, TelephonyOutputFiles.Alias,
@@ -70,6 +74,16 @@ public static class OutputFileNamesParser
 					: $"The new name for '{key}' was ignored: it is not a file FE-Buddy writes."));
 		}
 
+		// A new name may not be another renamed file's in the same folder, nor that of a file there that keeps
+		// FE-Buddy's name - Airways.txt renamed "Airports" would write over Airports.txt. The files checked are
+		// every one but the GeoJSON (KeptFileKeys), whether or not this run writes it: every run of a cycle writes
+		// into the same folder. The File Names tab checks the same way.
+		foreach ((string key, string problem) in OutputFileNames.Clashes(
+			newNames.ToDictionary(entry => entry.Key, entry => entry.Value.Trim(), StringComparer.OrdinalIgnoreCase), KeptFileKeys))
+		{
+			throw new ArgumentException($"The new name for {OutputFileNames.DefaultFileName(key)}, '{newNames[key].Trim()}', can't be used. {problem}", nameof(fileNames));
+		}
+
 		return new OutputFileNamesParseResult(new OutputFileNames(newNames), messages);
 	}
 
@@ -83,5 +97,5 @@ public static class OutputFileNamesParser
 		|| ArtccBoundaryOutputFiles.IsGeojsonKey(fileKey)
 		|| FixOutputFiles.IsGeojsonKey(fileKey)
 		|| WxStationOutputFiles.IsGeojsonKey(fileKey)
-		|| OtherFileKeys.Contains(fileKey);
+		|| KeptFileKeys.Contains(fileKey);
 }

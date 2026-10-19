@@ -14,7 +14,7 @@ This page lists both. Where a saved key differs from the block key, the table's 
 says so; a blank there means the same name.
 
 **Contents:** [How values are read](#how-values-are-read) · [The settings files](#the-settings-files) ·
-[Settings profiles](#settings-profiles) ·
+[Settings profiles](#settings-profiles) · [Saved settings outside the tabs](#saved-settings-outside-the-tabs) ·
 [Keys every AIRAC sub-service shares](#keys-every-airac-sub-service-shares) · [File keys](#file-keys) ·
 [New file names](#new-file-names) · [CRC defaults](#crc-defaults) · [Airports](#airports) ·
 [Airways](#airways) · [Departures and Arrivals](#departures-and-arrivals) · [NAVAIDs](#navaids) ·
@@ -51,9 +51,10 @@ a tab's node is saved, its old state is copied to `UserConfig-previous.<Profile>
 last save** restores. Settings' own **Save** writes the whole profile, with no undo copy.
 
 Each file starts with `"ConfigVersion"`, its layout (`UserConfigVersion`), which every write stamps
-and which is never read as a setting. A file with no stamp is layout 1 (3.0.0-beta.2 and beta.3).
-At launch, a profile in an older layout is brought forward (`UserConfigMigrations`) and written back,
-the old file kept as `UserConfig-v<old layout>.<Profile>.json`. See [Changing the layout](#changing-the-layout).
+and which is never read as a setting. A file with no stamp, or one older than
+`UserConfigVersion.Oldest`, is read as the oldest layout. At launch, a profile in an older layout is
+brought forward (`UserConfigMigrations`) and written back, the old file kept as
+`UserConfig-v<old layout>.<Profile>.json`. See [Changing the layout](#changing-the-layout).
 
 ## Settings profiles
 
@@ -63,11 +64,10 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 |---|---|
 | `UserConfig.<Profile>.json` | One profile: every setting but the shared ones. The name follows Windows' rules for a file name, up to 64 characters; names differing only in case are the same profile. |
 | `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, `RememberWindowPlacement`, `MainWindowPlacement`). |
-| `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward). They move and go with it. |
+| `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward), `damaged` (the profile as it was when it couldn't be read as settings, kept before a save wrote over it). They move and go with it. |
 
 - In memory the two files are one dictionary, so a caller never knows which a key is in. `Save`
-  writes a shared key under its node to `Shared.json`, and every other key to the profile. A shared
-  key found in a profile (copied in by hand, say) moves to `Shared.json`, unless that has one already.
+  writes a shared key under its node to `Shared.json`, and every other key to the profile.
   `SaveShared` writes shared keys to `Shared.json` alone, and `ReadSharedValue` reads one straight
   from it: the main window's placement uses both, as the window opens before the launch reads the
   settings.
@@ -77,12 +77,8 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 - A dev launch's choice of launch steps is not a setting: it's in `%APPDATA%\FE-Buddy\DevLaunch.json`,
   beside `User Configurations`, so no profile, import or export ever has it (see
   [Dev launch](README.md#dev-launch)).
-- 3.0.0-beta.3 and earlier kept one `%APPDATA%\FE-Buddy\UserConfig.json`. While there is no profile,
-  a launch moves it in as **Default**, its backups with it, so the old file is gone. One that can't
-  be moved (in use, say) is left, and the next launch tries again.
 
-A profile is not a layout change: each setting keeps its dotted path, so no migration step was
-needed.
+## Saved settings outside the tabs
 
 ### General
 
@@ -101,22 +97,29 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `Wel
 | `WelcomeShown` | `Y` once the first-launch welcome to FE-Buddy 3 has been shown (`WelcomeNotice`) | none |
 | `RememberWindowPlacement` | `Y` / `N` - the main window reopens where it was closed. Saved at once by Settings ▸ Main Window; `N` also removes `MainWindowPlacement` | `Y` |
 | `MainWindowPlacement` | `left,top,width,height,dpi,state` in physical screen pixels, e.g. `2120,140,1800,1170,144,Maximized` (`SavedWindowPlacement`). Checked against the screens connected at each launch (`WindowPlacementRules`); anything unreadable means the default | none: 1200 x 780, centered on the main screen |
-
-### Services.AiracService
-
-| Key | Values | Default |
-|---|---|---|
-| `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
-| `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
-| `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
-| `UserArtccId` | the Settings ▸ Facility ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedure Charts' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedure Charts until each is first saved | none |
+| `Facility` | the Settings ▸ Facility ARTCC, e.g. `ZOB` (`UserConfigKeys.Facility`). The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedure Charts' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedure Charts until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
 | `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
 | `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
 
-The default ROI is saved by `DefaultRoiStore`: by the Map as soon as it is set or cleared, by
-Settings when **Save** is pressed. Clearing it only sets `FilterByRoi` to `N`; the corners stay in
-the file but aren't read until a new ROI replaces them.
+The default ROI is saved by `DefaultRoiStore`, under its own `General.DefaultRoi` node: by the Map as
+soon as it is set or cleared, by Settings when **Save** is pressed. Clearing it only sets `FilterByRoi`
+to `N`; the corners stay in the file but aren't read until a new ROI replaces them.
+
+No settings-layout step brings these keys in from `Services.AiracService` (`UserArtccId`,
+`CoordinatePrecision`, `DefaultRoi.*`): a file that has them there opens Settings with no facility,
+6 decimal places and no default ROI.
+
+### Services.AiracService.General
+
+The AIRAC Service's General tab. Its node sits beside the other tabs' nodes, so its save and
+**Undo last save** touch only these keys.
+
+| Key | Values | Default |
+|---|---|---|
+| `CyclePosition` | `Current`, `Next` or `Previous`: the cycle last saved. A saved `Next` reopens on Next unless the FAA hasn't published it; anything else opens on Current | `Current` |
+| `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
+| `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
 
 ### Services.AiracService.DuplicateAliases
 
@@ -147,7 +150,9 @@ A ticked file with no name is not saved, so the tab flags it until it is named o
 
 ### Services.MapService
 
-Saved by the Map (`MapLayersState`) the moment a choice is made, with no Save button.
+Saved by the Map as each choice is made, with no Save button: `MapLayersState` saves the files,
+live layers and home view, and its `BaseMapSettings` saves the base map and gridlines (the opacity
+once the slider has been still for 0.4 s).
 
 | Key | Values | Default |
 |---|---|---|
@@ -179,13 +184,15 @@ Saved by the Map (`MapLayersState`) the moment a choice is made, with no Save bu
 
 ## Keys every AIRAC sub-service shares
 
-Read by `SubServiceSettingsReader`; saved by `GeojsonSubServiceViewModel`. Add Custom Aliases reads
-none of them.
+Read by `SubServiceSettingsReader`; saved by `GeojsonSubServiceViewModel`. Of these, Procedure
+Charts reads only `OutputDirectory`, `Area` and the ROI keys, Telephony only `OutputDirectory`, and
+Add Custom Aliases none. The app still sends the rest to Procedure Charts and Telephony, and both
+accept and ignore them.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
 | `OutputDirectory` | not saved | the folder the run writes into (below) | **required** |
-| `CoordinatePrecision` | `Services.AiracService.CoordinatePrecision` | `1`-`15`, or `0` not to round (`GeojsonFileWriter.NoRounding`) | `6` |
+| `CoordinatePrecision` | `General.CoordinatePrecision` | `1`-`15`, or `0` not to round (`GeojsonFileWriter.NoRounding`) | `6` |
 | `IncludeFebCustomProperties` | | `Y` / `N` | `N` |
 | `FebProperties` | | list of the sub-service's `feb.*` names; **required** when the above is `Y` | none |
 | `CrcDefaultsFor` | `CrcDefaultsScope` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `CrcDefaultsFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
@@ -200,13 +207,13 @@ none of them.
 - A tab that has never saved an area starts on what its other settings mean
   (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Settings ▸ Facility ARTCC) if it has
   any, otherwise the ROI if it has its own or the default ROI is on, otherwise `Everything`
-  (Procedure Charts: the ROI only with the old `IncludeRoiAirports`, otherwise `None`).
-- A block without `Area` (one written by hand, or before there was a choice) means the same: its ARTCC list if it has one, otherwise the
-  ROI with `FilterByRoi = Y`, otherwise everything (`SubServiceSettingsReader.ReadArea`).
+  (Procedure Charts: `None`).
+- A block without `Area` is refused (`SubServiceSettingsReader.ReadArea`); Procedure Charts' is the
+  exception (see [Procedure Charts](#procedure-charts)).
 - `CrcDefaultsFiles` keeps every choice, even for files the current settings don't write, so a file
   switched off and on keeps its choice. A run sends only the files written.
 - A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedure Charts' two documents) are
-  set on the General tab and saved there, under `Services.AiracService.Outputs` - never in the
+  set on the General tab and saved there, under `Services.AiracService.General.Outputs` - never in the
   sub-service's own node, so saving or undoing its tab can't change them.
 - Where a sub-service has both, `GenerateGeojson` and `GenerateAliasFile` can't both be `N`, and
   `GenerateGeojson = Y` needs at least one `Emit…`.
@@ -231,8 +238,10 @@ A **file key** names one output file: a GeoJSON file's name without `.geojson`, 
 name. `CrcDefaultsFor` and the File Names tab use them, matching case-insensitively. A
 `CrcDefaultsFor` key that isn't one of the sub-service's GeoJSON keys throws. A key for a file that
 isn't written this run is ignored by most sub-services, but ARTCC Boundaries, Fixes' and NAVAIDs'
-per-group layouts and Airways' `Designation` layout still require the `Crc.*` values of every
-listed key that isn't excluded. Each sub-service's keys are in its `*OutputFiles` class.
+per-group layouts still require the `Crc.*` values of every listed key that isn't excluded, and
+Airways reads them whenever the kind is written: with `Designation`, any listed key of a kind needs
+all three classes of that kind; with `HighLow`, each listed High or Low key needs its class, whether
+or not any designation goes there. Each sub-service's keys are in its `*OutputFiles` class.
 
 | Sub-service | GeoJSON keys | Alias key |
 |---|---|---|
@@ -325,7 +334,7 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 | `FixBufferNm` | | NM short of a five-letter fix, `0`-`10` | `2.5` |
 | `NavaidBufferNm` | | NM short of any other waypoint, `0`-`10` | `5` |
 | `SplitAtAntimeridian` | | `Y` / `N` | `Y` |
-| `ExcludedDesignations` | | list, e.g. `RN,SL` | none |
+| `ExcludedDesignations` | | list of designations (an airway ID's leading letters), e.g. `A,G` | none |
 | `HighDesignations`, `LowDesignations`, `BothDesignations` | | lists: the designations in the High file, the Low file, or both | `J,Q` High, `V,T` Low |
 
 - **`FebProperties`:** `awyId`, `pointId`, `waypoints`.
@@ -379,6 +388,9 @@ unknown-key warning).
 - A fan marker with no `FanMarkerStyle` gets no style, with a warning; an invalid style throws. The
   app requires one whenever the merged Symbols file gets CRC defaults styled by type and fan markers
   are included.
+- With `OutputBy = All` and `SymbolStyleBy = Type`, the merged Symbols file's defaults carry no
+  style: `Crc.NAVAIDs.Symbol.style` isn't read (or sent), and each NAVAID is styled by its type
+  (`FanMarkerStyle` for fan markers).
 
 ## ARTCC Boundaries
 
@@ -418,7 +430,7 @@ No other keys of its own, and no `FebProperties`: `IncludeFebCustomProperties = 
 
 ## Procedure Charts
 
-Procedure Charts writes no GeoJSON, so it has no `Emit…`, `FebProperties`, `CrcDefaultsFor` or `Crc.*` keys
+Procedure Charts writes no GeoJSON, so it has no `Emit…`, `CoordinatePrecision`, `FebProperties`, `CrcDefaultsFor` or `Crc.*` keys
 (`IncludeFebCustomProperties = Y` warns, pointing at `JsonFields`). Its `Area` is `Artccs` (the
 facilities), `Roi` (every airport inside it), `Everything` (every airport in the metafile) or `None`.
 
@@ -428,39 +440,35 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `GenerateProceduresJson` | `Outputs.Procedures.ProceduresJson` (General tab) | `Y` / `N` - `Procedures.json` | `Y` |
 | `GenerateAliasFile` | `Outputs.Procedures.Alias` (General tab) | `Y` / `N` - `Faa_Chart_Recall.txt` | `Y` |
 | `IncludeHelpCommand` | | `Y` / `N` - the help command as `Faa_Chart_Recall.txt`'s first line | `Y` |
-| `HelpCommandName` | sent only while `RenameHelpCommand` (saved, not sent) is `Y` | the help command's name, letters and numbers only; a dot in front is dropped | `helpCHARTRECALL` |
+| `HelpCommandName` | | the help command's name, letters and numbers only; a dot in front is dropped. Sent only while `IncludeHelpCommand` and `RenameHelpCommand` are `Y` | `helpCHARTRECALL` |
+| - | `RenameHelpCommand` | `Y` / `N` - use `HelpCommandName` rather than the default name; saved, not sent | `N` |
 | `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
-| `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
+| `PrimaryFacility` | not saved (`General.Facility`) | the ARTCC whose section leads both documents | none |
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
 | `Procedures` | | list of departure and arrival root names, included wherever charted, e.g. `BRWNZ` | none |
 | `AirportProcedures` | | list of `<airport>\|<departure or arrival root name>`, e.g. `PIT\|GRUUB` | none |
-| `IncludeProceduresWithFixInFacility` | | `Y` / `N` - also include, at any airport, the departures and arrivals whose route has a fix in `PrimaryFacility` (Feature #367). The tab sends `N` while no facility is set | `Y` |
-| `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH` | `IAP,STR,DP,ODP,DAU,APD` |
-| `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`) | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
+| `IncludeProceduresWithFixInFacility` | | `Y` / `N` - also include, at any airport, the departures and arrivals whose route has a fix in `PrimaryFacility`. The tab sends `N` while no facility is set | `Y` |
+| `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH`; blank for none | `IAP,STR,DP,ODP,DAU,APD` |
+| `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`); blank for none of them, so only the fields always written | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
 
 - The three `Generate…` keys can't all be `N`.
 - `Procedures` and `AirportProcedures` take departures and arrivals only (d-TPP `DP`, `ODP`, `STR`),
   matched by root name (`ProcedureNaming.RootName`: the name without its trailing qualifiers, then
-  its number), so `BRWNZ` matches `BRWNZ FOUR (RNAV)` and `BRWNZ FIVE`. A full name matches the same
-  way, so lists saved before 3.0.0-beta.9 still work; the tab reads them as root names and saves
-  them so. A name of any other chart (an approach) is left out with a warning.
+  its number), so `BRWNZ` matches `BRWNZ FOUR (RNAV)` and `BRWNZ FIVE`. A full name in a block
+  matches the same way (`BRWNZ FOUR (RNAV)` is `BRWNZ`); the tab saves root names. A name of any
+  other chart (an approach) is left out with a warning.
 - `Airports`, `Procedures` and `AirportProcedures` add to the area, even outside it; with
   `Everything` they aren't read. With `None`, at least one of them is required. The area's own
   checks (a facility, a ROI) and that one apply only when a document is on. The alias file ignores
   them all: it covers every chart at every airport in the d-TPP Metafile.
 - `IncludeProceduresWithFixInFacility` adds to the area like the lists: not read with `Everything`,
   and with `None` it counts as something to include when there is a `PrimaryFacility`. On without
-  one, the run warns and skips it. A procedure qualifies when any point of any body or transition of
-  its NASR `DP_RTE`/`STAR_RTE` route is a `FIX_BASE` row whose `ARTCC_ID_HIGH` or `ARTCC_ID_LOW`, or a
-  `NAV_BASE` row whose `HIGH_ALT_ARTCC_ID` or `LOW_ALT_ARTCC_ID`, is the facility - matched by ID and
-  type, and by ICAO region where both have one (`RoutePointArtccResolver`). A chart brought in only
-  by it is labeled in both documents, except at an airport whose responsible ARTCC is
-  `PrimaryFacility` (Feature #371). The rest of the rule -
-  matching a chart to its route, which cycle's route counts, the labels - is in the XML docs of
-  `ProceduresWithFixInFacility`, `NasrProcedureRoutes` and `ProcedureSelection`. It reads the
-  previous cycle's NASR from the cycle cache (`AiracSupplementalData.PreviousNasr`) only when used.
-- A block without `Area` takes `Facilities` as the area when it lists any, otherwise the ROI with
-  the old `IncludeRoiAirports = Y`, otherwise `None`. `FilterByRoi` alone never meant the ROI here.
+  one, the run warns and skips it. A chart brought in only by it is labeled in both documents,
+  except at an airport whose responsible ARTCC is `PrimaryFacility`. How a procedure qualifies, and
+  which route counts, is in the XML docs of `RoutePointArtccResolver`, `ProceduresWithFixInFacility`,
+  `NasrProcedureRoutes` and `ProcedureSelection`. The previous cycle's routes are used for deleted
+  and changed procedures, when that cycle's NASR data is loaded (`AiracSupplementalData.PreviousNasr`).
+- A block without `Area` takes `Facilities` as the area when it lists any, otherwise `None`.
 - An unknown `ChartTypes` code warns but is still used; an unknown `JsonFields` name warns and is
   ignored.
 - `JsonFields`: `icaoId`, `airportName`, `city`, `state`, `responsibleArtcc`, `airspaceClass`,
@@ -489,9 +497,9 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `VirtualAirlines.<n>.Designator` | | a virtual airline's three-letter designator (`<n>` from 1) | none |
 | `VirtualAirlines.<n>.Telephony` | | its telephony | none |
 | `VirtualAirlines.<n>.Organization` | | its virtual organization | none |
-| `IncludeVatsimRadarVirtualAirlines` | | `Y` / `N` - also write the virtual airline list (GNG + VATSIM-Radar; the key keeps its old name) | `N` |
+| `IncludeVatsimRadarVirtualAirlines` | | `Y` / `N` - also write the virtual airline list (GNG + VATSIM-Radar) | `N` |
 
-- No `FebProperties`, `CrcDefaultsFor` or `Crc.*`, and no area: the app saves and sends no `Area`
+- No `CoordinatePrecision`, `FebProperties`, `CrcDefaultsFor` or `Crc.*`, and no area: the app saves and sends no `Area`
   or ROI keys (any sent are accepted and ignored), and `IncludeFebCustomProperties = Y` warns.
 - Virtual airlines are read in number order. Each needs a three-letter `Designator`, a `Telephony`
   with a letter or digit, and an `Organization` (`TelephonySettingsParser.VirtualAirlineProblem`, which
@@ -522,8 +530,8 @@ without it.
   a `CredentialId` (an empty group is skipped); a relative `FilePath`; a `Url` that isn't http(s) or
   has a sign-in in it (`UrlSecrets` - the message never repeats the address); a `Url` group's
   `CredentialId` that isn't a GUID. A `CredentialId` on a `FilePath` is ignored, with an Info message.
-- With `AddCustomAliasFiles = N` the `Sources` keys are not read or checked, the app doesn't send
-  them, and `Combined_Alias.txt` holds FE-Buddy's aliases only.
+- With `AddCustomAliasFiles = N` the `Sources` keys are not read or checked, and the app doesn't
+  send them.
 - No sources is allowed: `Combined_Alias.txt` then holds FE-Buddy's aliases only, with an advisory
   warning. The tab is invalid only while adding custom files and a listed file has a problem.
 - A GitHub token that downloads a custom file and expires within 57 days adds an advisory warning
@@ -555,6 +563,8 @@ file fails that file only.
 
 **ERAM to GeoJSON:**
 
+Saved under the same names, as is `CroppingDistance`.
+
 | Block key | Values | Default |
 |---|---|---|
 | `OutputLayout` | `ByFilters`, `ByAttributes`, `Raw`, `RawPlus` | `ByAttributes` |
@@ -579,9 +589,9 @@ Settings ▸ **Export…** writes the profile in use to a file another user can 
   "exportedUtc": "2026-09-27T12:00:00Z", "settings": { "General": { ... }, "Services": { ... } } }
 ```
 
-A plain profile or beta.3 `UserConfig.json` imports too. `formatVersion` is the header's; `configVersion` is the
-layout of the settings inside (none means layout 1). A file in an older layout is brought forward
-before the import is planned. A file with a newer `formatVersion` or layout, or over 2 MB, is refused.
+A plain settings file with no header (a profile's `UserConfig.<Profile>.json`) imports too. `formatVersion` is the header's; `configVersion` is the
+layout of the settings inside (none, or one older than `UserConfigVersion.Oldest`, means the oldest
+layout). A file in an older layout is brought forward before the import is planned. A file with a newer `formatVersion` or layout, or over 2 MB, is refused.
 
 **Each key travels according to its name** (`UserConfigPortability.Classify`), so a new setting needs
 no list:
@@ -613,7 +623,8 @@ no list:
 
 ## Adding a setting
 
-1. **Pick its node:** `General` for app-wide preferences, the tab's own node otherwise.
+1. **Pick its node:** `General` for app-wide preferences, the tab's own node otherwise. A page or tab
+   writes only its own node ([Code Structure](Code-Structure.md#rules-for-core-and-the-app)).
 2. **Save and load it** in the tab's `LoadFromConfig` / `WriteToConfig` with `Get` / `Set` (relative
    to the tab's node; a file conversion tab: `LoadOwnSettings` / `SaveOwnSettings`). If more than one
    class reads it, add a constant to `UserConfigKeys`.
@@ -621,18 +632,24 @@ no list:
    `GeojsonSubServiceViewModel.AddSharedSettings`; a file conversion tab: `AddOwnSettings`), read it
    in the parser with `SettingsValueReader`, and add it to the parser's `OwnKeys` (or
    `SubServiceSettingsReader.CommonKeys`, or `ConversionSettingsReader.ConversionKeys`), or it is
-   reported as unknown. Add it to `HarnessSettings.cs` and a parser test.
+   reported as unknown. SCT2 to GeoJSON has no `OwnKeys` of its own. Add Custom Aliases, and the
+   fields of a numbered `Sources.<n>` or `VirtualAirlines.<n>` entry, are checked by their parser's
+   own field lists. Add it to `HarnessSettings.cs` where the harness has a block for that
+   sub-service, and to a parser test.
 4. **Mind its name** - it decides how it travels in an export. A name ending in `Folder`,
    `Directory` or `FilePath` is a machine path, `CredentialId` a credential choice, `Token`,
    `Password` and the like a secret. A yes/no setting ending in `Folder` goes in
-   `UserConfigPortability`'s `NotFolderKeys`, and a this-PC-only setting in its `LocalKeys`.
+   `UserConfigPortability`'s `NotFolderKeys`. A this-PC-only setting under `General` or `Services`
+   goes in its `LocalKeys` as a `UserConfigKeys` constant. That also makes every profile share it,
+   since it is saved in `Shared.json` rather than in the profile (`SharedByProfiles`).
 5. **List it on this page.**
 
 ## Changing the layout
 
 Testers keep their settings from one version to the next, so a saved setting is never just renamed.
 Renaming, moving or dropping one, or changing how its value is written, makes a new layout. Moving
-the settings file while every setting keeps its dotted path needs only step 3, as the profiles did.
+the settings file while every setting keeps its dotted path is not a layout change: it needs only
+step 3.
 
 1. **Bump `UserConfigVersion.Current`.**
 2. **Add the step** that turns the old layout into the new one to `UserConfigMigrations.All`:
@@ -645,7 +662,9 @@ the settings file while every setting keeps its dotted path needs only step 3, a
    ```
    A step edits the settings by dotted path (`Move`, `ChangeValue`, `Set`, `Remove`). It may meet a
    file that already has some of the new layout: `Move`, `Set` and `Remove` can run twice without
-   harm, and a `ChangeValue` must leave an already-changed value alone.
+   harm, and a `ChangeValue` must leave an already-changed value alone. The shared settings go
+   through the same steps: `Shared.json` is brought forward on its own, by its own stamp, so a step
+   sees one file's settings at a time, and one that renames a shared setting renames it there too.
 3. **For a file that moves**, have `UserConfigFile` look for it where the old layout kept it too.
 4. **Add a sample** of the new layout: `FeBuddy.UnitTests\Fixtures\UserConfig\UserConfig.v<N>.json`,
    a full file as the new version saves it, with its fingerprint in `UserConfigLayoutTests`.
@@ -659,5 +678,4 @@ The layouts so far:
 
 | Layout | First saved by | Change |
 |---|---|---|
-| 1 | 3.0.0-beta.2 | (no stamp) |
-| 2 | 3.0.0-beta.6 | Each AIRAC tab with settings gets its `Area`, from what its settings meant (`UserConfigAreas.SaveForEveryTab`); Procedures' `IncludeRoiAirports` and Telephony's `Roi` node are dropped |
+| 2 | 3.0.0-beta.6 | The oldest FE-Buddy reads (`UserConfigVersion.Oldest`) |

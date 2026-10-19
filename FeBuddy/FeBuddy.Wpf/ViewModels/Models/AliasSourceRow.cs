@@ -229,7 +229,6 @@ public sealed class AliasSourceRow : ObservableObject
 			if (SetProperty(ref _checkMessage, value))
 			{
 				OnPropertyChanged(nameof(HasCheckMessage));
-				OnPropertyChanged(nameof(CheckFailed));
 				RefreshStatus();
 			}
 		}
@@ -246,14 +245,10 @@ public sealed class AliasSourceRow : ObservableObject
 		{
 			if (SetProperty(ref _checkSucceeded, value))
 			{
-				OnPropertyChanged(nameof(CheckFailed));
 				RefreshStatus();
 			}
 		}
 	}
-
-	/// <summary>Whether the last <b>Check</b> could not read the file.</summary>
-	public bool CheckFailed => HasCheckMessage && !CheckSucceeded;
 
 	/// <summary>Whether a <b>Check</b> is running.</summary>
 	public bool IsChecking

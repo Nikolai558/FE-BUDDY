@@ -24,6 +24,15 @@ public static class NavaidBuilder
 	private const string LogSource = "NavaidBuilder";
 	private const string ShutdownStatus = "SHUTDOWN";
 
+	/// <summary>Whether a NAVAID is shut down (<c>NAV_STATUS</c> <c>SHUTDOWN</c>): it is never drawn, and its type isn't offered.</summary>
+	/// <param name="navaid">The NAVAID's <c>NAV_BASE</c> row.</param>
+	/// <returns><see langword="true"/> when it is shut down.</returns>
+	public static bool IsShutDown(NavBase navaid)
+	{
+		ArgumentNullException.ThrowIfNull(navaid);
+		return (navaid.NavStatus?.Trim() ?? string.Empty).Equals(ShutdownStatus, StringComparison.OrdinalIgnoreCase);
+	}
+
 	/// <summary>
 	/// Builds every eligible NAVAID from the parsed NASR data.
 	/// </summary>
@@ -56,7 +65,7 @@ public static class NavaidBuilder
 
 		foreach (NavBase row in allNasrCsvData.Nav.NavBase)
 		{
-			if ((row.NavStatus?.Trim() ?? string.Empty).Equals(ShutdownStatus, StringComparison.OrdinalIgnoreCase))
+			if (IsShutDown(row))
 			{
 				shutdownCount++;
 				continue;

@@ -18,6 +18,12 @@ public sealed record LaunchOptions(bool IsDevLaunch, OptionalLaunchStep Steps)
 	/// <returns>The options.</returns>
 	public static LaunchOptions DevLaunch(OptionalLaunchStep steps) => new(true, steps);
 
+	/// <summary>
+	/// Whether the app has already read the settings (<see cref="LaunchSequence.ReadSettings"/>) before
+	/// building its window, so the launch sequence doesn't read them again.
+	/// </summary>
+	public bool SettingsRead { get; init; }
+
 	/// <summary>Whether a step runs: always in a normal launch, and in a dev launch when it was chosen.</summary>
 	/// <param name="step">The step.</param>
 	/// <returns><see langword="true"/> when it runs.</returns>

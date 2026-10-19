@@ -2,6 +2,8 @@ using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac.Arrivals;
+using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 
@@ -10,7 +12,8 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 /// <summary>
 /// Covers <see cref="FileNamesViewModel"/>: the files listed by folder, which new names are flagged,
 /// a file the other tabs add after a save, and what is saved and sent to a run - against a stand-in
-/// list of files and a throwaway config.
+/// list of files and a throwaway config. Also the folder Departures and Arrivals list their GeoJSON
+/// files in.
 /// </summary>
 [Collection("AppLog")]
 public sealed class FileNamesViewModelTests : IDisposable
@@ -117,21 +120,27 @@ public sealed class FileNamesViewModelTests : IDisposable
 		Assert.Equal(expected, Row(tab, "Airways_High_Lines").Error);
 	}
 
-	/// <summary>Two files would be written over each other - whether the other is renamed too or keeps its name.</summary>
+	/// <summary>
+	/// Two files in one folder would be written over each other - whether the other is renamed too or keeps its
+	/// name. In different folders the same name writes over nothing.
+	/// </summary>
 	[Fact]
-	public void two_files_may_not_end_up_with_one_name()
+	public void two_files_in_one_folder_may_not_end_up_with_one_name()
 	{
+		_files.Add(OutputFileEntry.Renamable("Combined_Alias.txt", "Aliases", "AIRAC Service"));
 		FileNamesViewModel tab = RenamingTab();
-		Row(tab, "Airways.txt").NewName = "Duplicate_Alias_Commands";
-		Row(tab, "Duplicate_Alias_Commands.txt").Rename = false;
+		Row(tab, "Airways.txt").NewName = "Combined_Alias";
+		Row(tab, "Combined_Alias.txt").Rename = false;
+		Row(tab, "Duplicate_Alias_Commands.txt").NewName = "Airways";
 		Row(tab, "Airways_High_Lines").NewName = "ZOB";
 
-		Assert.Equal(
-			"Duplicate_Alias_Commands.txt is already the name of another file. Give this file a name of its own.",
-			Row(tab, "Airways.txt").Error);
+		Assert.Equal("Combined_Alias.txt is already the name of another file. Give this file a name of its own.", Row(tab, "Airways.txt").Error);
 
-		Row(tab, "Duplicate_Alias_Commands.txt").Rename = true;
-		Row(tab, "Duplicate_Alias_Commands.txt").NewName = "ZOB";
+		// The cycle folder's file named as an alias file is no clash: they are in different folders.
+		Assert.Null(Row(tab, "Duplicate_Alias_Commands.txt").Error);
+
+		Row(tab, "Combined_Alias.txt").Rename = true;
+		Row(tab, "Combined_Alias.txt").NewName = "ZOB";
 		Row(tab, "Airways.txt").NewName = "ZOB Aliases";
 
 		// ZOB.txt and ZOB.geojson differ by their extension.
@@ -139,8 +148,36 @@ public sealed class FileNamesViewModelTests : IDisposable
 
 		Row(tab, "Airways.txt").NewName = "zob";
 
-		Assert.Equal("Duplicate_Alias_Commands.txt is being renamed ZOB.txt too. Give each file its own name.", Row(tab, "Airways.txt").Error);
-		Assert.Equal("Airways.txt is being renamed zob.txt too. Give each file its own name.", Row(tab, "Duplicate_Alias_Commands.txt").Error);
+		Assert.Equal("Combined_Alias.txt is being renamed ZOB.txt too. Give each file its own name.", Row(tab, "Airways.txt").Error);
+		Assert.Equal("Airways.txt is being renamed zob.txt too. Give each file its own name.", Row(tab, "Combined_Alias.txt").Error);
+	}
+
+	/// <summary>
+	/// A new name may not be another alias file's even when this run doesn't write it, as the run refuses it:
+	/// every run of a cycle writes into the same folder.
+	/// </summary>
+	[Fact]
+	public void a_name_another_file_keeps_is_refused_even_when_this_run_doesnt_write_it()
+	{
+		_files.Clear();
+		_files.Add(OutputFileEntry.Renamable("Airways.txt", "Aliases", "Airways"));
+		FileNamesViewModel tab = RenamingTab();
+
+		Row(tab, "Airways.txt").NewName = "Airports";
+
+		Assert.Equal("Airports.txt is already the name of another file. Give this file a name of its own.", Row(tab, "Airways.txt").Error);
+	}
+
+	/// <summary>Departures and Arrivals list each procedure's GeoJSON files in the folder the run writes them to, Core's pattern.</summary>
+	[Fact]
+	public void departures_and_arrivals_list_their_geojson_files_in_cores_folder()
+	{
+		Assert.Equal(
+			DepartureOutputFiles.GeojsonFolderPattern,
+			new DeparturesViewModel().OutputFileEntries().Single(file => file.Key == "Departures_Lines").Folder);
+		Assert.Equal(
+			ArrivalOutputFiles.GeojsonFolderPattern,
+			new ArrivalsViewModel().OutputFileEntries().Single(file => file.Key == "Arrivals_Lines").Folder);
 	}
 
 	[Fact]

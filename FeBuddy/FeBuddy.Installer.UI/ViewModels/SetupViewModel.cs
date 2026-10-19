@@ -385,7 +385,7 @@ public sealed class SetupViewModel : ObservableObject
 	public bool Succeeded => Outcome == SetupOutcome.Succeeded;
 
 	/// <inheritdoc cref="Succeeded" />
-	public bool WasCancelled => Outcome == SetupOutcome.Cancelled;
+	public bool WasCancelled => Outcome is SetupOutcome.Cancelled or SetupOutcome.NotStarted;
 
 	/// <inheritdoc cref="Succeeded" />
 	public bool Failed => Outcome == SetupOutcome.Failed;
@@ -394,6 +394,7 @@ public sealed class SetupViewModel : ObservableObject
 	public string FinishHeading => Outcome switch
 	{
 		SetupOutcome.Cancelled => "Setup was cancelled",
+		SetupOutcome.NotStarted => "Setup didn't run",
 		SetupOutcome.Failed => "Setup couldn't finish",
 		_ => _operation switch
 		{
@@ -416,6 +417,9 @@ public sealed class SetupViewModel : ObservableObject
 			: "Nothing was changed - everything Setup had done has been undone.",
 		SetupOutcome.Failed =>
 			$"Windows Installer stopped and undid its changes, so {Product} is as it was before. What it reported is below.",
+		SetupOutcome.NotStarted =>
+			$"Nothing was changed - {Product} is just as it was. Windows Installer stopped before it began, most often because " +
+			"its administrator prompt was declined. Try again, and choose Yes when Windows asks for permission.",
 		_ => _operation switch
 		{
 			SetupOperation.Remove => $"{Product}, its settings and its saved credentials have been removed from this PC. Thanks for using {Product}.",
@@ -780,18 +784,9 @@ public sealed class SetupViewModel : ObservableObject
 			return;
 		}
 
-		try
-		{
-			Process.Start(new ProcessStartInfo(exe)
-			{
-				UseShellExecute = true,
-				WorkingDirectory = Path.GetDirectoryName(exe),
-			});
-		}
-		catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-		{
-			// FE-Buddy is installed; the user can start it from the Start menu.
-		}
+		// As the signed-in user, even when msiexec runs elevated. If it can't start, FE-Buddy is
+		// installed and the Start menu opens it.
+		UnelevatedLauncher.Start(exe);
 	}
 
 	// ------------------------------------------------------------------ helpers

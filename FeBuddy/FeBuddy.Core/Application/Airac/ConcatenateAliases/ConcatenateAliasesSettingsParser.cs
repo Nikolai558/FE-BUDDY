@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
@@ -92,7 +90,7 @@ public static class ConcatenateAliasesSettingsParser
 				continue;
 			}
 
-			if (TrySplitSourceKey(entry.Key, out int number, out string field))
+			if (NumberedSettings.TrySplit(entry.Key, SourcesPrefix, out int number, out string field))
 			{
 				if (!combine)
 				{
@@ -176,13 +174,16 @@ public static class ConcatenateAliasesSettingsParser
 			throw new ArgumentException($"{label} has no file path or web address.");
 		}
 
-		if (filePath.Length > 0)
-		{
-			if (!Path.IsPathFullyQualified(filePath))
-			{
-				throw new ArgumentException($"{label}'s path '{filePath}' is not a full path, such as C:\\Users\\me\\Documents\\Alias.txt.");
-			}
+		AliasSourceKind kind = filePath.Length > 0 ? AliasSourceKind.File : AliasSourceKind.Url;
 
+		// The rules the tab shows under a row as it is typed (AliasSourceRules), so a run refuses just what it does.
+		if (AliasSourceRules.Problem(kind, kind == AliasSourceKind.File ? filePath : url, hasCredential: kind == AliasSourceKind.Url && credential.Length > 0) is { } problem)
+		{
+			throw new ArgumentException($"{label}: {problem}");
+		}
+
+		if (kind == AliasSourceKind.File)
+		{
 			if (credential.Length > 0)
 			{
 				messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
@@ -190,19 +191,6 @@ public static class ConcatenateAliasesSettingsParser
 			}
 
 			return new AliasSource(number, AliasSourceKind.File, filePath);
-		}
-
-		if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
-		{
-			throw new ArgumentException($"{label}'s web address '{url}' is not an http:// or https:// address.");
-		}
-
-		// Never echo the address here: it holds the secret.
-		if (UrlSecrets.Describe(uri) is { } secret)
-		{
-			throw new ArgumentException(
-				$"{label}'s web address has {secret} in it. Remove it and choose a credential instead: web addresses are " +
-				"saved in FE-Buddy's settings and in settings exports.");
 		}
 
 		Guid? credentialId = null;
@@ -220,28 +208,4 @@ public static class ConcatenateAliasesSettingsParser
 		return new AliasSource(number, AliasSourceKind.Url, url, credentialId);
 	}
 
-	/// <summary>Splits <c>Sources.2.Url</c> into <c>2</c> and <c>Url</c>.</summary>
-	private static bool TrySplitSourceKey(string key, out int number, out string field)
-	{
-		number = 0;
-		field = string.Empty;
-
-		if (!key.StartsWith(SourcesPrefix, StringComparison.OrdinalIgnoreCase))
-		{
-			return false;
-		}
-
-		string[] parts = key[SourcesPrefix.Length..].Split('.');
-
-		if (parts.Length != 2
-			|| !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out number)
-			|| number < 1
-			|| parts[1].Length == 0)
-		{
-			return false;
-		}
-
-		field = parts[1];
-		return true;
-	}
 }

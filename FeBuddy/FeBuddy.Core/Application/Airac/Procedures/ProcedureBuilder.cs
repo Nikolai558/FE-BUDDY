@@ -1,7 +1,6 @@
 using System.Globalization;
 
 using FeBuddy.Core.Application.Airac.Procedures.Models;
-using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Dtpp;
@@ -37,7 +36,7 @@ public static class ProcedureBuilder
 	/// available - a deleted or re-added procedure's <see cref="Procedure.PreviousPdfName"/> is then
 	/// always <see langword="null"/>, and every procedure's <see cref="Procedure.PreviousPages"/> empty.
 	/// </param>
-	/// <returns>Every airport, in metafile file order, plus any messages collected.</returns>
+	/// <returns>Every airport, in metafile file order.</returns>
 	/// <exception cref="InvalidOperationException">Thrown when <paramref name="nasr"/>.Apt or .ClsArsp has not been parsed.</exception>
 	public static ProcedureBuildResult Build(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp, DtppMetafileDataCollection? previousDtpp)
 	{
@@ -53,8 +52,6 @@ public static class ProcedureBuilder
 		{
 			throw NasrCsvGroups.NotParsed(NasrCsvGroup.ClsArsp, "The Procedure Charts sub-service cannot run without it.");
 		}
-
-		List<ServiceMessage> messages = [];
 
 		// NASR keys APT_BASE on SITE_NO, not ARPT_ID - a duplicated identifier is possible in
 		// principle. AirportBuilder already reports that for the Airports sub-service; Procedures
@@ -111,7 +108,7 @@ public static class ProcedureBuilder
 			});
 		}
 
-		return new ProcedureBuildResult(airports, messages);
+		return new ProcedureBuildResult(airports);
 	}
 
 	/// <summary>

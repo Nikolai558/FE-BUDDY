@@ -62,8 +62,8 @@ public sealed class AliasPracticeContentTests
 		PracticeSubject subject, string airportId, string nasrName, string amendment, string computerCode, string expected)
 	{
 		string codeId = subject == PracticeSubject.Arrival
-			? ArrivalNaming.CodeIdFor(computerCode, amendment, nasrName, out _)
-			: DepartureNaming.CodeIdFor(computerCode, amendment, nasrName, out _);
+			? ArrivalNaming.CodeIdFor(computerCode, amendment, nasrName)
+			: DepartureNaming.CodeIdFor(computerCode, amendment, nasrName);
 
 		Assert.Equal(expected, $".{airportId.ToLowerInvariant()}{codeId}f");
 		Assert.Contains(Questions, question =>

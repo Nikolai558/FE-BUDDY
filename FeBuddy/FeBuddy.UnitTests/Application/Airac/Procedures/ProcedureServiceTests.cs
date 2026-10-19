@@ -33,6 +33,7 @@ public sealed class ProcedureServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Artccs",
 			["Facilities"] = "ZOB",
 		};
 
@@ -233,7 +234,7 @@ public sealed class ProcedureServiceTests : IDisposable
 		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
 
 		// Only AAA is picked for the documents; the alias file still covers BBB.
-		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("Facilities", ""), ("Airports", "AAA")));
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("Area", "None"), ("Facilities", ""), ("Airports", "AAA")));
 
 		Assert.Equal(1, result.AirportCount);
 		Assert.Equal(2, result.AliasAirportCount);

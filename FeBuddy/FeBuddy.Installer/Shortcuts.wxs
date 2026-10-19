@@ -3,6 +3,13 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>
 
+    <!--
+      Icon="FE_BUDDY.ico" (Package.wxs's Icon): Windows Installer saves it to
+      C:\Windows\Installer\{ProductCode}\ and points the shortcut there. The ProductCode is new
+      every release, so Windows can't reuse the icon it cached for an earlier version. Taking the
+      icon from FE-BUDDY.exe, whose path never changes, could leave 2.x's icon on the Desktop after
+      an upgrade.
+    -->
     <StandardDirectory Id="ProgramMenuFolder">
       <Component Id="StartMenuShortcutComponent"
            Condition="CREATE_STARTMENU_SHORTCUT">
@@ -10,7 +17,8 @@
                   Name="FE-BUDDY"
                   Description="FE-BUDDY"
                   Target="[INSTALLFOLDER]FE-BUDDY.exe"
-                  WorkingDirectory="INSTALLFOLDER" />
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="FE_BUDDY.ico" />
 
         <RegistryValue Root="HKCU"
                        Key="Software\FE-BUDDY"
@@ -30,7 +38,8 @@
                   Name="FE-BUDDY"
                   Description="FE-BUDDY"
                   Target="[INSTALLFOLDER]FE-BUDDY.exe"
-                  WorkingDirectory="INSTALLFOLDER" />
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="FE_BUDDY.ico" />
 
         <RegistryValue Root="HKCU"
                        Key="Software\FE-BUDDY"

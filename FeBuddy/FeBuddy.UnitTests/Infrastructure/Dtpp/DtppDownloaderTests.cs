@@ -218,6 +218,7 @@ public sealed class DtppDownloaderTests : IDisposable
 			Assert.Equal(DtppDownloadOutcome.NotYetPublished, outcome);
 			Assert.Equal(1, requestCount());
 			Assert.False(Directory.Exists(dir));
+			Assert.Contains(AppLog.Entries, e => e.Message == "Cycle 2611's d-TPP Metafile isn't on the FAA's server (not published yet, or no longer served).");
 			Assert.Empty(Directory.GetFiles(TempWorkspace.DownloadsDirectory, "*.download"));
 		}
 		finally

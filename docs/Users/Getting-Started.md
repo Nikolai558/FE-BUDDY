@@ -61,8 +61,8 @@ Aliases** tab, or uploading it removes your facility's aliases from vNAS.
 
 ## 5. Every cycle after
 
-Open **AIRAC Service**, set the cycle to **Current** (the General tab keeps the cycle you last
-saved, which is now **Previous**), and press **Run AIRAC Service** on Preview Settings.
+Open **AIRAC Service** and press **Run AIRAC Service** on Preview Settings. The General tab opens on
+the cycle in effect now (or on **Next**, if that's the one you last saved).
 
 ## Where next
 

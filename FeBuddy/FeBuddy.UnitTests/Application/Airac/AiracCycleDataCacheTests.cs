@@ -41,7 +41,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			},
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Equal(new[] { "2610", "2611", "2609" }, downloadOrder);
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
@@ -58,7 +58,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
 			pruneAllBut: cycleIds => kept = cycleIds);
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.NotNull(kept);
 		Assert.Equal(["2609", "2610", "2611"], kept.Order());
@@ -93,7 +93,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return new NasrCsvDataCollection();
 			});
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		// Current's parse is held open, yet the previous cycle's download must still get going.
 		// Wait for both: the pipeline may start that download before current's queued parse begins.
@@ -129,7 +129,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return new NasrCsvDataCollection();
 			});
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Equal(1, maxRunning); // memory safeguard: one dataset being built at a time
 		Assert.Equal(new[] { "2610", "2611", "2609" }, parseOrder);
@@ -167,7 +167,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return new NasrCsvDataCollection();
 			});
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 		await previousDownloaded.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
 		// Previous is on disk but its parse is queued behind current's. Asking for it now must
@@ -190,7 +190,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				? Task.FromException<NasrCsvDataCollection>(new InvalidDataException("bad csv"))
 				: Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next).WaitAsync(TimeSpan.FromSeconds(5));
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything).WaitAsync(TimeSpan.FromSeconds(5));
 
 		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
 		Assert.Equal(CycleDataState.Failed, cache.GetEntry("2609")!.State);
@@ -223,7 +223,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return new NasrCsvDataCollection();
 			});
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Task<NasrCsvDataCollection> a = cache.GetAsync("2610");
 		Task<NasrCsvDataCollection> b = cache.GetAsync("2610");
@@ -257,7 +257,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			},
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 		Assert.Equal(CycleDataState.Failed, cache.GetEntry("2610")!.State);
 		Assert.Equal(2, currentAttempts);
 
@@ -288,10 +288,31 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			},
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Equal(2, attempts["2610"]); // one try + one retry
 		Assert.Equal(CycleDataState.Failed, cache.GetEntry("2610")!.State);
+		Assert.Equal(AiracCycleReadiness.Unavailable, cache.ComputeReadiness());
+	}
+
+	/// <summary>
+	/// The FAA always has the current cycle, so one the probe calls not yet published (a proxy
+	/// answering 403, a PC clock set ahead) is unavailable, not something to wait for forever.
+	/// </summary>
+	[Fact]
+	public async Task a_current_cycle_that_is_not_published_is_unavailable_not_waiting()
+	{
+		AiracCycleDataCache cache = new(
+			probe: (cycle, _) => Task.FromResult(
+				cycle.AiracCycleId == Current.AiracCycleId
+					? AiracCyclePublicationState.NotYetPublished
+					: AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
+
+		Assert.Equal(CycleDataState.NotYetPublished, cache.GetEntry("2610")!.State);
 		Assert.Equal(AiracCycleReadiness.Unavailable, cache.ComputeReadiness());
 	}
 
@@ -306,7 +327,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Equal(CycleDataState.NotYetPublished, cache.GetEntry("2611")!.State);
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
@@ -322,7 +343,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				: Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Equal(CycleDataState.Failed, cache.GetEntry("2609")!.State);
 		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
@@ -353,7 +374,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.All(probes.Values, count => Assert.Equal(2, count));
 		Assert.Equal(["2610", "2609", "2611"], cache.Entries.Select(e => e.Cycle.AiracCycleId));
@@ -369,7 +390,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetAsync("2611"));
 		Assert.Contains("has not been published", ex.Message, StringComparison.Ordinal);
@@ -389,7 +410,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 					: Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
 			parse: (_, _) => Task.FromResult(parsed));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 		Assert.Equal(CycleDataState.Failed, cache.GetEntry("2610")!.State);
 
 		Assert.Same(parsed, await cache.GetAsync("2610"));
@@ -405,7 +426,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			download: (_, _) => Task.FromException<string>(new IOException("network down")),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetAsync("2610"));
 		Assert.Contains("could not be prepared (state: Failed)", ex.Message, StringComparison.Ordinal);
@@ -431,7 +452,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return new NasrCsvDataCollection();
 			});
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 		await currentParsing.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
 		Assert.Equal(AiracCycleReadiness.Waiting, cache.ComputeReadiness());
@@ -463,7 +484,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return new NasrCsvDataCollection();
 			});
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 		await nextParsing.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
 		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
@@ -493,7 +514,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				: Task.FromResult(cycle.AiracCycleId),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 		await cache.GetAsync("2610").WaitAsync(TimeSpan.FromSeconds(5));
 
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
@@ -524,7 +545,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return new NasrCsvDataCollection();
 			});
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 		await cache.GetAsync("2610").WaitAsync(TimeSpan.FromSeconds(5));
 
 		Task<NasrCsvDataCollection> run = cache.GetAsync("2611");
@@ -536,6 +557,51 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		await prepare.WaitAsync(TimeSpan.FromSeconds(5));
 	}
 
+	/// <summary>
+	/// A run that starts a cycle's parse and is cancelled while that parse waits its turn only stops
+	/// waiting: the parse goes on, and the next ask gets the data.
+	/// </summary>
+	[Fact]
+	public async Task a_cancelled_run_never_leaves_the_parse_it_started_cancelled()
+	{
+		TaskCompletionSource currentParsing = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource releaseCurrent = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		NasrCsvDataCollection previousData = new();
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
+			parse: async (directory, _) =>
+			{
+				if (directory == Current.AiracCycleId)
+				{
+					currentParsing.SetResult();
+					await releaseCurrent.Task;
+				}
+
+				return directory == Previous.AiracCycleId ? previousData : new NasrCsvDataCollection();
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: true, Parse: false, Prune: false));
+
+		Task<NasrCsvDataCollection> current = cache.GetAsync("2610");
+		await currentParsing.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+		// The run's ask starts the previous cycle's parse, queued behind the current one's.
+		using CancellationTokenSource run = new();
+		Task<NasrCsvDataCollection> cancelled = cache.GetAsync("2609", run.Token);
+		Assert.True(SpinWait.SpinUntil(() => cache.GetEntry("2609")!.ParseTask is not null, TimeSpan.FromSeconds(5)));
+
+		run.Cancel();
+		releaseCurrent.SetResult();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelled.WaitAsync(TimeSpan.FromSeconds(5)));
+		await current.WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Same(previousData, await cache.GetAsync("2609").WaitAsync(TimeSpan.FromSeconds(5)));
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2609")!.State);
+	}
+
 	[Fact]
 	public async Task each_parse_logs_how_long_it_took_and_how_many_groups_it_parsed()
 	{
@@ -544,7 +610,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection { Apt = new(), Fix = new() }));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		string[] messages = [.. AppLog.Entries.Select(e => e.Message)];
 		Assert.Contains(messages, m => m.StartsWith("Cycle 2610 parsed in ", StringComparison.Ordinal) && m.EndsWith(" ms (2 groups).", StringComparison.Ordinal));
@@ -562,7 +628,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 		cache.StateChanged += (_, _) => throw new InvalidOperationException("bad subscriber");
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
 	}
@@ -575,7 +641,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			download: (_, _) => Task.FromException<string>(new OperationCanceledException()),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything));
 		Assert.NotEqual(CycleDataState.Failed, cache.GetEntry("2610")!.State);
 	}
 
@@ -587,7 +653,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
 			parse: (_, _) => Task.FromException<NasrCsvDataCollection>(new OperationCanceledException()));
 
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything));
 		Assert.NotEqual(CycleDataState.Failed, cache.GetEntry("2610")!.State);
 	}
 
@@ -639,7 +705,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return Task.CompletedTask;
 			});
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Equal(3, calledWith.Count);
 		Assert.Contains((@"C:\cache\2609", "2609"), calledWith);
@@ -663,7 +729,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return Task.CompletedTask;
 			});
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.True(called);
 	}
@@ -677,7 +743,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
 			ensureDtpp: (_, _, _) => Task.FromException(new IOException("network down")));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
@@ -692,7 +758,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
 			ensureDtpp: (_, _, _) => Task.FromException(new OperationCanceledException()));
 
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything));
 	}
 
 	// ---- Dtpp: GetDtppAsync ----
@@ -737,7 +803,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return Task.FromResult<DtppMetafileDataCollection?>(null);
 			});
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		// Next has not been published, so its CycleDirectory is still null.
 		DtppMetafileDataCollection? result = await cache.GetDtppAsync("2611");
@@ -762,7 +828,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return Task.FromResult<DtppMetafileDataCollection?>(expected);
 			});
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		DtppMetafileDataCollection? result = await cache.GetDtppAsync("2610");
 
@@ -792,7 +858,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
 			loadDtpp: (cycleDirectory, _) => Task.FromResult<DtppMetafileDataCollection?>(cycleDirectory == @"C:\cache\2609" ? expected : null));
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 		await cache.GetAsync("2610").WaitAsync(TimeSpan.FromSeconds(5));
 
 		// A run on the current cycle asks for the previous cycle's metafile before it has landed.
@@ -825,7 +891,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
 			loadDtpp: (cycleDirectory, _) => Task.FromResult<DtppMetafileDataCollection?>(cycleDirectory == @"C:\cache\2609" ? expected : null));
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		// Launch is still on the current cycle's download.
 		Assert.Same(expected, await cache.GetDtppAsync("2609").WaitAsync(TimeSpan.FromSeconds(5)));
@@ -863,7 +929,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return Task.FromResult<DtppMetafileDataCollection?>(null);
 			});
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Null(await cache.GetDtppAsync("2609"));
 		Assert.Equal(2, previousAttempts);
@@ -900,7 +966,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			loadDtpp: (cycleDirectory, _) => Task.FromResult<DtppMetafileDataCollection?>(cycleDirectory == @"C:\cache\2609" ? expected : null));
 
 		// Launch is held on the current cycle, so the previous cycle's download is the callers' own.
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Task<DtppMetafileDataCollection?> first = cache.GetDtppAsync("2609", firstCaller.Token);
 		await firstAttemptStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -954,7 +1020,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	{
 		AiracCycleDataCache cache = CountingCache(new StepCounts());
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.False(cache.LoadsOnDemand);
 		Assert.All(cache.Entries, entry => Assert.False(cache.IsLoading(entry)));
@@ -1037,6 +1103,68 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
 	}
 
+	/// <summary>
+	/// A cycle loaded on demand from the UI thread downloads and parses on the thread pool, never on the
+	/// caller's context: the download unzips a cycle, which would freeze the window for seconds.
+	/// </summary>
+	[Fact]
+	public async Task a_cycle_loaded_on_demand_never_downloads_or_parses_on_the_callers_context()
+	{
+		SynchronizationContext? downloadedOn = null;
+		SynchronizationContext? parsedOn = null;
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) =>
+			{
+				downloadedOn = SynchronizationContext.Current;
+				return Task.FromResult($@"C:\cache\{cycle.AiracCycleId}");
+			},
+			parse: (_, _) =>
+			{
+				parsedOn = SynchronizationContext.Current;
+				return Task.FromResult(new NasrCsvDataCollection());
+			});
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+
+		CallersContext callers = new();
+		SynchronizationContext? before = SynchronizationContext.Current;
+		SynchronizationContext.SetSynchronizationContext(callers);
+		Task load;
+
+		try
+		{
+			load = cache.GetAsync("2610");
+		}
+		finally
+		{
+			SynchronizationContext.SetSynchronizationContext(before);
+		}
+
+		await load;
+
+		Assert.Null(downloadedOn);
+		Assert.Null(parsedOn);
+		Assert.Equal(0, callers.Posts);
+	}
+
+	/// <summary>A context that stands for the UI thread's: it counts what is posted to it, and runs it on the pool as itself.</summary>
+	private sealed class CallersContext : SynchronizationContext
+	{
+		private int _posts;
+
+		public int Posts => _posts;
+
+		public override void Post(SendOrPostCallback d, object? state)
+		{
+			Interlocked.Increment(ref _posts);
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				SetSynchronizationContext(this);
+				d(state);
+			});
+		}
+	}
+
 	[Fact]
 	public async Task a_cycle_left_unloaded_is_waiting_while_it_loads_on_demand()
 	{
@@ -1095,7 +1223,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		Assert.Null(cache.FindDtppFile("2611"));
 	}
@@ -1113,9 +1241,73 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				download: (_, _) => Task.FromResult(cycleDirectory),
 				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-			await cache.PrepareCyclesAsync(Previous, Current, Next);
+			await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 			Assert.Null(cache.FindDtppFile("2610"));
+		}
+		finally
+		{
+			Directory.Delete(cycleDirectory, recursive: true);
+		}
+	}
+
+	/// <summary>
+	/// The GUI asks on the UI thread at every state change, so the answer is what the cache found, not
+	/// a fresh look at the disk: a file gone since still counts, and one that turned up since doesn't.
+	/// </summary>
+	[Fact]
+	public async Task find_dtpp_file_answers_from_what_the_cache_found()
+	{
+		string root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindDtpp_" + Guid.NewGuid().ToString("N"));
+		string withFile = Path.Combine(root, "2610");
+		string withoutFile = Path.Combine(root, "2611");
+		Directory.CreateDirectory(withFile);
+		Directory.CreateDirectory(withoutFile);
+		string dtppFile = Path.Combine(withFile, "d-tpp_Metafile.xml");
+		File.WriteAllText(dtppFile, "<digital_tpp></digital_tpp>");
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (cycle, _) => Task.FromResult(cycle.AiracCycleId == "2610" ? withFile : withoutFile),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
+
+			File.Delete(dtppFile);
+			File.WriteAllText(Path.Combine(withoutFile, "d-tpp_Metafile.xml"), "<digital_tpp></digital_tpp>");
+
+			Assert.Equal(dtppFile, cache.FindDtppFile("2610"));
+			Assert.Null(cache.FindDtppFile("2611"));
+		}
+		finally
+		{
+			Directory.Delete(root, recursive: true);
+		}
+	}
+
+	/// <summary>A dev launch that finds a cycle on disk, without downloading it, finds its metafile there too.</summary>
+	[Fact]
+	public async Task find_dtpp_file_for_a_cycle_found_on_disk_without_downloading()
+	{
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindDtpp_" + Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(cycleDirectory);
+		string dtppFile = Path.Combine(cycleDirectory, "d-tpp_Metafile.xml");
+		File.WriteAllText(dtppFile, "<digital_tpp></digital_tpp>");
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (_, _) => Task.FromResult(cycleDirectory),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+				isLocallyAvailable: _ => true,
+				cycleDirectory: _ => cycleDirectory);
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+
+			Assert.Equal(dtppFile, cache.FindDtppFile("2610"));
 		}
 		finally
 		{
@@ -1138,7 +1330,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				download: (_, _) => Task.FromResult(cycleDirectory),
 				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
-			await cache.PrepareCyclesAsync(Previous, Current, Next);
+			await cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 			Assert.Equal(dtppFile, cache.FindDtppFile("2610"));
 		}

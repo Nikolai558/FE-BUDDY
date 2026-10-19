@@ -25,6 +25,17 @@ public static class SctToGeojsonService
 	/// <summary>The extensions a source folder's files must have to be converted.</summary>
 	public static readonly IReadOnlyList<string> Extensions = [".sct2", ".sct"];
 
+	/// <summary>
+	/// Counts the files in <paramref name="folder"/> (not its sub-folders) a run would convert: every file with a <see cref="Extensions"/> extension,
+	/// as the run picks them. For the page that shows the count as the folder is chosen, off the UI thread.
+	/// </summary>
+	/// <param name="folder">The folder.</param>
+	/// <param name="cancellationToken">Stops the count; a newer one has started.</param>
+	/// <returns>Whether the folder is there, how many files it has, or why it couldn't be read.</returns>
+	/// <exception cref="OperationCanceledException">The count was stopped.</exception>
+	public static SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken = default) =>
+		ConversionSourceFolder.Count(folder, Extensions, _ => true, cancellationToken);
+
 	private const string LogSource = "SctToGeojsonService";
 
 	/// <summary>Runs the conversion.</summary>
@@ -48,9 +59,12 @@ public static class SctToGeojsonService
 		IReadOnlyList<string> sources = ConversionFiles.Resolve(parsed, Extensions, LogSource, messages);
 		GeojsonFileSet files = new(parsed.CoordinatePrecision);
 
+		// ZOB.sct and ZOB.sct2 (or two files picked from two folders) would share one folder.
+		HashSet<string> folderNames = new(StringComparer.OrdinalIgnoreCase);
+
 		IReadOnlyList<SourceFileConversion> conversions = ConversionFiles.ConvertEach(
 			sources,
-			source => Convert(source, parsed, files, messages),
+			source => Convert(source, parsed, files, folderNames, messages),
 			(source, error) => new SourceFileConversion { SourcePath = source, Error = error },
 			Describe,
 			progress,
@@ -79,6 +93,7 @@ public static class SctToGeojsonService
 		string source,
 		SctToGeojsonSettings settings,
 		GeojsonFileSet files,
+		HashSet<string> folderNames,
 		List<ServiceMessage> messages)
 	{
 		string name = Path.GetFileName(source);
@@ -89,10 +104,21 @@ public static class SctToGeojsonService
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, $"{name}: {problem}"));
 		}
 
-		(IReadOnlyList<string> paths, int featureCount) = SctGeojsonWriter.Write(sctFile, settings, files);
+		string own = ConversionFiles.SafeFileName(Path.GetFileNameWithoutExtension(source));
+		string folder = ConversionFiles.UniqueFileName(own, folderNames);
+		(IReadOnlyList<string> paths, int featureCount) = SctGeojsonWriter.Write(sctFile, settings, files, folder);
+
+		if (paths.Count > 0 && !string.Equals(folder, own, StringComparison.Ordinal))
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"{name}: another file in this run has the same name, so its files are in the folder {folder}."));
+		}
 
 		if (paths.Count == 0)
 		{
+			// Nothing went in the folder, so its name is free for a later file.
+			folderNames.Remove(folder);
+
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
 				$"{name} has nothing FE-Buddy converts (lines, SIDs, STARs, labels or regions), so no GeoJSON was written for it.")
 			{
@@ -105,7 +131,6 @@ public static class SctToGeojsonService
 			SourcePath = source,
 			OutputPaths = paths,
 			FeaturesWritten = featureCount,
-			RecordsSkipped = sctFile.Problems.Count,
 		};
 	}
 

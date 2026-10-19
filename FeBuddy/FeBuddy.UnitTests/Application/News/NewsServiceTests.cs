@@ -59,6 +59,10 @@ public sealed class NewsServiceTests : IDisposable
 
 	public void Dispose() => AppLog.ConfigureForTesting(null);
 
+	/// <summary>Whether the log says the News read came from GitHub, not the bundled copy.</summary>
+	private static bool ReadFromGitHub() =>
+		AppLog.Entries.Any(e => e.Message.EndsWith("from GitHub.", StringComparison.Ordinal) || e.Message.Contains("from GitHub;", StringComparison.Ordinal));
+
 	[Theory]
 	[InlineData("2026-08-30.3", true, 3)]
 	[InlineData("2026-08-30.1", true, 1)]
@@ -115,7 +119,7 @@ public sealed class NewsServiceTests : IDisposable
 		NewsCheckResult result = await NewsService.CheckAsync(lastOpenPostId: null, hasInternetConnection: false);
 
 		Assert.True(result.ParseSucceeded);
-		Assert.False(result.FromNetwork);
+		Assert.False(ReadFromGitHub());
 		Assert.NotEmpty(result.Posts);
 		Assert.Equal(result.Posts.Count, result.NewPostCount);
 		Assert.Equal(result.Posts[0].Id, result.LatestPostId);
@@ -143,7 +147,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(lastOpenPostId: null, hasInternetConnection: true, client);
 
-		Assert.True(result.FromNetwork);
+		Assert.True(ReadFromGitHub());
 		Assert.True(result.ParseSucceeded);
 		Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
 	}
@@ -164,7 +168,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-		Assert.True(result.FromNetwork);
+		Assert.True(ReadFromGitHub());
 		Assert.True(result.ParseSucceeded);
 		Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
 		Assert.StartsWith("https://api.github.com/", Assert.Single(sent).RequestUri!.ToString(), StringComparison.Ordinal);
@@ -182,7 +186,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-		Assert.True(result.FromNetwork);
+		Assert.True(ReadFromGitHub());
 		Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
 	}
 
@@ -202,7 +206,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-		Assert.True(result.FromNetwork);
+		Assert.True(ReadFromGitHub());
 		Assert.Equal(2, sent.Count);
 		Assert.Equal(NewsService.RawUrl, sent[1].RequestUri!.ToString());
 	}
@@ -224,7 +228,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-		Assert.True(result.FromNetwork);
+		Assert.True(ReadFromGitHub());
 		Assert.Equal(2, sent.Count);
 		Assert.Equal(NewsService.RawUrl, sent[1].RequestUri!.ToString());
 	}
@@ -311,7 +315,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-		Assert.True(result.FromNetwork);
+		Assert.True(ReadFromGitHub());
 		HttpRequestMessage request = Assert.Single(sent);
 		Assert.Equal(NewsService.RawUrl, request.RequestUri!.ToString());
 		Assert.Null(request.Headers.Authorization);
@@ -327,7 +331,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-		Assert.False(result.FromNetwork);
+		Assert.False(ReadFromGitHub());
 		Assert.True(result.ParseSucceeded);
 	}
 
@@ -351,7 +355,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-		Assert.True(result.FromNetwork);
+		Assert.DoesNotContain(AppLog.Entries, e => e.Message.EndsWith("using the bundled copy.", StringComparison.Ordinal));
 		Assert.False(result.ParseSucceeded);
 		Assert.Empty(result.Posts);
 		Assert.Equal(0, result.NewPostCount);
@@ -365,7 +369,7 @@ public sealed class NewsServiceTests : IDisposable
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-		Assert.False(result.FromNetwork);
+		Assert.False(ReadFromGitHub());
 		Assert.True(result.ParseSucceeded);
 	}
 

@@ -63,19 +63,14 @@ public static class NavaidService
 			? NavaidAliasWriter.Generate(buildResult.Navaids, settings)
 			: null;
 
-		if (aliasResult is not null)
-		{
-			messages.AddRange(aliasResult.Messages);
-		}
-
 		// The types and the ROI limit the GeoJSON only; a filter that leaves no NAVAIDs would
 		// otherwise end in a clean-looking run with no GeoJSON at all, so say why.
 		if (settings.GenerateGeojson && navaidsInRoi.Count == 0)
 		{
-			string text = includedNavaids.Count == 0
-				? "No NAVAIDs matched the configured filters, so no NAVAIDs GeoJSON files were written."
-				: settings.Roi is null
-					? "No NAVAIDs were found, so no NAVAIDs GeoJSON files were written."
+			string text = buildResult.Navaids.Count == 0
+				? "No NAVAIDs were found, so no NAVAIDs GeoJSON files were written."
+				: includedNavaids.Count == 0
+					? "No NAVAIDs matched the configured filters, so no NAVAIDs GeoJSON files were written."
 					: "No NAVAIDs are inside the region of interest, so no NAVAIDs GeoJSON files were written.";
 
 			if (aliasResult?.FilePath is not null)

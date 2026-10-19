@@ -11,7 +11,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Telephony;
 /// GNG's list with VATSIM-Radar's; which of the list's virtual airlines can be written (and which are
 /// left out), each once and in order; what counts as the same virtual airline (all three values,
 /// ignoring case and spaces at either end) and the same call sign (3LD and telephony); and reading the
-/// kept copies - both parts, one alone, the older single copy, none.
+/// kept copies - both parts, one alone, none.
 /// </summary>
 public sealed class VatsimRadarVirtualAirlinesTests : IDisposable
 {
@@ -112,6 +112,60 @@ public sealed class VatsimRadarVirtualAirlinesTests : IDisposable
 
 	// ---- Merge ----
 
+	/// <summary>Spaces around a value don't make another virtual airline: each is written once.</summary>
+	[Fact]
+	public void the_same_virtual_airline_with_spaces_around_its_values_is_written_once()
+	{
+		VatsimRadarSelection selection = VatsimRadarVirtualAirlines.Select(
+		[
+			new VatsimRadarAirline("WEX", "World Express", "WORLD EXPRESS"),
+			new VatsimRadarAirline(" wex ", " world express ", " World Express "),
+		]);
+
+		Assert.Single(selection.VirtualAirlines);
+	}
+
+	/// <summary>
+	/// GNG lists thousands of rows: merging and selecting look each one up once, rather than against every
+	/// row so far, so the Telephony tab's list is ready at once. Ten times the rows takes about ten times as
+	/// long, not a hundred. The two sizes are timed in turns and each by its fastest of five, so a busy
+	/// machine slows both alike.
+	/// </summary>
+	[Fact]
+	public void a_list_of_tens_of_thousands_merges_and_selects_at_once()
+	{
+		(VatsimRadarAirline[] Gng, VatsimRadarAirline[] VatsimRadar) small = Lists(3_000), large = Lists(30_000);
+		TimeSpan fastestSmall = TimeSpan.MaxValue, fastestLarge = TimeSpan.MaxValue;
+
+		for (int round = 0; round < 5; round++)
+		{
+			fastestSmall = TimeSpan.FromTicks(Math.Min(fastestSmall.Ticks, MergeAndSelect(small).Ticks));
+			fastestLarge = TimeSpan.FromTicks(Math.Min(fastestLarge.Ticks, MergeAndSelect(large).Ticks));
+		}
+
+		Assert.True(fastestLarge < fastestSmall * 40, $"{fastestSmall} for 3,000 GNG rows, {fastestLarge} for 30,000.");
+	}
+
+	/// <summary>
+	/// <paramref name="count"/> GNG rows, and as many VATSIM-Radar entries, half of them with a GNG row's 3LD.
+	/// </summary>
+	private static (VatsimRadarAirline[] Gng, VatsimRadarAirline[] VatsimRadar) Lists(int count) =>
+		([.. Enumerable.Range(0, count).Select(i => new VatsimRadarAirline($"A{i:00000}", $"Org {i}", $"CALL{i}"))],
+		[.. Enumerable.Range(count / 2, count).Select(i => new VatsimRadarAirline($"A{i:00000}", $"Virtual {i}", $"CALL{i}"))]);
+
+	/// <summary>Merges and selects the lists, and returns how long it took.</summary>
+	private static TimeSpan MergeAndSelect((VatsimRadarAirline[] Gng, VatsimRadarAirline[] VatsimRadar) lists)
+	{
+		System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+		List<VatsimRadarAirline> merged = VatsimRadarVirtualAirlines.Merge(lists.Gng, lists.VatsimRadar);
+		VatsimRadarSelection selection = VatsimRadarVirtualAirlines.Select(merged);
+		stopwatch.Stop();
+
+		Assert.Equal(lists.Gng.Length * 3 / 2, merged.Count);
+		Assert.Equal(merged.Count, selection.VirtualAirlines.Count + selection.LeftOut.Count);
+		return stopwatch.Elapsed;
+	}
+
 	/// <summary>
 	/// As VATSIM-Radar merges them: GNG's rows, duplicates kept; a VATSIM-Radar entry takes over the name
 	/// and telephony of the first GNG row with its 3LD; one GNG doesn't have is added at the end.
@@ -179,7 +233,7 @@ public sealed class VatsimRadarVirtualAirlinesTests : IDisposable
 		string gng = WriteDated("gng.json", GngJson("""{ "icao": "WAT", "airline": "WALKER AIR", "callsign": "WALKER" }"""), GngUtc);
 		string vatsimRadar = WriteDated("vr.json", """[{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }]""", VatsimRadarUtc);
 
-		VatsimRadarCopy copy = Assert.IsType<VatsimRadarCopy>(VatsimRadarVirtualAirlines.ReadKeptCopy(gng, vatsimRadar, olderCopyPath: null));
+		VatsimRadarCopy copy = Assert.IsType<VatsimRadarCopy>(VatsimRadarVirtualAirlines.ReadKeptCopy(gng, vatsimRadar));
 
 		Assert.Equal(
 			[new VirtualAirline("DAL", "Delta", "Fly Delta Virtual"), new VirtualAirline("WAT", "WALKER", "WALKER AIR")],
@@ -187,43 +241,25 @@ public sealed class VatsimRadarVirtualAirlinesTests : IDisposable
 		Assert.Equal(VatsimRadarUtc, copy.DownloadedUtc);
 		Assert.Equal(GngUtc, copy.GngDownloadedUtc);
 		Assert.Equal(VatsimRadarUtc, copy.VatsimRadarDownloadedUtc);
-		Assert.False(copy.IsOlderCopy);
 	}
 
-	/// <summary>One part alone - the other missing or unreadable - is still the list; the older copy isn't read.</summary>
+	/// <summary>One part alone - the other missing or unreadable - is still the list.</summary>
 	[Fact]
-	public void one_part_alone_is_the_list_and_the_older_copy_is_not_read()
+	public void one_part_alone_is_the_list()
 	{
 		string vatsimRadar = WriteDated("vr.json", """[{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }]""", VatsimRadarUtc);
-		string older = Write("older.json", """{ "virtual": [{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }] }""");
 
-		VatsimRadarCopy copy = Assert.IsType<VatsimRadarCopy>(VatsimRadarVirtualAirlines.ReadKeptCopy(Write("gng.json", "<html></html>"), vatsimRadar, older));
+		VatsimRadarCopy copy = Assert.IsType<VatsimRadarCopy>(VatsimRadarVirtualAirlines.ReadKeptCopy(Write("gng.json", "<html></html>"), vatsimRadar));
 
 		Assert.Equal([new VirtualAirline("DAL", "Delta", "Fly Delta Virtual")], copy.VirtualAirlines);
 		Assert.Null(copy.GngDownloadedUtc);
-		Assert.False(copy.IsOlderCopy);
-	}
-
-	/// <summary>The older single copy - beta.4's merged list or beta.3's GitHub array - is read only while neither part can be.</summary>
-	[Theory]
-	[InlineData("""{ "airlines": [], "virtual": [{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }] }""")]
-	[InlineData("""[{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }]""")]
-	public void the_older_copy_is_read_only_while_neither_part_can_be(string olderJson)
-	{
-		string older = WriteDated("older.json", olderJson, VatsimRadarUtc);
-
-		VatsimRadarCopy copy = Assert.IsType<VatsimRadarCopy>(VatsimRadarVirtualAirlines.ReadKeptCopy(Path.Combine(_folder, "none.json"), null, older));
-
-		Assert.Equal([new VirtualAirline("OCN", "Ocean", "vOCN")], copy.VirtualAirlines);
-		Assert.True(copy.IsOlderCopy);
-		Assert.Equal(VatsimRadarUtc, copy.DownloadedUtc);
 	}
 
 	[Fact]
 	public void no_kept_copy_or_one_that_cannot_be_read_is_none()
 	{
-		Assert.Null(VatsimRadarVirtualAirlines.ReadKeptCopy(Path.Combine(_folder, "missing.json"), null, null));
-		Assert.Null(VatsimRadarVirtualAirlines.ReadKeptCopy(Write("broken.json", "<html></html>"), Write("object.json", "{}"), Write("older.json", "{}")));
-		Assert.Null(VatsimRadarVirtualAirlines.ReadKeptCopy(Write("short.json", """{ "records": 1, "rows": [{ "icao": "DAL", "airline": "X", "callsign": "Y" }] }"""), null, null));
+		Assert.Null(VatsimRadarVirtualAirlines.ReadKeptCopy(Path.Combine(_folder, "missing.json"), null));
+		Assert.Null(VatsimRadarVirtualAirlines.ReadKeptCopy(Write("broken.json", "<html></html>"), Write("object.json", "{}")));
+		Assert.Null(VatsimRadarVirtualAirlines.ReadKeptCopy(Write("short.json", """{ "records": 1, "rows": [{ "icao": "DAL", "airline": "X", "callsign": "Y" }] }"""), null));
 	}
 }

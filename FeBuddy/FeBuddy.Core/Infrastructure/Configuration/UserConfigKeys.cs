@@ -1,8 +1,9 @@
 namespace FeBuddy.Core.Infrastructure.Configuration;
 
 /// <summary>
-/// The <c>UserConfig.json</c> keys that are read in more than one place, so they are named once
-/// here. Each sub-service's own keys belong to the screen that edits them.
+/// Settings keys used outside the one screen that edits them, read in more than one place, or saved outside a
+/// sub-service tab's node, named once here. <c>UserConfigLayoutTests</c> reads every one by name. Each
+/// sub-service's own keys belong to the screen that edits them.
 /// </summary>
 public static class UserConfigKeys
 {
@@ -55,8 +56,18 @@ public static class UserConfigKeys
 	/// </summary>
 	public const string MainWindowPlacement = "General.MainWindowPlacement";
 
-	/// <summary>How many decimal places GeoJSON coordinates are rounded to, 0 to 15 (6 when unset).</summary>
-	public const string CoordinatePrecision = "Services.AiracService.CoordinatePrecision";
+	/// <summary>How many decimal places GeoJSON coordinates are rounded to, 0 to 15 (6 when unset). Settings ▸ GeoJSON Files.</summary>
+	public const string CoordinatePrecision = "General.CoordinatePrecision";
+
+	/// <summary>
+	/// The facility from Settings ▸ Facility, an ARTCC ID such as <c>ZOB</c>: the run's <c>PrimaryFacility</c>, and the
+	/// ARTCC ticked on the tabs with an area until each is first saved. Read by Settings, the AIRAC Service, Procedure
+	/// Charts, the area rules (<see cref="UserConfigAreas.DefaultFor"/>) and a settings import's profile name.
+	/// </summary>
+	public const string Facility = "General.Facility";
+
+	/// <summary>Whether the default ROI (Settings and the Map) is on: <c>Y</c> or <c>N</c>. Its corners sit beside it.</summary>
+	public const string DefaultRoiFilter = "General.DefaultRoi.FilterByRoi";
 
 	/// <summary>
 	/// Whether the AIRAC run stops for the user to choose for a duplicated alias command no saved

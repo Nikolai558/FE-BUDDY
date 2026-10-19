@@ -68,21 +68,9 @@ internal static class ArrivalNaming
 	/// <param name="computerCode">The published <c>STAR_COMPUTER_CODE</c>, e.g. <c>AALAN.BLAID2</c>.</param>
 	/// <param name="amendmentNo">The published <c>AMENDMENT_NO</c>, e.g. <c>TWO</c>.</param>
 	/// <param name="arrivalName">The published <c>ARRIVAL_NAME</c>, used when the code cannot be.</param>
-	/// <param name="usedFallback"><see langword="true"/> when the result came from <paramref name="arrivalName"/>.</param>
 	/// <returns>An upper-case identifier containing only letters and digits.</returns>
-	internal static string CodeIdFor(string? computerCode, string? amendmentNo, string arrivalName, out bool usedFallback)
-	{
-		string? fromCode = FromComputerCode(computerCode, amendmentNo);
-
-		if (fromCode is not null)
-		{
-			usedFallback = false;
-			return fromCode;
-		}
-
-		usedFallback = true;
-		return Clean(arrivalName);
-	}
+	internal static string CodeIdFor(string? computerCode, string? amendmentNo, string arrivalName) =>
+		FromComputerCode(computerCode, amendmentNo) ?? Clean(arrivalName);
 
 	/// <summary>Removes everything but letters and digits and upper-cases the rest.</summary>
 	/// <param name="value">The raw text.</param>

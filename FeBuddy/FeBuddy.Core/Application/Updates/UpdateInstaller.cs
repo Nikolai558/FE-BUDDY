@@ -10,15 +10,23 @@ namespace FeBuddy.Core.Application.Updates;
 
 /// <summary>
 /// Downloads a release's MSI for the update window's "Update now", and builds the msiexec
-/// command line that installs it. Launching msiexec (elevated) and closing the app are the GUI's
-/// job - the MSI cannot replace FE-Buddy's files while FE-Buddy is running.
+/// command line that installs it. Launching msiexec and closing the app are the GUI's job - the
+/// MSI cannot replace FE-Buddy's files while FE-Buddy is running.
 /// </summary>
 /// <remarks>
+/// <para>
+/// <c>msiexec</c> must be started without elevation, like <see cref="AppUninstall"/>'s; Windows
+/// Installer asks for administrator permission itself. Started elevated, a standard user who types
+/// an administrator's password would run the setup window as that administrator, and the FE-Buddy it
+/// opens at the end would use the administrator's settings and credentials.
+/// </para>
+/// <para>
 /// The same design as FE-Buddy 2.x's updater: the download goes to the temporary workspace
 /// (<c>%TEMP%\FE-Buddy\Updates</c>, cleared on every launch). When the user chose a GitHub token
 /// (<see cref="GitHubAuth"/>), it comes through the releases-assets API with that token, and a
 /// download with it that fails in any way is tried once more from the public asset URL; otherwise
 /// it comes from the public asset URL.
+/// </para>
 /// </remarks>
 public static class UpdateInstaller
 {

@@ -69,9 +69,6 @@
                            TextWrapping="Wrap" VerticalAlignment="Center" />
             </Grid>
             <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding Level}" Value="Info">
-                    <Setter TargetName="Tick" Property="Background" Value="{StaticResource Brush.Text.Tertiary}" />
-                </DataTrigger>
                 <DataTrigger Binding="{Binding Level}" Value="Success">
                     <Setter TargetName="Tick" Property="Background" Value="{StaticResource Brush.Positive}" />
                 </DataTrigger>

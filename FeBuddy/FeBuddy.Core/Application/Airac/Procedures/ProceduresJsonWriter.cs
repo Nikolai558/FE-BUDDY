@@ -35,8 +35,8 @@ public static class ProceduresJsonWriter
 	/// <param name="airports">The included airports (post-selection), each with only its included procedures.</param>
 	/// <param name="settings">The parsed settings; <see cref="ProcedureSettings.PrimaryFacility"/> and <see cref="ProcedureSettings.JsonFields"/> are read.</param>
 	/// <param name="dtpp">The selected cycle's parsed FAA d-TPP Metafile (its <c>Cycle</c> and effective date).</param>
-	/// <returns>The path written, plus any messages collected.</returns>
-	public static ProceduresJsonWriteResult Generate(
+	/// <returns>The path written.</returns>
+	public static string Generate(
 		IReadOnlyList<ProcedureAirport> airports,
 		ProcedureSettings settings,
 		DtppMetafileDataCollection dtpp)
@@ -78,7 +78,7 @@ public static class ProceduresJsonWriter
 		string path = Path.Combine(directory, settings.FileNames.FileName(ProcedureOutputFiles.Json));
 		File.WriteAllText(path, root.ToJsonString(SerializerOptions), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-		return new ProceduresJsonWriteResult(path, []);
+		return path;
 	}
 
 	/// <summary>

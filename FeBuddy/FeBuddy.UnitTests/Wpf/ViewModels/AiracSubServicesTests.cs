@@ -19,16 +19,6 @@ public sealed class AiracSubServicesTests
 			AiracSubServices.All.Select(s => s.DisplayName));
 	}
 
-	/// <summary>The table and the rail sort by Order, and other code walks the list as it is, so the two must agree.</summary>
-	[Fact]
-	public void each_order_value_is_higher_than_the_last()
-	{
-		int[] orders = [.. AiracSubServices.All.Select(s => s.Order)];
-
-		Assert.Equal(orders.Order(), orders);
-		Assert.Equal(orders.Length, orders.Distinct().Count());
-	}
-
 	[Fact]
 	public void every_key_is_unique()
 	{

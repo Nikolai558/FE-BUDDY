@@ -12,7 +12,7 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Core.Application.Airac.Airways;
 
 /// <summary>
-/// Public entry point for the Airways services: parses settings, builds every airway, and
+/// Public entry point for the Airways sub-service: parses settings, builds every airway, and
 /// generates the requested GeoJSON and alias output.
 /// </summary>
 /// <remarks>
@@ -50,9 +50,9 @@ public static class AirwayService
 		AirwayBuildAllResult buildResult = AirwayBuilder.BuildAll(allNasrCsvData, settings);
 		messages.AddRange(buildResult.Messages);
 
-		// The ROI limits the GeoJSON only. The alias file gets every built airway and applies its
-		// own AliasRoiScope - "All" really is all, "ROI airways only" narrows it.
-		IReadOnlyList<Airway> airwaysInRoi = [.. buildResult.Airways.Where(a => a.CrossesRoi)];
+		// The ROI and waypoint buffering limit the GeoJSON only. The alias file gets every built
+		// airway and applies its own AliasRoiScope - "All" really is all, "ROI airways only" narrows it.
+		IReadOnlyList<Airway> airwaysInRoi = [.. buildResult.Airways.Where(a => a.CrossesRoi && a.IsDrawn)];
 
 		GeojsonFileSet geojsonFiles = AirwayGeojsonWriter.Generate(airwaysInRoi, settings);
 

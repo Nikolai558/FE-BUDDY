@@ -14,51 +14,6 @@ using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 namespace FeBuddy.Core.Application.Airac;
 
 /// <summary>
-/// One cycle's slot in <see cref="AiracCycleDataCache"/>: its identity, current pipeline
-/// state, the local folder its CSVs live in once downloaded, and the parse task the parsed
-/// data can be awaited from.
-/// </summary>
-public sealed class AiracCycleDataCacheEntry
-{
-	internal AiracCycleDataCacheEntry(AiracCycleInfo cycle, AiracCyclePosition position)
-	{
-		Cycle = cycle;
-		Position = position;
-	}
-
-	/// <summary>The cycle's identity (ID, effective date, CSV date string).</summary>
-	public AiracCycleInfo Cycle { get; }
-
-	/// <summary>Where this cycle sits relative to today.</summary>
-	public AiracCyclePosition Position { get; }
-
-	/// <summary>The cycle's current pipeline state.</summary>
-	public CycleDataState State { get; internal set; } = CycleDataState.NotDownloaded;
-
-	/// <summary>The local folder holding this cycle's CSV files, once downloaded.</summary>
-	public string? CycleDirectory { get; internal set; }
-
-	/// <summary>
-	/// The in-flight (or completed) parse task. Awaiting this is how a caller gets the parsed
-	/// data without triggering a second parse.
-	/// </summary>
-	public Task<NasrCsvDataCollection>? ParseTask { get; internal set; }
-
-	/// <summary>
-	/// The download (CSVs, then the d-TPP Metafile) under way or last run, shared by the launch
-	/// pipeline and anything that needs the cycle on disk sooner, so a cycle is never downloaded
-	/// twice at once.
-	/// </summary>
-	internal Task? DownloadTask { get; set; }
-
-	/// <summary>
-	/// Whether the FAA has been asked if it has published this cycle. A dev launch that leaves out
-	/// downloading asks nobody, so a download asked for later asks first.
-	/// </summary>
-	internal bool Probed { get; set; }
-}
-
-/// <summary>
 /// Holds up to three cycles of parsed NASR data (previous / current / next) in memory and
 /// runs the launch pipeline that fills it: probe each cycle's publication state, then, for
 /// each published cycle in the order current -&gt; next -&gt; previous, download the CSVs and
@@ -203,7 +158,7 @@ public sealed class AiracCycleDataCache(
 
 	/// <summary>
 	/// The three cycle entries, once
-	/// <see cref="PrepareCyclesAsync(AiracCycleInfo, AiracCycleInfo, AiracCycleInfo, AiracLaunchPlan, CancellationToken)"/>
+	/// <see cref="PrepareCyclesAsync"/>
 	/// has been called.
 	/// </summary>
 	public IReadOnlyList<AiracCycleDataCacheEntry> Entries
@@ -229,27 +184,13 @@ public sealed class AiracCycleDataCache(
 	}
 
 	/// <summary>
-	/// Runs the launch pipeline for the three cycles: probe all three, then download and parse
-	/// each published cycle in the order current -&gt; next -&gt; previous, one parse at a time.
-	/// Never throws - a failed cycle is marked <see cref="CycleDataState.Failed"/>.
-	/// </summary>
-	/// <param name="previous">The previous cycle identity.</param>
-	/// <param name="current">The current cycle identity.</param>
-	/// <param name="next">The next cycle identity.</param>
-	/// <param name="cancellationToken">Cancels remaining work.</param>
-	public Task PrepareCyclesAsync(
-		AiracCycleInfo previous,
-		AiracCycleInfo current,
-		AiracCycleInfo next,
-		CancellationToken cancellationToken = default) =>
-		PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything, cancellationToken);
-
-	/// <summary>
 	/// Runs the launch pipeline for the three cycles as <paramref name="plan"/> says - all of it in
-	/// a normal launch. The three cycles are always tracked, whatever the plan: a cycle it leaves
-	/// unloaded is downloaded and parsed when something asks for it (<see cref="GetAsync"/>).
-	/// Without <see cref="AiracLaunchPlan.Download"/>, nothing touches the network: a cycle already on
-	/// disk is found by its folder alone, and only those can be parsed.
+	/// a normal launch: probe all three, then download and parse each published cycle in the order
+	/// current -&gt; next -&gt; previous, one parse at a time. Never throws - a failed cycle is marked
+	/// <see cref="CycleDataState.Failed"/>. The three cycles are always tracked, whatever the plan: a
+	/// cycle it leaves unloaded is downloaded and parsed when something asks for it
+	/// (<see cref="GetAsync"/>). Without <see cref="AiracLaunchPlan.Download"/>, nothing touches the
+	/// network: a cycle already on disk is found by its folder alone, and only those can be parsed.
 	/// </summary>
 	/// <param name="previous">The previous cycle identity.</param>
 	/// <param name="current">The current cycle identity.</param>
@@ -346,6 +287,7 @@ public sealed class AiracCycleDataCache(
 			if (_isLocallyAvailable(entry.Cycle))
 			{
 				entry.CycleDirectory = _cycleDirectory(entry.Cycle);
+				FindDtppOnDisk(entry, entry.CycleDirectory);
 				SetState(entry, CycleDataState.Downloaded);
 			}
 			else
@@ -388,8 +330,13 @@ public sealed class AiracCycleDataCache(
 	/// second one. If the cycle has not been downloaded/parsed yet, this kicks that off.
 	/// </summary>
 	/// <param name="cycleId">The cycle ID to get.</param>
-	/// <param name="cancellationToken">Cancels a parse this call starts.</param>
-	/// <returns>The parsed NASR data for the cycle.</returns>
+	/// <param name="cancellationToken">
+	/// Stops this call waiting. A parse it starts is shared, so it carries on and finishes for every caller.
+	/// </param>
+	/// <returns>
+	/// The parsed NASR data for the cycle. The task faults with <see cref="InvalidOperationException"/>
+	/// when the cycle couldn't be prepared, or with the parse's own exception when its parse failed.
+	/// </returns>
 	/// <exception cref="InvalidOperationException">The cycle is not tracked, or it is not published.</exception>
 	public Task<NasrCsvDataCollection> GetAsync(string cycleId, CancellationToken cancellationToken = default)
 	{
@@ -459,6 +406,12 @@ public sealed class AiracCycleDataCache(
 	/// Procedures has nothing to run on (the General tab shows such a cycle as partial), rather than
 	/// let a run fail on it.
 	/// </summary>
+	/// <remarks>
+	/// Answers from memory, never the disk: the GUI asks on the UI thread every time a cycle's state
+	/// changes, and the folder can be slow to answer (a roaming or redirected profile). The cache looks
+	/// for the file when it learns the cycle's folder and again once the download has fetched it; the
+	/// metafile is fetched before the cycle is parsed, so a ready cycle keeps its answer until the next launch.
+	/// </remarks>
 	/// <param name="cycleId">The cycle ID.</param>
 	/// <returns>
 	/// The full path of the cycle's <see cref="DtppFiles.FileName"/>, or <see langword="null"/>
@@ -466,39 +419,43 @@ public sealed class AiracCycleDataCache(
 	/// </returns>
 	public string? FindDtppFile(string cycleId)
 	{
-		if (GetEntry(cycleId)?.CycleDirectory is not { } cycleDirectory)
-		{
-			return null;
-		}
+		AiracCycleDataCacheEntry? entry = GetEntry(cycleId);
+		return entry?.CycleDirectory is null ? null : entry.DtppFile;
+	}
 
+	/// <summary>Looks for the cycle's metafile in its folder, for <see cref="FindDtppFile"/> to answer from.</summary>
+	private static void FindDtppOnDisk(AiracCycleDataCacheEntry entry, string cycleDirectory)
+	{
 		string path = Path.Combine(cycleDirectory, DtppFiles.FileName);
-		return File.Exists(path) ? path : null;
+		entry.DtppFile = File.Exists(path) ? path : null;
 	}
 
 	private async Task<NasrCsvDataCollection> RunFlightAsync(AiracCycleDataCacheEntry entry, CancellationToken cancellationToken)
 	{
 		try
 		{
+			// The parse is shared by every caller, so it never gets a caller's token: cancelling only
+			// stops this call waiting, and the parse finishes for everyone.
 			if (entry.ParseTask is { } inFlightParse)
 			{
-				return await inFlightParse.ConfigureAwait(false);
+				return await inFlightParse.WaitAsync(cancellationToken).ConfigureAwait(false);
 			}
 
 			await WaitForDownloadAsync(entry, retryFailed: true, cancellationToken).ConfigureAwait(false);
 
-			if (StartParse(entry, cancellationToken) is { } started)
+			if (StartParse(entry, CancellationToken.None) is { } started)
 			{
-				await ObserveParseAsync(entry, started).ConfigureAwait(false);
+				await ObserveParseAsync(entry, started).WaitAsync(cancellationToken).ConfigureAwait(false);
 			}
 			else if (entry.ParseTask is { } queued)
 			{
 				// The launch pipeline queued this cycle's parse while the download above was waited for.
-				return await queued.ConfigureAwait(false);
+				return await queued.WaitAsync(cancellationToken).ConfigureAwait(false);
 			}
 
 			if (entry.State == CycleDataState.Ready && entry.ParseTask is { } parsed)
 			{
-				return await parsed.ConfigureAwait(false);
+				return await parsed.WaitAsync(cancellationToken).ConfigureAwait(false);
 			}
 
 			// Found only now, when the download asked first: a dev launch that left out downloading
@@ -537,7 +494,10 @@ public sealed class AiracCycleDataCache(
 				return AiracCycleReadiness.Waiting;
 			}
 
-			if (current.State == CycleDataState.Failed)
+			// The FAA always has the current cycle, so one it seems not to have (a proxy or firewall
+			// answering for its site, or a PC clock set ahead) won't arrive by waiting: it is as
+			// unavailable as one that failed.
+			if (current.State is CycleDataState.Failed or CycleDataState.NotYetPublished)
 			{
 				return AiracCycleReadiness.Unavailable;
 			}
@@ -697,8 +657,9 @@ public sealed class AiracCycleDataCache(
 		async Task DownloadWhenUnlockedAsync()
 		{
 			// Yield first so the DownloadTask assignment above completes (and the lock is released)
-			// before any download work or state notification runs.
-			await Task.Yield();
+			// before any download work or state notification runs - to the thread pool, never back to
+			// the caller's context: the caller can be the UI thread, and the download unzips a cycle.
+			await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
 			await DownloadStageAsync(entry, cancellationToken).ConfigureAwait(false);
 		}
 	}
@@ -734,6 +695,7 @@ public sealed class AiracCycleDataCache(
 		// from disk), which is what fills in a next cycle's metafile once the FAA publishes it, at
 		// a later launch, or retries one whose earlier attempt failed.
 		await EnsureDtppAsync(entry, cycleDirectory, cancellationToken).ConfigureAwait(false);
+		FindDtppOnDisk(entry, cycleDirectory);
 
 		SetState(entry, CycleDataState.Downloaded);
 	}
@@ -794,8 +756,8 @@ public sealed class AiracCycleDataCache(
 		async Task<NasrCsvDataCollection> ParseWhenTurnAsync(string cycleDirectory, Task startAfter)
 		{
 			// Yield first so the ParseTask assignment above completes (and the lock is released)
-			// before any parse work or state notification runs.
-			await Task.Yield();
+			// before any parse work or state notification runs - to the thread pool, as the download does.
+			await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
 			await startAfter.ConfigureAwait(false);
 			cancellationToken.ThrowIfCancellationRequested();
 

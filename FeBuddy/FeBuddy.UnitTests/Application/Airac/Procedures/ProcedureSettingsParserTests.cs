@@ -7,7 +7,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 
 /// <summary>
 /// Covers <see cref="ProcedureSettingsParser"/>: every key, the documented defaults, the area (and
-/// what a block without one means), the "both documents off" and "no inclusion source" guards,
+/// the one a block without it takes), the "both documents off" and "no inclusion source" guards,
 /// <c>AirportProcedures</c> parsing and validation, unknown <c>ChartTypes</c>/<c>JsonFields</c>
 /// entries, and that Procedures has no GeoJSON/alias/<c>feb.*</c> settings of its own.
 /// </summary>
@@ -17,6 +17,7 @@ public sealed class ProcedureSettingsParserTests
 	{
 		["OutputDirectory"] = @"C:\Output",
 		["Facilities"] = "ZOB",
+		["Area"] = "Artccs",
 	};
 
 	[Fact]
@@ -268,26 +269,16 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Contains("\"None\"", ex.Message);
 	}
 
-	/// <summary>A block without <c>Area</c> means what its settings did before: the ROI's airports with <c>IncludeRoiAirports</c>.</summary>
+	/// <summary>A block without <c>Area</c> takes its facilities when it lists any, otherwise none: never the ROI.</summary>
 	[Fact]
-	public void a_block_without_an_area_takes_include_roi_airports_as_the_roi()
+	public void a_block_without_an_area_takes_its_facilities_otherwise_none()
 	{
-		Dictionary<string, string> settings = WithRoi(new(StringComparer.OrdinalIgnoreCase) { ["OutputDirectory"] = @"C:\Output" });
-		settings["IncludeRoiAirports"] = "Y";
+		Dictionary<string, string> settings = WithRoi(new(StringComparer.OrdinalIgnoreCase) { ["OutputDirectory"] = @"C:\Output", ["Facilities"] = "ZOB" });
 
-		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+		Assert.Equal(SubServiceArea.Artccs, ProcedureSettingsParser.Parse(settings).Settings.Area);
 
-		Assert.Equal(SubServiceArea.Roi, parsed.Area);
-		Assert.NotNull(parsed.Roi);
-	}
-
-	/// <summary>FilterByRoi alone never meant the ROI here: it was sent whenever a default ROI was set.</summary>
-	[Fact]
-	public void a_block_without_an_area_and_only_filter_by_roi_has_no_area()
-	{
-		Dictionary<string, string> settings = WithRoi(new(StringComparer.OrdinalIgnoreCase) { ["OutputDirectory"] = @"C:\Output" });
+		settings.Remove("Facilities");
 		settings["Airports"] = "PIT";
-
 		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
 
 		Assert.Equal(SubServiceArea.None, parsed.Area);
@@ -299,7 +290,7 @@ public sealed class ProcedureSettingsParserTests
 	[Fact]
 	public void no_area_and_nothing_listed_throws()
 	{
-		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase) { ["OutputDirectory"] = @"C:\Output" };
+		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase) { ["OutputDirectory"] = @"C:\Output", ["Area"] = "None" };
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
 		Assert.Contains("\"None\"", ex.Message);
@@ -311,6 +302,7 @@ public sealed class ProcedureSettingsParserTests
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = @"C:\Output",
+			["Area"] = "None",
 			["Airports"] = "PIT",
 		};
 
@@ -325,6 +317,7 @@ public sealed class ProcedureSettingsParserTests
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = @"C:\Output",
+			["Area"] = "None",
 			["Procedures"] = "ILS OR LOC RWY 28C",
 		};
 
@@ -339,6 +332,7 @@ public sealed class ProcedureSettingsParserTests
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = @"C:\Output",
+			["Area"] = "None",
 			["AirportProcedures"] = "PIT|ILS OR LOC RWY 28C",
 		};
 
@@ -421,6 +415,28 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Throws<ArgumentNullException>(() => ProcedureSettingsParser.IncludesProceduresWithFixInFacility(null!));
 	}
 
+	/// <summary>
+	/// The rule adds only to what the documents cover, so with Everything, or with only the alias file
+	/// on, it never runs and the run needn't load the previous cycle for it.
+	/// </summary>
+	[Theory]
+	[InlineData("Artccs", "Y", "Y", true)]
+	[InlineData("Artccs", "Y", "N", true)]
+	[InlineData("Artccs", "N", "Y", true)]
+	[InlineData("Everything", "Y", "Y", false)]
+	[InlineData("Artccs", "N", "N", false)]
+	public void includes_procedures_with_a_fix_in_the_facility_needs_a_document_and_an_area_short_of_everything(
+		string area, string changesDocument, string proceduresJson, bool expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["PrimaryFacility"] = "ZDC";
+		settings["Area"] = area;
+		settings["GenerateChangesDocument"] = changesDocument;
+		settings["GenerateProceduresJson"] = proceduresJson;
+
+		Assert.Equal(expected, ProcedureSettingsParser.IncludesProceduresWithFixInFacility(settings));
+	}
+
 	// ---- AirportProcedures parsing ----
 
 	[Theory]
@@ -459,6 +475,19 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Equal(ProcedureChartTypes.Default, parsed.ChartTypes);
 	}
 
+	/// <summary>A saved blank list is the user's choice, read the same way as the tab reads it: no chart types, not the defaults.</summary>
+	[Fact]
+	public void blank_chart_types_mean_none()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["ChartTypes"] = "";
+
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
+
+		Assert.Empty(result.Settings.ChartTypes);
+		Assert.Empty(result.Messages.WarningTexts());
+	}
+
 	[Fact]
 	public void chart_types_are_upper_cased_and_deduplicated()
 	{
@@ -491,6 +520,19 @@ public sealed class ProcedureSettingsParserTests
 		ProcedureSettings parsed = ProcedureSettingsParser.Parse(MinimalValidSettings()).Settings;
 
 		Assert.Equal(8, parsed.JsonFields.Count);
+	}
+
+	/// <summary>Every optional field unticked is a choice: only the fields always written, never the defaults.</summary>
+	[Fact]
+	public void blank_json_fields_mean_none_of_the_optional_fields()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["JsonFields"] = "";
+
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
+
+		Assert.Empty(result.Settings.JsonFields);
+		Assert.Empty(result.Messages.WarningTexts());
 	}
 
 	[Fact]
@@ -573,6 +615,7 @@ public sealed class ProcedureSettingsParserTests
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = @"C:\Output",
+			["Area"] = "None",
 			["GenerateChangesDocument"] = "N",
 			["GenerateProceduresJson"] = "N",
 		};

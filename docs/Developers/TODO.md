@@ -2,21 +2,32 @@
 
 Open work only. When an item is done, delete it - the commit is the record.
 
-## Standards
+## After 3.0
 
-- **Bring `FeBuddy.Harness` up to the standard.** It doesn't require XML docs yet, and still has
-  planning-doc comments ("Phase 3.3-3.7 settings" in `HarnessSettings.cs`).
+- **The Harness.** Replace its commented-out runs with a switch that picks which runs to do. Give it
+  XML docs on every member, remove the machine-specific paths and the planning-phase comments
+  ("Phase 3.3-3.7", "(3.3)"). It should compile cleanly and run on any developer's machine.
+- **Share repeated code.** Departures and Arrivals are near copies of each other; share what they
+  have in common, and look for other copies at the same time.
+- **One home for values used in several places.** Start with the d-TPP Metafile timing
+  ("approximately 20 days prior to" a cycle), written out in Core, the General tab tooltip,
+  the run advisory and the docs: make it one Core constant. Then look for other values hard-coded
+  in more than one place.
+- **A new AIRAC cycle during a session.** When a cycle takes effect while FE-Buddy is open, pick
+  it up without a restart. Agree the approach first.
+- **A wrong DAT or SCT file should fail**, as a wrong ERAM file does, instead of only giving an
+  advisory. Try a few real DAT and SCT files first, so valid ones don't fail.
+- **Non-web custom alias sources.** If an FTP or other non-http(s) address is ever allowed, keep a
+  secret in the address out of the error message.
+- **GUI framework simplifications.** `TabbedServiceViewModel`, `ConversionTabViewModel` and the
+  card interfaces each have a single user; fold them in.
+- **Delete the alpha.1 News stub** (`FeBuddy/FeBuddy.Core/News.md` and its comment) in the first
+  release after 3.0.0.
+- **Decide whether to offer a per-user install.**
 
 ## Testing
 
-- **Test more of `FeBuddy.Wpf`.** Tested today (`FeBuddy.UnitTests/Wpf`): the map's logic and
-  `MapCanvas`, `BesideOrBelow`, `CommandTablePanel`, `OutputTag`, `OutputSummary`, `InlineCode`,
-  `InlineMarkdown`, `FileNamesAsCodeConverter`, the side nav and the Systems drawer, the AIRAC Service
-  and File Conversions screens, the view-models of the General, Airways, Procedures, Add Custom
-  Aliases, File Names, Telephony and ERAM to GeoJSON tabs, the Area card, What You'll Get, the
-  Departures and Arrivals amendment question, the CRC-ERAM file choice, the list of a tab's problems,
-  the sub-service order, the Review tab, Info, What's New, the Alias Command Guide, settings profiles,
-  Import Settings, the duplicate alias review, and the Reset, Uninstall and update windows. The rest
-  of the view-model logic - the
-  other tabs' settings blocks, dirty tracking, validation - could be tested the same way, without a
-  window.
+- **Test more of `FeBuddy.Wpf`.** Not tested on their own yet: the Credentials page and editor,
+  the Dashboard, the DAT and SCT2 to GeoJSON pages, and the Airports, Departures, Arrivals,
+  NAVAIDs, ARTCC Boundaries, Fixes and Wx Stations tabs (settings blocks, dirty tracking,
+  validation). They can be tested like the others, without a window.

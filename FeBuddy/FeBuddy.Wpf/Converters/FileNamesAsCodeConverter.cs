@@ -5,6 +5,8 @@ using System.Windows.Data;
 
 using FeBuddy.Wpf.Behaviors;
 
+using FeBuddy.Core.Application.Models;
+
 namespace FeBuddy.Wpf.Converters;
 
 /// <summary>
@@ -14,9 +16,10 @@ namespace FeBuddy.Wpf.Converters;
 /// </summary>
 /// <remarks>
 /// A name already between backticks is left as it is, and so is one inside a path or a web address
-/// (<c>Aliases\Airways.txt</c>, <c>…/main/ZOB.txt</c>): only part of it would stand out.
+/// (<c>Aliases\Airways.txt</c>, <c>…/main/ZOB.txt</c>): only part of it would stand out. The extensions are
+/// Core's (<see cref="FileNameExtensions.All"/>), so every format FE-Buddy reads or writes is picked out.
 /// </remarks>
-public sealed partial class FileNamesAsCodeConverter : IValueConverter
+public sealed class FileNamesAsCodeConverter : IValueConverter
 {
 	/// <inheritdoc />
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -37,7 +40,7 @@ public sealed partial class FileNamesAsCodeConverter : IValueConverter
 
 		foreach ((string part, bool isCode) in InlineCode.Split(text))
 		{
-			marked.Append(isCode ? $"`{part}`" : FileName().Replace(part, "`$0`"));
+			marked.Append(isCode ? $"`{part}`" : FileName.Replace(part, "`$0`"));
 		}
 
 		return marked.ToString();
@@ -45,6 +48,9 @@ public sealed partial class FileNamesAsCodeConverter : IValueConverter
 
 	// A word of letters, digits, '_' and '-', with dots inside, ending in a known extension - not
 	// straight after a path separator, a dot, a backtick or '>' (a placeholder such as <Airport ID>).
-	[GeneratedRegex(@"(?<![\w`/\\.>-])[\w-]+(?:\.[\w-]+)*\.(?:txt|geojson|md|json|xml|dat|sct2?|csv|log)\b(?![`/\\])", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-	private static partial Regex FileName();
+	private static readonly Regex FileName = new(
+		@"(?<![\w`/\\.>-])[\w-]+(?:\.[\w-]+)*\.(?:"
+			+ string.Join('|', FileNameExtensions.All.Select(extension => Regex.Escape(extension.TrimStart('.'))))
+			+ @")\b(?![`/\\])",
+		RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 }

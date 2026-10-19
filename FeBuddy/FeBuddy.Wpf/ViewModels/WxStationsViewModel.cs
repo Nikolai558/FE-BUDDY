@@ -7,7 +7,8 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Settings;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.WxStations;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -29,9 +30,14 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.WxStations";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.WxStations}";
+	private const string LogSource = "WxStations";
 
 	private string _stationDataStatus = string.Empty;
+
+	// Numbers the looks at the kept copy, so only the latest is shown: one started after a run may finish
+	// before the one started when the tab was built.
+	private int _stationDataRefresh;
 
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public WxStationsViewModel()
@@ -65,7 +71,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= station data =================
 
 	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the station list.</summary>
-	public string StationDataStatus => _stationDataStatus;
+	private string StationDataStatus => _stationDataStatus;
 
 	/// <summary>
 	/// Re-reads how old FE-Buddy's kept copy of the station list is
@@ -76,23 +82,58 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// Never blocks the run: a missing copy is what the run downloads, and a failed download is
 	/// reported by the run itself.
 	/// </remarks>
-	public void RefreshStationData()
-	{
-		_stationDataStatus = File.Exists(WxStationFiles.SharedFilePath)
-			? $"FE-Buddy's copy is from {File.GetLastWriteTime(WxStationFiles.SharedFilePath):d MMM yyyy}. Every run downloads the latest list first, and uses this copy only if it can't."
-			: "FE-Buddy has no copy yet. Every run downloads the latest list first, so the first run needs an internet connection.";
+	public void RefreshStationData() => _ = RefreshStationDataAsync();
 
-		OnPropertyChanged(nameof(StationDataStatus));
+	/// <summary>
+	/// Says what FE-Buddy's kept copy of the station list is, unit tests only: stands in for
+	/// <see cref="DescribeStationData"/> so they can hold a look back, or make it fail.
+	/// </summary>
+	internal Func<string, string> DescribeStationCopy { get; set; } = DescribeStationData;
+
+	/// <summary>
+	/// Looks at the kept copy off the UI thread - the folder can be slow to answer (OneDrive, a network
+	/// profile) - then shows what it found, or that it couldn't look. A look that a newer one has
+	/// overtaken shows nothing.
+	/// </summary>
+	/// <returns>A task that completes when <see cref="StationDataStatus"/> says it.</returns>
+	internal async Task RefreshStationDataAsync()
+	{
+		int refresh = ++_stationDataRefresh;
+		Func<string, string> describe = DescribeStationCopy;
+		string status;
+
+		try
+		{
+			status = await Task.Run(() => describe(WxStationFiles.SharedFilePath));
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning(LogSource, $"Looking at FE-Buddy's copy of the station list failed: {ex.Message}");
+			status = $"FE-Buddy couldn't read its copy: {ex.Message}";
+		}
+
+		if (refresh != _stationDataRefresh)
+		{
+			return;
+		}
+
+		_stationDataStatus = status;
 	}
+
+	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the station list.</summary>
+	/// <param name="path">The copy.</param>
+	/// <returns>The status line.</returns>
+	internal static string DescribeStationData(string path) =>
+		File.Exists(path)
+			? $"FE-Buddy's copy is from {File.GetLastWriteTime(path):d MMM yyyy}. Every run downloads the latest list first, and uses this copy only if it can't."
+			: "FE-Buddy has no copy yet. Every run downloads the latest list first, so the first run needs an internet connection.";
 
 	// ================= parent hooks =================
 
 	/// <inheritdoc />
-	/// <remarks>
-	/// Does nothing: Wx Stations has no lists built from the selected cycle's NASR data. Its own
-	/// data is downloaded by the run itself.
-	/// </remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	/// <remarks>Does nothing: Wx Stations has no lists built from the selected cycle's NASR data. Its own
+	/// data is downloaded by the run itself.</remarks>
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
 	}
 

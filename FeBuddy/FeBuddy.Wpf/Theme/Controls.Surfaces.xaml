@@ -5,7 +5,8 @@
         Card.Warn       ctl:Card - amber: something the user should know before going on
         Card.Danger     ctl:Card - red: something failed or blocks the run
         Card.Accent     ctl:Card - soft amber with an amber edge: a light, friendly heads-up
-        Card.Popup      ctl:Card - a floating panel (flyout) with a drop shadow
+        Card.Popup      ctl:Card - a floating panel (flyout) with a drop shadow, opening below its button
+        Card.Popup.Above ctl:Card - the same, opening above its button: its shadow falls up
         ctl:SectionHeader       (implicit) a card or section title
         SectionHeader.Group     ctl:SectionHeader - a heading for a group of controls in a card
         Panel.Inset     Border  - a darker, hairline-bordered panel inside a card (a CRC defaults panel)
@@ -181,12 +182,24 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
     </Style>
 
-    <!-- Floats above the page (the Systems flyout). The margin leaves the shadow room to
-         draw inside its Popup. -->
+    <!-- Floats above the page, opening below its button (the map's Base Map and Output Files
+         menus). Its shadow falls down, as every other floating surface's does. The margin leaves
+         the shadow room to draw inside its Popup. -->
     <Style x:Key="Card.Popup" TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
         <Setter Property="Background" Value="{DynamicResource Brush.Panel}" />
         <Setter Property="Padding" Value="12" />
         <Setter Property="Margin" Value="10" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270"
+                                  Opacity="0.5" Color="#000000" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A Card.Popup that opens above its button (the Systems flyout): its shadow falls up, away
+         from the button, rather than onto it. -->
+    <Style x:Key="Card.Popup.Above" TargetType="ctl:Card" BasedOn="{StaticResource Card.Popup}">
         <Setter Property="Effect">
             <Setter.Value>
                 <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="90"

@@ -236,4 +236,53 @@ public sealed class AppLogTests : IDisposable
 		Assert.True(File.Exists(notes));
 		Assert.True(File.Exists(badDate));
 	}
+
+	/// <summary>Following the display returns what it holds since the last clear, and calls back for each later entry.</summary>
+	[Fact]
+	public void following_the_display_returns_what_it_holds_and_calls_back_for_later_entries()
+	{
+		AppLog.Info("Test", "before the clear");
+		AppLog.ClearDisplay();
+		AppLog.Info("Test", "one");
+		List<string> later = [];
+
+		IReadOnlyList<LogEntry> held = AppLog.FollowDisplay((_, entry) => later.Add(entry.Message));
+		AppLog.Info("Test", "two");
+
+		Assert.Equal(["one"], held.Select(entry => entry.Message));
+		Assert.Equal(["two"], later);
+		Assert.Throws<ArgumentNullException>(() => AppLog.FollowDisplay(null!));
+	}
+
+	/// <summary>
+	/// An entry logged on another thread while the display is followed is in the snapshot or the callbacks,
+	/// exactly once: none missed between the two, none in both.
+	/// </summary>
+	[Fact]
+	public async Task an_entry_logged_while_following_starts_is_seen_exactly_once()
+	{
+		for (int attempt = 0; attempt < 20; attempt++)
+		{
+			AppLog.ConfigureForTesting(_logDirectory);
+			using ManualResetEventSlim go = new();
+			System.Collections.Concurrent.ConcurrentQueue<LogEntry> later = new();
+
+			Task logging = Task.Run(() =>
+			{
+				go.Wait();
+				for (int i = 0; i < 200; i++)
+				{
+					AppLog.Info("Test", $"entry {i}");
+				}
+			});
+
+			go.Set();
+			IReadOnlyList<LogEntry> held = AppLog.FollowDisplay((_, entry) => later.Enqueue(entry));
+			await logging;
+
+			List<LogEntry> seen = [.. held, .. later];
+			Assert.Equal(200, seen.Count);
+			Assert.Equal(200, seen.Distinct(ReferenceEqualityComparer.Instance).Count());
+		}
+	}
 }

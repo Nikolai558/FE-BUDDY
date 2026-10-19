@@ -1,6 +1,6 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Core.Infrastructure.Configuration;
@@ -15,8 +15,8 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// A profile's name is used in its file's name, so it follows Windows' rules for one
 /// (<see cref="ProfileNameProblem"/>), and two names that differ only in case are the same profile.
 /// Its backups - the undo snapshot, the file before an import, a file brought forward from an older
-/// layout - are named <c>UserConfig-&lt;kind&gt;.&lt;Profile&gt;.json</c>, so they can never be mistaken
-/// for a profile, and they move and go with it.
+/// layout, a file that couldn't be read as settings - are named <c>UserConfig-&lt;kind&gt;.&lt;Profile&gt;.json</c>,
+/// so they can never be mistaken for a profile, and they move and go with it.
 /// </para>
 /// </remarks>
 public static partial class UserConfigFile
@@ -31,27 +31,11 @@ public static partial class UserConfigFile
 		["CON", "PRN", "AUX", "NUL", .. Enumerable.Range(1, 9).SelectMany(n => new[] { $"COM{n}", $"LPT{n}" })],
 		StringComparer.OrdinalIgnoreCase);
 
-	/// <summary>The backups an older FE-Buddy kept beside <c>UserConfig.json</c>, and their kind now.</summary>
-	private static readonly Regex LegacyBackupName = new(@"^UserConfig\.(previous|before-import|v\d+)\.json$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
 	/// <summary>The kinds of backup a profile has.</summary>
-	private static readonly Regex BackupKind = new(@"^(previous|before-import|v\d+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+	private static readonly Regex BackupKind = new(@"^(previous|before-import|damaged|v\d+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-	/// <summary>Whether any settings are saved: a profile, or an older FE-Buddy's file not yet moved in.</summary>
-	public static bool HasSettings =>
-		ProfileNames().Count > 0 || File.Exists(Path.Combine(RootDirectory, LegacyConfigFileName));
-
-	/// <summary>The folder that stands for <c>%APPDATA%\FE-Buddy</c>.</summary>
-	private static string RootDirectory
-	{
-		get
-		{
-			lock (Gate)
-			{
-				return _root;
-			}
-		}
-	}
+	/// <summary>Whether any settings are saved: any profile has a file.</summary>
+	public static bool HasSettings => ProfileNames().Count > 0;
 
 	/// <summary>Every profile, in name order: each one with a file, and the one in use even before it has one.</summary>
 	/// <returns>The names.</returns>
@@ -67,12 +51,6 @@ public static partial class UserConfigFile
 
 		return [.. names.Order(StringComparer.OrdinalIgnoreCase)];
 	}
-
-	/// <summary>Whether a profile by this name (in any case) has a file.</summary>
-	/// <param name="name">The name.</param>
-	/// <returns><see langword="true"/> when it has.</returns>
-	public static bool ProfileExists(string name) =>
-		ProfileNames().Contains(name?.Trim() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
 	/// Why a profile can't have <paramref name="name"/>, or <see langword="null"/> when it can. It
@@ -184,6 +162,8 @@ public static partial class UserConfigFile
 				MoveQuietly(path, BackupFilePath(renamed, kind));
 			}
 
+			ForgetUndoSnapshot();
+
 			if (_profile.Equals(profile, StringComparison.OrdinalIgnoreCase))
 			{
 				_profile = renamed;
@@ -217,6 +197,8 @@ public static partial class UserConfigFile
 			{
 				DeleteIfPresent(path);
 			}
+
+			ForgetUndoSnapshot();
 		}
 
 		AppLog.Info(LogSource, $"Deleted settings profile '{profile}'.");
@@ -269,23 +251,93 @@ public static partial class UserConfigFile
 	private static string? ExistingName(string? name) =>
 		ProfileNames().FirstOrDefault(profile => profile.Equals(name?.Trim(), StringComparison.OrdinalIgnoreCase));
 
-	/// <summary>The trimmed new name, once it is checked: usable, and no other profile's.</summary>
-	/// <exception cref="ArgumentException">It isn't.</exception>
-	private static string CheckNewName(string name, string? renaming)
+	/// <summary>
+	/// Why a new profile - or a profile being renamed - can't be called <paramref name="name"/>: a name no
+	/// file can have (<see cref="ProfileNameProblem"/>), or another profile's in any case. What the name
+	/// windows say, and what creating or renaming a profile refuses.
+	/// </summary>
+	/// <param name="name">The name typed.</param>
+	/// <param name="profiles">Every profile now.</param>
+	/// <param name="renaming">The profile being renamed, which may keep its own name in any case; <see langword="null"/> for a new one.</param>
+	/// <returns>A sentence saying what is wrong, or <see langword="null"/>.</returns>
+	public static string? NewProfileNameProblem(string? name, IReadOnlyCollection<string> profiles, string? renaming)
 	{
+		ArgumentNullException.ThrowIfNull(profiles);
+
 		if (ProfileNameProblem(name) is { } problem)
 		{
-			throw new ArgumentException(problem, nameof(name));
+			return problem;
 		}
 
-		string trimmed = name.Trim();
+		string trimmed = name!.Trim();
+		string? taken = profiles.FirstOrDefault(profile => profile.Equals(trimmed, StringComparison.OrdinalIgnoreCase)
+			&& !profile.Equals(renaming, StringComparison.OrdinalIgnoreCase));
 
-		if (ExistingName(trimmed) is { } taken && !taken.Equals(renaming, StringComparison.OrdinalIgnoreCase))
+		return taken is null ? null : $"There is already a profile called {taken}.";
+	}
+
+	/// <summary>The trimmed new name, once it is checked: usable, and no other profile's.</summary>
+	/// <exception cref="ArgumentException">It isn't.</exception>
+	private static string CheckNewName(string name, string? renaming) =>
+		NewProfileNameProblem(name, ProfileNames(), renaming) is { } problem
+			? throw new ArgumentException(problem, nameof(name))
+			: name.Trim();
+
+	/// <summary>
+	/// Copies the profile in use to <paramref name="path"/>, and every other profile beside it, named after the
+	/// copy with the profile's name in brackets (<c>Backup (ZNY).json</c>): each the file as saved - a full
+	/// backup of that profile, which an import reads back. For before a reset or an uninstall empties FE-Buddy's
+	/// folder, so a copy can't be saved inside it.
+	/// </summary>
+	/// <param name="path">Where the profile in use goes.</param>
+	/// <returns>How many profiles were copied.</returns>
+	/// <exception cref="ArgumentException">
+	/// The path is inside <see cref="AppDataReset.RootDirectory"/>, which a reset empties (<see cref="IsInsideAppData"/>), or
+	/// is not one Windows can use.
+	/// </exception>
+	/// <exception cref="IOException">A file could not be copied.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	public static int CopyProfilesTo(string path)
+	{
+		if (IsInsideAppData(path))
 		{
-			throw new ArgumentException($"There is already a settings profile called '{taken}'.", nameof(name));
+			throw new ArgumentException($"A copy inside {AppDataReset.RootDirectory} would be deleted with it. Choose another folder.", nameof(path));
 		}
 
-		return trimmed;
+		string full = Path.GetFullPath(path);
+		string active = ActiveProfile;
+		string stem = Path.Combine(Path.GetDirectoryName(full)!, Path.GetFileNameWithoutExtension(full));
+		string extension = Path.GetExtension(full);
+		int copied = 0;
+
+		foreach (string profile in Profiles())
+		{
+			string from = ProfileFilePath(profile);
+
+			if (File.Exists(from))
+			{
+				bool inUse = profile.Equals(active, StringComparison.OrdinalIgnoreCase);
+				File.Copy(from, inUse ? full : $"{stem} ({profile}){extension}", overwrite: true);
+				copied++;
+			}
+		}
+
+		return copied;
+	}
+
+	/// <summary>
+	/// Whether <paramref name="path"/> is inside <see cref="AppDataReset.RootDirectory"/>, FE-Buddy's own folder,
+	/// which a reset or an uninstall empties: a copy of the settings saved there would go with it.
+	/// </summary>
+	/// <param name="path">The path.</param>
+	/// <returns><see langword="true"/> when it is.</returns>
+	/// <exception cref="ArgumentException">The path is not one Windows can use.</exception>
+	public static bool IsInsideAppData(string path)
+	{
+		ArgumentNullException.ThrowIfNull(path);
+
+		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+		return Path.GetFullPath(path).StartsWith(folder, StringComparison.OrdinalIgnoreCase);
 	}
 
 	/// <summary>A profile's backup files that exist, with the kind each is.</summary>
@@ -335,45 +387,6 @@ public static partial class UserConfigFile
 
 		AppLog.Warning(LogSource, $"The settings profile '{wanted}' has no file. Using '{fallback}' instead.");
 		return fallback;
-	}
-
-	/// <summary>
-	/// Moves an older FE-Buddy's one settings file, <c>%APPDATA%\FE-Buddy\UserConfig.json</c>, in as the
-	/// <see cref="DefaultProfile"/> profile, with its backups - once, while there is no profile yet - so
-	/// the old file is gone once its settings are in. Its shared settings move into <c>Shared.json</c>
-	/// as it is read. Never throws: when it can't be moved, it is left where it is, and the next launch
-	/// tries again.
-	/// </summary>
-	private static void MoveLegacyFileIn()
-	{
-		string legacy = Path.Combine(_root, LegacyConfigFileName);
-
-		if (!File.Exists(legacy) || ProfileNames().Count > 0)
-		{
-			return;
-		}
-
-		try
-		{
-			System.IO.Directory.CreateDirectory(Directory);
-			File.Move(legacy, ProfileFilePath(DefaultProfile));
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			AppLog.Warning(LogSource, $"Could not move '{legacy}' into '{ProfilesFolderName}': {ex.Message} FE-Buddy tries again at the next launch.");
-			return;
-		}
-
-		foreach (string path in System.IO.Directory.EnumerateFiles(_root, "UserConfig.*.json"))
-		{
-			if (LegacyBackupName.Match(Path.GetFileName(path)) is { Success: true } match)
-			{
-				MoveQuietly(path, BackupFilePath(DefaultProfile, match.Groups[1].Value.ToLowerInvariant()));
-			}
-		}
-
-		AppLog.Info(LogSource, string.Create(CultureInfo.InvariantCulture,
-			$"Moved '{LegacyConfigFileName}' into '{ProfilesFolderName}' as the settings profile '{DefaultProfile}'."));
 	}
 
 	/// <summary>Moves a file, logging rather than throwing when it can't: a backup is never worth failing for.</summary>

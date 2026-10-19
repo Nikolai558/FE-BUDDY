@@ -12,7 +12,7 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// Settings' Developer card, shown only in a dev launch: a box for each optional launch step, ticked
-/// when a dev launch runs it. Each change is saved at once to <see cref="DevLaunchSettings"/> -
+/// when a dev launch runs it. Each change is saved at once to <see cref="DevLaunchFile"/> -
 /// outside every settings profile, so the page's Save, profiles, Import and Export never touch it -
 /// and applies from the next dev launch. <see cref="RestartCommand"/> starts that dev launch now.
 /// </summary>
@@ -42,7 +42,7 @@ public sealed class DevLaunchCardViewModel : ObservableObject
 	public static DevLaunchCardViewModel? For(LaunchOptions options, Action restart)
 	{
 		ArgumentNullException.ThrowIfNull(options);
-		return options.IsDevLaunch ? new DevLaunchCardViewModel(DevLaunchSettings.Read(), restart) : null;
+		return options.IsDevLaunch ? new DevLaunchCardViewModel(DevLaunchFile.Read(), restart) : null;
 	}
 
 	/// <summary>One box per optional launch step, in the card's order.</summary>
@@ -75,13 +75,13 @@ public sealed class DevLaunchCardViewModel : ObservableObject
 	{
 		try
 		{
-			DevLaunchSettings.Save(Chosen);
+			DevLaunchFile.Save(Chosen);
 			SaveError = null;
 			return true;
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
-			AppLog.Warning("DevLaunch", $"Could not save {DevLaunchSettings.FileName}: {ex.Message}");
+			AppLog.Warning("DevLaunch", $"Could not save {DevLaunchFile.FileName}: {ex.Message}");
 			SaveError = $"Couldn't save these choices: {ex.Message}";
 			return false;
 		}

@@ -39,8 +39,8 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 
 	private JsonObject GenerateRoot(IReadOnlyList<ProcedureAirport> airports, ProcedureSettings settings, DtppMetafileDataCollection dtpp)
 	{
-		ProceduresJsonWriteResult result = ProceduresJsonWriter.Generate(airports, settings, dtpp);
-		return JsonNode.Parse(File.ReadAllText(result.FilePath!))!.AsObject();
+		string path = ProceduresJsonWriter.Generate(airports, settings, dtpp);
+		return JsonNode.Parse(File.ReadAllText(path))!.AsObject();
 	}
 
 	private JsonObject GenerateFirstAirport(ProcedureAirport airport, ProcedureSettings settings, string cycle = "2609") =>
@@ -62,19 +62,18 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 	[Fact]
 	public void generate_creates_the_publication_docs_folder_and_returns_its_path()
 	{
-		ProceduresJsonWriteResult result = ProceduresJsonWriter.Generate([], Settings(), ProcedureTestData.Dtpp("2609"));
+		string path = ProceduresJsonWriter.Generate([], Settings(), ProcedureTestData.Dtpp("2609"));
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Publication_Docs", "Procedures.json"), result.FilePath);
-		Assert.True(File.Exists(result.FilePath));
-		Assert.Empty(result.Messages);
+		Assert.Equal(Path.Combine(_outputDirectory, "Publication_Docs", "Procedures.json"), path);
+		Assert.True(File.Exists(path));
 	}
 
 	[Fact]
 	public void output_has_no_byte_order_mark()
 	{
-		ProceduresJsonWriteResult result = ProceduresJsonWriter.Generate([], Settings(), ProcedureTestData.Dtpp("2609"));
+		string path = ProceduresJsonWriter.Generate([], Settings(), ProcedureTestData.Dtpp("2609"));
 
-		byte[] bytes = File.ReadAllBytes(result.FilePath!);
+		byte[] bytes = File.ReadAllBytes(path);
 		Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF);
 	}
 
@@ -551,6 +550,7 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 		ProcedureSettingsParseResult parsed = ProcedureSettingsParser.Parse(new Dictionary<string, string>
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Artccs",
 			["Facilities"] = "ZOB",
 		});
 

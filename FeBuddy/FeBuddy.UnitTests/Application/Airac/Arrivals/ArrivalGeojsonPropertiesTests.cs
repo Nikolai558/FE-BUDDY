@@ -20,6 +20,7 @@ public sealed class ArrivalGeojsonPropertiesTests
 		Dictionary<string, string> raw = new()
 		{
 			["OutputDirectory"] = @"C:\unused",
+			["Area"] = "Everything",
 			["IncludeFebCustomProperties"] = "Y",
 			["FebProperties"] = string.Join(',', febProperties),
 		};
@@ -85,7 +86,7 @@ public sealed class ArrivalGeojsonPropertiesTests
 			AmendmentNo = "TWO",
 			AmendmentEffectiveDateText = "2024/01/25",
 			ServedAirports = ["33N", "DOV", "ILG"],
-			Bodies = [new ArrivalRawRoute("BODY", 1, ArrivalRouteKind.Body, null, [new ArrivalRawPoint("ALPHA", "RP")])],
+			Bodies = [new ArrivalRawRoute("BODY", 1, ArrivalRouteKind.Body, [new ArrivalRawPoint("ALPHA", "RP")])],
 			Transitions = [],
 			BodiesByAirport = new Dictionary<string, IReadOnlyList<(string Name, int Sequence)>>()
 		};

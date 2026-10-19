@@ -51,40 +51,4 @@ public sealed record EramProperties
 
 	/// <summary>Whether any property is set.</summary>
 	public bool IsEmpty => this == None;
-
-	/// <inheritdoc />
-	/// <remarks>Compares <see cref="Filters"/> by content, so two elements with the same overrides group together.</remarks>
-	public bool Equals(EramProperties? other) =>
-		other is not null
-		&& Bcg == other.Bcg
-		&& (Filters ?? []).SequenceEqual(other.Filters ?? [])
-		&& (Filters is null) == (other.Filters is null)
-		&& Style == other.Style
-		&& Thickness == other.Thickness
-		&& Size == other.Size
-		&& Underline == other.Underline
-		&& XOffset == other.XOffset
-		&& YOffset == other.YOffset
-		&& Display == other.Display;
-
-	/// <inheritdoc />
-	public override int GetHashCode()
-	{
-		HashCode hash = new();
-		hash.Add(Bcg);
-
-		foreach (int filter in Filters ?? [])
-		{
-			hash.Add(filter);
-		}
-
-		hash.Add(Style);
-		hash.Add(Thickness);
-		hash.Add(Size);
-		hash.Add(Underline);
-		hash.Add(XOffset);
-		hash.Add(YOffset);
-		hash.Add(Display);
-		return hash.ToHashCode();
-	}
 }

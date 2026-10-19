@@ -465,4 +465,64 @@ public sealed class TelephonyBuilderTests
 			"or a telephony with no letter or digit (C, PHENX).",
 			note.Text);
 	}
+
+	// ---- the real operators the Telephony tab warns about ----
+
+	/// <summary>
+	/// The real operators are the rows a run writes: the first of each 3LD (or identifier) and telephony, with no
+	/// row that has no designator or telephony and no expired U.S. special call sign - so a virtual airline that
+	/// shares an expired one's call sign isn't called left out.
+	/// </summary>
+	[Fact]
+	public void the_real_operators_are_the_faa_rows_a_run_writes()
+	{
+		TelephonyDataCollection data = Data(
+			[
+				Assignment("American Airlines Inc.", "UNITED STATES", "American", "aal"),
+				Assignment("ANOTHER AMERICAN", "UNITED STATES", "AMERICAN", "AAL"),
+				Assignment("NO DESIGNATOR", "FRANCE", "NOBODY", "..."),
+				Assignment("NO TELEPHONY", "FRANCE", " ", "NTY"),
+			],
+			[
+				SpecialCallSign("AIR SIX", "ARSIX", "NYC Environmental Protection", "N/A"),
+				SpecialCallSign("OLD ONE", "OLDCS", "Gone Agency", "1-Jan-2020"),
+			]);
+
+		IReadOnlyDictionary<(string Designator, string Telephony), string> operators = TelephonyBuilder.RealOperators(data, Today);
+
+		Assert.Equal(2, operators.Count);
+		Assert.Equal("AMERICAN AIRLINES INC.", operators[("AAL", "AMERICAN")]);
+		Assert.Equal("NYC ENVIRONMENTAL PROTECTION", operators[("ARSIX", "AIR SIX")]);
+		Assert.False(operators.ContainsKey(("OLDCS", "OLD ONE")));
+	}
+
+	/// <summary>FE-Buddy's kept copies are read as a run reads them; a copy that is missing gives none of its operators.</summary>
+	[Fact]
+	public void the_real_operators_are_read_from_the_kept_copies()
+	{
+		DirectoryInfo folder = Directory.CreateTempSubdirectory("febuddy-telephony-");
+
+		try
+		{
+			string register = Path.Combine(folder.FullName, "register.html");
+			string special = Path.Combine(folder.FullName, "special.html");
+			string none = Path.Combine(folder.FullName, "none.html");
+			File.WriteAllText(register,
+				"<table><thead><tr><th>Company</th><th>Country</th><th>Telephony</th><th>3-Ltr</th></tr></thead><tbody>" +
+				"<tr><td>AMERICAN AIRLINES INC.</td><td>UNITED STATES</td><td>AMERICAN</td><td>AAL</td></tr>" +
+				"</tbody></table>");
+			File.WriteAllText(special,
+				"<table><thead><tr><th>Telephony/Call Sign</th><th>Identifier</th><th>Company or Operating Agency</th><th>Expiration Date</th></tr></thead>" +
+				"<tbody><tr><td>AIR SIX</td><td>ARSIX</td><td>NYC Environmental Protection</td><td>N/A</td></tr>" +
+				"<tr><td>OLD ONE</td><td>OLDCS</td><td>Gone Agency</td><td>1-Jan-2020</td></tr></tbody></table>");
+
+			Assert.Equal([("AAL", "AMERICAN"), ("ARSIX", "AIR SIX")], TelephonyBuilder.RealOperators(register, special, Today).Keys.Order());
+			Assert.Equal([("AAL", "AMERICAN")], TelephonyBuilder.RealOperators(register, none, Today).Keys);
+			Assert.Empty(TelephonyBuilder.RealOperators(none, none));
+		}
+		finally
+		{
+			folder.Delete(recursive: true);
+		}
+	}
 }

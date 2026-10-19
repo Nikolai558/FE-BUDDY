@@ -29,7 +29,7 @@ public abstract record ServiceResult
 
 	/// <summary>
 	/// The text of every <see cref="LogLevel.Warning"/> and <see cref="LogLevel.Error"/> in
-	/// <see cref="Messages"/> - what a plain-text report lists. Use <see cref="Messages"/> for
+	/// <see cref="Messages"/>, for the Harness's report and tests. Use <see cref="Messages"/> for
 	/// anything level-aware.
 	/// </summary>
 	public IReadOnlyList<string> Warnings =>

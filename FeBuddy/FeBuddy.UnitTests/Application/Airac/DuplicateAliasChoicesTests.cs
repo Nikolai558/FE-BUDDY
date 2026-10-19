@@ -107,6 +107,72 @@ public sealed class DuplicateAliasChoicesTests : IDisposable
 			DuplicateAliasChoices.Problem(Nutiy(), [Choice("Departures.txt", Rename, ".x"), Choice("Arrivals.txt", Rename, ".X")], Nothing, Nothing));
 	}
 
+	/// <summary>
+	/// Every command checked at once gives what checking each against the others' new commands gives:
+	/// a new command two commands both give out is flagged on both, and one a command gives out to
+	/// two of its own lines is flagged once there.
+	/// </summary>
+	[Fact]
+	public void every_command_checked_at_once_is_checked_against_the_others_new_commands()
+	{
+		DuplicateAliasCommand other = new(".orfOTHERf",
+		[
+			new DuplicateAliasLine("Departures.txt", "Departures.txt", ".orfOTHERf .FF A", "ZDC"),
+			new DuplicateAliasLine("Arrivals.txt", "Arrivals.txt", ".orfOTHERf .FF B", "ZDC"),
+		]);
+		DuplicateAliasCommand third = new(".orfTHIRDf",
+		[
+			new DuplicateAliasLine("Departures.txt", "Departures.txt", ".orfTHIRDf .FF A", "ZDC"),
+			new DuplicateAliasLine("Arrivals.txt", "Arrivals.txt", ".orfTHIRDf .FF B", "ZDC"),
+		]);
+
+		IReadOnlyList<string?> problems = DuplicateAliasChoices.Problems(
+			[Nutiy(), other, third],
+			[
+				[Choice("Departures.txt", Keep), Choice("Arrivals.txt", Rename, ".shared")],
+				[Choice("Departures.txt", Keep, command: ".orfOTHERf"), Choice("Arrivals.txt", Rename, " .SHARED ", ".orfOTHERf")],
+				[Choice("Departures.txt", Keep, command: ".orfTHIRDf"), Choice("Arrivals.txt", Rename, ".mine", ".orfTHIRDf")],
+			],
+			Nothing);
+
+		Assert.Equal(".shared is already given to another line. Choose another command.", problems[0]);
+		Assert.Equal(".SHARED is already given to another line. Choose another command.", problems[1]);
+		Assert.Null(problems[2]);
+	}
+
+	/// <summary>
+	/// Hundreds of duplicated commands are checked in one pass - each command's choices read twice, and each new
+	/// command looked for once among those taken - rather than each command against every other, so the review
+	/// keeps up with the typing.
+	/// </summary>
+	[Fact]
+	public void hundreds_of_commands_are_checked_at_once()
+	{
+		DuplicateAliasCommand[] duplicates = [.. Enumerable.Range(0, 2000).Select(i => new DuplicateAliasCommand($".c{i}",
+		[
+			new DuplicateAliasLine("Departures.txt", "Departures.txt", $".c{i} .FF A", "ZDC"),
+			new DuplicateAliasLine("Arrivals.txt", "Arrivals.txt", $".c{i} .FF B", "ZDC"),
+		]))];
+		IReadOnlyList<DuplicateAliasRule?>[] choices = [.. Enumerable.Range(0, 2000).Select(i => (IReadOnlyList<DuplicateAliasRule?>)
+		[
+			Choice("Departures.txt", Keep, command: $".c{i}"),
+			Choice("Arrivals.txt", Rename, $".n{i}", $".c{i}"),
+		])];
+		CountingList<IReadOnlyList<DuplicateAliasRule?>> counted = new(choices);
+		CountingSet taken = new();
+
+		IReadOnlyList<string?> problems = DuplicateAliasChoices.Problems(duplicates, counted, taken);
+
+		Assert.All(problems, Assert.Null);
+		Assert.True(counted.Reads <= 2 * choices.Length, $"Read {counted.Reads:N0} commands' choices for {choices.Length:N0} commands.");
+		Assert.True(taken.Lookups <= choices.Length, $"Looked {taken.Lookups:N0} new commands up among those taken, for {choices.Length:N0} new commands.");
+		Assert.Throws<ArgumentException>(() => DuplicateAliasChoices.Problems(duplicates, [], Nothing));
+		Assert.Throws<ArgumentNullException>(() => DuplicateAliasChoices.Problems(null!, choices, Nothing));
+		Assert.Throws<ArgumentNullException>(() => DuplicateAliasChoices.Problems(duplicates, null!, Nothing));
+		Assert.Throws<ArgumentNullException>(() => DuplicateAliasChoices.Problems(duplicates, choices, null!));
+		Assert.Throws<ArgumentNullException>(() => DuplicateAliasChoices.Problem(Nutiy(), [], Nothing, null!));
+	}
+
 	// ---- sorting a run's duplicates ----
 
 	[Fact]
@@ -252,5 +318,42 @@ public sealed class DuplicateAliasChoicesTests : IDisposable
 	{
 		Assert.Equal("Departures.txt|.orfNUTIYf|1|Keep|", DuplicateAliasChoices.ToConfig([Choice("Departures.txt", Keep, ".stale")]));
 		Assert.Null(Assert.Single(DuplicateAliasChoices.FromConfig("Departures.txt|.orfNUTIYf|1|ignore|.stale")).NewCommand);
+	}
+
+	/// <summary>A list that counts how often an item is read from it.</summary>
+	private sealed class CountingList<T>(IReadOnlyList<T> items) : IReadOnlyList<T>
+	{
+		public int Reads { get; private set; }
+
+		public int Count => items.Count;
+
+		public T this[int index]
+		{
+			get
+			{
+				Reads++;
+				return items[index];
+			}
+		}
+
+		public IEnumerator<T> GetEnumerator()
+		{
+			Reads += items.Count;
+			return items.GetEnumerator();
+		}
+
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+	}
+
+	/// <summary>An empty set of commands taken that counts how often a command is looked up in it.</summary>
+	private sealed class CountingSet() : HashSet<string>(StringComparer.OrdinalIgnoreCase), IReadOnlySet<string>
+	{
+		public int Lookups { get; private set; }
+
+		bool IReadOnlySet<string>.Contains(string item)
+		{
+			Lookups++;
+			return Contains(item);
+		}
 	}
 }

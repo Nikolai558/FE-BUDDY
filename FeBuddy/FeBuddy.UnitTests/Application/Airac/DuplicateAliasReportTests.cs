@@ -281,8 +281,7 @@ public sealed class DuplicateAliasReportTests : IDisposable
 		DuplicateAliasReportResult result = DuplicateAliasReport.Write([chartRecall], Nasr(), "2609", cycleFolder, "ZLA", Generated);
 
 		Assert.Equal(Path.Combine(cycleFolder, "Duplicate_Alias_Commands.txt"), result.FilePath);
-		Assert.Single(result.Duplicates);
-		Assert.Equal(2, result.LineCount);
+		Assert.Equal(2, Assert.Single(result.Duplicates).Lines.Count);
 
 		byte[] bytes = File.ReadAllBytes(result.FilePath);
 		Assert.False(bytes is [0xEF, 0xBB, 0xBF, ..]);

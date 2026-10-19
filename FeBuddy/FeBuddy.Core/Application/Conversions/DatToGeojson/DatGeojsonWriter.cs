@@ -36,12 +36,17 @@ public static class DatGeojsonWriter
 	/// <param name="sourcePath">The <c>.dat</c> file they came from; its name becomes the GeoJSON file's.</param>
 	/// <param name="settings">The parsed settings.</param>
 	/// <param name="files">The run's file set, which does the writing and remembers what was written.</param>
+	/// <param name="outputName">
+	/// The GeoJSON file's name without its extension, when it isn't the source's: another source in
+	/// the run has the same name (see <see cref="ConversionFiles.UniqueFileName"/>).
+	/// </param>
 	/// <returns>The file written, or <see langword="null"/> when <paramref name="lines"/> is empty.</returns>
 	public static string? Write(
 		IReadOnlyList<LineString> lines,
 		string sourcePath,
 		DatToGeojsonSettings settings,
-		GeojsonFileSet files)
+		GeojsonFileSet files,
+		string? outputName = null)
 	{
 		ArgumentNullException.ThrowIfNull(lines);
 		ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
@@ -63,7 +68,7 @@ public static class DatGeojsonWriter
 		collection.Add(new Feature(Wgs84.Factory.CreateMultiLineString([.. lines]), new AttributesTable()));
 
 		// One rendered Feature, so the file set always writes it.
-		files.Write(collection, 1, OutputDirectory(settings), $"{Path.GetFileNameWithoutExtension(sourcePath)}.geojson");
+		files.Write(collection, 1, OutputDirectory(settings), $"{outputName ?? Path.GetFileNameWithoutExtension(sourcePath)}.geojson");
 
 		return files.FilesWritten[^1];
 	}

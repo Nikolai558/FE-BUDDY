@@ -37,24 +37,6 @@ public static partial class TelephonyHtmlParser
 	private const string RegisterPageName = "The FAA telephony register (JO 7340.2, Chapter 3, Section 1)";
 	private const string SpecialCallSignsPageName = "The FAA U.S. special call signs (JO 7340.2, Chapter 3, Section 4)";
 
-	/// <summary>
-	/// Parses both kept pages into one collection.
-	/// </summary>
-	/// <param name="registerPath">The Section 1 page (the register).</param>
-	/// <param name="specialCallSignsPath">The Section 4 page, or <see langword="null"/> to leave the special call signs out.</param>
-	/// <returns>The parsed rows.</returns>
-	/// <exception cref="InvalidDataException">Thrown when a page's layout is not the one described above.</exception>
-	public static TelephonyDataCollection Parse(string registerPath, string? specialCallSignsPath)
-	{
-		ArgumentException.ThrowIfNullOrWhiteSpace(registerPath);
-
-		return new TelephonyDataCollection
-		{
-			Assignments = ParseRegister(registerPath),
-			SpecialCallSigns = specialCallSignsPath is null ? [] : ParseSpecialCallSigns(specialCallSignsPath),
-		};
-	}
-
 	/// <summary>Parses the Section 1 page (the register) from a file.</summary>
 	/// <param name="path">The page's path.</param>
 	/// <returns>Every row, in page order.</returns>

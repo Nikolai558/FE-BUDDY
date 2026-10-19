@@ -136,16 +136,14 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 	/// <summary>A one-leg airway at the given latitude, its designation taken from its ID.</summary>
 	private static Airway BuildAirway(string awyId, AirwayAltitudeClass altitudeClass, double latitude)
 	{
-		AirwayPoint from = new($"{awyId}AA", "WP", latitude, -80.0, "fix");
-		AirwayPoint to = new($"{awyId}BB", "WP", latitude, -81.0, "fix");
+		AirwayPoint from = new($"{awyId}AA", "WP", latitude, -80.0);
+		AirwayPoint to = new($"{awyId}BB", "WP", latitude, -81.0);
 
 		return new Airway
 		{
 			AwyId = awyId,
 			Designation = awyId[..1],
-			AwyLocation = "C",
 			AltitudeClass = altitudeClass,
-			Segments = [new AirwaySegment(from.PointId, to.PointId, IsGap: false, MaxAuthAlt: null)],
 			Points = [from, to],
 			Geometry = Wgs84.Factory.CreateLineString(
 			[

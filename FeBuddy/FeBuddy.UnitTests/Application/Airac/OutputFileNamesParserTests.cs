@@ -16,7 +16,7 @@ public sealed class OutputFileNamesParserTests
 	{
 		OutputFileNamesParseResult result = OutputFileNamesParser.Parse(null);
 
-		Assert.Empty(result.FileNames.NewNames);
+		Assert.Equal("Airways.txt", result.FileNames.FileName("Airways.txt"));
 		Assert.Empty(result.Messages);
 	}
 
@@ -50,7 +50,7 @@ public sealed class OutputFileNamesParserTests
 		OutputFileNamesParseResult result = OutputFileNamesParser.Parse(new Dictionary<string, string> { [key] = "Mine" });
 
 		Assert.True(OutputFileNamesParser.CanRename(key));
-		Assert.Equal("Mine", result.FileNames.NewNames[key]);
+		Assert.Equal("Mine" + OutputFileNames.ExtensionOf(key), result.FileNames.FileName(key));
 		Assert.Empty(result.Messages);
 	}
 
@@ -62,7 +62,7 @@ public sealed class OutputFileNamesParserTests
 		OutputFileNamesParseResult result = OutputFileNamesParser.Parse(new Dictionary<string, string> { [key] = "Mine" });
 
 		Assert.False(OutputFileNamesParser.CanRename(key));
-		Assert.Empty(result.FileNames.NewNames);
+		Assert.Equal(OutputFileNames.DefaultFileName(key), result.FileNames.FileName(key));
 		ServiceMessage message = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Warning, message.Level);
 		Assert.Equal($"The new name for '{key}' was ignored: Departures and Arrivals name each procedure's GeoJSON file from the FAA's data, so those files keep their names.", message.Text);
@@ -76,7 +76,7 @@ public sealed class OutputFileNamesParserTests
 	{
 		OutputFileNamesParseResult result = OutputFileNamesParser.Parse(new Dictionary<string, string> { [key] = "Mine" });
 
-		Assert.Empty(result.FileNames.NewNames);
+		Assert.Equal(OutputFileNames.DefaultFileName(key), result.FileNames.FileName(key));
 		ServiceMessage message = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Warning, message.Level);
 		Assert.Equal($"The new name for '{key}' was ignored: it is not a file FE-Buddy writes.", message.Text);
@@ -91,7 +91,8 @@ public sealed class OutputFileNamesParserTests
 			["Airports.txt"] = "",
 		});
 
-		Assert.Empty(result.FileNames.NewNames);
+		Assert.Equal("Airways.txt", result.FileNames.FileName("Airways.txt"));
+		Assert.Equal("Airports.txt", result.FileNames.FileName("Airports.txt"));
 		Assert.Empty(result.Messages);
 	}
 

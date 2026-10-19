@@ -26,7 +26,7 @@ namespace FeBuddy.Core.Infrastructure.Dtpp;
 /// launch, while a folder that already succeeded is never re-downloaded.
 /// </para>
 /// <para>
-/// The FAA publishes a cycle's metafile only about 15-18 days before its effective date (see
+/// The FAA publishes a cycle's metafile approximately 20 days prior to its effective date (see
 /// <see cref="DtppFiles.DownloadUrl"/>), so a 404 for the next cycle is normal, not a failure: it
 /// is reported as <see cref="DtppDownloadOutcome.NotYetPublished"/> rather than thrown. Any other
 /// failure - a real HTTP error, a payload that doesn't parse as a metafile, or a metafile for the
@@ -95,7 +95,7 @@ public sealed class DtppDownloader
 
 			if (response.StatusCode == HttpStatusCode.NotFound)
 			{
-				AppLog.Info(LogSource, $"Cycle {cycleId}'s d-TPP Metafile is not published by the FAA yet.");
+				AppLog.Info(LogSource, $"Cycle {cycleId}'s d-TPP Metafile isn't on the FAA's server (not published yet, or no longer served).");
 				return DtppDownloadOutcome.NotYetPublished;
 			}
 

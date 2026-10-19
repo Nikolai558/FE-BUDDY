@@ -3,9 +3,9 @@ using FeBuddy.Wpf.Shell;
 namespace FeBuddy.UnitTests.Wpf.Shell;
 
 /// <summary>
-/// Covers <see cref="DevLaunchArgs.IsRequested"/>: <c>--dev</c> and <c>--devmode</c> ask for a dev
-/// launch in any case; nothing else does. (That only a Debug build acts on it is <c>App.OnStartup</c>'s
-/// <c>#if DEBUG</c>, which isn't tested.)
+/// Covers <see cref="DevLaunchArgs.IsRequested"/>: <c>--dev</c> asks for a dev launch in any case;
+/// nothing else does. (That only a Debug build acts on it is <c>App.OnStartup</c>'s <c>#if DEBUG</c>,
+/// which isn't tested.)
 /// </summary>
 public sealed class DevLaunchArgsTests
 {
@@ -13,11 +13,8 @@ public sealed class DevLaunchArgsTests
 	[InlineData("--dev")]
 	[InlineData("--DEV")]
 	[InlineData("--Dev")]
-	[InlineData("--devmode")]
-	[InlineData("--DevMode")]
-	[InlineData("--DEVMODE")]
 	[InlineData(" --dev ")]
-	public void dev_or_devmode_in_any_case_asks_for_a_dev_launch(string arg)
+	public void dev_in_any_case_asks_for_a_dev_launch(string arg)
 	{
 		Assert.True(DevLaunchArgs.IsRequested([arg]));
 		Assert.True(DevLaunchArgs.IsRequested(["--other", arg]));
@@ -28,6 +25,7 @@ public sealed class DevLaunchArgsTests
 	[InlineData("/dev")]
 	[InlineData("dev")]
 	[InlineData("--developer")]
+	[InlineData("--devmode")]
 	[InlineData("--dev-mode")]
 	[InlineData("")]
 	public void anything_else_does_not(string arg)

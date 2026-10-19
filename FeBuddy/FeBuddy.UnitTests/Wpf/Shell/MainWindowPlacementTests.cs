@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.Shell.Models;
 using FeBuddy.Wpf.ViewModels;
 
 namespace FeBuddy.UnitTests.Wpf.Shell;

@@ -290,7 +290,7 @@ public sealed class AliasGuideDocumentView : Decorator
 
 		foreach (IReadOnlyList<string> row in table.Rows)
 		{
-			panel.Children.Add(Divider(new Thickness(0)));
+			panel.Children.Add(Divider());
 			panel.Children.Add(TableRow(table.Headers.Count, [.. row.Select(cell => TextOrCommand(cell, "Text.Body"))]));
 		}
 
@@ -299,12 +299,16 @@ public sealed class AliasGuideDocumentView : Decorator
 
 	/// <summary>
 	/// A table cell or a bullet: one that is just a command shows it as pills, like a command's
-	/// examples; anything else is inline text.
+	/// examples; anything else is inline text. Parsed once, for both.
 	/// </summary>
-	private static FrameworkElement TextOrCommand(string text, string styleKey) =>
-		GuideInline.Parse(text) is [{ Style: InlineStyle.Code } only] && only.Parts.Any(part => part.Kind != CommandPartKind.Typed)
+	private static FrameworkElement TextOrCommand(string text, string styleKey)
+	{
+		IReadOnlyList<InlineRun> runs = GuideInline.Parse(text);
+
+		return runs is [{ Style: InlineStyle.Code } only] && only.Parts.Any(part => part.Kind != CommandPartKind.Typed)
 			? CommandLine(only.Parts, CommandSize)
-			: Prose(text, styleKey);
+			: Prose(runs, styleKey);
+	}
 
 	private static TextBlock HeaderCell(string header)
 	{
@@ -342,12 +346,15 @@ public sealed class AliasGuideDocumentView : Decorator
 	// ---------------------------------------------------------------- inlines
 
 	/// <summary>Inline text in a TextBlock: plain, bold, code (a command coloured part by part), links and line breaks.</summary>
-	private static TextBlock Prose(string text, string styleKey)
+	private static TextBlock Prose(string text, string styleKey) => Prose(GuideInline.Parse(text), styleKey);
+
+	/// <summary>Inline text already parsed into its runs.</summary>
+	private static TextBlock Prose(IReadOnlyList<InlineRun> runs, string styleKey)
 	{
 		TextBlock block = new() { TextWrapping = TextWrapping.Wrap };
 		block.SetResourceReference(StyleProperty, styleKey);
 
-		foreach (InlineRun run in GuideInline.Parse(text))
+		foreach (InlineRun run in runs)
 		{
 			block.Inlines.Add(run.Style switch
 			{
@@ -484,9 +491,9 @@ public sealed class AliasGuideDocumentView : Decorator
 		return chip;
 	}
 
-	private static Border Divider(Thickness margin)
+	private static Border Divider()
 	{
-		Border rule = new() { Margin = margin };
+		Border rule = new();
 		rule.SetResourceReference(StyleProperty, "Divider");
 		return rule;
 	}

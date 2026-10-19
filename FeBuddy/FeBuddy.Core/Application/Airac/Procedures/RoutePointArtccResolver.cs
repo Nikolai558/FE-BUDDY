@@ -37,7 +37,6 @@ public sealed class RoutePointArtccResolver
 	private readonly ILookup<string, (string Type, string[] Artccs)> _navaids;
 	private readonly Dictionary<string, string> _airportArtccs = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<ProcedureRoutePoint, string[]?> _found = [];
-	private readonly List<ProcedureRoutePoint> _ambiguous = [];
 
 	/// <summary>Builds the lookups from one cycle's NASR data.</summary>
 	/// <param name="nasr">Parsed NASR data with its <c>FIX</c> and <c>NAV</c> groups; <c>APT</c>, if parsed, for the airport fallback.</param>
@@ -74,9 +73,6 @@ public sealed class RoutePointArtccResolver
 			}
 		}
 	}
-
-	/// <summary>The points looked up so far that more than one row still matched.</summary>
-	public IReadOnlyList<ProcedureRoutePoint> AmbiguousPoints => _ambiguous;
 
 	/// <summary>Whether <paramref name="point"/> is in <paramref name="facility"/>.</summary>
 	/// <param name="point">The route point.</param>
@@ -118,7 +114,6 @@ public sealed class RoutePointArtccResolver
 
 		if (rows.Length > 1)
 		{
-			_ambiguous.Add(point);
 			AppLog.Info(LogSource,
 				$"Route point {point.Id} ({point.Type}{(point.Region is null ? string.Empty : $", region {point.Region}")}) matches {rows.Length} rows; " +
 				$"it counts as in any facility one of them is in ({(artccs.Length == 0 ? "none" : string.Join(", ", artccs))}).");

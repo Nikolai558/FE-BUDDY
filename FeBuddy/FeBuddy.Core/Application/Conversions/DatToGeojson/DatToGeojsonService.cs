@@ -37,6 +37,17 @@ public static class DatToGeojsonService
 	/// <summary>The extensions a source folder's files must have to be converted.</summary>
 	public static readonly IReadOnlyList<string> Extensions = [".dat"];
 
+	/// <summary>
+	/// Counts the files in <paramref name="folder"/> (not its sub-folders) a run would convert: every file with a <see cref="Extensions"/> extension,
+	/// as the run picks them. For the page that shows the count as the folder is chosen, off the UI thread.
+	/// </summary>
+	/// <param name="folder">The folder.</param>
+	/// <param name="cancellationToken">Stops the count; a newer one has started.</param>
+	/// <returns>Whether the folder is there, how many files it has, or why it couldn't be read.</returns>
+	/// <exception cref="OperationCanceledException">The count was stopped.</exception>
+	public static SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken = default) =>
+		ConversionSourceFolder.Count(folder, Extensions, _ => true, cancellationToken);
+
 	private const string LogSource = "DatToGeojsonService";
 
 	/// <summary>Runs the conversion.</summary>
@@ -60,9 +71,12 @@ public static class DatToGeojsonService
 		IReadOnlyList<string> sources = ConversionFiles.Resolve(parsed, Extensions, LogSource, messages);
 		GeojsonFileSet files = new(parsed.CoordinatePrecision);
 
+		// Two sources with one name (picked from two folders) would write the same file.
+		HashSet<string> outputNames = new(StringComparer.OrdinalIgnoreCase);
+
 		IReadOnlyList<DatFileConversion> conversions = ConversionFiles.ConvertEach(
 			sources,
-			source => Convert(source, parsed, files, messages),
+			source => Convert(source, parsed, files, outputNames, messages),
 			(source, error) => new DatFileConversion { SourcePath = source, Error = error },
 			Describe,
 			progress,
@@ -91,6 +105,7 @@ public static class DatToGeojsonService
 		string source,
 		DatToGeojsonSettings settings,
 		GeojsonFileSet files,
+		HashSet<string> outputNames,
 		List<ServiceMessage> messages)
 	{
 		string name = Path.GetFileName(source);
@@ -116,7 +131,7 @@ public static class DatToGeojsonService
 				IsAdvisory = true
 			});
 
-			return new DatFileConversion { SourcePath = source, RecordsSkipped = datFile.Problems.Count };
+			return new DatFileConversion { SourcePath = source };
 		}
 
 		IReadOnlyList<LineString> lines = datFile.Lines;
@@ -145,15 +160,29 @@ public static class DatToGeojsonService
 		}
 
 		lines = AntimeridianSplitter.Split(lines);
+		string? outputName = lines.Count > 0 ? OutputName(source, outputNames, messages) : null;
 
 		return new DatFileConversion
 		{
 			SourcePath = source,
-			OutputPath = DatGeojsonWriter.Write(lines, source, settings, files),
-			LinesRead = datFile.Lines.Count,
+			OutputPath = DatGeojsonWriter.Write(lines, source, settings, files, outputName),
 			LinesWritten = lines.Count,
-			RecordsSkipped = datFile.Problems.Count,
 		};
+	}
+
+	/// <summary>The output file's name: the source's, or - taken by another source in the run - the next free one, with a note.</summary>
+	private static string OutputName(string source, HashSet<string> outputNames, List<ServiceMessage> messages)
+	{
+		string own = ConversionFiles.SafeFileName(Path.GetFileNameWithoutExtension(source));
+		string name = ConversionFiles.UniqueFileName(own, outputNames);
+
+		if (!string.Equals(name, own, StringComparison.Ordinal))
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"{Path.GetFileName(source)}: another file in this run has the same name, so this one was written as {name}.geojson."));
+		}
+
+		return name;
 	}
 
 	private static string Describe(DatFileConversion conversion) => conversion switch

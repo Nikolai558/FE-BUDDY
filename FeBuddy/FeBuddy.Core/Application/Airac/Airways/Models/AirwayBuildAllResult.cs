@@ -9,8 +9,9 @@ namespace FeBuddy.Core.Application.Airac.Airways.Models;
 /// </summary>
 /// <param name="Airways">
 /// Every airway that produced usable geometry. With an ROI set, airways outside it are kept
-/// too, marked <see cref="Airway.CrossesRoi"/> <see langword="false"/>: the alias file can
-/// still list them.
+/// too, marked <see cref="Airway.CrossesRoi"/> <see langword="false"/>, and so are airways
+/// waypoint buffering leaves no legs of, marked <see cref="Airway.IsDrawn"/> <see langword="false"/>:
+/// the alias file can still list them.
 /// </param>
 /// <param name="Messages">Levelled messages noticed while building airways.</param>
 /// <param name="ExcludedAirwayIds">

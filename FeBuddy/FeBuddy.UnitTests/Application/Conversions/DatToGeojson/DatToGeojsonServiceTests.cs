@@ -1,5 +1,6 @@
 using System.Text.Json;
 
+using FeBuddy.Core.Application.Conversions;
 using FeBuddy.Core.Application.Conversions.DatToGeojson;
 using FeBuddy.Core.Application.Conversions.DatToGeojson.Models;
 using FeBuddy.Core.Application.Conversions.Models;
@@ -82,6 +83,31 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 	private static JsonElement Features(string path) =>
 		JsonDocument.Parse(File.ReadAllText(path)).RootElement.GetProperty("features");
 
+	/// <summary>
+	/// Two maps with one name, picked from two folders, would write the same GeoJSON file, the
+	/// second over the first. The second is written as "ZOB (2)", and the run says so.
+	/// </summary>
+	[Fact]
+	public void two_maps_with_one_name_are_both_kept()
+	{
+		string first = WriteMap("ZOB.dat");
+		string other = Path.Combine(_root, "Other");
+		Directory.CreateDirectory(other);
+		string second = Path.Combine(other, "ZOB.dat");
+		File.Copy(first, second);
+
+		Dictionary<string, string> settings = Settings(("SourceFiles", $"{first}{ConversionSettingsReader.SourceFileSeparator}{second}"));
+		settings.Remove("SourceFolder");
+
+		DatToGeojsonServiceResult result = DatToGeojsonService.Run(settings);
+
+		Assert.Equal(Path.Combine(ConvertedFolder, "ZOB.geojson"), result.Files[0].OutputPath);
+		Assert.Equal(Path.Combine(ConvertedFolder, "ZOB (2).geojson"), result.Files[1].OutputPath);
+		Assert.True(File.Exists(result.Files[1].OutputPath));
+		Assert.Contains(result.Messages, message => message.Level == LogLevel.Info
+			&& message.Text == "ZOB.dat: another file in this run has the same name, so this one was written as ZOB (2).geojson.");
+	}
+
 	[Fact]
 	public void converts_every_dat_in_the_folder_to_its_own_geojson()
 	{
@@ -101,9 +127,7 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 		Assert.Empty(result.Warnings);
 
 		DatFileConversion a = result.Files[0];
-		Assert.Equal(2, a.LinesRead);
 		Assert.Equal(2, a.LinesWritten);
-		Assert.Equal(0, a.RecordsSkipped);
 		Assert.Null(a.Error);
 
 		JsonElement feature = Assert.Single(Features(a.OutputPath!).EnumerateArray());
@@ -210,7 +234,6 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 
 		DatFileConversion empty = Assert.Single(result.Files);
 		Assert.Null(empty.OutputPath);
-		Assert.Equal(1, empty.RecordsSkipped);
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && m.Text.Contains("1 LINE block(s) with fewer than two points"));
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains("has no lines"));
 		Assert.Contains(result.Warnings, w => w.StartsWith("EMPTY.dat: Line 2:"));

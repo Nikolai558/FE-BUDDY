@@ -16,7 +16,8 @@ public sealed class NavaidSettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
-		{ "OutputDirectory", @"C:\Output" }
+		{ "OutputDirectory", @"C:\Output" },
+		{ "Area", "Everything" }
 	};
 
 	private static void AddSymbolDefaults(Dictionary<string, string> settings, string prefix, bool withStyle)

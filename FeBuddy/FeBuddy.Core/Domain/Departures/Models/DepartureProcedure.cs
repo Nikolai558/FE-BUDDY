@@ -87,12 +87,10 @@ public sealed record DepartureProcedure
 /// <summary>One body or transition as listed in <c>DP_RTE</c>, not yet located.</summary>
 /// <param name="Name">The route name (<c>ROUTE_NAME</c>), e.g. <c>DLREY-DOTSS</c> or <c>CLEEE TRANSITION</c>.</param>
 /// <param name="Kind">Body or transition.</param>
-/// <param name="TransitionCode">The transition computer code (<c>TRANSITION_COMPUTER_CODE</c>), or <see langword="null"/> for a body.</param>
 /// <param name="Points">The route's points in <c>POINT_SEQ</c> order.</param>
 public sealed record DepartureRawRoute(
 	string Name,
 	DepartureRouteKind Kind,
-	string? TransitionCode,
 	IReadOnlyList<DepartureRawPoint> Points);
 
 /// <summary>One point on a route as listed in <c>DP_RTE</c>, not yet located.</summary>

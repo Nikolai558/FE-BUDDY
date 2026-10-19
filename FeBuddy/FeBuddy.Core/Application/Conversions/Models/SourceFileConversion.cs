@@ -18,9 +18,6 @@ public sealed record SourceFileConversion
 	/// <summary>How many rendered Features were written, across its files.</summary>
 	public int FeaturesWritten { get; init; }
 
-	/// <summary>How many of the file's records could not be used and were skipped.</summary>
-	public int RecordsSkipped { get; init; }
-
 	/// <summary>Why the file was not converted, or <see langword="null"/> when it was.</summary>
 	public string? Error { get; init; }
 }

@@ -40,8 +40,8 @@ public sealed class WaypointLocatorTests
 	{
 		NasrCsvDataCollection data = Data();
 
-		Assert.Equal((47.4, -122.3, "navaid"), Find(data, "SEA", WaypointType.Navaid));
-		Assert.Equal((47.45, -122.31, "airport"), Find(data, "SEA", WaypointType.Airport));
+		Assert.Equal((47.4, -122.3), Find(data, "SEA", WaypointType.Navaid));
+		Assert.Equal((47.45, -122.31), Find(data, "SEA", WaypointType.Airport));
 		Assert.Null(Find(data, "SEA", WaypointType.Fix));
 		Assert.Null(Find(data, "SEA", (WaypointType)99));
 	}
@@ -51,7 +51,7 @@ public sealed class WaypointLocatorTests
 	{
 		NasrCsvDataCollection data = Data();
 
-		Assert.Equal((40.0, -80.0, "fix"), Find(data, "alpha"));
+		Assert.Equal((40.0, -80.0), Find(data, "alpha"));
 		Assert.Null(Find(data, "NOPE"));
 	}
 

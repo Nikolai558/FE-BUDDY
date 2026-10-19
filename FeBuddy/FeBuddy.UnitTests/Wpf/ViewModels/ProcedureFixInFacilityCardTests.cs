@@ -51,7 +51,7 @@ public sealed class ProcedureFixInFacilityCardTests : IDisposable
 	{
 		if (facility is not null)
 		{
-			UserConfigFile.TrySetValue("Services.AiracService.UserArtccId", facility);
+			UserConfigFile.TrySetValue(UserConfigKeys.Facility, facility);
 		}
 
 		ProceduresViewModel tab = new();

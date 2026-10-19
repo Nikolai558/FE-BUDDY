@@ -38,8 +38,8 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 
 	private string Generate(IReadOnlyList<ProcedureAirport> airports, DtppMetafileDataCollection dtpp, DtppMetafileDataCollection? previousDtpp = null, string? primaryFacility = null)
 	{
-		ProcedureChangesWriteResult result = ProcedureChangesMarkdownWriter.Generate(airports, Settings(primaryFacility), dtpp, previousDtpp);
-		return File.ReadAllText(result.FilePath!);
+		string path = ProcedureChangesMarkdownWriter.Generate(airports, Settings(primaryFacility), dtpp, previousDtpp);
+		return File.ReadAllText(path);
 	}
 
 	[Fact]
@@ -55,11 +55,10 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 	[Fact]
 	public void generate_creates_the_publication_docs_folder_and_returns_its_path()
 	{
-		ProcedureChangesWriteResult result = ProcedureChangesMarkdownWriter.Generate([], Settings(), ProcedureTestData.Dtpp("2609"), null);
+		string path = ProcedureChangesMarkdownWriter.Generate([], Settings(), ProcedureTestData.Dtpp("2609"), null);
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Publication_Docs", "Procedure_Changes.md"), result.FilePath);
-		Assert.True(File.Exists(result.FilePath));
-		Assert.Empty(result.Messages);
+		Assert.Equal(Path.Combine(_outputDirectory, "Publication_Docs", "Procedure_Changes.md"), path);
+		Assert.True(File.Exists(path));
 	}
 
 	[Fact]
@@ -665,13 +664,13 @@ public sealed class ProcedureChangesMarkdownWriterTests : IDisposable
 	[Fact]
 	public void output_is_crlf_and_utf8_without_a_bom()
 	{
-		ProcedureChangesWriteResult result = ProcedureChangesMarkdownWriter.Generate([], Settings(), ProcedureTestData.Dtpp("2609"), null);
+		string path = ProcedureChangesMarkdownWriter.Generate([], Settings(), ProcedureTestData.Dtpp("2609"), null);
 
-		byte[] bytes = File.ReadAllBytes(result.FilePath!);
+		byte[] bytes = File.ReadAllBytes(path);
 		bool hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
 		Assert.False(hasBom);
 
-		string content = File.ReadAllText(result.FilePath!);
+		string content = File.ReadAllText(path);
 		string withoutCrlf = content.Replace("\r\n", string.Empty, StringComparison.Ordinal);
 		Assert.DoesNotContain('\n', withoutCrlf);
 		Assert.DoesNotContain('\r', withoutCrlf);

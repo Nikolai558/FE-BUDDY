@@ -241,4 +241,46 @@ public sealed class CrcDefaultsReaderTests
 		Assert.Contains(TextPrefix, ex.Message);
 		Assert.Contains("size", ex.Message);
 	}
+
+	/// <summary>
+	/// Each property's value is checked as the readers check it: parsed the same way, then held to the
+	/// validator's ranges and styles - so a screen marks what a run would refuse.
+	/// </summary>
+	[Theory]
+	[InlineData(CrcFeatureKind.Line, "bcg", "40", true)]
+	[InlineData(CrcFeatureKind.Line, "bcg", " 1 ", true)]
+	[InlineData(CrcFeatureKind.Line, "bcg", "50", false)]
+	[InlineData(CrcFeatureKind.Line, "bcg", "0", false)]
+	[InlineData(CrcFeatureKind.Line, "bcg", "ten", false)]
+	[InlineData(CrcFeatureKind.Line, "bcg", "", false)]
+	[InlineData(CrcFeatureKind.Line, "filters", "0, 2,40", true)]
+	[InlineData(CrcFeatureKind.Line, "filters", "2,41", false)]
+	[InlineData(CrcFeatureKind.Line, "filters", "2;7", false)]
+	[InlineData(CrcFeatureKind.Line, "filters", ",", false)]
+	[InlineData(CrcFeatureKind.Line, "style", "shortdashed", true)]
+	[InlineData(CrcFeatureKind.Line, "style", "Dotted", false)]
+	[InlineData(CrcFeatureKind.Symbol, "style", "TACAN", true)]
+	[InlineData(CrcFeatureKind.Symbol, "style", "Solid", false)]
+	[InlineData(CrcFeatureKind.Line, "thickness", "3", true)]
+	[InlineData(CrcFeatureKind.Line, "thickness", "4", false)]
+	[InlineData(CrcFeatureKind.Symbol, "size", "4", true)]
+	[InlineData(CrcFeatureKind.Symbol, "size", "5", false)]
+	[InlineData(CrcFeatureKind.Text, "size", "5", true)]
+	[InlineData(CrcFeatureKind.Text, "size", "0", true)]
+	[InlineData(CrcFeatureKind.Text, "size", "6", false)]
+	[InlineData(CrcFeatureKind.Text, "underline", "Y", true)]
+	[InlineData(CrcFeatureKind.Text, "opaque", "Maybe", false)]
+	[InlineData(CrcFeatureKind.Text, "xOffset", "-12", true)]
+	[InlineData(CrcFeatureKind.Text, "yOffset", "1.5", false)]
+	public void a_value_is_valid_when_the_reader_would_accept_it(CrcFeatureKind kind, string property, string value, bool expected) =>
+		Assert.Equal(expected, CrcDefaultsReader.IsValidValue(kind, property, value));
+
+	/// <summary>A property the kind has no default for is a programming error, not a bad value.</summary>
+	[Fact]
+	public void a_property_the_kind_doesnt_have_is_refused()
+	{
+		Assert.Throws<ArgumentOutOfRangeException>(() => CrcDefaultsReader.IsValidValue(CrcFeatureKind.Line, "size", "1"));
+		Assert.Throws<ArgumentNullException>(() => CrcDefaultsReader.IsValidValue(CrcFeatureKind.Line, null!, "1"));
+		Assert.False(CrcDefaultsReader.IsValidValue(CrcFeatureKind.Line, "BCG", null));
+	}
 }

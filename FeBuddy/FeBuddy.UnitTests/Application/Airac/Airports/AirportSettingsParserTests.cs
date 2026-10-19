@@ -15,7 +15,8 @@ public sealed class AirportSettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
-		{ "OutputDirectory", @"C:\Output" }
+		{ "OutputDirectory", @"C:\Output" },
+		{ "Area", "Everything" }
 	};
 
 	/// <summary>Adds a complete, valid set of CRC defaults for one class and kind.</summary>
@@ -61,6 +62,7 @@ public sealed class AirportSettingsParserTests
 	private static Dictionary<string, string> WithRoi()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
 		settings["FilterByRoi"] = "Y";
 		settings["RoiSwLat"] = "32.5";
 		settings["RoiSwLon"] = "-120";

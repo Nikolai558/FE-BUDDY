@@ -176,7 +176,8 @@ public sealed class EramCrcPropertiesTests
 	{
 		EramProperties drawn = EramCrcProperties.Over(Line, new EramProperties { Thickness = 3, Filters = [9] });
 
-		Assert.Equal(Line with { Thickness = 3, Filters = [9] }, drawn);
+		Assert.Equal([9], drawn.Filters!);
+		Assert.Equal(Line with { Thickness = 3, Filters = null }, drawn with { Filters = null });
 		Assert.Equal(Text, EramCrcProperties.Over(Text, EramProperties.None));
 		Assert.Equal(Text, EramCrcProperties.Over(EramProperties.None, Text));
 	}

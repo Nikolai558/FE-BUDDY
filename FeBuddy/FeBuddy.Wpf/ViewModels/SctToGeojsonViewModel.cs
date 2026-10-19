@@ -1,5 +1,6 @@
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
+using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Conversions.SctToGeojson;
 using FeBuddy.Core.Application.Models;
 
@@ -39,6 +40,10 @@ public sealed class SctToGeojsonViewModel : FileConversionTabViewModel
 
 	/// <inheritdoc />
 	protected override IReadOnlyList<string> Extensions => SctToGeojsonService.Extensions;
+
+	/// <inheritdoc />
+	protected override SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken) =>
+		SctToGeojsonService.CountSourceFiles(folder, cancellationToken);
 
 	/// <inheritdoc />
 	protected override string FileDescription => "Sector files";

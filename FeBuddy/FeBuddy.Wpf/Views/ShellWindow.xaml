@@ -51,9 +51,6 @@
         <DataTemplate DataType="{x:Type vm:FileConversionsViewModel}">
             <views:FileConversionsView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:AirwaysViewModel}">
-            <views:AirwaysView />
-        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:MapViewModel}">
             <views:MapView />
         </DataTemplate>
@@ -297,8 +294,7 @@
 
                 <!-- caption buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
-                    <Button x:Name="MinimizeButton"
-                            Style="{StaticResource Caption.Button}"
+                    <Button Style="{StaticResource Caption.Button}"
                             Content="{StaticResource Icon.Minimize}"
                             Click="OnMinimize"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True" />
@@ -307,8 +303,7 @@
                             Content="{StaticResource Icon.Maximize}"
                             Click="OnMaxRestore"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True" />
-                    <Button x:Name="CloseButton"
-                            Style="{StaticResource Caption.Close}"
+                    <Button Style="{StaticResource Caption.Close}"
                             Content="{StaticResource Icon.Close}"
                             Click="OnClose"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True" />
@@ -324,7 +319,7 @@
 
                 <!-- nav rail: Width animates between 232 and 68 on NavCollapsed. Collapsed, 68 leaves each
                      row room for its 20-wide icon after the row's 15 / 10 margins, centred in its highlight. -->
-                <Border x:Name="NavRail" Grid.Column="0" Width="232" ClipToBounds="True"
+                <Border Grid.Column="0" Width="232" ClipToBounds="True"
                         Background="{StaticResource Brush.Panel}"
                         BorderBrush="{StaticResource Brush.Stroke}"
                         BorderThickness="0,0,1,0">

@@ -678,6 +678,15 @@ public sealed class TelephonyViewModelTests : IDisposable
 			result.Settings.VirtualAirlines);
 	}
 
+	/// <summary>Telephony writes no GeoJSON, so the block leaves out the GeoJSON settings its parser would only ignore.</summary>
+	[Fact]
+	public void the_settings_block_leaves_out_the_geojson_settings()
+	{
+		IReadOnlyDictionary<string, string> block = new TelephonyViewModel().BuildSettingsBlock();
+
+		Assert.DoesNotContain(block.Keys, key => key is "CoordinatePrecision" or "IncludeFebCustomProperties" or "FebProperties" or "CrcDefaultsFor");
+	}
+
 	[Fact]
 	public void with_no_virtual_airlines_the_settings_block_has_no_virtual_airline_keys()
 	{
@@ -938,7 +947,6 @@ public sealed class TelephonyViewModelTests : IDisposable
 	{
 		(TelephonyViewModel withCopy, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual"), ("OCN", "Ocean", "vOCN")));
 		(TelephonyViewModel withoutCopy, _) = TabUsing(null);
-		(TelephonyViewModel withOlderCopy, _) = TabUsing(ListOf(("OCN", "Ocean", "vOCN")) with { IsOlderCopy = true, GngDownloadedUtc = null, VatsimRadarDownloadedUtc = null });
 
 		Assert.Equal(
 			$"FE-Buddy's copy is from {ListDownloadedUtc.ToLocalTime():d MMM yyyy}: 2 virtual airlines.",
@@ -947,8 +955,6 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.Equal(
 			"FE-Buddy has no copy yet, so a virtual airline you add can't be checked against it.",
 			withoutCopy.VatsimRadarListStatus);
-		Assert.StartsWith("FE-Buddy's older copy of the list is from ", withOlderCopy.VatsimRadarListStatus, StringComparison.Ordinal);
-		Assert.Equal("Using FE-Buddy's older copy of the list until its two parts can be downloaded.", withOlderCopy.VatsimRadarListWarning);
 	}
 
 	/// <summary>A part FE-Buddy has no copy of is a warning, in amber, even before anything is downloaded.</summary>
@@ -1084,11 +1090,11 @@ public sealed class TelephonyViewModelTests : IDisposable
 		release.Set();
 		await older;
 
-		Assert.Equal("The newer look.", tab.TelephonyDataStatus);
+		Assert.Equal("The newer look.", tab.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Telephony data").Value);
 
 		tab.DescribeTelephonyCopy = _ => throw new IOException("boom");
 		await tab.RefreshTelephonyDataAsync();
 
-		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.TelephonyDataStatus);
+		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.BuildPreviewSummary()[0].Rows.Single(row => row.Label == "Telephony data").Value);
 	}
 }

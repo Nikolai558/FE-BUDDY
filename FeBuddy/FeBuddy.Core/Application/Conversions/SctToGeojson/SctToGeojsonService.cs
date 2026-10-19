@@ -131,7 +131,6 @@ public static class SctToGeojsonService
 			SourcePath = source,
 			OutputPaths = paths,
 			FeaturesWritten = featureCount,
-			RecordsSkipped = sctFile.Problems.Count,
 		};
 	}
 

@@ -36,6 +36,7 @@ public sealed class DepartureServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Everything",
 		};
 
 		foreach ((string key, string value) in overrides)
@@ -183,7 +184,7 @@ public sealed class DepartureServiceTests : IDisposable
 	[Fact]
 	public void run_whose_filters_leave_nothing_says_why_nothing_was_written()
 	{
-		DepartureServiceResult result = DepartureService.Run(DepartureTestData.Dotss(), Settings(("ArtccFilter", "ZNY")));
+		DepartureServiceResult result = DepartureService.Run(DepartureTestData.Dotss(), Settings(("Area", "Artccs"), ("ArtccFilter", "ZNY")));
 
 		Assert.Equal(1, result.ProcedureCount);
 		Assert.Equal(0, result.ProceduresInScopeCount);

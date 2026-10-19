@@ -16,8 +16,8 @@ namespace FeBuddy.Core.Infrastructure.Nasr;
 /// <para>
 /// <c>AiracCycleResolver</c> will happily name a next-cycle identity weeks before its data
 /// exists. Publication is a separate fact and must be checked separately: a cheap HTTP
-/// <c>HEAD</c> (falling back to a one-byte ranged <c>GET</c> when HEAD is not allowed) against
-/// the cycle's CSV URL.
+/// <c>HEAD</c> against the cycle's CSV URL, falling back to a one-byte ranged <c>GET</c> when HEAD
+/// gives no clear answer (405, 5xx, a network error).
 /// </para>
 /// <para>
 /// A not-yet-published next cycle is <b>normal, not a failure</b>: it is logged at
@@ -32,7 +32,8 @@ public static class AiracCycleAvailability
 	private const string LogSource = "AiracCycleAvailability";
 
 	/// <summary>
-	/// Probes whether <paramref name="cycle"/>'s NASR CSV archive is published. Never throws.
+	/// Probes whether <paramref name="cycle"/>'s NASR CSV archive is published. Never throws, except
+	/// when <paramref name="cancellationToken"/> is cancelled.
 	/// </summary>
 	/// <param name="cycle">The cycle to probe.</param>
 	/// <param name="httpClient">An <see cref="HttpClient"/> to use, or <see langword="null"/> to create one. A test seam.</param>
@@ -41,6 +42,7 @@ public static class AiracCycleAvailability
 	/// <see cref="AiracCyclePublicationState.Published"/>, <see cref="AiracCyclePublicationState.NotYetPublished"/>,
 	/// or <see cref="AiracCyclePublicationState.Unknown"/>.
 	/// </returns>
+	/// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
 	public static async Task<AiracCyclePublicationState> ProbeAsync(
 		AiracCycleInfo cycle,
 		HttpClient? httpClient = null,
@@ -53,23 +55,15 @@ public static class AiracCycleAvailability
 		using HttpClient? owned = httpClient is null ? FeBuddyHttp.CreateClient(TimeSpan.FromSeconds(15)) : null;
 		HttpClient client = httpClient ?? owned!;
 
-		try
-		{
-			AiracCyclePublicationState state = await SendAsync(client, HttpMethod.Head, url, cycle, cancellationToken).ConfigureAwait(false);
+		AiracCyclePublicationState state = await SendAsync(client, HttpMethod.Head, url, cycle, cancellationToken).ConfigureAwait(false);
 
-			// Some servers/CDNs reject HEAD (405) - retry once with a one-byte ranged GET.
-			if (state == AiracCyclePublicationState.Unknown)
-			{
-				state = await SendAsync(client, HttpMethod.Get, url, cycle, cancellationToken, rangedFirstByte: true).ConfigureAwait(false);
-			}
-
-			return state;
-		}
-		catch (Exception ex)
+		// Some servers/CDNs reject HEAD (405) - retry once with a one-byte ranged GET.
+		if (state == AiracCyclePublicationState.Unknown)
 		{
-			AppLog.Info(LogSource, $"Cycle {cycle.AiracCycleId}: publication probe could not reach the FAA ({ex.Message}). Will retry.");
-			return AiracCyclePublicationState.Unknown;
+			state = await SendAsync(client, HttpMethod.Get, url, cycle, cancellationToken, rangedFirstByte: true).ConfigureAwait(false);
 		}
+
+		return state;
 	}
 
 	private static async Task<AiracCyclePublicationState> SendAsync(
@@ -108,7 +102,7 @@ public static class AiracCycleAvailability
 			// 405 (method not allowed), 5xx, redirects we did not follow, etc. - inconclusive.
 			return AiracCyclePublicationState.Unknown;
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
 		{
 			AppLog.Info(LogSource, $"Cycle {cycle.AiracCycleId}: publication probe error ({ex.Message}). Will retry.");
 			return AiracCyclePublicationState.Unknown;

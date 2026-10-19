@@ -51,9 +51,10 @@ a tab's node is saved, its old state is copied to `UserConfig-previous.<Profile>
 last save** restores. Settings' own **Save** writes the whole profile, with no undo copy.
 
 Each file starts with `"ConfigVersion"`, its layout (`UserConfigVersion`), which every write stamps
-and which is never read as a setting. A file with no stamp is layout 1 (3.0.0-beta.2 and beta.3).
-At launch, a profile in an older layout is brought forward (`UserConfigMigrations`) and written back,
-the old file kept as `UserConfig-v<old layout>.<Profile>.json`. See [Changing the layout](#changing-the-layout).
+and which is never read as a setting. A file with no stamp, or one older than
+`UserConfigVersion.Oldest`, is read as the oldest layout. At launch, a profile in an older layout is
+brought forward (`UserConfigMigrations`) and written back, the old file kept as
+`UserConfig-v<old layout>.<Profile>.json`. See [Changing the layout](#changing-the-layout).
 
 ## Settings profiles
 
@@ -66,8 +67,7 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 | `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward), `damaged` (the profile as it was when it couldn't be read as settings, kept before a save wrote over it). They move and go with it. |
 
 - In memory the two files are one dictionary, so a caller never knows which a key is in. `Save`
-  writes a shared key under its node to `Shared.json`, and every other key to the profile. A shared
-  key found in a profile (copied in by hand, say) moves to `Shared.json`, unless that has one already.
+  writes a shared key under its node to `Shared.json`, and every other key to the profile.
   `SaveShared` writes shared keys to `Shared.json` alone, and `ReadSharedValue` reads one straight
   from it: the main window's placement uses both, as the window opens before the launch reads the
   settings.
@@ -77,9 +77,6 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 - A dev launch's choice of launch steps is not a setting: it's in `%APPDATA%\FE-Buddy\DevLaunch.json`,
   beside `User Configurations`, so no profile, import or export ever has it (see
   [Dev launch](README.md#dev-launch)).
-- 3.0.0-beta.3 and earlier kept one `%APPDATA%\FE-Buddy\UserConfig.json`. While there is no profile,
-  a launch moves it in as **Default**, its backups with it, so the old file is gone. One that can't
-  be moved (in use, say) is left, and the next launch tries again.
 
 ## Saved settings outside the tabs
 
@@ -210,9 +207,9 @@ accept and ignore them.
 - A tab that has never saved an area starts on what its other settings mean
   (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Settings ▸ Facility ARTCC) if it has
   any, otherwise the ROI if it has its own or the default ROI is on, otherwise `Everything`
-  (Procedure Charts: the ROI only with the old `IncludeRoiAirports`, otherwise `None`).
-- A block without `Area` (one written by hand, or before there was a choice) means the same: its ARTCC list if it has one, otherwise the
-  ROI with `FilterByRoi = Y`, otherwise everything (`SubServiceSettingsReader.ReadArea`).
+  (Procedure Charts: `None`).
+- A block without `Area` is refused (`SubServiceSettingsReader.ReadArea`); Procedure Charts' is the
+  exception (see [Procedure Charts](#procedure-charts)).
 - `CrcDefaultsFiles` keeps every choice, even for files the current settings don't write, so a file
   switched off and on keeps its choice. A run sends only the files written.
 - A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedure Charts' two documents) are
@@ -457,9 +454,9 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 - The three `Generate…` keys can't all be `N`.
 - `Procedures` and `AirportProcedures` take departures and arrivals only (d-TPP `DP`, `ODP`, `STR`),
   matched by root name (`ProcedureNaming.RootName`: the name without its trailing qualifiers, then
-  its number), so `BRWNZ` matches `BRWNZ FOUR (RNAV)` and `BRWNZ FIVE`. A full name matches the same
-  way (`BRWNZ FOUR (RNAV)` is `BRWNZ`), and the tab reads a saved full name as its root name and
-  saves it so. A name of any other chart (an approach) is left out with a warning.
+  its number), so `BRWNZ` matches `BRWNZ FOUR (RNAV)` and `BRWNZ FIVE`. A full name in a block
+  matches the same way (`BRWNZ FOUR (RNAV)` is `BRWNZ`); the tab saves root names. A name of any
+  other chart (an approach) is left out with a warning.
 - `Airports`, `Procedures` and `AirportProcedures` add to the area, even outside it; with
   `Everything` they aren't read. With `None`, at least one of them is required. The area's own
   checks (a facility, a ROI) and that one apply only when a document is on. The alias file ignores
@@ -471,8 +468,7 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
   which route counts, is in the XML docs of `RoutePointArtccResolver`, `ProceduresWithFixInFacility`,
   `NasrProcedureRoutes` and `ProcedureSelection`. The previous cycle's routes are used for deleted
   and changed procedures, when that cycle's NASR data is loaded (`AiracSupplementalData.PreviousNasr`).
-- A block without `Area` takes `Facilities` as the area when it lists any, otherwise the ROI with
-  the old `IncludeRoiAirports = Y`, otherwise `None`. `FilterByRoi` alone never meant the ROI here.
+- A block without `Area` takes `Facilities` as the area when it lists any, otherwise `None`.
 - An unknown `ChartTypes` code warns but is still used; an unknown `JsonFields` name warns and is
   ignored.
 - `JsonFields`: `icaoId`, `airportName`, `city`, `state`, `responsibleArtcc`, `airspaceClass`,
@@ -594,8 +590,8 @@ Settings ▸ **Export…** writes the profile in use to a file another user can 
 ```
 
 A plain settings file with no header (a profile's `UserConfig.<Profile>.json`) imports too. `formatVersion` is the header's; `configVersion` is the
-layout of the settings inside (none means layout 1). A file in an older layout is brought forward
-before the import is planned. A file with a newer `formatVersion` or layout, or over 2 MB, is refused.
+layout of the settings inside (none, or one older than `UserConfigVersion.Oldest`, means the oldest
+layout). A file in an older layout is brought forward before the import is planned. A file with a newer `formatVersion` or layout, or over 2 MB, is refused.
 
 **Each key travels according to its name** (`UserConfigPortability.Classify`), so a new setting needs
 no list:
@@ -682,5 +678,4 @@ The layouts so far:
 
 | Layout | First saved by | Change |
 |---|---|---|
-| 1 | 3.0.0-beta.2 | (no stamp) |
-| 2 | 3.0.0-beta.6 | Each AIRAC tab with settings gets its `Area`, from what its settings meant (`UserConfigAreas.SaveForEveryTab`); Procedures' `IncludeRoiAirports` and Telephony's `Roi` node are dropped |
+| 2 | 3.0.0-beta.6 | The oldest FE-Buddy reads (`UserConfigVersion.Oldest`) |

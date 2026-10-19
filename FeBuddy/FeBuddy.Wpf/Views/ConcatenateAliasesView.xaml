@@ -144,8 +144,7 @@
                                                     <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="New credential…" Margin="8,0,0,0"
                                                             ToolTip="Add a GitHub token for a private repository, and use it for this file."
                                                             Command="{Binding NewCredentialCommand}" />
-                                                    <ComboBox Style="{StaticResource Themed.ComboBox}"
-                                                              ItemsSource="{Binding DataContext.Credentials, ElementName=Root}"
+                                                    <ComboBox ItemsSource="{Binding DataContext.Credentials, ElementName=Root}"
                                                               SelectedValuePath="Id" SelectedValue="{Binding CredentialId}">
                                                         <ComboBox.ItemTemplate>
                                                             <DataTemplate DataType="{x:Type m:CredentialChoice}">

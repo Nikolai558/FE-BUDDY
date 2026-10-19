@@ -156,7 +156,8 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 		await tab.CheckAsync(row);
 
 		Assert.Equal("https://github.com/vZOB/facility/raw/refs/heads/main/ZOB-Alias.txt", row.Location);
-		Assert.True(row.CheckFailed);
+		Assert.True(row.HasCheckMessage);
+		Assert.False(row.CheckSucceeded);
 		Assert.True(row.AsksIfPrivate);
 
 		row.AnswerPrivateCommand.Execute(null);

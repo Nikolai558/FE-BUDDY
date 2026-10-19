@@ -15,7 +15,4 @@ public sealed record VatsimRadarCopy(IReadOnlyList<VirtualAirline> VirtualAirlin
 
 	/// <summary>When VATSIM-Radar's part was downloaded; <see langword="null"/> when FE-Buddy has no copy of it it can read.</summary>
 	public DateTime? VatsimRadarDownloadedUtc { get; init; }
-
-	/// <summary>Whether this is the older single copy beta.4 and earlier kept, read while neither part has a copy.</summary>
-	public bool IsOlderCopy { get; init; }
 }

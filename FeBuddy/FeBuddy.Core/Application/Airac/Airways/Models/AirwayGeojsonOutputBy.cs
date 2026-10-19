@@ -1,7 +1,7 @@
 namespace FeBuddy.Core.Application.Airac.Airways.Models;
 
 /// <summary>
-/// Controls how the Airways GeoJSON service groups airways into output files. Whether GeoJSON is
+/// Controls how the Airways GeoJSON writer groups airways into output files. Whether GeoJSON is
 /// written at all is <see cref="AirwaySettings.GenerateGeojson"/>.
 /// </summary>
 public enum AirwayGeojsonOutputBy

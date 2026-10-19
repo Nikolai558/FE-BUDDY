@@ -30,6 +30,7 @@ public sealed class NavaidServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Everything",
 		};
 
 		foreach ((string key, string value) in overrides)
@@ -65,7 +66,7 @@ public sealed class NavaidServiceTests : IDisposable
 		// A box around Chicago only: ELY (Nevada) falls outside it.
 		NavaidServiceResult result = NavaidService.Run(data, Settings(
 			("ExcludedTypes", "FAN MARKER"),
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", "40.0"), ("RoiSwLon", "-89.0"), ("RoiNeLat", "43.0"), ("RoiNeLon", "-86.0")));
 
 		// CGT and ELY are left for the GeoJSON (FAN MARKER excluded); only CGT is inside the ROI.
@@ -85,7 +86,7 @@ public sealed class NavaidServiceTests : IDisposable
 
 		// Nowhere near Chicago.
 		NavaidServiceResult result = NavaidService.Run(data, Settings(
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", "24.0"), ("RoiSwLon", "-82.0"), ("RoiNeLat", "26.0"), ("RoiNeLon", "-80.0")));
 
 		Assert.Equal(1, result.NavaidCount);

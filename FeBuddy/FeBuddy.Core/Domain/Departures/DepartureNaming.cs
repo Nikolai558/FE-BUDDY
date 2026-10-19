@@ -67,21 +67,9 @@ internal static class DepartureNaming
 	/// <param name="computerCode">The published <c>DP_COMPUTER_CODE</c>, e.g. <c>DOTSS2.DOTSS</c>.</param>
 	/// <param name="amendmentNo">The published <c>AMENDMENT_NO</c>, e.g. <c>TWO</c>.</param>
 	/// <param name="dpName">The published <c>DP_NAME</c>, used when the code cannot be.</param>
-	/// <param name="usedFallback"><see langword="true"/> when the result came from <paramref name="dpName"/>.</param>
 	/// <returns>An upper-case identifier containing only letters and digits.</returns>
-	internal static string CodeIdFor(string? computerCode, string? amendmentNo, string dpName, out bool usedFallback)
-	{
-		string? fromCode = FromComputerCode(computerCode, amendmentNo);
-
-		if (fromCode is not null)
-		{
-			usedFallback = false;
-			return fromCode;
-		}
-
-		usedFallback = true;
-		return Clean(dpName);
-	}
+	internal static string CodeIdFor(string? computerCode, string? amendmentNo, string dpName) =>
+		FromComputerCode(computerCode, amendmentNo) ?? Clean(dpName);
 
 	/// <summary>Removes everything but letters and digits and upper-cases the rest.</summary>
 	/// <param name="value">The raw text.</param>

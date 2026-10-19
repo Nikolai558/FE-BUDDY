@@ -54,7 +54,7 @@ public static class ArtccBoundarySettingsParser
 		ArtccBoundaryOutputBy outputBy = SettingsValueReader.OptionalEnum(artccBoundarySettings, "OutputBy", ArtccBoundaryOutputBy.HighLow);
 
 		// Only the area chosen applies: the ARTCCs listed, or the ROI, or neither.
-		SubServiceArea area = SubServiceSettingsReader.ReadArea(artccBoundarySettings, SubServiceSettingsReader.ArtccOrRoiAreas, artccListKey: "LocationFilter");
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(artccBoundarySettings, SubServiceSettingsReader.ArtccOrRoiAreas);
 		IReadOnlyCollection<string> locationFilter = SubServiceSettingsReader.ReadAreaArtccs(artccBoundarySettings, area, "LocationFilter");
 
 		bool splitAtAntimeridian = SettingsValueReader.YesNo(artccBoundarySettings, "SplitAtAntimeridian", defaultValue: true);

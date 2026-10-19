@@ -65,12 +65,6 @@ public static class AiracSharedDataLoader
 	public static Task<AiracSharedDataLoadResult<WxStationDataCollection>> LoadWxStationsAsync(CancellationToken cancellationToken = default) =>
 		LoadWxStationsAsync(_refreshWxStations, DateTime.UtcNow, cancellationToken);
 
-	/// <summary>Downloads (or falls back on) and parses the two FAA telephony pages.</summary>
-	/// <param name="cancellationToken">Cancels the downloads.</param>
-	/// <returns>The parsed pages, or <see langword="null"/> when there is no usable copy of the register, and the messages for the run.</returns>
-	public static Task<AiracSharedDataLoadResult<TelephonyDataCollection>> LoadTelephonyAsync(CancellationToken cancellationToken = default) =>
-		LoadTelephonyAsync(includeVatsimRadar: false, cancellationToken);
-
 	/// <summary>
 	/// Downloads (or falls back on) and parses the two FAA telephony pages and, when the run includes
 	/// it, the virtual airline list - optional, like the U.S. special call signs.
@@ -109,16 +103,6 @@ public static class AiracSharedDataLoader
 			return new AiracSharedDataLoadResult<WxStationDataCollection>(null, messages);
 		}
 	}
-
-	/// <summary>
-	/// Same as <see cref="LoadTelephonyAsync(CancellationToken)"/>, with the downloads and the clock
-	/// supplied, so tests need neither the network nor a real date.
-	/// </summary>
-	internal static Task<AiracSharedDataLoadResult<TelephonyDataCollection>> LoadTelephonyAsync(
-		Func<CancellationToken, Task<TelephonyRefreshResult>> refresh,
-		DateTime nowUtc,
-		CancellationToken cancellationToken) =>
-		LoadTelephonyAsync(refresh, refreshVirtualAirlineList: null, nowUtc, cancellationToken);
 
 	/// <summary>
 	/// Same as <see cref="LoadTelephonyAsync(bool, CancellationToken)"/>, with the downloads and the
@@ -179,8 +163,8 @@ public static class AiracSharedDataLoader
 	/// <summary>
 	/// Refreshes (or falls back on) the virtual airline list's two parts, merges them and adds the list
 	/// to the run's telephony data, with a message for each part. A part without a usable copy is left
-	/// out with a warning, and the list is the other part alone. Only while neither part has a copy is
-	/// the older single copy used - and without that either, the run goes on without the list.
+	/// out with a warning, and the list is the other part alone. Without either, the run goes on without
+	/// the list.
 	/// </summary>
 	private static async Task AddVirtualAirlineListAsync(
 		Func<CancellationToken, Task<VirtualAirlineListRefreshResult>> refresh,
@@ -196,37 +180,18 @@ public static class AiracSharedDataLoader
 		VirtualAirlineListRefreshResult refreshed = await refresh(cancellationToken).ConfigureAwait(false);
 
 		string WithoutPart(SharedDataRefreshResult other, string otherName) =>
-			other.HasCopy ? $"the virtual airline list has only the {otherName}'s airlines"
-			: refreshed.OlderCopyPath is not null ? "this run used FE-Buddy's older copy of the whole list"
-			: WithoutTheList;
+			other.HasCopy ? $"the virtual airline list has only the {otherName}'s airlines" : WithoutTheList;
 
 		messages.Add(RefreshMessage(refreshed.Gng, TelephonySource, Gng, WithoutPart(refreshed.VatsimRadar, VatsimRadar), nowUtc, required: false));
 		messages.Add(RefreshMessage(refreshed.VatsimRadar, TelephonySource, VatsimRadar, WithoutPart(refreshed.Gng, Gng), nowUtc, required: false));
 
 		const string LeavesThemOut = "the virtual airline list leaves its airlines out";
 		IReadOnlyList<VatsimRadarAirline>? gng = ReadPart(refreshed.Gng.FilePath, GngAirlineParser.Parse, Gng, LeavesThemOut, messages);
-		IReadOnlyList<VatsimRadarAirline>? vatsimRadar = ReadPart(refreshed.VatsimRadar.FilePath, VatsimRadarAirlineParser.Parse, VatsimRadar, LeavesThemOut, messages);
+		IReadOnlyList<VatsimRadarAirline>? vatsimRadar = ReadPart(refreshed.VatsimRadar.FilePath, VatsimRadarAirlineParser.ParseGitHubList, VatsimRadar, LeavesThemOut, messages);
 
 		if (gng is not null || vatsimRadar is not null)
 		{
 			data.VatsimRadarAirlines = VatsimRadarVirtualAirlines.Merge(gng ?? [], vatsimRadar ?? []);
-			return;
-		}
-
-		if (refreshed.OlderCopyPath is { } olderPath
-			&& ReadPart(olderPath, VatsimRadarAirlineParser.Parse, "virtual airline list (its older copy)", WithoutTheList, messages) is { } older)
-		{
-			data.VatsimRadarAirlines = [.. older];
-
-			string from = refreshed.OlderCopyDownloadedUtc is { } downloadedUtc
-				? $" from {downloadedUtc.ToLocalTime():d MMM yyyy} ({DescribeAge(nowUtc - downloadedUtc)})"
-				: string.Empty;
-
-			messages.Add(new ServiceMessage(LogLevel.Warning, TelephonySource,
-				$"FE-Buddy has no copy of either part of the virtual airline list yet, so this run used its older copy of the whole list{from}.")
-			{
-				IsAdvisory = true
-			});
 		}
 	}
 

@@ -56,13 +56,13 @@ public sealed record TelephonyServiceResult : ServiceResult
 	/// <summary>How many of <see cref="VirtualAirlineCount"/> came from the virtual airline list.</summary>
 	public int VatsimRadarVirtualAirlineCount { get; init; }
 
-	/// <summary>Rows left out because they have no three-letter designator (register) or identifier (U.S. special call sign).</summary>
+	/// <summary>Rows left out because they have no three-letter designator (register) or identifier (U.S. special call sign). For the Harness's report and tests.</summary>
 	public required int NoDesignatorCount { get; init; }
 
-	/// <summary>Rows left out because they have no telephony.</summary>
+	/// <summary>Rows left out because they have no telephony. For the Harness's report and tests.</summary>
 	public required int NoTelephonyCount { get; init; }
 
-	/// <summary>U.S. special call signs left out because they have expired.</summary>
+	/// <summary>U.S. special call signs left out because they have expired. For the Harness's report and tests.</summary>
 	public required int ExpiredCount { get; init; }
 
 	/// <summary>Full path of <c>Telephony.txt</c>, or <see langword="null"/> when it was not written.</summary>

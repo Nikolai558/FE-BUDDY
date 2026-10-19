@@ -24,13 +24,13 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 | [W6-28](#w6-28) | Minor | Low | Some public members of internal types have no XML docs | Open | S8 |
 | [W6-9](#w6-9) | Wrong doc | Low | FileNamesAsCodeConverter's doc says it is only for the Review tab's run messages | Open | S8 |
 | [W6-10](#w6-10) | Wrong doc | Low | StringToVisibilityConverter says "non-empty" but treats whitespace as empty | Open | S8 |
-| [W6-29](#w6-29) | Minor | Low | The AiracLayerKind enum is not in Map/Models | Agreed | S6 |
+| [W6-29](#w6-29) | Minor | Low | The AiracLayerKind enum is not in Map/Models | Fixed | S6 |
 | [W6-26](#w6-26) | Minor | Low | BaseMap.Load hides why a base layer failed to load | Open | S8 |
 | [W6-16](#w6-16) | Minor | Low | GeoJsonReader.Read's `<returns>` leaves out the Multi* types and skipped shapes | Open | S8 |
 | [W7-8](#w7-8) | Stale doc | Low | DefaultRoiStore names a settings file that no longer exists, and `Changed`'s doc misses `NotifyReloaded` | Fixed | S8 |
 | [W7-9](#w7-9) | Wrong doc | Low | Links' summary lists only three places; the links are used in six | Open | S8 |
 | [W7-10](#w7-10) | History wording | Low | Feature number in two summaries | Open | S8 |
-| [W7-12](#w7-12) | Minor | Low | Five window-placement data records sit in a file named after no type, outside Shell/Models/ | Agreed | S6 |
+| [W7-12](#w7-12) | Minor | Low | Five window-placement data records sit in a file named after no type, outside Shell/Models/ | Fixed | S6 |
 | [W7-11](#w7-11) | Minor | Low | Comment on the showCmd constants says "minimized" but one is the maximized value | Open | S8 |
 | [W7-21](#w7-21) | Wrong doc | Low | Controls.Buttons.xaml header: "three intents", Button.Icon.Small missing, Toggle.Icon's size | Open | S8 |
 | [W7-17](#w7-17) | History wording | Low | "now" in the ComboBox header narrates an earlier state | Open | S8 |
@@ -89,7 +89,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 | [W4-25](#w4-25) | Wrong doc | Low | SubServiceSettingsViewModel's class docs: who derives from it, and how WriteToConfig writes | Open | S8 |
 | [W4-34](#w4-34) | Minor | Low | "menu" for what everything else calls a tab | Open | S8 |
 | [W4-28](#w4-28) | Wrong doc | Low | SubServiceDescriptor claims to be the whole registration surface | Open | S8 |
-| [W4-36](#w4-36) | Minor | Low | Files outside the Models/ rule in ServiceTabs | Agreed | S6 |
+| [W4-36](#w4-36) | Minor | Low | Files outside the Models/ rule in ServiceTabs | Fixed | S6 |
 | [W5-31](#w5-31) | Minor | Low | Esc doesn't close most dialogs | Open | S8 |
 | [W5-26](#w5-26) | Wrong doc | Low | InfoView header leaves out the FAQ card | Open | S8 |
 | [W5-32](#w5-32) | Minor | Low | MapView calls the Map page "the Map Service page" | Open | S8 |
@@ -333,7 +333,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 
 ### W6-29 · Minor · Low · The AiracLayerKind enum is not in Map/Models
 
-**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `AiracLayerKind` is alone in `FeBuddy.Core/Application/Map/Models/AiracLayerKind.cs`, where S5 put it with the map's layer catalog · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs:16-27`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs#L16-L27)
 
@@ -419,7 +419,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 
 ### W7-12 · Minor · Low · Five window-placement data records sit in a file named after no type, outside Shell/Models/
 
-**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The five records are in `Shell/Models/` (namespace `FeBuddy.Wpf.Shell.Models`), one file each · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/WindowPlacementModels.cs:1-138`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/WindowPlacementModels.cs#L1-L138)
 
@@ -1271,7 +1271,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 
 ### W4-36 · Minor · Low · Files outside the Models/ rule in ServiceTabs
 
-**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `SummaryLines` is in `ServiceTabs/SummaryLines.cs` and `SummaryJoin` in `Models/SummaryJoin.cs`; `RunStep` and `SubServiceRunResult` are in `ServiceTabs/Models/` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/Models/SummaryBlock.cs:134-198`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/Models/SummaryBlock.cs#L134-L198); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/RunStep.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/RunStep.cs); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceRunResult.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceRunResult.cs)
 
@@ -1429,7 +1429,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 
 ### D1b-24 · Stale doc · Med · "UserConfig.json" is still named as the settings file, including in GUI text
 
-**Status:** Agreed ([H1](010_Decisions.md#h1)) · **Session:** [S8](020_Work-Plan.md#s8)
+**Status:** Agreed ([H1](010_Decisions.md#h1)); its on-screen line, the CRC ERAM Defaults note, is fixed with [W5-2](610_On-Screen-Text.md#w5-2) in S6 (not yet merged); the comments and docs are left for S8 · **Session:** [S8](020_Work-Plan.md#s8)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/Cards/CrcDefaultsCard.xaml.cs:25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/Cards/CrcDefaultsCard.xaml.cs#L25); [`FeBuddy/FeBuddy.Core/Application/Updates/UpdateChannelSetting.cs:12`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Updates/UpdateChannelSetting.cs#L12); [`FeBuddy/FeBuddy.Versioning/Models/ReleaseChannel.cs:5`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Versioning/Models/ReleaseChannel.cs#L5); [`FeBuddy/FeBuddy.Core/Infrastructure/Credentials/CredentialStore.cs:15`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Credentials/CredentialStore.cs#L15); [`FeBuddy/FeBuddy.Core/Infrastructure/Credentials/UrlSecrets.cs:6`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Credentials/UrlSecrets.cs#L6); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigPortability.cs:19`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigPortability.cs#L19); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigKeys.cs:4`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigKeys.cs#L4); [`FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs:9`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs#L9); [`FeBuddy/FeBuddy.Wpf/ViewModels/CredentialsViewModel.cs:22`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/CredentialsViewModel.cs#L22); [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:48`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L48)
 

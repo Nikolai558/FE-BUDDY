@@ -97,7 +97,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		// What the run does with duplicate alias commands is the run's, not any tab's, so it sits on Preview Settings.
 		_duplicateAliases = new DuplicateAliasesCardViewModel(
-			() => Tabs.OfType<GeojsonSubServiceViewModel>().Any(t => t.IsAvailable && t.WritesAliasFile));
+			() => Tabs.OfType<GeojsonSubServiceViewModel>().Any(t => t.IsAvailable && t.GenerateAliasFile));
 		_preview = new ServicePreviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs.Where(t => t.IsAvailable))
 		{
 			RunOptions = _duplicateAliases,
@@ -152,12 +152,10 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>
 	/// The AIRAC data readiness. Controls whether the cycle-dependent lists and the run are enabled.
 	/// </summary>
-	public AiracCycleReadiness Readiness =>
-		AiracCycleDataCache.Instance.Entries.Count == 0 ? AiracCycleReadiness.Waiting
-		: AiracCycleDataCache.Instance.ComputeReadiness();
+	private static AiracCycleReadiness Readiness => AiracCycleDataCache.Instance.ComputeReadiness();
 
 	/// <summary>Whether the service is usable (Ready or Degraded).</summary>
-	public bool IsReady => Readiness is AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded;
+	private bool IsReady => Readiness is AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded;
 
 	/// <inheritdoc />
 	protected override ServiceTabViewModel GeneralTab => _general;
@@ -264,7 +262,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private void BuildSubServiceTabs()
 	{
-		foreach (SubServiceDescriptor descriptor in AiracSubServices.All.OrderBy(d => d.Order))
+		foreach (SubServiceDescriptor descriptor in AiracSubServices.All)
 		{
 			ServiceTabViewModel tab = descriptor.CreateTab();
 			_tabsByKey[descriptor.Key] = tab;
@@ -294,7 +292,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	{
 		List<ServiceTabViewModel> tabs = [];
 
-		foreach (SubServiceDescriptor descriptor in AiracSubServices.All.OrderBy(d => d.Order))
+		foreach (SubServiceDescriptor descriptor in AiracSubServices.All)
 		{
 			ServiceTabViewModel tab = _tabsByKey[descriptor.Key];
 
@@ -331,7 +329,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		bool anyAliasFile = _tabsByKey.Values.Where(t => t.IsAvailable).OfType<GeojsonSubServiceViewModel>().Any(tab => tab.WritesAliasFile);
+		bool anyAliasFile = _tabsByKey.Values.Where(t => t.IsAvailable).OfType<GeojsonSubServiceViewModel>().Any(tab => tab.GenerateAliasFile);
 		bool wasAvailable = concatenate.IsAvailable;
 
 		concatenate.SetAvailability(anyAliasFile,
@@ -360,7 +358,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			yield return file;
 		}
 
-		if (tabs.Any(tab => tab.WritesAliasFile))
+		if (tabs.Any(tab => tab.GenerateAliasFile))
 		{
 			yield return OutputFileEntry.Renamable(AiracOutputPaths.DuplicateAliasReportFileName, string.Empty, "AIRAC Service");
 			yield return OutputFileEntry.Renamable(AiracOutputPaths.CombinedAliasFileName, AiracOutputPaths.AliasFolder, "AIRAC Service");
@@ -385,8 +383,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	{
 		LoadCurrentCycleIfLeftUnloaded();
 		PushSelectedCycle();
-		OnPropertyChanged(nameof(Readiness));
-		OnPropertyChanged(nameof(IsReady));
 
 		_general.SetReadiness(IsReady, WaitingMessage);
 		PushTabReadiness();
@@ -670,10 +666,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				return;
 			}
 
-			ServiceTabViewModel[] runnable = [.. Tabs.Where(t => t.IsAvailable && t.IsRunnable
-				&& !ReferenceEquals(t, GeneralTab) && !ReferenceEquals(t, _fileNames) && !ReferenceEquals(t, PreviewTab))];
+			IReadOnlyList<ISubServiceRunTarget> targets = IncludedRunTargets;
 
-			if (runnable.Length == 0)
+			if (targets.Count == 0)
 			{
 				Toast.Warn("Nothing to run", "Include a sub-service in the General tab first.");
 				return;
@@ -722,7 +717,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				settings = settings with { ExistingOutput = existingOutput };
 			}
 
-			IReadOnlyList<ISubServiceRunTarget> targets = IncludedRunTargets;
 			string[] runningTabTitles = [.. Tabs
 				.Where(t => t.IsAvailable && t is ISubServiceRunTarget)
 				.Select(t => t.Title)];

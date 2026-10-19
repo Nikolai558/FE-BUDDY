@@ -34,7 +34,7 @@ public static class AppDataReset
 	private const string RequestFileName = "Reset.pending.json";
 
 	/// <summary>The file a dev launch's chosen steps are kept in: kept with the settings.</summary>
-	internal const string DevLaunchSettingsFileName = "DevLaunch.json";
+	internal const string DevLaunchFileName = "DevLaunch.json";
 
 	private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
@@ -83,9 +83,8 @@ public static class AppDataReset
 
 		WaitForExit(request.WaitForProcessId, waitForExit);
 
-		// Every settings profile, Shared.json, an older FE-Buddy's one file not yet moved in, and the
-		// steps a dev launch runs (Application.Launch.DevLaunchSettings).
-		string[] settings = [UserConfigFile.ProfilesFolderName, UserConfigFile.LegacyConfigFileName, DevLaunchSettingsFileName];
+		// Every settings profile, Shared.json, and the steps a dev launch runs (Application.Launch.DevLaunchFile).
+		string[] settings = [UserConfigFile.ProfilesFolderName, DevLaunchFileName];
 		List<string> notDeleted = [];
 
 		foreach (string entry in Entries(RootDirectory))

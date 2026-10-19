@@ -21,10 +21,6 @@ public sealed class ArtccBoundaryOutputFilesTests
 		Assert.Equal("ARTCC-Boundary_ZOB-HIGH_Lines", ArtccBoundaryOutputFiles.KeyFor("ZOB", "HIGH"));
 
 	[Fact]
-	public void class_for_a_group_is_the_group_unchanged() =>
-		Assert.Equal(ArtccBoundaryOutputFiles.HighClass, ArtccBoundaryOutputFiles.ClassFor(ArtccBoundaryOutputFiles.HighClass));
-
-	[Fact]
 	public void class_for_location_and_altitude_hyphenates_them() =>
 		Assert.Equal("ZOB-HIGH", ArtccBoundaryOutputFiles.ClassFor("ZOB", "HIGH"));
 

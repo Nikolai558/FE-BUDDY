@@ -74,7 +74,7 @@ public static class WxStationSettingsParser
 		}
 
 		// Only the area chosen applies: the ROI, or everything.
-		SubServiceArea area = SubServiceSettingsReader.ReadArea(wxStationSettings, SubServiceSettingsReader.RoiAreas, artccListKey: null);
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(wxStationSettings, SubServiceSettingsReader.RoiAreas);
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(wxStationSettings, area);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(wxStationSettings);
 

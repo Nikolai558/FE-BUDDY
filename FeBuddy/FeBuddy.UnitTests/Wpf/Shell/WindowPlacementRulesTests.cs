@@ -1,6 +1,7 @@
 using System.Windows;
 
 using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.Shell.Models;
 
 namespace FeBuddy.UnitTests.Wpf.Shell;
 

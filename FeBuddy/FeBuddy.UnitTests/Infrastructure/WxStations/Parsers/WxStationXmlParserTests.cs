@@ -172,45 +172,13 @@ public sealed class WxStationXmlParserTests : IDisposable
 	}
 
 	[Fact]
-	public void a_present_num_results_is_used_even_when_it_disagrees_with_the_station_count()
-	{
-		string path = WriteStations("<Station></Station>", dataAttributes: " num_results=\"99\"");
-
-		WxStationDataCollection data = WxStationXmlParser.Parse(path);
-
-		Assert.Equal(99, data.NumResults);
-		Assert.Single(data.Stations);
-	}
-
-	[Fact]
-	public void an_absent_num_results_falls_back_to_the_station_count()
-	{
-		string path = WriteStations("<Station></Station><Station></Station>");
-
-		WxStationDataCollection data = WxStationXmlParser.Parse(path);
-
-		Assert.Equal(2, data.NumResults);
-	}
-
-	[Fact]
-	public void a_garbage_num_results_falls_back_to_the_station_count()
-	{
-		string path = WriteStations("<Station></Station>", dataAttributes: " num_results=\"not-a-number\"");
-
-		WxStationDataCollection data = WxStationXmlParser.Parse(path);
-
-		Assert.Equal(1, data.NumResults);
-	}
-
-	[Fact]
-	public void a_file_with_no_stations_parses_to_an_empty_list_and_zero_results()
+	public void a_file_with_no_stations_parses_to_an_empty_list()
 	{
 		string path = WriteStations("");
 
 		WxStationDataCollection data = WxStationXmlParser.Parse(path);
 
 		Assert.Empty(data.Stations);
-		Assert.Equal(0, data.NumResults);
 	}
 
 	[Fact]

@@ -1,12 +1,11 @@
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
-using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
-namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
+namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 /// <summary>
 /// One sub-service's block in a finished run's review (the Review tab, or under a conversion's

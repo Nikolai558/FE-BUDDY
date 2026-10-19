@@ -79,7 +79,7 @@ public static class DepartureSettingsParser
 		bool includeObstacleDepartures = SettingsValueReader.YesNo(departureSettings, "IncludeObstacleDepartures", defaultValue: true);
 
 		// Only the area chosen applies: the ARTCCs listed, or the ROI, or neither.
-		SubServiceArea area = SubServiceSettingsReader.ReadArea(departureSettings, SubServiceSettingsReader.ArtccOrRoiAreas, artccListKey: "ArtccFilter");
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(departureSettings, SubServiceSettingsReader.ArtccOrRoiAreas);
 		IReadOnlyCollection<string> artccFilter = SubServiceSettingsReader.ReadAreaArtccs(departureSettings, area, "ArtccFilter");
 
 		// Only the value the chosen mode uses is read (and required); the others are ignored.

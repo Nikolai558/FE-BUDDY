@@ -13,7 +13,8 @@ public sealed class DepartureSettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
-		{ "OutputDirectory", @"C:\Output" }
+		{ "OutputDirectory", @"C:\Output" },
+		{ "Area", "Everything" }
 	};
 
 	/// <summary>Adds a complete, valid set of CRC defaults for one class and kind.</summary>
@@ -51,6 +52,7 @@ public sealed class DepartureSettingsParserTests
 	private static Dictionary<string, string> WithRoi(string swLat, string swLon, string neLat, string neLon)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
 		settings["FilterByRoi"] = "Y";
 		settings["RoiSwLat"] = swLat;
 		settings["RoiSwLon"] = swLon;
@@ -155,6 +157,7 @@ public sealed class DepartureSettingsParserTests
 	public void the_artcc_filter_is_trimmed_and_upper_cased()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Artccs";
 		settings["ArtccFilter"] = "zla, zoa";
 
 		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;

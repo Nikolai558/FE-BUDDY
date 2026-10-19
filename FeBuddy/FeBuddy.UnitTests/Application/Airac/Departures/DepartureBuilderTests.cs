@@ -74,8 +74,6 @@ public sealed class DepartureBuilderTests
 		Assert.Equal(
 			["CLEEE TRANSITION", "CNERY TRANSITION"],
 			procedure.Transitions.Select(t => t.Name));
-		Assert.Equal(["DOTSS2.CLEEE", "DOTSS2.CNERY"], procedure.Transitions.Select(t => t.TransitionCode));
-		Assert.All(procedure.Bodies, body => Assert.Null(body.TransitionCode));
 	}
 
 	[Fact]

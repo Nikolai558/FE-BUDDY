@@ -71,7 +71,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= station data =================
 
 	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the station list.</summary>
-	public string StationDataStatus => _stationDataStatus;
+	private string StationDataStatus => _stationDataStatus;
 
 	/// <summary>
 	/// Re-reads how old FE-Buddy's kept copy of the station list is
@@ -118,7 +118,6 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 		}
 
 		_stationDataStatus = status;
-		OnPropertyChanged(nameof(StationDataStatus));
 	}
 
 	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the station list.</summary>

@@ -16,7 +16,7 @@ public sealed class ProcedureAmendmentFilterTests
 	[InlineData("Days", "AmendedWithinDays", ProcedureAmendmentFilter.MaxWithinDays)]
 	public void both_parsers_take_the_limits_and_no_more(string filter, string key, int maximum)
 	{
-		Dictionary<string, string> settings = new() { ["OutputDirectory"] = @"C:\Output", ["AmendmentFilter"] = filter, [key] = $"{maximum}" };
+		Dictionary<string, string> settings = new() { ["OutputDirectory"] = @"C:\Output", ["Area"] = "Everything", ["AmendmentFilter"] = filter, [key] = $"{maximum}" };
 
 		DepartureSettingsParser.Parse(settings);
 		ArrivalSettingsParser.Parse(settings);
@@ -30,7 +30,7 @@ public sealed class ProcedureAmendmentFilterTests
 	[Fact]
 	public void both_parsers_read_the_date_in_one_format()
 	{
-		Dictionary<string, string> settings = new() { ["OutputDirectory"] = @"C:\Output", ["AmendmentFilter"] = "Date", ["AmendedOnOrAfter"] = "2026-01-31" };
+		Dictionary<string, string> settings = new() { ["OutputDirectory"] = @"C:\Output", ["Area"] = "Everything", ["AmendmentFilter"] = "Date", ["AmendedOnOrAfter"] = "2026-01-31" };
 
 		Assert.Equal(new DateOnly(2026, 1, 31), DepartureSettingsParser.Parse(settings).Settings.AmendedOnOrAfter);
 		Assert.Equal(new DateOnly(2026, 1, 31), ArrivalSettingsParser.Parse(settings).Settings.AmendedOnOrAfter);

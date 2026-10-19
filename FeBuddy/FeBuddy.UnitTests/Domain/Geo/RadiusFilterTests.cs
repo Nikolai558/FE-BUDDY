@@ -25,7 +25,7 @@ public sealed class RadiusFilterTests
 		Wgs84.Factory.CreateLineString([.. points.Select(p => new Coordinate(p.Lon, p.Lat))]);
 
 	private static double DistanceFromCenter(Coordinate coordinate) =>
-		GeoMath.Distance(Center, new Location(coordinate.Y, coordinate.X), round: false);
+		GeoMath.Distance(Center, new Location(coordinate.Y, coordinate.X));
 
 	[Fact]
 	public void a_line_wholly_inside_is_kept_exactly()
@@ -158,8 +158,8 @@ public sealed class RadiusFilterTests
 
 		LineString only = Assert.Single(RadiusFilter.ClipLines([line], guam, 6));
 
-		Assert.Equal(6, GeoMath.Distance(guam, new Location(only.Coordinates[0].Y, only.Coordinates[0].X), round: false), Tolerance);
-		Assert.Equal(6, GeoMath.Distance(guam, new Location(only.Coordinates[1].Y, only.Coordinates[1].X), round: false), Tolerance);
+		Assert.Equal(6, GeoMath.Distance(guam, new Location(only.Coordinates[0].Y, only.Coordinates[0].X)), Tolerance);
+		Assert.Equal(6, GeoMath.Distance(guam, new Location(only.Coordinates[1].Y, only.Coordinates[1].X)), Tolerance);
 	}
 
 	[Theory]

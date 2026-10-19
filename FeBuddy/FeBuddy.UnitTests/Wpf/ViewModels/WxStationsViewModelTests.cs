@@ -75,6 +75,6 @@ public sealed class WxStationsViewModelTests : IDisposable
 		release.Set();
 		await older;
 
-		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.StationDataStatus);
+		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.BuildPreviewSummary()[0].Rows[0].Value);
 	}
 }

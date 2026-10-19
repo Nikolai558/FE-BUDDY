@@ -44,8 +44,8 @@ public static class ProcedureChangesMarkdownWriter
 	/// available - only its <c>Cycle</c> is read, and only when a procedure actually carries
 	/// <see cref="Procedure.PreviousPages"/> (which cannot happen when this is <see langword="null"/>).
 	/// </param>
-	/// <returns>The path written, plus any messages collected.</returns>
-	public static ProcedureChangesWriteResult Generate(
+	/// <returns>The path written.</returns>
+	public static string Generate(
 		IReadOnlyList<ProcedureAirport> airports,
 		ProcedureSettings settings,
 		DtppMetafileDataCollection dtpp,
@@ -106,7 +106,7 @@ public static class ProcedureChangesMarkdownWriter
 		string path = Path.Combine(directory, settings.FileNames.FileName(ProcedureOutputFiles.Changes));
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-		return new ProcedureChangesWriteResult(path, []);
+		return path;
 	}
 
 	/// <summary>One procedure to render under one airport, with the other included airports it also serves (if any).</summary>

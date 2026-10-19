@@ -2,8 +2,8 @@ namespace FeBuddy.Core.Infrastructure.Telephony.Models;
 
 /// <summary>
 /// The parsed FAA telephony pages: every row of the ICAO register (Chapter 3, Section 1) and of the
-/// U.S. special call signs (Chapter 3, Section 4), as <see cref="Parsers.TelephonyHtmlParser"/>
-/// returns them - and the virtual airline list, when the user includes it.
+/// U.S. special call signs (Chapter 3, Section 4), and the virtual airline list when the user includes
+/// it, as <c>AiracSharedDataLoader</c> assembles them for a run.
 /// </summary>
 public class TelephonyDataCollection
 {

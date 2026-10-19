@@ -11,11 +11,8 @@ namespace FeBuddy.UnitTests.Application.Airac.WxStations.Fixtures;
 internal static class WxStationTestData
 {
 	/// <summary>Builds a <see cref="WxStationDataCollection"/> holding only the given rows.</summary>
-	public static WxStationDataCollection Build(IEnumerable<WxStationXmlDataModel.Station>? rows = null, int? numResults = null)
-	{
-		List<WxStationXmlDataModel.Station> stationList = [.. rows ?? []];
-		return new WxStationDataCollection { Stations = stationList, NumResults = numResults ?? stationList.Count };
-	}
+	public static WxStationDataCollection Build(IEnumerable<WxStationXmlDataModel.Station>? rows = null) =>
+		new() { Stations = [.. rows ?? []] };
 
 	/// <summary>Builds one Station row. Every field <see cref="Core.Application.Airac.WxStations.WxStationBuilder"/> reads can be overridden.</summary>
 	public static WxStationXmlDataModel.Station Row(

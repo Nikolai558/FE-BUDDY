@@ -15,7 +15,7 @@ namespace FeBuddy.UnitTests.Application.Airac;
 /// a fixed clock and small real files on disk: the fresh/stale/no-copy/unreadable-copy message and
 /// data shapes for both Wx Stations (required) and Telephony (register required, special call
 /// signs and the virtual airline list optional - the list only when included, each of its two parts
-/// falling back on its own, the older single copy only while neither has one), and
+/// falling back on its own), and
 /// <see cref="AiracSharedDataLoader.DescribeAge"/>'s boundaries.
 /// </summary>
 public sealed class AiracSharedDataLoaderTests : IDisposable
@@ -168,7 +168,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, NowUtc, FailureReason: null));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.NotNull(result.Data);
 		Assert.Single(result.Data!.Assignments);
@@ -197,9 +197,6 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 
 	private const string VatsimRadarJson =
 		"""[{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }, { "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }]""";
-
-	private const string OlderCopyJson =
-		"""{ "airlines": [], "virtual": [{ "icao": "WAT", "name": "Walker Air", "callsign": "Walker", "virtual": true }] }""";
 
 	private TelephonyRefreshResult FreshPages() => new(
 		new SharedDataRefreshResult(WriteFile("register.html", ValidRegisterHtml), NowUtc, FailureReason: null),
@@ -311,30 +308,6 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 		Assert.Contains("Telephony.txt leaves the virtual airline list out", result.Messages[3].Text, StringComparison.Ordinal);
 	}
 
-	/// <summary>The older single copy is the last resort: used only while neither part has a copy.</summary>
-	[Fact]
-	public async Task the_older_copy_is_used_only_while_neither_part_has_a_copy()
-	{
-		string olderPath = WriteFile("vatsim_radar_airlines.json", OlderCopyJson);
-		SharedDataRefreshResult noGng = new(null, null, "GNG is down");
-		SharedDataRefreshResult noVatsimRadar = new(null, null, "GitHub is down");
-
-		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(FreshPages()),
-			Refresh(new VirtualAirlineListRefreshResult(noGng, noVatsimRadar, olderPath, NowUtc.AddDays(-2))),
-			NowUtc,
-			CancellationToken.None);
-
-		Assert.Equal(new VatsimRadarAirline("WAT", "Walker Air", "Walker"), Assert.Single(result.Data!.VatsimRadarAirlines));
-		Assert.Contains("this run used FE-Buddy's older copy of the whole list", result.Messages[2].Text, StringComparison.Ordinal);
-
-		ServiceMessage older = result.Messages[^1];
-		Assert.Equal(LogLevel.Warning, older.Level);
-		Assert.True(older.IsAdvisory);
-		Assert.StartsWith("FE-Buddy has no copy of either part of the virtual airline list yet, so this run used its older copy of the whole list from ", older.Text, StringComparison.Ordinal);
-		Assert.Contains("(2 days old)", older.Text, StringComparison.Ordinal);
-	}
-
 	[Fact]
 	public async Task a_part_whose_copy_cannot_be_read_is_left_out_with_an_error()
 	{
@@ -352,22 +325,6 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 		Assert.Equal(LogLevel.Error, error.Level);
 		Assert.StartsWith("FE-Buddy's copy of the GNG fictional airline list can't be read", error.Text, StringComparison.Ordinal);
 		Assert.EndsWith("so the virtual airline list leaves its airlines out.", error.Text, StringComparison.Ordinal);
-	}
-
-	[Fact]
-	public async Task an_older_copy_that_cannot_be_read_is_left_out_with_an_error()
-	{
-		string olderPath = WriteFile("vatsim_radar_airlines.json", UnparsableHtml);
-
-		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(FreshPages()),
-			Refresh(new VirtualAirlineListRefreshResult(new SharedDataRefreshResult(null, null, "down"), new SharedDataRefreshResult(null, null, "down"), olderPath)),
-			NowUtc,
-			CancellationToken.None);
-
-		Assert.Empty(result.Data!.VatsimRadarAirlines);
-		Assert.Equal(LogLevel.Error, result.Messages[^1].Level);
-		Assert.Contains("Telephony.txt leaves the virtual airline list out", result.Messages[^1].Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -406,7 +363,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, downloadedUtc, "special call signs download failed"));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.NotNull(result.Data);
 		Assert.Single(result.Data!.Assignments);
@@ -432,7 +389,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, NowUtc, FailureReason: null));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.Null(result.Data);
 
@@ -453,7 +410,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(FilePath: null, DownloadedUtc: null, "network down"));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.NotNull(result.Data);
 		Assert.Single(result.Data!.Assignments);
@@ -478,7 +435,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, NowUtc, FailureReason: null));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.Null(result.Data);
 		Assert.Equal(3, result.Messages.Count);
@@ -500,7 +457,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, NowUtc, FailureReason: null));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.NotNull(result.Data);
 		Assert.Single(result.Data!.Assignments);

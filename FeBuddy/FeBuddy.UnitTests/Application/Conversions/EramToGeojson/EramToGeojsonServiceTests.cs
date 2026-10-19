@@ -833,14 +833,13 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 	}
 
 	[Fact]
-	public void reader_problems_are_warned_about_and_counted()
+	public void reader_problems_are_warned_about()
 	{
 		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB + "<GeoMapSymbol><Latitude>40000000N</Latitude></GeoMapSymbol>"));
 
 		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings());
 
-		Assert.Equal(1, result.Files[0].RecordsSkipped);
-		Assert.Contains(result.Warnings, w => w.StartsWith("Geomaps.xml: Line"));
+		Assert.Single(result.Warnings, w => w.StartsWith("Geomaps.xml: Line"));
 	}
 
 	[Fact]

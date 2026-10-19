@@ -23,9 +23,6 @@ public static class InstalledProduct
 	/// <summary>The install folder, e.g. <c>C:\Program Files\FE-BUDDY\</c>.</summary>
 	public static string? InstallLocation => ReadValue("InstallLocation");
 
-	/// <summary>The real version the installer installed, e.g. <c>3.0.0-alpha.1</c>.</summary>
-	public static string? ProductSemVer => ReadValue("ProductSemVer");
-
 	/// <summary>The install's MSI ProductCode GUID, for <c>msiexec /x</c>.</summary>
 	public static string? ProductCode => ReadValue("ProductCode");
 

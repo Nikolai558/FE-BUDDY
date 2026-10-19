@@ -1,8 +1,8 @@
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 /// <summary>
-/// One entry in a service's sub-service catalogue: what it is called, where it sits in the rail,
-/// what it can make, and how to build its tab.
+/// One entry in a service's sub-service catalogue: what it is called, what it can make, and how to
+/// build its tab. The catalogue's order is the rail's.
 /// </summary>
 /// <remarks>
 /// A catalogue of these is the whole registration surface for a sub-service. Adding the next one
@@ -15,12 +15,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 /// renaming it loses the saved selection and outputs.
 /// </param>
 /// <param name="DisplayName">The name shown in the General tab's table and on the tab.</param>
-/// <param name="Order">Sort order in the General tab's table and the tab rail; lower comes first.</param>
 /// <param name="CreateTab">Builds the tab view-model. Called once, when the screen is built.</param>
-/// <param name="AliasFileName">
-/// The alias file the sub-service can write (e.g. <c>Airways.txt</c>), or <see langword="null"/> when it
-/// writes none.
-/// </param>
 /// <param name="Outputs">
 /// What the sub-service can make: its columns on the General tab. <see cref="SubServiceOutputKinds.None"/>
 /// keeps it off the General tab's table altogether (Add Custom Aliases).
@@ -29,8 +24,6 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 public sealed record SubServiceDescriptor(
 	string Key,
 	string DisplayName,
-	int Order,
 	Func<ServiceTabViewModel> CreateTab,
-	string? AliasFileName = null,
 	SubServiceOutputKinds Outputs = SubServiceOutputKinds.None,
 	SubServiceHelp? Help = null);

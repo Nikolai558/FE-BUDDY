@@ -60,7 +60,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		SubServices = new ObservableCollection<SubServiceRow>(
 			AiracSubServices.All
 				.Where(d => d.Outputs != SubServiceOutputKinds.None)
-				.OrderBy(d => d.Order)
 				.Select(d => new SubServiceRow(d, OnSubServicesChanged)));
 
 		LoadFromConfig();
@@ -106,11 +105,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	public SubServiceRow? RowFor(string key) =>
 		SubServices.FirstOrDefault(row => string.Equals(row.Key, key, StringComparison.OrdinalIgnoreCase));
 
-	/// <summary>Whether a sub-service is in the table and included.</summary>
-	/// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
-	/// <returns><see langword="true"/> when it takes part in the run.</returns>
-	public bool IsIncluded(string key) => RowFor(key) is { IsIncluded: true };
-
 	/// <summary>Which cycle (relative to today) the run uses.</summary>
 	public AiracCyclePosition SelectedCyclePosition
 	{
@@ -154,13 +148,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	public bool IsReady
 	{
 		get => _isReady;
-		private set
-		{
-			if (SetProperty(ref _isReady, value))
-			{
-				Revalidate();
-			}
-		}
+		private set => SetProperty(ref _isReady, value);
 	}
 
 	/// <summary>Shown while <see cref="IsReady"/> is <see langword="false"/>.</summary>
@@ -181,7 +169,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	}
 
 	/// <summary>Re-reads each cycle row's label and cache state.</summary>
-	public void RefreshCycleOptions()
+	private void RefreshCycleOptions()
 	{
 		foreach (CycleOption option in CycleOptions)
 		{
@@ -271,8 +259,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			{
 				row.Load(included?.Contains(row.Key) ?? true, ReadOutputs(row));
 			}
-
-			OnPropertyChanged(nameof(IncludedSubServices));
 		}
 		finally
 		{
@@ -322,7 +308,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		}
 
 		MarkDirty();
-		OnPropertyChanged(nameof(IncludedSubServices));
 		SubServicesChanged?.Invoke(this, EventArgs.Empty);
 	}
 

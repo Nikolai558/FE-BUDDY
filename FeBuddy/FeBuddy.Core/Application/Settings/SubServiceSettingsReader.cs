@@ -45,33 +45,14 @@ public static partial class SubServiceSettingsReader
 		AreaKey, "FilterByRoi", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 	};
 
-	/// <summary>
-	/// Reads <c>Area</c>: which of the sub-service's area filters the run uses. A block without it
-	/// (the harness, or one written before there was a choice) gets the area its filters meant:
-	/// <see cref="SubServiceArea.Artccs"/> when <paramref name="artccListKey"/> lists any,
-	/// otherwise <see cref="SubServiceArea.Roi"/> when <c>FilterByRoi</c> is <c>Y</c>, otherwise
-	/// <paramref name="withNoFilter"/>.
-	/// </summary>
+	/// <summary>Reads <c>Area</c>: which of the sub-service's area filters the run uses.</summary>
 	/// <param name="settings">The raw settings block.</param>
 	/// <param name="offered">The areas the sub-service offers.</param>
-	/// <param name="artccListKey">The key of its ARTCC list, e.g. <c>ArtccFilter</c>; <see langword="null"/> when it has none.</param>
-	/// <param name="withNoFilter">The area a block with no filter at all means.</param>
 	/// <returns>The area.</returns>
-	/// <exception cref="ArgumentException">Thrown when <c>Area</c> is not one of <paramref name="offered"/>.</exception>
-	public static SubServiceArea ReadArea(
-		IReadOnlyDictionary<string, string> settings,
-		IReadOnlyList<SubServiceArea> offered,
-		string? artccListKey,
-		SubServiceArea withNoFilter = SubServiceArea.Everything)
+	/// <exception cref="ArgumentException">Thrown when <c>Area</c> is missing, or is not one of <paramref name="offered"/>.</exception>
+	public static SubServiceArea ReadArea(IReadOnlyDictionary<string, string> settings, IReadOnlyList<SubServiceArea> offered)
 	{
-		string? text = SettingsValueReader.OptionalString(settings, AreaKey);
-
-		if (text is null)
-		{
-			return artccListKey is not null && SettingsValueReader.StringList(settings, artccListKey).Count > 0 ? SubServiceArea.Artccs
-				: SettingsValueReader.YesNo(settings, "FilterByRoi", defaultValue: false) ? SubServiceArea.Roi
-				: withNoFilter;
-		}
+		string text = SettingsValueReader.RequiredString(settings, AreaKey);
 
 		foreach (SubServiceArea area in offered)
 		{

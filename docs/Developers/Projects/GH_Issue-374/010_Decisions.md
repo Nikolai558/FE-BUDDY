@@ -265,7 +265,7 @@ Patterns the review kept finding. Agreeing on a rule stops them coming back. Ses
 
 ### H4 · Naming and layout
 
-**Status:** Done (not yet merged): in `Code-Structure.md`'s "Rules for Core and the app" and "Naming by role"; the renames themselves are in [S6](020_Work-Plan.md#s6). Agreed (Nikolas, 2026-10-17)
+**Status:** Done (not yet merged): in `Code-Structure.md`'s "Rules for Core and the app" and "Naming by role"; the renames themselves are done in [S6](020_Work-Plan.md#s6) too. Agreed (Nikolas, 2026-10-17)
 
 `*Service` only for entry points; data types in `Models/`; one type per file.
 

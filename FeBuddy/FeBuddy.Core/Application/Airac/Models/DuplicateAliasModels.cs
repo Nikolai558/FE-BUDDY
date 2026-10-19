@@ -110,8 +110,4 @@ public sealed record DuplicateAliasCommand(string Command, IReadOnlyList<Duplica
 /// <summary>The outcome of writing <c>Duplicate_Alias_Commands.txt</c>.</summary>
 /// <param name="FilePath">The report's full path.</param>
 /// <param name="Duplicates">Every command more than one line uses; empty when the run's alias files have none.</param>
-public sealed record DuplicateAliasReportResult(string FilePath, IReadOnlyList<DuplicateAliasCommand> Duplicates)
-{
-	/// <summary>How many lines use a duplicated command.</summary>
-	public int LineCount => Duplicates.Sum(duplicate => duplicate.Lines.Count);
-}
+public sealed record DuplicateAliasReportResult(string FilePath, IReadOnlyList<DuplicateAliasCommand> Duplicates);

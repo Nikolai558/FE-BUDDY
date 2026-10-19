@@ -62,7 +62,7 @@ The goal: user manuals so short that nobody needs to read them, with anything th
 | [D2-48](#d2-48) | Cut | How often do I run FE-Buddy? (FAQ-and-Troubleshooting.md:5-8) | Open |
 | [D2-49](#d2-49) | Keep (shortened) | Where are my files? (FAQ-and-Troubleshooting.md:10-14) | Open |
 | [D2-50](#d2-50) | Keep (shortened) | Why does Windows show a different version number? (FAQ-and-Troubleshooting.md:16-19) | Open |
-| [D2-51](#d2-51) | Fix | Does FE-Buddy send my data anywhere? (FAQ-and-Troubleshooting.md:21-28) | Open |
+| [D2-51](#d2-51) | Fix | Does FE-Buddy send my data anywhere? (FAQ-and-Troubleshooting.md:21-28) | Fixed |
 | [D2-52](#d2-52) | Cut | I set FEBUDDY_GITHUB_TOKEN for FE-Buddy 2.x (FAQ-and-Troubleshooting.md:30-34) | Open |
 | [D2-53](#d2-53) | Cut | What if Wx Stations or Telephony can't download? (FAQ-and-Troubleshooting.md:36-41) | Open |
 | [D2-54](#d2-54) | Cut | Same command in Departures.txt and Arrivals.txt (FAQ-and-Troubleshooting.md:43-48) | Open |
@@ -279,7 +279,7 @@ its tests, README and the issue templates link to them).
 
 ### D2-51 · Does FE-Buddy send my data anywhere?
 
-**Status:** Open; pulled forward to [S6](020_Work-Plan.md#s6), to be fixed before the public beta (Kyle, 2026-10-19). A wording fix: the FAQ already names GNG, but reads as if GNG's list came from GitHub.
+**Status:** Fixed (not yet merged), in [S6](020_Work-Plan.md#s6): the answer is reworded as proposed, under the same heading, after checking the code: nothing is uploaded, every download is one the answer names, and a saved token or password goes only to its allowed websites, over HTTPS.
 
 **Doc:** [`docs/Users/FAQ-and-Troubleshooting.md:21-28`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Users/FAQ-and-Troubleshooting.md?plain=1#L21-L28)
 

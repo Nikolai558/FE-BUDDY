@@ -134,10 +134,6 @@ public static class GeojsonFileReader
 				// Text that isn't UTF-8 (ANSI, say) is found out only when a string holding a character outside ASCII is read.
 				throw new FormatException("Not UTF-8 text - save it as UTF-8", ex);
 			}
-			catch (InvalidOperationException ex)
-			{
-				throw new FormatException("Not laid out as GeoJSON", ex);
-			}
 
 			if (result.Count == 0)
 			{

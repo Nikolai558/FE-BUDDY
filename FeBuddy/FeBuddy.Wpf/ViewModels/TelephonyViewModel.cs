@@ -171,13 +171,16 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	protected override (string? Lines, string? Symbols, string? Text) EmitKeys => (null, null, null);
 
 	/// <inheritdoc />
+	protected override bool HasGeojson => false;
+
+	/// <inheritdoc />
 	/// <remarks>None: Telephony's one output is on whenever it is included on the General tab.</remarks>
 	public override string? WhatYoullGetFooter => null;
 
 	// ================= telephony data =================
 
 	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copies of the FAA pages.</summary>
-	public string TelephonyDataStatus => _telephonyDataStatus;
+	private string TelephonyDataStatus => _telephonyDataStatus;
 
 	/// <summary>
 	/// Re-reads how old FE-Buddy's kept copy of the FAA telephony register is
@@ -228,7 +231,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		}
 
 		_telephonyDataStatus = status;
-		OnPropertyChanged(nameof(TelephonyDataStatus));
 	}
 
 	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the FAA pages.</summary>
@@ -330,8 +332,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		IsDownloadingVatsimRadarList ? "Downloading the latest list…"
 		: _vatsimRadarCopy switch
 		{
-			{ IsOlderCopy: true } older =>
-				$"FE-Buddy's older copy of the list is from {older.DownloadedUtc.ToLocalTime():d MMM yyyy}: {_vatsimRadarList.Count:N0} virtual airlines.",
 			{ } kept =>
 				$"FE-Buddy's copy is from {kept.DownloadedUtc.ToLocalTime():d MMM yyyy}: {_vatsimRadarList.Count:N0} virtual airlines.",
 			_ => "FE-Buddy has no copy yet, so a virtual airline you add can't be checked against it.",
@@ -364,7 +364,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				AddPartProblem(problems, refreshed.VatsimRadar, TelephonyFiles.VatsimRadarAirlinesDescription);
 			}
 
-			if (_vatsimRadarCopy is { IsOlderCopy: false } copy && problems.Count == 0)
+			if (_vatsimRadarCopy is { } copy && problems.Count == 0)
 			{
 				string? missing = copy.GngDownloadedUtc is null ? TelephonyFiles.GngAirlinesDescription
 					: copy.VatsimRadarDownloadedUtc is null ? TelephonyFiles.VatsimRadarAirlinesDescription
@@ -374,11 +374,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				{
 					problems.Add($"FE-Buddy has no copy of the {missing} yet, so the list is missing its airlines.");
 				}
-			}
-
-			if (_vatsimRadarCopy is { IsOlderCopy: true })
-			{
-				problems.Add("Using FE-Buddy's older copy of the list until its two parts can be downloaded.");
 			}
 
 			return string.Join(" ", problems);
@@ -886,7 +881,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			_lastRefresh = result;
 			_downloadError = null;
 			// Read off the UI thread: merging thousands of rows is no work for it.
-			UseVatsimRadarCopy(await Task.Run(() => WithLookup(VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath, result.OlderCopyPath))));
+			UseVatsimRadarCopy(await Task.Run(() => WithLookup(VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath))));
 		}
 		catch (Exception ex)
 		{

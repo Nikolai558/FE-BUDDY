@@ -9,8 +9,8 @@ namespace FeBuddy.UnitTests.Infrastructure.Configuration;
 
 /// <summary>
 /// Covers settings profiles (issue #324): the settings every profile shares kept in
-/// <c>Shared.json</c>, the rest in the profile's own file; an older FE-Buddy's <c>UserConfig.json</c>
-/// moved in as the Default profile; and creating, switching, renaming and deleting profiles - against
+/// <c>Shared.json</c>, the rest in the profile's own file; a <c>UserConfig.json</c> outside them left
+/// unread; and creating, switching, renaming and deleting profiles - against
 /// a throwaway folder standing for <c>%APPDATA%\FE-Buddy</c>.
 /// </summary>
 [Collection("AppLog")]
@@ -113,26 +113,6 @@ public sealed class UserConfigProfilesTests : IDisposable
 		Assert.Null(File(UserConfigFile.SharedFilePath)!["General"]);
 	}
 
-	/// <summary>A profile that still holds a shared setting (written before Shared.json, or by hand) gives it to Shared.json; Shared.json's own win.</summary>
-	[Fact]
-	public void a_profiles_copy_of_a_shared_setting_moves_to_shared_json_unless_it_has_one()
-	{
-		Directory.CreateDirectory(ProfilesFolder);
-		System.IO.File.WriteAllText(UserConfigFile.ConfigFilePath, """{ "General": { "UpdateChannel": "Alpha", "NewsLastOpen": "2026-01-01.1" } }""");
-		System.IO.File.WriteAllText(UserConfigFile.SharedFilePath, """{ "General": { "UpdateChannel": "Stable" } }""");
-
-		UserConfigFile.ReadAll();
-
-		Assert.Equal("Stable", UserConfigFile.GetValue(Channel));
-		Assert.Equal("2026-01-01.1", UserConfigFile.GetValue(News));
-		Assert.Equal("2026-01-01.1", At(File(UserConfigFile.SharedFilePath), News));
-		Assert.Equal("Stable", At(File(UserConfigFile.SharedFilePath), Channel));
-
-		// The profile's copies go at its next save.
-		UserConfigFile.Save("General");
-		Assert.Null(File(UserConfigFile.ConfigFilePath)!["General"]);
-	}
-
 	/// <summary>A profile that can't be read still leaves the shared settings, so a save can't wipe them.</summary>
 	[Fact]
 	public void an_unreadable_profile_keeps_the_shared_settings()
@@ -166,60 +146,20 @@ public sealed class UserConfigProfilesTests : IDisposable
 		Assert.Null(At(File(UserConfigFile.ConfigFilePath), Channel));
 	}
 
-	// ---- an older FE-Buddy's file ----
+	// ---- a settings file outside the profiles ----
 
-	/// <summary>Once its settings are in, the old file and its backups are gone from FE-Buddy's folder.</summary>
+	/// <summary>A <c>UserConfig.json</c> in FE-Buddy's own folder, outside the profiles, is not read: FE-Buddy starts on its defaults and leaves the file alone.</summary>
 	[Fact]
-	public void an_older_fe_buddys_settings_file_is_moved_in_as_the_default_profile()
+	public void a_settings_file_outside_the_profiles_is_left_alone()
 	{
-		// Today's layout, so the file is only moved, not brought forward too (which drops the undo snapshot).
-		WriteRoot("UserConfig.json", $$"""{ "ConfigVersion": {{UserConfigVersion.Current}}, "General": { "UpdateChannel": "Beta", "PrettyPrintGeojson": "Y" } }""");
-		WriteRoot("UserConfig.previous.json", "{}");
-		WriteRoot("UserConfig.before-import.json", "{}");
-		WriteRoot("UserConfig.v1.json", "{}");
-		Assert.True(UserConfigFile.HasSettings);
-
-		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
-
-		Assert.Equal("Default", UserConfigFile.ActiveProfile);
-		Assert.Equal("Beta", UserConfigFile.GetValue(Channel));
-		Assert.Equal("Y", UserConfigFile.GetValue(Pretty));
-		Assert.Equal("Beta", At(File(UserConfigFile.SharedFilePath), Channel));
-		Assert.Equal(
-			["Shared.json", "UserConfig-before-import.Default.json", "UserConfig-previous.Default.json", "UserConfig-v1.Default.json", "UserConfig.Default.json"],
-			Directory.GetFiles(ProfilesFolder).Select(Path.GetFileName).Order(StringComparer.Ordinal));
-		Assert.Empty(Directory.GetFiles(_root, "UserConfig*.json"));
-	}
-
-	[Fact]
-	public void an_older_file_that_cannot_be_moved_is_tried_again_next_time()
-	{
-		WriteRoot("UserConfig.json", """{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""");
-
-		using (new FileStream(Path.Combine(_root, "UserConfig.json"), FileMode.Open, FileAccess.Read, FileShare.None))
-		{
-			Assert.Equal(UserConfigReadResult.Missing, UserConfigFile.ReadAll());
-		}
-
-		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith($"Could not move '{Path.Combine(_root, "UserConfig.json")}'", StringComparison.Ordinal));
-
-		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
-		Assert.Equal("ZOB", UserConfigFile.GetValue(Artcc));
-		Assert.False(System.IO.File.Exists(Path.Combine(_root, "UserConfig.json")));
-	}
-
-	/// <summary>Once there are profiles, an older FE-Buddy's file (one run again, say) is left alone.</summary>
-	[Fact]
-	public void an_older_file_is_left_alone_once_there_are_profiles()
-	{
-		UserConfigFile.TrySetValue(Artcc, "ZOB");
-		UserConfigFile.Write();
 		WriteRoot("UserConfig.json", """{ "Services": { "AiracService": { "UserArtccId": "ZNY" } } }""");
 
-		UserConfigFile.ReadAll();
+		Assert.False(UserConfigFile.HasSettings);
+		Assert.Equal(UserConfigReadResult.Missing, UserConfigFile.ReadAll());
 
-		Assert.Equal("ZOB", UserConfigFile.GetValue(Artcc));
+		Assert.Null(UserConfigFile.GetValue(Artcc));
 		Assert.True(System.IO.File.Exists(Path.Combine(_root, "UserConfig.json")));
+		Assert.False(System.IO.File.Exists(UserConfigFile.ConfigFilePath));
 	}
 
 	// ---- the profiles ----
@@ -287,8 +227,6 @@ public sealed class UserConfigProfilesTests : IDisposable
 		Assert.StartsWith("There is already a profile called ZOB.", taken.Message, StringComparison.Ordinal);
 		Assert.Throws<ArgumentException>(() => UserConfigFile.CreateProfile("bad:name", null));
 		Assert.Throws<ArgumentException>(() => UserConfigFile.SwitchProfile("Nobody"));
-		Assert.True(UserConfigFile.ProfileExists(" zob "));
-		Assert.False(UserConfigFile.ProfileExists("ZNY"));
 	}
 
 	[Theory]

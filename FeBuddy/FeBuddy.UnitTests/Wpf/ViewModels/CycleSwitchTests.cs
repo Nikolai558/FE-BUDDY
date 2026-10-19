@@ -143,12 +143,13 @@ public sealed class CycleSwitchTests : IDisposable
 		await AiracCycleDataCache.Instance.PrepareCyclesAsync(
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Previous),
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Current),
-			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next));
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next),
+			AiracLaunchPlan.Everything);
 
 		AiracServiceViewModel screen = new();
 		AiracGeneralTabViewModel general = screen.Tabs.OfType<AiracGeneralTabViewModel>().Single();
 		ArrivalsViewModel arrivals = screen.Tabs.OfType<ArrivalsViewModel>().Single();
-		Assert.True(screen.IsReady);
+		Assert.True(general.IsReady);
 
 		general.SelectedCyclePosition = AiracCyclePosition.Next;
 
@@ -189,7 +190,8 @@ public sealed class CycleSwitchTests : IDisposable
 		Task prepare = AiracCycleDataCache.Instance.PrepareCyclesAsync(
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Previous),
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Current),
-			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next));
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next),
+			AiracLaunchPlan.Everything);
 
 		if (wait)
 		{
@@ -240,14 +242,14 @@ public sealed class CycleSwitchTests : IDisposable
 		AiracServiceViewModel screen = new();
 		AiracGeneralTabViewModel general = screen.Tabs.OfType<AiracGeneralTabViewModel>().Single();
 		ProceduresViewModel procedures = screen.Tabs.OfType<ProceduresViewModel>().Single();
-		PumpUntil(() => procedures.IsDtppKnown);
+		PumpUntil(() => procedures.DtppCycleId is not null);
 
 		general.SelectedCyclePosition = AiracCyclePosition.Next;
 		Pump();
-		Assert.False(procedures.IsDtppKnown);
+		Assert.Null(procedures.DtppCycleId);
 
 		general.SelectedCyclePosition = AiracCyclePosition.Current;
-		PumpUntil(() => procedures.IsDtppKnown);
+		PumpUntil(() => procedures.DtppCycleId is not null);
 
 		Assert.Equal("2610", procedures.DtppCycleId);
 	});
@@ -285,7 +287,7 @@ public sealed class CycleSwitchTests : IDisposable
 
 		AiracServiceViewModel screen = new();
 		AiracGeneralTabViewModel general = screen.Tabs.OfType<AiracGeneralTabViewModel>().Single();
-		PumpUntil(() => screen.IsReady);
+		PumpUntil(() => general.IsReady);
 
 		general.SelectedCyclePosition = AiracCyclePosition.Next;
 		general.SelectedCyclePosition = AiracCyclePosition.Previous;
@@ -318,7 +320,7 @@ public sealed class CycleSwitchTests : IDisposable
 
 		AiracServiceViewModel screen = new();
 		AiracGeneralTabViewModel general = screen.Tabs.OfType<AiracGeneralTabViewModel>().Single();
-		PumpUntil(() => screen.IsReady);
+		PumpUntil(() => general.IsReady);
 
 		general.SelectedCyclePosition = AiracCyclePosition.Next;
 		PumpUntil(() => screen.LoadingCycleId is null && Volatile.Read(ref nextDownloads) == 4);
@@ -360,7 +362,7 @@ public sealed class CycleSwitchTests : IDisposable
 		PumpAWhile();
 
 		firstRead.SetResult();
-		PumpUntil(() => procedures.IsDtppKnown);
+		PumpUntil(() => procedures.DtppCycleId is not null);
 
 		Assert.Equal(1, Volatile.Read(ref reads));
 	});

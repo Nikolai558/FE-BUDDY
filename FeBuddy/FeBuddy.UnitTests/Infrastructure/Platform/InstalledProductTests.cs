@@ -20,11 +20,9 @@ public sealed class InstalledProductTests : IDisposable
 	public void values_come_from_the_installers_registry_key()
 	{
 		_registry["InstallLocation"] = @"C:\Program Files\FE-BUDDY\";
-		_registry["ProductSemVer"] = "3.0.0-alpha.1";
 		_registry["ProductCode"] = "{11111111-2222-3333-4444-555555555555}";
 
 		Assert.Equal(@"C:\Program Files\FE-BUDDY\", InstalledProduct.InstallLocation);
-		Assert.Equal("3.0.0-alpha.1", InstalledProduct.ProductSemVer);
 		Assert.Equal("{11111111-2222-3333-4444-555555555555}", InstalledProduct.ProductCode);
 	}
 

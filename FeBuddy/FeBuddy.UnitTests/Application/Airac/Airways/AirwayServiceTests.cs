@@ -50,6 +50,7 @@ public sealed class AirwayServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Everything",
 			["OutputBy"] = "HighLow",
 		};
 
@@ -63,11 +64,11 @@ public sealed class AirwayServiceTests : IDisposable
 
 	/// <summary>A region around AAAAA and ABC that leaves CCCCC outside.</summary>
 	private static (string, string)[] SouthEastRoi =>
-		[("FilterByRoi", "Y"), ("RoiSwLat", "39.5"), ("RoiSwLon", "-81.5"), ("RoiNeLat", "41.5"), ("RoiNeLon", "-79.5")];
+		[("Area", "Roi"), ("FilterByRoi", "Y"), ("RoiSwLat", "39.5"), ("RoiSwLon", "-81.5"), ("RoiNeLat", "41.5"), ("RoiNeLon", "-79.5")];
 
 	/// <summary>A region far away from J1.</summary>
 	private static (string, string)[] FarAwayRoi =>
-		[("FilterByRoi", "Y"), ("RoiSwLat", "30.0"), ("RoiSwLon", "-100.0"), ("RoiNeLat", "31.0"), ("RoiNeLon", "-99.0")];
+		[("Area", "Roi"), ("FilterByRoi", "Y"), ("RoiSwLat", "30.0"), ("RoiSwLon", "-100.0"), ("RoiNeLat", "31.0"), ("RoiNeLon", "-99.0")];
 
 	private static IEnumerable<(string, string)> CrcDefaults()
 	{
@@ -175,7 +176,7 @@ public sealed class AirwayServiceTests : IDisposable
 
 	/// <summary>The distance, in NM, from a GeoJSON <c>[lon, lat]</c> position to a point.</summary>
 	private static double DistanceNm(JsonElement position, double lat, double lon) =>
-		GeoMath.Distance(new Location(position[1].GetDouble(), position[0].GetDouble()), new Location(lat, lon), round: false);
+		GeoMath.Distance(new Location(position[1].GetDouble(), position[0].GetDouble()), new Location(lat, lon));
 
 	[Fact]
 	public void run_with_crc_defaults_and_a_roi_draws_only_the_points_inside_it()
@@ -347,7 +348,7 @@ public sealed class AirwayServiceTests : IDisposable
 	public void settings_reject_a_malformed_roi_and_warn_on_an_unknown_text_property()
 	{
 		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(Settings(
-			("FilterByRoi", "Y"), ("RoiSwLat", "north"), ("RoiSwLon", "-81"), ("RoiNeLat", "41"), ("RoiNeLon", "-79"))));
+			("Area", "Roi"), ("FilterByRoi", "Y"), ("RoiSwLat", "north"), ("RoiSwLon", "-81"), ("RoiNeLat", "41"), ("RoiNeLon", "-79"))));
 
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(Settings(("Crc.High.Text.madeUp", "1")));
 

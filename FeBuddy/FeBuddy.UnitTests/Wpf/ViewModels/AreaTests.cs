@@ -168,7 +168,7 @@ public sealed class AreaTests : IDisposable
 	[Fact]
 	public void a_tab_never_given_an_area_starts_on_the_one_its_settings_mean()
 	{
-		UserConfigFile.TrySetValue(UserConfigAreas.FacilityKey, "ZOB");
+		UserConfigFile.TrySetValue(UserConfigKeys.Facility, "ZOB");
 
 		Assert.Equal(SubServiceArea.Artccs, new DeparturesViewModel().Area);
 		Assert.Equal(SubServiceArea.Everything, new AirportsViewModel().Area);
@@ -442,7 +442,7 @@ public sealed class AreaTests : IDisposable
 	[Fact]
 	public void procedures_count_the_facilities_the_list_will_tick_before_it_loads()
 	{
-		UserConfigFile.TrySetValue(UserConfigAreas.FacilityKey, "ZOB");
+		UserConfigFile.TrySetValue(UserConfigKeys.Facility, "ZOB");
 		ProceduresViewModel tab = new() { Area = SubServiceArea.Artccs };
 
 		Assert.False(tab.HasFacilities);
@@ -461,18 +461,17 @@ public sealed class AreaTests : IDisposable
 	}
 
 	/// <summary>
-	/// Just after launch the previous cycle can still be on its way: that's said, not warned about,
-	/// since a run waits for it.
+	/// Just after launch the previous cycle can still be on its way: that isn't warned about, since a
+	/// run waits for it.
 	/// </summary>
 	[Fact]
-	public void procedures_say_the_previous_cycle_is_still_loading_without_warning()
+	public void procedures_dont_warn_while_the_previous_cycle_is_still_loading()
 	{
 		ProceduresViewModel tab = Procedures();
 
 		tab.SetDtppData("2611", ProcedureNameIndex.Build(new DtppMetafileDataCollection()), "2610", previousAvailable: false, downloadedLocal: DateTime.Now, previousLoading: true);
 
 		Assert.Null(tab.DtppWarning);
-		Assert.Equal("Cycle 2610 is still loading. Once it has, deleted procedures link to its charts.", tab.DtppPreviousStatus);
 	}
 
 	/// <summary>The cards name only the documents that are on, and the chart recall note is for the alias file.</summary>

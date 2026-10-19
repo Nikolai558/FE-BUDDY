@@ -137,37 +137,33 @@ public static class VatsimRadarVirtualAirlines
 	/// </summary>
 	/// <returns>The list, or <see langword="null"/> when there is no copy that can be read.</returns>
 	public static VatsimRadarCopy? ReadKeptCopy() =>
-		ReadKeptCopy(TelephonyFiles.GngAirlinesFilePath, TelephonyFiles.VatsimRadarAirlinesFilePath, TelephonyFiles.OlderVatsimRadarAirlinesFilePath);
+		ReadKeptCopy(TelephonyFiles.GngAirlinesFilePath, TelephonyFiles.VatsimRadarAirlinesFilePath);
 
 	/// <summary>
 	/// Same as <see cref="ReadKeptCopy()"/>, with the copies' paths supplied. Each part is read on its
-	/// own; one that is missing or can't be read is left out. Only while neither part can be read is the
-	/// older single copy read instead.
+	/// own; one that is missing or can't be read is left out.
 	/// </summary>
 	/// <param name="gngPath">GNG's part, or <see langword="null"/> for none.</param>
 	/// <param name="vatsimRadarPath">VATSIM-Radar's part, or <see langword="null"/> for none.</param>
-	/// <param name="olderCopyPath">The older single copy, or <see langword="null"/> for none.</param>
 	/// <returns>The list, or <see langword="null"/> when there is no copy that can be read.</returns>
-	public static VatsimRadarCopy? ReadKeptCopy(string? gngPath, string? vatsimRadarPath, string? olderCopyPath)
+	public static VatsimRadarCopy? ReadKeptCopy(string? gngPath, string? vatsimRadarPath)
 	{
 		(IReadOnlyList<VatsimRadarAirline> Airlines, DateTime DownloadedUtc)? gng = TryRead(gngPath, GngAirlineParser.Parse);
-		(IReadOnlyList<VatsimRadarAirline> Airlines, DateTime DownloadedUtc)? vatsimRadar = TryRead(vatsimRadarPath, VatsimRadarAirlineParser.Parse);
+		(IReadOnlyList<VatsimRadarAirline> Airlines, DateTime DownloadedUtc)? vatsimRadar = TryRead(vatsimRadarPath, VatsimRadarAirlineParser.ParseGitHubList);
 
-		if (gng is not null || vatsimRadar is not null)
+		if (gng is null && vatsimRadar is null)
 		{
-			VatsimRadarSelection selection = Select(Merge(gng?.Airlines ?? [], vatsimRadar?.Airlines ?? []));
-			DateTime oldest = new[] { gng?.DownloadedUtc, vatsimRadar?.DownloadedUtc }.OfType<DateTime>().Min();
-
-			return new VatsimRadarCopy(selection.VirtualAirlines, oldest)
-			{
-				GngDownloadedUtc = gng?.DownloadedUtc,
-				VatsimRadarDownloadedUtc = vatsimRadar?.DownloadedUtc,
-			};
+			return null;
 		}
 
-		return TryRead(olderCopyPath, VatsimRadarAirlineParser.Parse) is { } older
-			? new VatsimRadarCopy(Select(older.Airlines).VirtualAirlines, older.DownloadedUtc) { IsOlderCopy = true }
-			: null;
+		VatsimRadarSelection selection = Select(Merge(gng?.Airlines ?? [], vatsimRadar?.Airlines ?? []));
+		DateTime oldest = new[] { gng?.DownloadedUtc, vatsimRadar?.DownloadedUtc }.OfType<DateTime>().Min();
+
+		return new VatsimRadarCopy(selection.VirtualAirlines, oldest)
+		{
+			GngDownloadedUtc = gng?.DownloadedUtc,
+			VatsimRadarDownloadedUtc = vatsimRadar?.DownloadedUtc,
+		};
 	}
 
 	/// <summary>A kept copy's airlines and download time, or <see langword="null"/> when there is none, or it can't be read.</summary>

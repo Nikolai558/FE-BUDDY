@@ -128,7 +128,7 @@ public sealed class MapLayersState : ObservableObject
 		OpenOutputFolderCommand = new RelayCommand(OpenOutputFolder, () => _outputDirectoryExists);
 		SelectAllOutputsCommand = new RelayCommand(() => SetAllOutputs(true), () => OutputChoices.Count > 0);
 		SelectNoOutputsCommand = new RelayCommand(() => SetAllOutputs(false), () => _selectedOutputs.Count > 0);
-		ResetHomeCommand = new RelayCommand(ResetHome, () => HasCustomHome);
+		ResetHomeCommand = new RelayCommand(ResetHome, () => Home is not null);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(OnCacheStateChanged);
 
@@ -182,13 +182,9 @@ public sealed class MapLayersState : ObservableObject
 			if (SetProperty(ref _home, value))
 			{
 				OnPropertyChanged(nameof(HomeSummary));
-				OnPropertyChanged(nameof(HasCustomHome));
 			}
 		}
 	}
-
-	/// <summary>Whether the user has saved a home view of their own.</summary>
-	public bool HasCustomHome => Home is not null;
 
 	/// <summary>The home view on one line, e.g. <c>34.05, -118.25 at zoom 6.5</c>.</summary>
 	public string HomeSummary => Home is { } h
@@ -533,17 +529,7 @@ public sealed class MapLayersState : ObservableObject
 		}
 	}
 
-	private static string? CurrentCycleId()
-	{
-		try
-		{
-			return AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
-		}
-		catch (InvalidOperationException)
-		{
-			return null;
-		}
-	}
+	private static string CurrentCycleId() => AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
 
 	private void OnCacheStateChanged()
 	{

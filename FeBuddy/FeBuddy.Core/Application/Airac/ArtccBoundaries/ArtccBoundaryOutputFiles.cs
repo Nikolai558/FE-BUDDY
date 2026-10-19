@@ -47,11 +47,6 @@ public static partial class ArtccBoundaryOutputFiles
 	/// <returns>The file key.</returns>
 	public static string KeyFor(string locationId, string altitudeToken) => KeyFor(ClassFor(locationId, altitudeToken));
 
-	/// <summary>A HighLow/HighLowUnlimited-mode file's CRC class name: its group, unchanged.</summary>
-	/// <param name="group">The file's group: <see cref="HighClass"/>, <see cref="LowClass"/> or <see cref="UnlimitedClass"/>.</param>
-	/// <returns>The CRC class name.</returns>
-	public static string ClassFor(string group) => group;
-
 	/// <summary>An ArtccAltitude-mode file's CRC class name, e.g. <c>ZOB-HIGH</c>.</summary>
 	/// <param name="locationId">The location's identifier.</param>
 	/// <param name="altitudeToken">The altitude, as NASR writes it.</param>

@@ -63,8 +63,6 @@ public sealed class ShellViewModel : ObservableObject
 	private string _airacStatus = "Preparing AIRAC data…";
 	private string _versionText = "…";
 	private bool _isUpdateAvailable;
-	private bool _isOnline = true;
-	private string _versionBrushKey = "Brush.Accent.Text";
 	private string _updateTooltipTitle = "Checking for updates…";
 	private string _updateTooltipBody = string.Empty;
 	private string _updateBadgeVersionText = string.Empty;
@@ -216,37 +214,14 @@ public sealed class ShellViewModel : ObservableObject
 		{
 			if (SetProperty(ref _isUpdateAvailable, value))
 			{
+				OnPropertyChanged(nameof(VersionIsWarning));
 				CommandManager.InvalidateRequerySuggested();
 			}
 		}
 	}
 
-	/// <summary>Whether the machine currently has internet - gates the update tooltip.</summary>
-	public bool IsOnline
-	{
-		get => _isOnline;
-		private set => SetProperty(ref _isOnline, value);
-	}
-
-	/// <summary>
-	/// Resource key for the version text brush: <c>Brush.Accent.Text</c> normally, or
-	/// <c>Brush.Warn</c> for the rest of the session once the user declines an available
-	/// update.
-	/// </summary>
-	public string VersionBrushKey
-	{
-		get => _versionBrushKey;
-		private set
-		{
-			if (SetProperty(ref _versionBrushKey, value))
-			{
-				OnPropertyChanged(nameof(VersionIsWarning));
-			}
-		}
-	}
-
 	/// <summary><see langword="true"/> once the user has declined an available update this session - the version text and the update badge turn amber.</summary>
-	public bool VersionIsWarning => _versionBrushKey == "Brush.Warn";
+	public bool VersionIsWarning => IsUpdateAvailable && _updateDeclinedThisSession;
 
 	/// <summary>Title line of the FE-BUDDY caption tooltip - update state only.</summary>
 	public string UpdateTooltipTitle
@@ -593,7 +568,7 @@ public sealed class ShellViewModel : ObservableObject
 
 	private void RefreshVersionState()
 	{
-		IsOnline = AppEnvironment.HasInternetConnection;
+		bool online = AppEnvironment.HasInternetConnection;
 
 		VersionCheckResult? version = AppEnvironment.Version;
 
@@ -601,9 +576,8 @@ public sealed class ShellViewModel : ObservableObject
 		{
 			VersionText = AppEnvironment.LaunchCompleted ? "dev" : "…";
 			IsUpdateAvailable = false;
-			UpdateTooltipTitle = IsOnline ? "Checking for updates…" : "Update state unknown offline";
+			UpdateTooltipTitle = online ? "Checking for updates…" : "Update state unknown offline";
 			UpdateTooltipBody = string.Empty;
-			VersionBrushKey = "Brush.Accent.Text";
 			return;
 		}
 
@@ -616,7 +590,6 @@ public sealed class ShellViewModel : ObservableObject
 		}
 
 		IsUpdateAvailable = version.Status == VersionCheckStatus.UpdateAvailable;
-		VersionBrushKey = "Brush.Accent.Text";
 
 		switch (version.Status)
 		{
@@ -627,7 +600,7 @@ public sealed class ShellViewModel : ObservableObject
 
 			case VersionCheckStatus.Failed:
 				// Offline only when FE-Buddy is: a check can fail online too (GitHub's rate limit, an error).
-				UpdateTooltipTitle = IsOnline ? "Could not check for updates" : "Update state unknown offline";
+				UpdateTooltipTitle = online ? "Could not check for updates" : "Update state unknown offline";
 				UpdateTooltipBody = version.Message ?? string.Empty;
 				break;
 
@@ -635,7 +608,6 @@ public sealed class ShellViewModel : ObservableObject
 				UpdateTooltipTitle = $"v{version.LatestVersion} available!";
 				UpdateTooltipBody = $"You are on v{version.DisplayVersion}. Click to review and update.";
 				UpdateBadgeVersionText = $"v{version.LatestVersion} available";
-				VersionBrushKey = _updateDeclinedThisSession ? "Brush.Warn" : "Brush.Accent.Text";
 				break;
 
 			case VersionCheckStatus.RunningPreRelease:
@@ -718,9 +690,7 @@ public sealed class ShellViewModel : ObservableObject
 				: new HealthRow("Internet", "offline — online features are disabled", StatusKind.Down));
 
 		AiracCycleDataCache cache = AiracCycleDataCache.Instance;
-		AiracCycleReadiness readiness = cache.Entries.Count == 0
-			? AiracCycleReadiness.Waiting
-			: cache.ComputeReadiness();
+		AiracCycleReadiness readiness = cache.ComputeReadiness();
 
 		// A cycle's metafile is fetched before it is parsed, so a ready cycle without one stays
 		// without one until the next launch - as the General tab's "partial" says.
@@ -786,7 +756,7 @@ public sealed class ShellViewModel : ObservableObject
 		if (vm.UserDeclined && !vm.IsGoingBack)
 		{
 			_updateDeclinedThisSession = true;
-			RefreshVersionState();
+			OnPropertyChanged(nameof(VersionIsWarning));
 		}
 	}
 

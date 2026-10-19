@@ -16,13 +16,13 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// <para>
 /// The file is the same nested JSON as <c>UserConfig.json</c>, wrapped in a small header:
 /// <code>
-/// { "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 1, "appVersion": "3.0.0",
+/// { "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 2, "appVersion": "3.0.0",
 ///   "exportedUtc": "2026-09-27T12:00:00Z", "settings": { "General": { ... }, "Services": { ... } } }
 /// </code>
 /// <c>formatVersion</c> is this wrapper's; <c>configVersion</c> is the settings layout inside it
 /// (<see cref="UserConfigVersion"/>), which <see cref="Read(string)"/> brings forward
-/// (<see cref="UserConfigMigrations"/>). An export with no <c>configVersion</c> (3.0.0-beta.3 and
-/// earlier) is taken to be in the oldest layout.
+/// (<see cref="UserConfigMigrations"/>). An export with no <c>configVersion</c>, or one older than
+/// <see cref="UserConfigVersion.Oldest"/>, is taken to be in the oldest layout.
 /// Each setting goes by its <see cref="UserConfigPortability.Classify(string)"/> scope: shared
 /// settings travel as they are, folders travel tokenized (<see cref="PortablePathTokens"/>), and
 /// PC-only state, credentials and credential choices never go into the file.
@@ -463,10 +463,8 @@ public static class UserConfigTransfer
 	{
 		string target = Path.GetFullPath(path);
 		string folder = Path.GetFullPath(UserConfigFile.Directory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-		string legacy = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(folder.TrimEnd(Path.DirectorySeparatorChar))!, UserConfigFile.LegacyConfigFileName));
 
-		return target.StartsWith(folder, StringComparison.OrdinalIgnoreCase)
-			|| string.Equals(target, legacy, StringComparison.OrdinalIgnoreCase);
+		return target.StartsWith(folder, StringComparison.OrdinalIgnoreCase);
 	}
 
 	/// <summary>

@@ -36,9 +36,6 @@
         <DataTemplate x:Key="ReviewSection" DataType="{x:Type tabm:ServicePreviewSection}">
             <ctl:Card Header="{Binding Title}">
                 <StackPanel>
-                    <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Prose}"
-                               Margin="0,0,0,6"
-                               Visibility="{Binding Note, Converter={StaticResource StringToVis}}" />
                     <!-- the tab's What You'll Get summary, the same lines as on the tab, then the
                          settings it leaves out -->
                     <ctl:OutputSummary Blocks="{Binding WhatYoullGet}" Margin="0,0,0,8" />

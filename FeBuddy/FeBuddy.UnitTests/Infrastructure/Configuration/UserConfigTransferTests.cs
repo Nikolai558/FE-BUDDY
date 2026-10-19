@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.UnitTests.Infrastructure.Configuration;
 
@@ -276,14 +277,14 @@ public sealed class UserConfigTransferTests : IDisposable
 	public void a_plain_files_stamp_is_its_layout_not_a_setting()
 	{
 		UserConfigPackage package = UserConfigTransfer.Parse(
-			"""{ "ConfigVersion": 1, "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""",
+			"""{ "ConfigVersion": 2, "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""",
 			"UserConfig.json");
 
-		Assert.Equal(1, package.ConfigVersion);
+		Assert.Equal(2, package.ConfigVersion);
 		Assert.Equal(["Services.AiracService.UserArtccId"], package.Values.Keys);
 	}
 
-	/// <summary>Exports from beta.3 and earlier have no stamp: they are the oldest layout.</summary>
+	/// <summary>An export with no stamp is in the oldest layout.</summary>
 	[Fact]
 	public void an_export_with_no_layout_is_the_oldest()
 	{
@@ -293,6 +294,22 @@ public sealed class UserConfigTransferTests : IDisposable
 
 		Assert.Equal(UserConfigVersion.Oldest, package.ConfigVersion);
 		Assert.Equal("ZOB", package.Values[ArtccKey]);
+	}
+
+	/// <summary>
+	/// A file or export stamped with a layout older than the oldest is taken as the oldest: its settings
+	/// come in as they are, without a warning.
+	/// </summary>
+	[Theory]
+	[InlineData("""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 1, "settings": { "General": { "UpdateChannel": "Beta" } } }""")]
+	[InlineData("""{ "ConfigVersion": 1, "General": { "UpdateChannel": "Beta" } }""")]
+	public void a_file_stamped_older_than_the_oldest_layout_is_taken_as_it(string json)
+	{
+		UserConfigPackage package = UserConfigTransfer.Parse(json, "UserConfig.json");
+
+		Assert.Equal(UserConfigVersion.Oldest, package.ConfigVersion);
+		Assert.Equal("Beta", package.Values[UserConfigKeys.UpdateChannel]);
+		Assert.DoesNotContain(AppLog.Entries, e => e.Level == LogLevel.Warning);
 	}
 
 	/// <summary>A file in a layout newer than this FE-Buddy's can't be understood, so it isn't imported.</summary>
@@ -306,26 +323,26 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.Contains(expectedMessage, ex.Message, StringComparison.Ordinal);
 	}
 
-	/// <summary>With a second layout, an older file's settings are brought forward before the import is planned.</summary>
+	/// <summary>With a newer layout, an older file's settings are brought forward before the import is planned.</summary>
 	[Fact]
 	public void an_older_files_settings_are_brought_forward_before_they_are_imported()
 	{
-		UserConfigMigrations.ConfigureForTesting(2, [new UserConfigMigration(2, "Moved the ARTCC", settings => settings.Move(ArtccKey, "General.Facility.ArtccId"))]);
+		UserConfigMigrations.ConfigureForTesting(3, [new UserConfigMigration(3, "Moved the ARTCC", settings => settings.Move(ArtccKey, "General.Facility.ArtccId"))]);
 
 		UserConfigPackage package = UserConfigTransfer.Parse(
-			"""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 1, "settings": { "Services": { "AiracService": { "UserArtccId": "ZOB" } } } }""",
+			"""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "configVersion": 2, "settings": { "Services": { "AiracService": { "UserArtccId": "ZOB" } } } }""",
 			"zob.json");
 
-		Assert.Equal(1, package.ConfigVersion);
+		Assert.Equal(2, package.ConfigVersion);
 		Assert.Equal(["General.Facility.ArtccId"], package.Values.Keys);
 		Assert.Equal("ZOB", package.Values["General.Facility.ArtccId"]);
-		Assert.Contains(AppLog.Entries, e => e.Message == "Brought 'zob.json' up from settings layout 1 to layout 2: Moved the ARTCC.");
+		Assert.Contains(AppLog.Entries, e => e.Message == "Brought 'zob.json' up from settings layout 2 to layout 3: Moved the ARTCC.");
 	}
 
 	[Fact]
 	public void a_file_whose_settings_cannot_be_brought_forward_is_refused()
 	{
-		UserConfigMigrations.ConfigureForTesting(2, [new UserConfigMigration(2, "Breaks", _ => throw new FormatException("no"))]);
+		UserConfigMigrations.ConfigureForTesting(3, [new UserConfigMigration(3, "Breaks", _ => throw new FormatException("no"))]);
 
 		UserConfigTransferException ex = Assert.Throws<UserConfigTransferException>(() => UserConfigTransfer.Parse(
 			"""{ "General": { "UpdateChannel": "Beta" } }""",
@@ -1017,7 +1034,6 @@ public sealed class UserConfigTransferTests : IDisposable
 			UserConfigFile.SharedFilePath,
 			UserConfigFile.ProfileFilePath("Another"),
 			Path.Combine(UserConfigFile.Directory, "anything.json"),
-			Path.Combine(_directory, "config", UserConfigFile.LegacyConfigFileName),
 		];
 
 		foreach (string path in own)
@@ -1058,5 +1074,5 @@ public sealed class UserConfigTransferTests : IDisposable
 	}
 
 	private static UserConfigPackage Package(Dictionary<string, string> values) =>
-		new("test.json", UserConfigTransfer.FormatVersion, "3.1.0", ExportedAt, values);
+		new("test.json", UserConfigTransfer.FormatVersion, "3.1.0", ExportedAt, values, UserConfigVersion.Current);
 }

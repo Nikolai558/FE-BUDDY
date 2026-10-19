@@ -26,6 +26,11 @@ namespace FeBuddy.Core.Infrastructure.Logging;
 /// </remarks>
 public static class AppLog
 {
+	// A day's log file: FE-Buddy_yyyy-MM-dd.log (LogFileName).
+	private const string FileNamePrefix = "FE-Buddy_";
+	private const string FileDateFormat = "yyyy-MM-dd";
+	private const string FileExtension = ".log";
+
 	private static readonly Lock Gate = new();
 	private static readonly List<LogEntry> RecordedEntries = [];
 
@@ -230,7 +235,7 @@ public static class AppLog
 
 			DateTime cutoffUtc = DateTime.UtcNow.Date.AddDays(-Math.Abs(retentionDays));
 
-			foreach (string file in Directory.EnumerateFiles(directory, "FE-Buddy_*.log"))
+			foreach (string file in Directory.EnumerateFiles(directory, FileNamePrefix + "*" + FileExtension))
 			{
 				DateTime fileDate = TryParseLogFileDate(file, out DateTime parsed)
 					? parsed
@@ -262,7 +267,7 @@ public static class AppLog
 	/// <param name="utcDate">The date whose log file path is wanted.</param>
 	/// <returns>The absolute log file path.</returns>
 	public static string GetLogFilePath(DateTime utcDate) =>
-		Path.Combine(LogDirectory, $"FE-Buddy_{utcDate:yyyy-MM-dd}.log");
+		Path.Combine(LogDirectory, LogFileName(utcDate));
 
 	/// <summary>
 	/// Points the log directory somewhere else and resets in-memory state. For unit tests only,
@@ -329,7 +334,7 @@ public static class AppLog
 			{
 				Directory.CreateDirectory(directory);
 
-				string path = Path.Combine(directory, $"FE-Buddy_{entry.UtcTimestamp:yyyy-MM-dd}.log");
+				string path = Path.Combine(directory, LogFileName(entry.UtcTimestamp));
 				string line = string.Format(
 					CultureInfo.InvariantCulture,
 					"{0:yyyy-MM-dd HH:mm:ss}Z  {1,-7}  {2,-24}  {3}{4}",
@@ -352,15 +357,18 @@ public static class AppLog
 	private static string GetDefaultLogDirectory() =>
 		Path.Combine(AppPaths.AppDataDirectory, "Logs");
 
+	/// <summary>A day's log file name, e.g. <c>FE-Buddy_2026-10-19.log</c>.</summary>
+	private static string LogFileName(DateTime utcDate) =>
+		FileNamePrefix + utcDate.ToString(FileDateFormat, CultureInfo.InvariantCulture) + FileExtension;
+
 	private static bool TryParseLogFileDate(string filePath, out DateTime date)
 	{
 		string name = Path.GetFileNameWithoutExtension(filePath);
-		const string prefix = "FE-Buddy_";
 
-		if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+		if (name.StartsWith(FileNamePrefix, StringComparison.OrdinalIgnoreCase)
 			&& DateTime.TryParseExact(
-				name[prefix.Length..],
-				"yyyy-MM-dd",
+				name[FileNamePrefix.Length..],
+				FileDateFormat,
 				CultureInfo.InvariantCulture,
 				DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
 				out date))

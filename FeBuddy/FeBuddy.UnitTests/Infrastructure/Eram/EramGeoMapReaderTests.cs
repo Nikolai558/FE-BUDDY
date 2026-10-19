@@ -114,9 +114,9 @@ public sealed class EramGeoMapReaderTests
 		Assert.Equal("SECTOR", sector.ObjectType);
 		Assert.Equal(4, sector.MapGroupId);
 		Assert.Equal("SECTOR_4", sector.Name);
-		Assert.Equal(new EramProperties { Bcg = 1, Filters = [1, 2], Style = "Solid", Thickness = 2 }, sector.LineDefaults);
-		Assert.Equal(new EramProperties { Bcg = 3, Filters = [3], Style = "VOR", Size = 1 }, sector.SymbolDefaults);
-		Assert.Equal(
+		AssertProperties(new EramProperties { Bcg = 1, Filters = [1, 2], Style = "Solid", Thickness = 2 }, sector.LineDefaults);
+		AssertProperties(new EramProperties { Bcg = 3, Filters = [3], Style = "VOR", Size = 1 }, sector.SymbolDefaults);
+		AssertProperties(
 			new EramProperties { Bcg = 4, Filters = [4], Size = 1, Underline = false, XOffset = 5, YOffset = -5, Display = true },
 			sector.TextDefaults);
 
@@ -223,10 +223,10 @@ public sealed class EramGeoMapReaderTests
 		Assert.Equal(
 			[EramElementKind.Line, EramElementKind.Line, EramElementKind.Text, EramElementKind.Text],
 			elements.Select(e => e.Kind));
-		Assert.All(elements.Take(2), segment => Assert.Equal(new EramProperties { Style = "ShortDashed" }, segment.Overrides));
+		Assert.All(elements.Take(2), segment => AssertProperties(new EramProperties { Style = "ShortDashed" }, segment.Overrides));
 		Assert.Equal(new Coordinate(-100.5, 40.5), elements[1].End);
 		Assert.Equal(["R0001"], elements[2].TextLines!);
-		Assert.Equal(new EramProperties { Size = 2, Display = false }, elements[2].Overrides);
+		AssertProperties(new EramProperties { Size = 2, Display = false }, elements[2].Overrides);
 		Assert.Equal(["R0001", "R0001", "R0001", "NOLABEL"], elements.Select(e => e.ObjectId));
 		Assert.All(elements, e => Assert.True(e.IsSaa));
 
@@ -312,12 +312,12 @@ public sealed class EramGeoMapReaderTests
 
 		IReadOnlyList<EramElement> elements = file.Maps[0].Objects[0].Elements;
 
-		Assert.Equal(new EramProperties { Bcg = 7, Filters = [5, 6], Style = "LongDashed", Thickness = 3 }, elements[0].Overrides);
-		Assert.Equal(new EramProperties { Filters = [8], Style = "Airport", Size = 2 }, elements[1].Overrides);
+		AssertProperties(new EramProperties { Bcg = 7, Filters = [5, 6], Style = "LongDashed", Thickness = 3 }, elements[0].Overrides);
+		AssertProperties(new EramProperties { Filters = [8], Style = "Airport", Size = 2 }, elements[1].Overrides);
 
 		// A symbol's label with a position of its own is drawn there, with its own overrides.
 		Assert.Equal(new Coordinate(-(100 + 1 / 60.0), 40 + 1 / 60.0), elements[2].Start);
-		Assert.Equal(new EramProperties { Filters = [9], Size = 1, Underline = true, XOffset = -2 }, elements[2].Overrides);
+		AssertProperties(new EramProperties { Filters = [9], Size = 1, Underline = true, XOffset = -2 }, elements[2].Overrides);
 	}
 
 	[Fact]
@@ -347,7 +347,7 @@ public sealed class EramGeoMapReaderTests
 
 		EramGeoMapObject thing = file.Maps[0].Objects[0];
 
-		Assert.Equal(new EramProperties { Thickness = 1, Filters = [1] }, thing.LineDefaults);
+		AssertProperties(new EramProperties { Thickness = 1, Filters = [1] }, thing.LineDefaults);
 		Assert.Same(EramProperties.None, thing.TextDefaults);
 		Assert.Null(thing.SymbolDefaults);
 
@@ -483,19 +483,19 @@ public sealed class EramGeoMapReaderTests
 	}
 
 	[Fact]
-	public void properties_compare_by_value_including_their_filters()
+	public void properties_are_empty_only_with_nothing_set()
 	{
-		EramProperties first = new() { Bcg = 1, Filters = [1, 2], Style = "Solid" };
-		EramProperties same = new() { Bcg = 1, Filters = [1, 2], Style = "Solid" };
-
-		Assert.Equal(first, same);
-		Assert.Equal(first.GetHashCode(), same.GetHashCode());
-		Assert.Equal(new EramProperties { Bcg = 1 }.GetHashCode(), new EramProperties { Bcg = 1 }.GetHashCode());
-		Assert.NotEqual(first, first with { Filters = [2, 1] });
-		Assert.NotEqual(first, first with { Filters = null });
-		Assert.NotEqual(new EramProperties { Filters = [] }, new EramProperties());
-		Assert.False(first.Equals(null));
 		Assert.True(EramProperties.None.IsEmpty);
-		Assert.False(first.IsEmpty);
+		Assert.True(new EramProperties().IsEmpty);
+		Assert.False(new EramProperties { Bcg = 1 }.IsEmpty);
+		Assert.False(new EramProperties { Filters = [] }.IsEmpty);
+	}
+
+	/// <summary>Asserts two property sets match, their filters by content.</summary>
+	private static void AssertProperties(EramProperties expected, EramProperties? actual)
+	{
+		Assert.NotNull(actual);
+		Assert.Equal(expected.Filters, actual.Filters);
+		Assert.Equal(expected with { Filters = null }, actual with { Filters = null });
 	}
 }

@@ -20,7 +20,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1b-5](#d1b-5) | History wording | Low | "still parses all 24" | Fixed | S11 |
 | [D1b-6](#d1b-6) | Wrong doc | Low | Output layout bullet leaves out Publication_Docs and the duplicate report | Fixed | S11 |
 | [D1b-7](#d1b-7) | Minor | Low | Designation rule names no class in a list where "each rule lives in one class" | Fixed | S11 |
-| [D1b-10](#d1b-10) | Minor | Low | Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root | Agreed | S6 |
+| [D1b-10](#d1b-10) | Minor | Low | Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root | Fixed | S6 |
 | [D1b-9](#d1b-9) | Stale doc | Low | Code-Structure's folder maps miss some major types | Fixed | S11 |
 | [W5-22](#w5-22) | Stale doc | Low | Code-Structure's folder map leaves out Views/Models | Fixed | S11 |
 | [W7-26](#w7-26) | Stale doc | Low | Code-Structure's Shell/ list misses the window-placement files | Fixed | S11 |
@@ -33,7 +33,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [C2-32](#c2-32) | Wrong doc | Low | Settings-Reference: Airways CRC keys for unwritten or excluded files | Fixed | S11 |
 | [C3-15](#c3-15) | History wording | Low | Settings-Reference: "the key keeps its old name" | Fixed | S11 |
 | [D1a-10](#d1a-10) | History wording | Low | Procedure lists: "saved before 3.0.0-beta.9" | Fixed | S11 |
-| [D1a-11](#d1a-11) | History wording | Low | "the old `IncludeRoiAirports`", "before there was a choice", "never meant" | Agreed | S6 |
+| [D1a-11](#d1a-11) | History wording | Low | "the old `IncludeRoiAirports`", "before there was a choice", "never meant" | Fixed | S6 |
 | [D1a-13](#d1a-13) | History wording | Low | "as the profiles did" / "no migration step was needed" (duplicated) | Fixed | S11 |
 | [D1a-14](#d1a-14) | History wording | Low | Import: "beta.3 `UserConfig.json`" | Fixed | S11 |
 | [D1a-18](#d1a-18) | Minor | Low | Readability: duplication and placement | Fixed | S11 |
@@ -45,7 +45,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1a-8](#d1a-8) | Wrong doc | Low | "Adding a setting" step 3 doesn't fit Add Custom Aliases, SCT2, the numbered lists, or the harness | Fixed | S11 |
 | [D1b-16](#d1b-16) | Stale doc | Low | TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests | Fixed | S11 |
 | [O1-36](#o1-36) | Wrong doc | Low | VERSIONING.md: the version check keeps only "the user's channel" | Fixed | S11 |
-| [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Agreed, changed | S6 |
+| [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Fixed | S6 |
 | [N1-43](#n1-43) | Wrong doc | Low | Settings-Reference: CyclePosition can be Previous; General section narrates history | Fixed | S14 |
 
 ## docs
@@ -211,7 +211,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-10 · Minor · Low · Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root
 
-**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The class is `DevLaunchFile`, with its tests, `Architecture.md` and `Code-Structure.md`; the naming table has a `*File` row for it and `UserConfigFile` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Code-Structure.md:111`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L111); [`FeBuddy/FeBuddy.Core/Application/Launch/DevLaunchSettings.cs:24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/DevLaunchSettings.cs#L24)
 
@@ -396,7 +396,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-11 · History wording · Low · "the old `IncludeRoiAirports`", "before there was a choice", "never meant"
 
-**Status:** Agreed: the doc lines go with the code they describe, in S6 with [C4-12](130_Old-Version-Code.md#c4-12) (Kyle, [decision log](010_Decisions.md#decision-log)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). Settings-Reference's lines and the two code comments now say what a block without `Area` does, with [C4-12](130_Old-Version-Code.md#c4-12) and [T1b-21](140_Unused-Code.md#t1b-21) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Settings-Reference.md:203`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L203), 204, 462-463; [`FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs:49`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs#L49); [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs:185-188`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs#L185-L188)
 
@@ -598,7 +598,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-1 · Unused · High · Remove CRC's AliasParser.cs from the repository before the public release
 
-**Status:** Agreed, changed: delete it because nothing needs it any more. The CRC developer gave permission to host it, so it is not a licensing problem, and git history is left alone ([D2](010_Decisions.md#d2), [Q10](010_Decisions.md#q10)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `docs/Developers/Reference/` (`AliasParser.cs` and its `README.md`) is deleted, with the Reference row in `docs/README.md`: nothing needs it any more. The CRC developer gave permission, so it isn't a licensing matter, and git history is left alone ([D2](010_Decisions.md#d2), [Q10](010_Decisions.md#q10)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Reference/AliasParser.cs:1-554`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Reference/AliasParser.cs#L1-L554); [`docs/Developers/Reference/README.md:1-15`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Reference/README.md?plain=1#L1-L15); [`docs/README.md:25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/README.md?plain=1#L25)
 

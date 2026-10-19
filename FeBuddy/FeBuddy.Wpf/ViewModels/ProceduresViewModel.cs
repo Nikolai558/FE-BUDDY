@@ -104,7 +104,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private bool _hasDtppData;
 	private string? _dtppCycleId;
 	private string _dtppStatus = string.Empty;
-	private string _dtppPreviousStatus = string.Empty;
+	private string _dtppPreviousWarning = string.Empty;
 	private bool _previousDtppAvailable = true;
 
 	private string _newAirportText = string.Empty;
@@ -126,16 +126,8 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	public ProceduresViewModel()
 	{
 		Facilities.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasFacilities));
-		Airports.CollectionChanged += (_, _) =>
-		{
-			_airportEntries = null;
-			OnPropertyChanged(nameof(HasAirports));
-		};
-		ProcedureNames.CollectionChanged += (_, _) =>
-		{
-			OnPropertyChanged(nameof(HasProcedureNames));
-			RefreshProcedureNameRows();
-		};
+		Airports.CollectionChanged += (_, _) => _airportEntries = null;
+		ProcedureNames.CollectionChanged += (_, _) => RefreshProcedureNameRows();
 		AirportProcedures.CollectionChanged += (_, _) =>
 		{
 			OnPropertyChanged(nameof(HasAirportProcedures));
@@ -192,7 +184,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	public bool GenerateProceduresJson => Outputs.ProceduresJson;
 
 	/// <summary>Whether either document is on - the facility, airport, procedure and chart type choices only matter then.</summary>
-	public bool GeneratesDocument => GenerateChangesDocument || GenerateProceduresJson;
+	private bool GeneratesDocument => GenerateChangesDocument || GenerateProceduresJson;
 
 	/// <inheritdoc />
 	/// <remarks>The two documents, and what follows from them: the cards that pick what they cover.</remarks>
@@ -201,7 +193,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		base.OnOutputsChanged();
 		OnPropertyChanged(nameof(GenerateChangesDocument));
 		OnPropertyChanged(nameof(GenerateProceduresJson));
-		OnPropertyChanged(nameof(GeneratesDocument));
 		OnPropertyChanged(nameof(DtppWarning));
 		RaiseCardIntros();
 	}
@@ -404,6 +395,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	protected override (string? Lines, string? Symbols, string? Text) EmitKeys => (null, null, null);
 
 	/// <inheritdoc />
+	protected override bool HasGeojson => false;
+
+	/// <inheritdoc />
 	/// <remarks>The FAA Chart Recall alias file, <c>Faa_Chart_Recall.txt</c>.</remarks>
 	protected override bool HasAliasFile => true;
 
@@ -494,20 +488,14 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	// ================= d-TPP data =================
 
-	/// <summary>Whether <see cref="SetDtppData"/> has been called yet for the currently selected cycle.</summary>
-	public bool IsDtppKnown => _dtppKnown;
-
 	/// <summary>The cycle whose metafile the tab shows, or <see langword="null"/> while none is known.</summary>
 	public string? DtppCycleId => _dtppKnown ? _dtppCycleId : null;
 
-	/// <summary>Whether the selected cycle has a downloaded, parsed d-TPP Metafile. Only meaningful once <see cref="IsDtppKnown"/> is true.</summary>
+	/// <summary>Whether the selected cycle has a downloaded, parsed d-TPP Metafile.</summary>
 	public bool HasDtppData => _hasDtppData;
 
 	/// <summary>What the Preview Settings tab says about the metafile's availability.</summary>
-	public string DtppStatus => _dtppKnown ? _dtppStatus : "Chart data appears once the selected cycle's data is loaded.";
-
-	/// <summary>Whether the previous cycle's metafile is available for deleted-procedure links.</summary>
-	public string DtppPreviousStatus => _dtppKnown ? _dtppPreviousStatus : string.Empty;
+	private string DtppStatus => _dtppKnown ? _dtppStatus : "Chart data appears once the selected cycle's data is loaded.";
 
 	/// <summary>
 	/// What the amber card at the top of the tab says while the metafiles fall short: the selected
@@ -532,7 +520,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			}
 			else if (!_previousDtppAvailable && GenerateChangesDocument)
 			{
-				lines.Add(_dtppPreviousStatus);
+				lines.Add(_dtppPreviousWarning);
 			}
 
 			return lines.Count > 0 ? string.Join("\n", lines) : null;
@@ -578,11 +566,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		// One still loading isn't a problem to warn about: a run waits for it.
 		_previousDtppAvailable = previousAvailable || previousLoading;
-		_dtppPreviousStatus = previousAvailable
-			? $"Deleted procedures link to cycle {previousCycleId}'s charts."
-			: previousLoading
-				? $"Cycle {previousCycleId} is still loading. Once it has, deleted procedures link to its charts."
-				: $"Cycle {previousCycleId}'s metafile isn't available, so deleted procedures are listed without a link.";
+		_dtppPreviousWarning = $"Cycle {previousCycleId}'s metafile isn't available, so deleted procedures are listed without a link.";
 
 		RefreshPairProcedureOptions();
 		RaiseDtppDependentProperties();
@@ -601,9 +585,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <summary>The airports (FAA or ICAO ID, as typed) added to the Airports card, stored by their FAA ID, in the order they were added.</summary>
 	public ObservableCollection<string> Airports { get; } = [];
-
-	/// <summary>Whether any airport has been added.</summary>
-	public bool HasAirports => Airports.Count > 0;
 
 	/// <summary>
 	/// The text typed or pasted into the Airports card's Add box: one or more FAA or ICAO IDs,
@@ -674,9 +655,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// cycle, or a note that the cycle has no departure or arrival by that name.
 	/// </summary>
 	public IReadOnlyList<ProcedureNameRow> ProcedureNameRows { get; private set; } = [];
-
-	/// <summary>Whether any procedure name has been added.</summary>
-	public bool HasProcedureNames => ProcedureNames.Count > 0;
 
 	/// <summary>
 	/// What the two cards that list procedures by name say about how they keep them: departures and
@@ -1074,12 +1052,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				Airports.Add(id);
 			}
 
-			// By root name: an earlier FE-Buddy saved the full name (BRWNZ FOUR (RNAV)), which reads
-			// as BRWNZ. The page saves the root from then on, and isn't marked changed for it.
 			ProcedureNames.Clear();
-			foreach (string root in SplitOrdered(Get("Procedures")).Select(ProcedureNaming.RootName).Distinct(StringComparer.OrdinalIgnoreCase))
+			foreach (string name in SplitOrdered(Get("Procedures")).Distinct(StringComparer.OrdinalIgnoreCase))
 			{
-				ProcedureNames.Add(root);
+				ProcedureNames.Add(name);
 			}
 
 			AirportProcedures.Clear();
@@ -1705,10 +1681,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	private void RaiseDtppDependentProperties()
 	{
-		OnPropertyChanged(nameof(IsDtppKnown));
 		OnPropertyChanged(nameof(HasDtppData));
-		OnPropertyChanged(nameof(DtppStatus));
-		OnPropertyChanged(nameof(DtppPreviousStatus));
 		OnPropertyChanged(nameof(DtppWarning));
 		OnPropertyChanged(nameof(ProcedureNameOptions));
 		RaiseNewAirportHint();
@@ -1739,10 +1712,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private static IEnumerable<string> SplitOrdered(string? saved) =>
 		(saved ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-	/// <summary>
-	/// The saved airport-specific picks, each by its root name - an earlier FE-Buddy saved the full name
-	/// (<c>LAS|BRWNZ FOUR (RNAV)</c>), which reads as <c>LAS|BRWNZ</c> - and each pair once.
-	/// </summary>
+	/// <summary>The saved airport-specific picks (<c>LAS|BRWNZ</c>), each pair once.</summary>
 	private static IEnumerable<ProcedureAirportPickItem> ParseAirportProcedurePicks(string? saved)
 	{
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
@@ -1764,11 +1734,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				continue;
 			}
 
-			string root = ProcedureNaming.RootName(procedure);
-
-			if (seen.Add($"{airport}|{root}"))
+			if (seen.Add($"{airport}|{procedure}"))
 			{
-				yield return new ProcedureAirportPickItem(airport, root, PairLabel(airport, root));
+				yield return new ProcedureAirportPickItem(airport, procedure, PairLabel(airport, procedure));
 			}
 		}
 	}

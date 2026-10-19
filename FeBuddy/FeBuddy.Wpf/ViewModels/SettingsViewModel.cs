@@ -564,9 +564,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	public string ChannelWarning =>
 		$"We recommend staying on Stable. The {Channel.DisplayName()} channel may change or break things you are used to.";
 
-	/// <summary>Whether the machine has internet; the update check needs it.</summary>
-	public bool IsOnline => AppEnvironment.HasInternetConnection;
-
 	/// <summary>Re-runs the version check, then opens the update window or toasts that there is nothing new.</summary>
 	public ICommand CheckNowCommand { get; }
 
@@ -1126,13 +1123,10 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	private void RefreshFacilities()
 	{
-		AiracCycleReadiness readiness = AiracCycleDataCache.Instance.Entries.Count == 0
-			? AiracCycleReadiness.Waiting
-			: AiracCycleDataCache.Instance.ComputeReadiness();
+		AiracCycleReadiness readiness = AiracCycleDataCache.Instance.ComputeReadiness();
 
 		FacilitiesReady = readiness is AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded;
 		OnPropertyChanged(nameof(FacilitiesReady));
-		OnPropertyChanged(nameof(IsOnline));
 		CommandManager.InvalidateRequerySuggested();
 
 		// A dev launch can leave the current cycle unloaded; opening this page loads it, for the

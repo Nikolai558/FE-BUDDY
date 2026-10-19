@@ -3,8 +3,9 @@
 <!--
   The install's state under HKLM\Software\FE-BUDDY. The key, every value name and their meaning
   are the same as FE-Buddy 2.x's installer, on purpose: a 3.x MSI reads 2.x's InstallLocation,
-  shortcut choices and ProductSemVer to upgrade it in place, and the app reads InstallLocation,
-  ProductSemVer and ProductCode (FeBuddy.Core InstalledProduct). Do not rename any of them.
+  shortcut choices and ProductSemVer to upgrade it in place, the setup window reads them too
+  (InstalledFeBuddy), and the app reads InstallLocation and ProductCode (FeBuddy.Core
+  InstalledProduct). Do not rename any of them.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>

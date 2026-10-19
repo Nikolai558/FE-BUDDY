@@ -22,7 +22,7 @@ public partial class CrcDefaultsCard : UserControl
 		+ "Map Defaults are usually defined at the beginning of the GeoJSON file with specific properties, which you can "
 		+ "check out [HERE](https://docs.virtualnas.net/data-admin/video-maps/#map-defaults).\n\n"
 		+ "Choose which files get the Map Defaults, if any, and set the values you desire.\n"
-		+ "Note: This should be a one-time setup, as these values are saved to your `UserConfig.json` file.");
+		+ "Note: this should be a one-time setup: these values are saved in your settings profile.");
 
 	/// <summary>Identifies the <see cref="Choice"/> dependency property.</summary>
 	public static readonly DependencyProperty ChoiceProperty = DependencyProperty.Register(

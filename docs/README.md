@@ -22,7 +22,6 @@
 | [Releasing](Developers/RELEASING.md) | Change-log entries, and making a release step by step. |
 | [Versioning](Developers/VERSIONING.md) | Version numbers, update channels and the installer. |
 | [TODO](Developers/TODO.md) | Open work. |
-| [Reference](Developers/Reference/README.md) | CRC's alias parser, kept for reading. |
 
 ## Elsewhere
 

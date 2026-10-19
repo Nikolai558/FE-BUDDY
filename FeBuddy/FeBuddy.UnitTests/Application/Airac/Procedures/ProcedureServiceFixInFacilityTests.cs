@@ -35,6 +35,7 @@ public sealed class ProcedureServiceFixInFacilityTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Artccs",
 			["Facilities"] = "ZDC",
 			["PrimaryFacility"] = "ZDC",
 			["JsonFields"] = "chartType",

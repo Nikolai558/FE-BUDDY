@@ -82,7 +82,7 @@ public static class DepartureBuilder
 			List<DpRte> routes = [.. routeRows[key]];
 
 			string computerCode = row.DpComputerCode?.Trim() ?? string.Empty;
-			string codeId = DepartureNaming.CodeIdFor(computerCode, row.AmendmentNo, dpName, out _);
+			string codeId = DepartureNaming.CodeIdFor(computerCode, row.AmendmentNo, dpName);
 
 			procedures.Add(new DepartureProcedure
 			{
@@ -270,7 +270,7 @@ public static class DepartureBuilder
 			: NavaidPointTypes.Contains(rawPoint.PointType) ? WaypointLocator.WaypointType.Navaid
 			: null;
 
-		(double waypointLat, double waypointLon, string foundIn)? found =
+		(double waypointLat, double waypointLon)? found =
 			WaypointLocator.Find(allNasrCsvData, rawPoint.Id, type);
 
 		return found is { } hit
@@ -367,7 +367,7 @@ public static class DepartureBuilder
 				continue;
 			}
 
-			routes.Add(new DepartureRawRoute(name, kind, transitionCode.Length > 0 ? transitionCode : null, points));
+			routes.Add(new DepartureRawRoute(name, kind, points));
 		}
 
 		return routes;

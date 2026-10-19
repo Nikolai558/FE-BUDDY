@@ -62,7 +62,7 @@ public static class UserConfigKeys
 	/// <summary>
 	/// The facility from Settings ▸ Facility, an ARTCC ID such as <c>ZOB</c>: the run's <c>PrimaryFacility</c>, and the
 	/// ARTCC ticked on the tabs with an area until each is first saved. Read by Settings, the AIRAC Service, Procedure
-	/// Charts, the area rules (<see cref="UserConfigAreas.FacilityKey"/>) and a settings import's profile name.
+	/// Charts, the area rules (<see cref="UserConfigAreas.DefaultFor"/>) and a settings import's profile name.
 	/// </summary>
 	public const string Facility = "General.Facility";
 

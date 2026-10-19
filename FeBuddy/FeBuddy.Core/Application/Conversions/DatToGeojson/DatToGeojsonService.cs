@@ -131,7 +131,7 @@ public static class DatToGeojsonService
 				IsAdvisory = true
 			});
 
-			return new DatFileConversion { SourcePath = source, RecordsSkipped = datFile.Problems.Count };
+			return new DatFileConversion { SourcePath = source };
 		}
 
 		IReadOnlyList<LineString> lines = datFile.Lines;
@@ -166,9 +166,7 @@ public static class DatToGeojsonService
 		{
 			SourcePath = source,
 			OutputPath = DatGeojsonWriter.Write(lines, source, settings, files, outputName),
-			LinesRead = datFile.Lines.Count,
 			LinesWritten = lines.Count,
-			RecordsSkipped = datFile.Problems.Count,
 		};
 	}
 

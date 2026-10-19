@@ -25,7 +25,7 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class DuplicateAliasesCardViewModel : ObservableObject, IPreviewOptions
 {
 	/// <summary>The settings node both values are saved under.</summary>
-	public const string Node = "Services.AiracService.DuplicateAliases";
+	internal const string Node = "Services.AiracService.DuplicateAliases";
 
 	private readonly Func<bool> _runWritesAliasFile;
 	private bool _reviewDuplicates;

@@ -75,11 +75,4 @@ public sealed record CombinedAliasResult : ServiceResult
 
 	/// <summary>How many alias commands FE-Buddy's files added.</summary>
 	public int FeBuddyCommandCount { get; init; }
-
-	/// <summary>
-	/// How many commands from the custom alias files are also in another merged file, so CRC can run
-	/// only one of each. Commands only FE-Buddy's own files share are in
-	/// <c>Duplicate_Alias_Commands.txt</c> instead.
-	/// </summary>
-	public int DuplicateCommandCount { get; init; }
 }

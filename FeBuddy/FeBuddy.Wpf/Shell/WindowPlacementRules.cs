@@ -1,5 +1,7 @@
 using System.Windows;
 
+using FeBuddy.Wpf.Shell.Models;
+
 namespace FeBuddy.Wpf.Shell;
 
 /// <summary>

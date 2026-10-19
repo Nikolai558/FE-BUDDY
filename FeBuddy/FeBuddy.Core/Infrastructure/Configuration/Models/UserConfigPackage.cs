@@ -18,7 +18,7 @@ public sealed record UserConfigPackage(
 	string? AppVersion,
 	DateTimeOffset? ExportedUtc,
 	IReadOnlyDictionary<string, string> Values,
-	int ConfigVersion = UserConfigVersion.Oldest)
+	int ConfigVersion)
 {
 	/// <summary>Whether the file is a plain <c>UserConfig.json</c> rather than an FE-Buddy export.</summary>
 	public bool IsPlainConfigFile => FormatVersion == 0;

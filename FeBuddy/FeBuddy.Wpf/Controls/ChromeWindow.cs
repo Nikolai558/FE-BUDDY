@@ -5,6 +5,7 @@ using System.Windows.Shell;
 
 using FeBuddy.Wpf.Behaviors;
 using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.Shell.Models;
 
 namespace FeBuddy.Wpf.Controls;
 

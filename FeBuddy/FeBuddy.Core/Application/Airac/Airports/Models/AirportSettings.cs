@@ -8,7 +8,7 @@ namespace FeBuddy.Core.Application.Airac.Airports.Models;
 /// Fully-parsed, typed settings for the Airports sub-service (GeoJSON generation and alias file
 /// generation). Built once by <c>AirportSettingsParser.Parse</c> from the raw
 /// <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>) supplies; every
-/// other Airports service consumes this typed object, never the raw dictionary.
+/// other Airports type consumes this typed object, never the raw dictionary.
 /// </summary>
 public sealed record AirportSettings
 {

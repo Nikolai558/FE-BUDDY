@@ -35,8 +35,8 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 	[Fact]
 	public void a_leg_too_short_to_buffer_is_reported_as_info_not_warning()
 	{
-		AirwayPoint a = new("AAAAA", "WP", 40.00000, -80.00000, "fix");
-		AirwayPoint b = new("BBBBB", "WP", 40.00100, -80.00100, "fix"); // ~0.08 NM away - well inside 2.5+2.5
+		AirwayPoint a = new("AAAAA", "WP", 40.00000, -80.00000);
+		AirwayPoint b = new("BBBBB", "WP", 40.00100, -80.00100); // ~0.08 NM away - well inside 2.5+2.5
 
 		LineString leg = Wgs84.Factory.CreateLineString(
 		[
@@ -44,7 +44,7 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 			new Coordinate(b.Longitude, b.Latitude),
 		]);
 
-		AirwayBufferResult result = AirwayWaypointBuffer.Buffer([leg], [a, b], "TEST");
+		AirwayBufferResult result = AirwayWaypointBuffer.Buffer([leg], [a, b], "TEST", AirwayWaypointBuffer.DefaultFixRadiusNm, AirwayWaypointBuffer.DefaultNavaidRadiusNm);
 
 		ServiceMessage message = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, message.Level);
@@ -61,6 +61,7 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		Dictionary<string, string> settings = new()
 		{
 			{ "OutputDirectory", _output },
+			{ "Area", "Everything" },
 			{ "OutputBy", "HighLow" },
 			{ "TotallyMadeUpKey", "x" },
 		};
@@ -85,6 +86,7 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		AirwayServiceResult result = AirwayService.Run(data, new Dictionary<string, string>
 		{
 			{ "OutputDirectory", _output },
+			{ "Area", "Everything" },
 			{ "GenerateGeojson", "N" },
 		});
 

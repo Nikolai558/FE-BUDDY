@@ -184,7 +184,6 @@ public static class EramToGeojsonService
 			OutputPaths = paths,
 			OtherOutputPaths = rundown is null ? [] : [rundown],
 			FeaturesWritten = featureCount,
-			RecordsSkipped = geoMaps.Problems.Count,
 		};
 	}
 

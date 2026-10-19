@@ -152,7 +152,6 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 		SourceFileConversion file = Assert.Single(result.Files);
 		// Two ARTCC names, one feature in each other line file, one SID, one STAR, one label, one region.
 		Assert.Equal(11, file.FeaturesWritten);
-		Assert.Equal(0, file.RecordsSkipped);
 	}
 
 	[Fact]
@@ -302,7 +301,6 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 
 		SourceFileConversion empty = Assert.Single(result.Files);
 		Assert.Empty(empty.OutputPaths);
-		Assert.Equal(1, empty.RecordsSkipped);
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains("has nothing FE-Buddy converts"));
 		Assert.Contains(result.Warnings, w => w.StartsWith("EMPTY.sct2: Line 5:"));
 	}

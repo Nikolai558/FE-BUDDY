@@ -282,7 +282,7 @@ internal static class DepartureTestData
 			ServedAirports = ["AAA"],
 			Bodies =
 			[
-				new DepartureRawRoute("BODY", DepartureRouteKind.Body, null, [new DepartureRawPoint("ALPHA", "WP")])
+				new DepartureRawRoute("BODY", DepartureRouteKind.Body, [new DepartureRawPoint("ALPHA", "WP")])
 			],
 			Transitions = [],
 			BodyNamesByAirport = new Dictionary<string, IReadOnlyList<string>>()

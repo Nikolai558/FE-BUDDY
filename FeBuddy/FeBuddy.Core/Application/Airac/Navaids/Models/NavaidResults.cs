@@ -28,11 +28,7 @@ public sealed record NavaidGeojsonGenerateResult(GeojsonFileSet Files, IReadOnly
 /// <summary>The outcome of generating the NAVAIDs alias file.</summary>
 /// <param name="FilePath">The file written, or <see langword="null"/> when there was nothing to write.</param>
 /// <param name="CommandCount">How many alias commands (lines) were written.</param>
-/// <param name="Messages">Messages collected while generating.</param>
-public sealed record NavaidAliasGenerateResult(
-	string? FilePath,
-	int CommandCount,
-	IReadOnlyList<ServiceMessage> Messages);
+public sealed record NavaidAliasGenerateResult(string? FilePath, int CommandCount);
 
 /// <summary>
 /// The result of running the top-level NAVAIDs sub-service (<c>NavaidService.Run</c>): what was
@@ -53,7 +49,7 @@ public sealed record NavaidServiceResult : ServiceResult
 	/// <summary>Full paths of every GeoJSON file written.</summary>
 	public required IReadOnlyList<string> GeojsonFilesWritten { get; init; }
 
-	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>.</summary>
+	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>. For the Harness's report and tests.</summary>
 	public required IReadOnlyDictionary<string, int> GeojsonFeatureCountsByFile { get; init; }
 
 	/// <summary>The alias file's path, or <see langword="null"/> when it was not generated or had nothing to write.</summary>

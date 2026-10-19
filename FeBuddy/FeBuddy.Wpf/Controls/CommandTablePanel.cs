@@ -30,30 +30,22 @@ namespace FeBuddy.Wpf.Controls;
 /// </remarks>
 public sealed class CommandTablePanel : Panel
 {
-	/// <summary>Identifies the <see cref="MiddleMinWidth"/> dependency property.</summary>
-	public static readonly DependencyProperty MiddleMinWidthProperty = DependencyProperty.Register(
-		nameof(MiddleMinWidth), typeof(double), typeof(CommandTablePanel),
-		new FrameworkPropertyMetadata(240.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
-
-	/// <summary>Identifies the <see cref="ColumnSpacing"/> dependency property.</summary>
-	public static readonly DependencyProperty ColumnSpacingProperty = DependencyProperty.Register(
-		nameof(ColumnSpacing), typeof(double), typeof(CommandTablePanel),
-		new FrameworkPropertyMetadata(24.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
-
-	/// <summary>Identifies the <see cref="RowPadding"/> dependency property.</summary>
-	public static readonly DependencyProperty RowPaddingProperty = DependencyProperty.Register(
-		nameof(RowPadding), typeof(double), typeof(CommandTablePanel),
-		new FrameworkPropertyMetadata(12.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
-
-	/// <summary>Identifies the <see cref="StackSpacing"/> dependency property.</summary>
-	public static readonly DependencyProperty StackSpacingProperty = DependencyProperty.Register(
-		nameof(StackSpacing), typeof(double), typeof(CommandTablePanel),
-		new FrameworkPropertyMetadata(8.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
-
 	/// <summary>Identifies the <see cref="RuleBrush"/> dependency property.</summary>
 	public static readonly DependencyProperty RuleBrushProperty = DependencyProperty.Register(
 		nameof(RuleBrush), typeof(Brush), typeof(CommandTablePanel),
 		new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+
+	/// <summary>The least width the middle column keeps beside the other two; with less, every row stacks.</summary>
+	private const double MiddleMinWidth = 240;
+
+	/// <summary>The gap between two columns.</summary>
+	private const double ColumnSpacing = 24;
+
+	/// <summary>The space between a row and the rule above or below it.</summary>
+	private const double RowPadding = 12;
+
+	/// <summary>The gap between a stacked row's cells.</summary>
+	private const double StackSpacing = 8;
 
 	/// <summary>The rules' thickness.</summary>
 	private const double RuleThickness = 1;
@@ -63,34 +55,6 @@ public sealed class CommandTablePanel : Panel
 
 	/// <summary>The first and last columns' widths, from the last measure.</summary>
 	private double _firstWidth, _lastWidth;
-
-	/// <summary>The least width the middle column keeps beside the other two; with less, every row stacks.</summary>
-	public double MiddleMinWidth
-	{
-		get => (double)GetValue(MiddleMinWidthProperty);
-		set => SetValue(MiddleMinWidthProperty, value);
-	}
-
-	/// <summary>The gap between two columns.</summary>
-	public double ColumnSpacing
-	{
-		get => (double)GetValue(ColumnSpacingProperty);
-		set => SetValue(ColumnSpacingProperty, value);
-	}
-
-	/// <summary>The space between a row and the rule above or below it.</summary>
-	public double RowPadding
-	{
-		get => (double)GetValue(RowPaddingProperty);
-		set => SetValue(RowPaddingProperty, value);
-	}
-
-	/// <summary>The gap between a stacked row's cells.</summary>
-	public double StackSpacing
-	{
-		get => (double)GetValue(StackSpacingProperty);
-		set => SetValue(StackSpacingProperty, value);
-	}
 
 	/// <summary>The brush the rules between rows are drawn in; none when <see langword="null"/>.</summary>
 	public Brush? RuleBrush

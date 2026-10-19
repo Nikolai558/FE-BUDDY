@@ -118,13 +118,11 @@ public sealed record ArrivalProcedure
 /// <param name="Name">The route name (<c>ROUTE_NAME</c>), e.g. <c>AALAN-BLAID</c> or <c>FIM TRANSITION</c>.</param>
 /// <param name="Sequence">The body sequence (<c>BODY_SEQ</c>), which together with <paramref name="Name"/> identifies the route.</param>
 /// <param name="Kind">Body or transition.</param>
-/// <param name="TransitionCode">The transition computer code (<c>TRANSITION_COMPUTER_CODE</c>), or <see langword="null"/> for a body.</param>
 /// <param name="Points">The route's points in <c>POINT_SEQ</c> order.</param>
 public sealed record ArrivalRawRoute(
 	string Name,
 	int Sequence,
 	ArrivalRouteKind Kind,
-	string? TransitionCode,
 	IReadOnlyList<ArrivalRawPoint> Points);
 
 /// <summary>One point on a route as listed in <c>STAR_RTE</c>, not yet located.</summary>

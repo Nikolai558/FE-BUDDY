@@ -74,7 +74,7 @@ public partial class App : Application
 		}
 
 		// Published before the window is built, so the shell and every page know a dev launch.
-		LaunchOptions options = devLaunch ? LaunchOptions.DevLaunch(DevLaunchSettings.Read()) : LaunchOptions.Normal;
+		LaunchOptions options = devLaunch ? LaunchOptions.DevLaunch(DevLaunchFile.Read()) : LaunchOptions.Normal;
 
 		// Before the window: every page reads its settings as it is built, so they must be in memory
 		// first, or a page shows defaults and saving it writes them over the user's settings.

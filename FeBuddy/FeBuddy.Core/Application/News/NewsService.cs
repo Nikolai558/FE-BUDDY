@@ -71,13 +71,13 @@ public static class NewsService
 		catch (Exception ex)
 		{
 			AppLog.Warning(LogSource, $"Could not parse the News document: {ex.Message}. NewsLastOpen is left unchanged.");
-			return new NewsCheckResult([], null, 0, ParseSucceeded: false, fromNetwork);
+			return new NewsCheckResult([], null, 0, ParseSucceeded: false);
 		}
 
 		if (posts.Count == 0)
 		{
 			AppLog.Warning(LogSource, "The News document parsed to zero posts. NewsLastOpen is left unchanged.");
-			return new NewsCheckResult(posts, null, 0, ParseSucceeded: false, fromNetwork);
+			return new NewsCheckResult(posts, null, 0, ParseSucceeded: false);
 		}
 
 		NewsPostId latest = posts[0].Id;
@@ -100,7 +100,7 @@ public static class NewsService
 			? $"{newCount} unread News post(s) from {source}; newest is {latest}."
 			: $"News is up to date (newest {latest}) - from {source}.");
 
-		return new NewsCheckResult(posts, latest, newCount, ParseSucceeded: true, fromNetwork);
+		return new NewsCheckResult(posts, latest, newCount, ParseSucceeded: true);
 	}
 
 	/// <summary>

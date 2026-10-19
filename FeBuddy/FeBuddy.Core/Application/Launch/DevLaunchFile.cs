@@ -21,10 +21,10 @@ namespace FeBuddy.Core.Application.Launch;
 /// in the file, or a file that can't be read, is off: a dev launch skips every step until told otherwise.
 /// </para>
 /// </remarks>
-public static class DevLaunchSettings
+public static class DevLaunchFile
 {
 	/// <summary>The file's name, in <c>%APPDATA%\FE-Buddy</c>.</summary>
-	public const string FileName = AppDataReset.DevLaunchSettingsFileName;
+	public const string FileName = AppDataReset.DevLaunchFileName;
 
 	private const string LogSource = "DevLaunch";
 

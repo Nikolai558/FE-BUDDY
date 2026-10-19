@@ -41,7 +41,7 @@ public static class ConfigPages
 	/// The names of the pages that could not reload. They still show the settings from before, and
 	/// saving on one would write those back over the new ones.
 	/// </returns>
-	public static IReadOnlyList<string> ReloadAll()
+	private static IReadOnlyList<string> ReloadAll()
 	{
 		List<string> failed = [];
 

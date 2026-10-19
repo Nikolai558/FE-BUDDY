@@ -39,13 +39,11 @@ public static class ProcedureSettingsParser
 	];
 
 	/// <summary>The keys only Procedures reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
-	/// <remarks><c>IncludeRoiAirports</c> is read only for a block without <c>Area</c> (see <see cref="ReadArea"/>).</remarks>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"GenerateChangesDocument", "GenerateProceduresJson", "GenerateAliasFile",
 		"IncludeHelpCommand", "HelpCommandName",
 		"Facilities", "PrimaryFacility",
-		"IncludeRoiAirports",
 		"Airports", "Procedures", "AirportProcedures",
 		IncludeFixInFacilityKey,
 		"ChartTypes", "JsonFields",
@@ -188,16 +186,13 @@ public static class ProcedureSettingsParser
 	}
 
 	/// <summary>
-	/// Reads <c>Area</c>. A block without it (the harness, or one written before there was a choice)
-	/// gets the area its settings meant: the facilities when <c>Facilities</c> lists any, otherwise the
-	/// ROI when <c>IncludeRoiAirports</c> is <c>Y</c>, otherwise none. <c>FilterByRoi</c> alone never
-	/// meant the ROI here: it was sent whenever a default ROI was set.
+	/// Reads <c>Area</c>. A block without it takes the facilities when <c>Facilities</c> lists any,
+	/// otherwise none.
 	/// </summary>
 	private static SubServiceArea ReadArea(IReadOnlyDictionary<string, string> procedureSettings) =>
 		SettingsValueReader.OptionalString(procedureSettings, SubServiceSettingsReader.AreaKey) is not null
-			? SubServiceSettingsReader.ReadArea(procedureSettings, Areas, artccListKey: null)
+			? SubServiceSettingsReader.ReadArea(procedureSettings, Areas)
 			: SettingsValueReader.StringList(procedureSettings, "Facilities").Count > 0 ? SubServiceArea.Artccs
-			: SettingsValueReader.YesNo(procedureSettings, "IncludeRoiAirports", defaultValue: false) ? SubServiceArea.Roi
 			: SubServiceArea.None;
 
 	/// <summary>

@@ -60,6 +60,8 @@ Two pull requests merged into `v3-B13-Dev` after the review, and are in `e15a634
 
 The new code ([`UnelevatedLauncher.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/e15a634aa6915245e558875cd249bccdb8455480/FeBuddy/FeBuddy.Installer.UI/Setup/UnelevatedLauncher.cs), [`LaunchActions.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/e15a634aa6915245e558875cd249bccdb8455480/FeBuddy/FeBuddy.Installer.CustomActions/LaunchActions.cs) and the edited comments and docs) was reviewed the same way: [N1-1](500_Developer-Docs.md#n1-1), [N1-2](400_Installer-Harness-CI.md#n1-2) and [N1-3](610_On-Screen-Text.md#n1-3). Its comments are accurate.
 
+On 2026-10-19, once Nikolas had pushed his last work (`4893e32`), the code [S2](020_Work-Plan.md#s2) to [S5](020_Work-Plan.md#s5) added was reviewed the same way, commit by commit, in five parts: AIRAC Service and Procedure Charts; the GUI-lag work on the other pages; Settings, profiles and saves; the code moved into Core; and the update watcher, the setup window and the build counter. A second pass checked each finding in the code. 39 findings: [N1-5](100_Bugs.md#n1-5) to [N1-43](500_Developer-Docs.md#n1-43), fixed in [S14](020_Work-Plan.md#s14). Their links show the code at `4893e32`.
+
 ## Checked and fine
 
 Not everything is a finding. These match their docs:

@@ -36,30 +36,30 @@ And the user manuals: they should be very short. Anything that isn't common sens
 
 ## Where we are
 
-As of 2026-10-18: the review is done and Nikolas has answered every decision and question in [010_Decisions.md](010_Decisions.md). **130 of 665 findings fixed** so far; 22 are deferred to [after 3.0](020_Work-Plan.md#after-30).
+As of 2026-10-19: the review is done and Nikolas has answered every decision and question in [010_Decisions.md](010_Decisions.md). **130 of 704 findings fixed** so far; 22 are deferred to [after 3.0](020_Work-Plan.md#after-30). The 704 include 39 found on 2026-10-19 in a review of the code [S2](020_Work-Plan.md#s2) to [S5](020_Work-Plan.md#s5) added (N1-5 to N1-43, session [S14](020_Work-Plan.md#s14)). Nikolas stepped away on 2026-10-19; Kyle has the rest, the installer included.
 
 | File | Findings | High | Med | Low | Done | Session |
 |---|---:|---:|---:|---:|---:|---|
-| [100_Bugs.md](100_Bugs.md) | 47 | 2 | 11 | 34 | 44 | [S1](020_Work-Plan.md#s1), [S2](020_Work-Plan.md#s2) |
-| [110_GUI-Lag.md](110_GUI-Lag.md) | 29 | 2 | 10 | 17 | 29 | [S3](020_Work-Plan.md#s3), [S4](020_Work-Plan.md#s4) |
-| [120_Logic-In-GUI.md](120_Logic-In-GUI.md) | 24 |  | 3 | 21 | 24 | [S5](020_Work-Plan.md#s5) |
-| [130_Old-Version-Code.md](130_Old-Version-Code.md) | 17 |  | 5 | 12 |  | [S6](020_Work-Plan.md#s6) |
+| [100_Bugs.md](100_Bugs.md) | 71 | 2 | 16 | 53 | 44 | [S1](020_Work-Plan.md#s1), [S2](020_Work-Plan.md#s2), [S14](020_Work-Plan.md#s14) |
+| [110_GUI-Lag.md](110_GUI-Lag.md) | 33 | 2 | 10 | 21 | 29 | [S3](020_Work-Plan.md#s3), [S4](020_Work-Plan.md#s4), [S14](020_Work-Plan.md#s14) |
+| [120_Logic-In-GUI.md](120_Logic-In-GUI.md) | 25 |  | 3 | 22 | 24 | [S5](020_Work-Plan.md#s5), [S14](020_Work-Plan.md#s14) |
+| [130_Old-Version-Code.md](130_Old-Version-Code.md) | 18 |  | 5 | 13 |  | [S6](020_Work-Plan.md#s6) |
 | [140_Unused-Code.md](140_Unused-Code.md) | 78 |  | 3 | 75 |  | [S6](020_Work-Plan.md#s6) |
-| [200_Comments-Core.md](200_Comments-Core.md) | 140 |  | 8 | 132 | 1 | [S7](020_Work-Plan.md#s7) |
+| [200_Comments-Core.md](200_Comments-Core.md) | 142 |  | 8 | 134 | 1 | [S7](020_Work-Plan.md#s7), [S14](020_Work-Plan.md#s14) |
 | [210_Comments-NASR.md](210_Comments-NASR.md) | 25 |  | 3 | 22 |  | [S7](020_Work-Plan.md#s7) |
-| [220_Comments-GUI.md](220_Comments-GUI.md) | 97 |  | 2 | 95 | 1 | [S8](020_Work-Plan.md#s8) |
-| [300_Unit-Tests.md](300_Unit-Tests.md) | 101 |  | 7 | 94 |  | [S9](020_Work-Plan.md#s9) |
+| [220_Comments-GUI.md](220_Comments-GUI.md) | 98 |  | 2 | 96 | 1 | [S8](020_Work-Plan.md#s8), [S14](020_Work-Plan.md#s14) |
+| [300_Unit-Tests.md](300_Unit-Tests.md) | 106 |  | 7 | 99 |  | [S9](020_Work-Plan.md#s9), [S14](020_Work-Plan.md#s14) |
 | [400_Installer-Harness-CI.md](400_Installer-Harness-CI.md) | 55 |  | 1 | 54 |  | [S10](020_Work-Plan.md#s10) |
-| [500_Developer-Docs.md](500_Developer-Docs.md) | 36 | 1 | 4 | 31 | 31 | [S11](020_Work-Plan.md#s11) |
+| [500_Developer-Docs.md](500_Developer-Docs.md) | 37 | 1 | 4 | 32 | 31 | [S11](020_Work-Plan.md#s11), [S14](020_Work-Plan.md#s14) |
 | [600_User-Docs-Proposal.md](600_User-Docs-Proposal.md) | 69 sections | | | | | [S12](020_Work-Plan.md#s12) |
 | [610_On-Screen-Text.md](610_On-Screen-Text.md) | 16 |  | 1 | 15 |  | [S12](020_Work-Plan.md#s12) |
-| **Total** | **665** | **5** | **58** | **602** | **130** | |
+| **Total** | **704** | **5** | **63** | **636** | **130** | |
 
 **Done so far:** [C1-5](100_Bugs.md#c1-5), fixed by Nikolas ([#377](https://github.com/Nikolai558/FE-BUDDY/pull/377)). Fixed, not yet merged: [U1-1](110_GUI-Lag.md#u1-1), [W1-1](110_GUI-Lag.md#w1-1), [U1-2](110_GUI-Lag.md#u1-2), [W1-3](110_GUI-Lag.md#w1-3), [U1-14](110_GUI-Lag.md#u1-14), [U1-6](110_GUI-Lag.md#u1-6), [W4-7](100_Bugs.md#w4-7), [C6-30](110_GUI-Lag.md#c6-30), [U1-7](110_GUI-Lag.md#u1-7), [W4-5](110_GUI-Lag.md#w4-5), [W2-6](110_GUI-Lag.md#w2-6), [W2-27](110_GUI-Lag.md#w2-27), [W3-7](110_GUI-Lag.md#w3-7), [W2-5](100_Bugs.md#w2-5), [W1-5](110_GUI-Lag.md#w1-5), [W4-4](110_GUI-Lag.md#w4-4), [U1-15](110_GUI-Lag.md#u1-15), [W6-6](110_GUI-Lag.md#w6-6), [W1-14](100_Bugs.md#w1-14), [W2-10](100_Bugs.md#w2-10), [W2-8](100_Bugs.md#w2-8), [W2-9](100_Bugs.md#w2-9), [W1-15](100_Bugs.md#w1-15), [U1-17](120_Logic-In-GUI.md#u1-17), [C7-4](110_GUI-Lag.md#c7-4), [W7-1](110_GUI-Lag.md#w7-1), [U1-13](110_GUI-Lag.md#u1-13), [W3-1](110_GUI-Lag.md#w3-1), [W3-3](110_GUI-Lag.md#w3-3), [W3-4](110_GUI-Lag.md#w3-4), [C6-31](110_GUI-Lag.md#c6-31), [T3-6](110_GUI-Lag.md#t3-6), [W7-2](110_GUI-Lag.md#w7-2), [W7-7](110_GUI-Lag.md#w7-7), [U1-9](110_GUI-Lag.md#u1-9), [W3-5](110_GUI-Lag.md#w3-5), [W3-8](110_GUI-Lag.md#w3-8), [W2-19](120_Logic-In-GUI.md#w2-19), [W2-20](120_Logic-In-GUI.md#w2-20), [W1-6](120_Logic-In-GUI.md#w1-6), [W1-12](120_Logic-In-GUI.md#w1-12), [W2-18](120_Logic-In-GUI.md#w2-18), [W1-9](120_Logic-In-GUI.md#w1-9), [W1-8](120_Logic-In-GUI.md#w1-8), [W4-6](120_Logic-In-GUI.md#w4-6), [W2-7](120_Logic-In-GUI.md#w2-7), [W2-22](120_Logic-In-GUI.md#w2-22), [W1-11](120_Logic-In-GUI.md#w1-11), [W2-23](120_Logic-In-GUI.md#w2-23), [W6-8](120_Logic-In-GUI.md#w6-8), [W1-10](120_Logic-In-GUI.md#w1-10), [W7-6](120_Logic-In-GUI.md#w7-6), [W3-12](120_Logic-In-GUI.md#w3-12), [W2-21](120_Logic-In-GUI.md#w2-21), [W2-25](120_Logic-In-GUI.md#w2-25), [W3-14](120_Logic-In-GUI.md#w3-14), [W3-13](120_Logic-In-GUI.md#w3-13), [W3-10](120_Logic-In-GUI.md#w3-10), [W3-9](120_Logic-In-GUI.md#w3-9), [C2-6](120_Logic-In-GUI.md#c2-6), [W6-3](100_Bugs.md#w6-3), [W1-7](100_Bugs.md#w1-7), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W7-22](100_Bugs.md#w7-22), [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30), [C6-13](200_Comments-Core.md#c6-13), [D1a-3](500_Developer-Docs.md#d1a-3), [D2-46](600_User-Docs-Proposal.md#d2-46) ([Q7](010_Decisions.md#q7)), [W2-12](220_Comments-GUI.md#w2-12), [W2-1](100_Bugs.md#w2-1), [N1-4](100_Bugs.md#n1-4), [W7-3](100_Bugs.md#w7-3), [W2-11](100_Bugs.md#w2-11), [W7-4](100_Bugs.md#w7-4), [C3-18](100_Bugs.md#c3-18), [U1-3](100_Bugs.md#u1-3), [C1-1](100_Bugs.md#c1-1), [C5-1](100_Bugs.md#c5-1), [W1-13](100_Bugs.md#w1-13), [O1-1](100_Bugs.md#o1-1), [W3-15](100_Bugs.md#w3-15), [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [D1b-2](500_Developer-Docs.md#d1b-2), [D1b-3](500_Developer-Docs.md#d1b-3), [D1b-9](500_Developer-Docs.md#d1b-9), [W5-22](500_Developer-Docs.md#w5-22), [W7-26](500_Developer-Docs.md#w7-26), [D1b-16](500_Developer-Docs.md#d1b-16), and the other 24 S11 findings listed in [S11](020_Work-Plan.md#s11). The house rules [H1 to H5](010_Decisions.md#proposed-house-rules) are written into `Code-Structure.md`.
 
 **Since the review:** Nikolas opened [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) (a side effect of the [C1-5](100_Bugs.md#c1-5) fix; fixed in [S1](020_Work-Plan.md#s1) and tested on a VM, not yet merged) and [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) (low risk; fixed in [S2](020_Work-Plan.md#s2), not yet merged or tested with two accounts). See [020_Work-Plan.md](020_Work-Plan.md#related-issues).
 
-**Next:** [S6](020_Work-Plan.md#s6). [S1](020_Work-Plan.md#s1) to [S5](020_Work-Plan.md#s5) are done (not yet merged), so every bug not deferred is, and every GUI lag and logic-in-GUI finding, and the Settings page's keys are in its own node. S11 is done but for the findings that go with S6 and the release day. Kyle has confirmed [D3](010_Decisions.md#d3), the last open detail.
+**Next:** [S14](020_Work-Plan.md#s14), then [S6](020_Work-Plan.md#s6). [S1](020_Work-Plan.md#s1) to [S5](020_Work-Plan.md#s5) are done (not yet merged), so every bug not deferred is, and every GUI lag and logic-in-GUI finding, and the Settings page's keys are in its own node. S14 fixes what the review of that new code found. S11 is done but for the findings that go with S6 and the release day. Kyle has confirmed [D3](010_Decisions.md#d3), the last open detail.
 
 ## The files
 
@@ -178,7 +178,7 @@ The review was AI-assisted and static: nothing was built or run. Timings are est
 
 - **IDs never change and are never reused.** A finding that turns out to be wrong gets `Won't fix` and the reason; it isn't deleted.
 - **Change a Status** by editing the finding's Status line and its row in the file's Summary table, in the same pull request as the fix.
-- **Add a finding** with the next N1 number (N1-4, N1-5, …), in the file for its kind, in the same format: an anchor line (`<a id="n1-4"></a>`), the heading, then the labelled lines. Add a row to the Summary table. Link code with a permalink to the commit you read.
+- **Add a finding** with the next N1 number (N1-44, N1-45, …), in the file for its kind, in the same format: an anchor line (`<a id="n1-4"></a>`), the heading, then the labelled lines. Add a row to the Summary table. Link code with a permalink to the commit you read.
 - **Finish a session** by updating the Status of every finding it closed, then ticking the session on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 - **Record a decision** in the decision log in [010_Decisions.md](010_Decisions.md#decision-log), and change the decision's or question's Status.
 - **Links between these files** are relative (`100_Bugs.md#w2-1`), so they work on any branch. Every finding has an anchor: its ID in lower case.

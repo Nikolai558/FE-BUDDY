@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-Plan.md#s8).
 
-**97 findings** (2 Med, 95 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**98 findings** (2 Med, 96 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -107,6 +107,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 | [W5-21](#w5-21) | Stale doc | Low | FebPropertiesCard's usage example binds IsEnabled, which no view does | Open | S8 |
 | [W5-35](#w5-35) | Minor | Low | SourceFilesCard uses a literal ✕ glyph instead of the icon token | Open | S8 |
 | [W5-30](#w5-30) | Wrong doc | Low | SummaryCard header says "every AIRAC sub-service tab" | Open | S8 |
+| [N1-37](#n1-37) | Wrong doc | Low | ReportReset's summary sits on ShowSplash | Open | S14 |
 
 ## FeBuddy.Wpf
 
@@ -151,6 +152,18 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 **Problem:** The comment matches the settings, but both are already the defaults for net10.0, so the lines change nothing (no other project in the solution sets them). Note the line-21 comment "unused usings are reported (IDE0005)" is true only in the IDE: `.editorconfig` sets IDE0005 to `suggestion` and no project sets `EnforceCodeStyleInBuild`, so a build never reports it.
 
 **Proposed:** Either delete lines 44-46, or keep them as documentation. Optionally reword line 21: `<!-- Every public member must be documented (CS1591); also lets the IDE flag unused usings (IDE0005). -->`
+
+<a id="n1-37"></a>
+
+### N1-37 · Wrong doc · Low · `ReportReset`'s summary sits on `ShowSplash`
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:113-117`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L113-L117), 132
+
+**Problem:** Line 113 is `ReportReset`'s summary, but it sits above `ShowSplash`'s own, so `ShowSplash` has two and `ReportReset` (132) none.
+
+**Proposed:** Move line 113 to above line 132.
 
 ## FeBuddy.Wpf/Behaviors
 

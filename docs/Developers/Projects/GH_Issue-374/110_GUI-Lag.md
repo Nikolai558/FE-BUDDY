@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Work the GUI does on the UI thread. Timings are estimates: nothing could be profiled. Most of these share a fix: build the per-cycle lists, the d-TPP index, the GeoJSON reading and the map layers in **Core**, off the UI thread, and cache them. Session [S3](020_Work-Plan.md#s3) covers the AIRAC Service and File Conversions screens; [S4](020_Work-Plan.md#s4) covers the Map, Dashboard, Settings and startup.
 
-**29 findings** (2 High, 10 Med, 17 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**33 findings** (2 High, 10 Med, 21 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -39,6 +39,10 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [U1-13](#u1-13) | GUI lag | Low | Settings facility list runs its 20k-row LINQ on the UI thread when the cycle is already cached | Fixed | S4 |
 | [W3-7](#w3-7) | GUI lag | Low | System health refresh hits the disk on every cycle state change | Fixed | S4 |
 | [U1-15](#u1-15) | GUI lag | Low | Switching AIRAC Service tabs rebuilds the whole tab view | Fixed | S3 |
+| [N1-29](#n1-29) | GUI lag | Low | The d-TPP metafile is parsed again on every refresh; the index cache never hits | Open | S14 |
+| [N1-30](#n1-30) | GUI lag | Low | The UI thread waits on the settings lock while a background save holds it | Open | S14 |
+| [N1-31](#n1-31) | GUI lag | Low | FolderProbe blocks a pool thread per check of an offline network folder | Open | S14 |
+| [N1-32](#n1-32) | GUI lag | Low | A burst of log entries updates the Dashboard one entry at a time | Open | S14 |
 
 ## High
 
@@ -364,7 +368,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### T3-6 · GUI lag · Low · Switching, creating, renaming or deleting a settings profile does file I/O and reloads every page on the UI thread
 
-**Status:** Fixed (not yet merged), as proposed: each profile change's file work - switching, creating, renaming, deleting - runs with `Task.Run`, step by step until one fails; then, on the UI thread, the pages read the profile and the user is told. New, Rename and Delete can't be clicked meanwhile, and choosing another profile waits too. Reading the pages again stays on the UI thread: it is the pages' own work. Tests: `SettingsProfilesViewModelTests` · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: each profile change's file work - switching, creating, renaming, deleting - runs with `Task.Run`, step by step until one fails; then, on the UI thread, the pages read the profile and the user is told. New, Rename and Delete can't be clicked meanwhile; a profile chosen meanwhile is refused, and the list goes back to the profile in use (the list itself stays enabled, and an import isn't held back: [N1-7](100_Bugs.md#n1-7)). Reading the pages again stays on the UI thread: it is the pages' own work. Tests: `SettingsProfilesViewModelTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:153-180`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L153-L180)
 
@@ -421,6 +425,54 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 **Problem:** the selected tab is shown through a ContentControl + DataTemplate, so every switch discards and re-creates the full card tree of the tab (Procedures, Fixes and Airways views are large), and the switch also runs `_fileNames.RefreshFiles()` (lists every output file of every included tab). Est. 30-150 ms per switch for the large tabs (estimate; measure first).
 
 **Proposed:** measure; if a switch exceeds ~50 ms, keep realized tab views alive (an ItemsControl over `Tabs` with a Grid panel and `Visibility` bound to "is selected", or a TabControl-style content cache) so a switch only flips visibility.
+
+<a id="n1-29"></a>
+
+### N1-29 · GUI lag · Low · The d-TPP metafile is parsed again on every Procedure Charts refresh, so the index cache never hits
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs:437-468`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs#L437-L468); [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:517-530`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L517-L530), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:536-555`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L536-L555) (553); [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureNameIndex.cs:16-23`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureNameIndex.cs#L16-L23), 106-113
+
+**Problem:** `GetDtppAsync` parses the metafile on every call, so `ProcedureNameIndex.For`'s cache, keyed by the parsed object, never hits. Every refresh re-parses up to 16 MB (about 0.3 s) and rebuilds the index: at the hand-over, on each General toggle while the d-TPP isn't known yet, and on each previous-cycle state change, which only needs the previous-cycle flags. While the first load runs, each of these starts another parse in parallel. Off the UI thread, but CPU and memory spikes for nothing.
+
+**Proposed:** Keep one task per cycle in the view-model (`Dictionary<string, Task<(ProcedureNameIndex? Index, DateTime? Downloaded)>>`, removed if it faults); `LoadProceduresDataAsync` awaits it, and a previous-cycle change only recomputes the previous-cycle flags. Fix the comment at 553. Test: a counting `loadDtpp` held on a `TaskCompletionSource`; toggle a General row twice; one call for 2610 (today 3).
+
+<a id="n1-30"></a>
+
+### N1-30 · GUI lag · Low · The UI thread waits for a background settings save: `CanUndo`, `ActiveProfile`, `GetValue` take the same lock
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:121-142`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L121-L142), 303-320, 649-660, 1114-1125; the lock held during disk I/O at 476-479, 519-554, 184-268, 403-432 and [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:146-162`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L146-L162). Called on the UI thread from [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:41`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L41), 58; [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:82`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L82), 85, 163, 328; [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:82`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L82)
+
+**Problem:** Every command requery (a key press, a click) calls `CanUndo` on the UI thread. While a map save, a profile change or an import holds `Gate` for its disk I/O, that call waits; so do `ActiveProfile`, `FileNote` and `GetValue`. On a slow folder that is a visible freeze, though the I/O itself moved off the UI thread in [S4](020_Work-Plan.md#s4).
+
+**Proposed:** Read `_profile` and `_root` without the lock (volatile, replaced whole). `CanUndo` answers from an immutable set of snapshot node paths, published whenever the snapshot changes and loaded by `ReadAll`. Test: `UserConfigFileTests.reads_do_not_wait_for_a_save` (an internal hook blocks `WriteObject`; `SaveValues` on the thread pool; `CanUndo` and `ActiveProfile` answer within 200 ms; today they time out).
+
+<a id="n1-31"></a>
+
+### N1-31 · GUI lag · Low · FolderProbe leaves a thread-pool thread blocked for each check of an offline network folder
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/FolderProbe.cs:20-30`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/FolderProbe.cs#L20-L30); [`FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs:41-44`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs#L41-L44) (5 pickers)
+
+**Problem:** The caller gets its answer within 300 ms, but the thread asking Windows stays blocked in `Directory.Exists` until the network times out (tens of seconds). Each picker opened while the share is offline blocks one or two more.
+
+**Proposed:** Keep the probes still running in a `ConcurrentDictionary<string, Task<bool>>` and reuse an unfinished one for the same folder; start them `LongRunning`. Test: `FolderProbeTests.a_folder_still_being_asked_is_not_asked_again` (a blocking stub that counts calls; two `Exists` calls; one call).
+
+<a id="n1-32"></a>
+
+### N1-32 · GUI lag · Low · A burst of log entries updates the Dashboard one entry at a time
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:231-254`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L231-L254), 41, 201-214
+
+**Problem:** Each entry in a batch, and each one trimmed off the 2,000 shown, raises its own `CollectionChanged` through the filtered view, so a burst of hundreds of entries (a run) stalls the UI thread. The level counts cover only the entries shown, on purpose (a test says so), so a long run can push the only Error off the list and leave the Error count at 0.
+
+**Proposed:** For a batch over about 50 entries, build the capped list and swap it in with one reset (an `ObservableCollection` with `ReplaceAll`), then count. Decide whether the counts should cover the whole session; if so, keep running totals. Test: `DashboardViewModelTests.a_burst_is_shown_in_one_change` (log `MaxShownEntries + 500` entries, `ShowIncoming()`; at most 2 `CollectionChanged` events; today about 3,000).
 
 ## Reported more than once
 

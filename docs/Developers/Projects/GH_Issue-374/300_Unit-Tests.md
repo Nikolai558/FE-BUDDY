@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Unit tests: names and comments that don't match what they test, unused helpers, and tests for code [D1](010_Decisions.md#d1) proposes removing. Grouped by folder. Session [S9](020_Work-Plan.md#s9).
 
-**101 findings** (7 Med, 94 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**106 findings** (7 Med, 99 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -111,6 +111,11 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 | [T3-17](#t3-17) | Wrong doc | Low | The STAR/STR test claims more than it asserts | Open | S9 |
 | [T3-18](#t3-18) | Stale doc | Low | WhatsNewViewModelTests section header names an Export that doesn't exist | Open | S9 |
 | [T3-35](#t3-35) | Minor | Low | Tests that pin GUI wording word for word (list below) | Open | S9 |
+| [N1-38](#n1-38) | History wording | Low | Tests and comments added since the review cite finding IDs and narrate history | Open | S14 |
+| [N1-39](#n1-39) | Wrong doc | Low | AiracGeneralTabViewModelTests: the "older build" case uses a key no release saved | Open | S14 |
+| [N1-40](#n1-40) | Minor | Low | New tests: misplaced summaries, wall-clock limits, an untested Telephony guard | Open | S14 |
+| [N1-41](#n1-41) | Minor | Low | DeferredSave's timer, close and retry untested; a save-failure test fails only at its first write | Open | S14 |
+| [N1-42](#n1-42) | Minor | Low | New tests that can't catch what they guard (update watcher, FieldState, Telephony name) | Open | S14 |
 
 ## FeBuddy.UnitTests
 
@@ -153,6 +158,22 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 **Problem:** CsvHelper, NetTopologySuite and NetTopologySuite.IO.GeoJSON4STJ already flow in through the FeBuddy.Core ProjectReference (FeBuddy.Core.csproj:24-26, no PrivateAssets), so each version must be bumped twice; no test uses NetTopologySuite.IO at all.
 
 **Proposed:** Delete the three PackageReferences (at least GeoJSON4STJ).
+
+<a id="n1-38"></a>
+
+### N1-38 · History wording · Low · Tests and comments added since the review cite finding IDs and narrate history
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** Finding IDs: [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Airports/AirportBuilderTests.cs:314-315`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Airac/Airports/AirportBuilderTests.cs#L314-L315); [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Telephony/TelephonyBuilderTests.cs:469`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Airac/Telephony/TelephonyBuilderTests.cs#L469); [`FeBuddy/FeBuddy.UnitTests/Application/Settings/CrcDefaultsReaderTests.cs:246`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Settings/CrcDefaultsReaderTests.cs#L246); [`FeBuddy/FeBuddy.UnitTests/Application/Updates/VersionCheckResultTests.cs:7`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Updates/VersionCheckResultTests.cs#L7); [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigProfilesTests.cs:259`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigProfilesTests.cs#L259); [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Logging/AppLogTests.cs:259`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Logging/AppLogTests.cs#L259); [`FeBuddy/FeBuddy.UnitTests/Repository/InstallerVersionScriptTests.cs:7`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Repository/InstallerVersionScriptTests.cs#L7); [`FeBuddy/FeBuddy.UnitTests/Wpf/Behaviors/FieldStateTests.cs:10`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/Behaviors/FieldStateTests.cs#L10); [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/Models/EramClassDefaultTests.cs:6`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/Models/EramClassDefaultTests.cs#L6); [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/RunResultSummaryTests.cs:16`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/RunResultSummaryTests.cs#L16); [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/UserConfigLayoutTests.cs:143`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/UserConfigLayoutTests.cs#L143); [`FeBuddy/FeBuddy.Installer/Shortcuts.wxs:11`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer/Shortcuts.wxs#L11). History: [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/UserConfigLayoutTests.cs:142-149`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/UserConfigLayoutTests.cs#L142-L149); [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs:52-53`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs#L52-L53); [`FeBuddy/FeBuddy.UnitTests/Wpf/Behaviors/FieldStateTests.cs:11`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/Behaviors/FieldStateTests.cs#L11)
+
+**Says:** `(C2-6)`, `(W6-3)`, `(W1-7)`, `(W4-8)`, `(W3-14)`, `(W3-13)`, `(W3-16)`, `(O1-23)`, `(W5-3)`, `(W2-37)`, `(Q1, H5)`, `an upgrade (#375).`; "which moved from … into …"; "so it reported the old version"; "which a local ToolTip … never let happen"
+
+**Problem:** House rules [H2](010_Decisions.md#h2) (no issue, PR or finding numbers in comments) and [H3](010_Decisions.md#h3) (no history). The IDs mean nothing once this review is closed.
+
+**Proposed:** Delete each ID in brackets (and the comma or space before it). UserConfigLayoutTests.cs:142-149: "Settings no layout step brings forward, on purpose: the General tab's, which sit in their own `Services.AiracService.General` node (a file that has them directly under `Services.AiracService` opens the General tab on its defaults), and the Settings page's Facility, coordinate precision and default ROI, which sit under `General` (a file that has them under `Services.AiracService` opens Settings with no facility, 6 decimal places and no default ROI)." InstalledVersionWatcherTests.cs:52-53: "A running FE-Buddy has its own `FE-BUDDY.dll` loaded, and Windows' version information answers from that copy, not the file on disk, so the version is read from the file itself." FieldStateTests.cs:11: "…until an error replaces it; the hint is never set as a local ToolTip, which would always win over the style."
+
+**Note:** The older `(issue #NNN)` references are already findings for S7 to S9 (for example [W6-18](220_Comments-GUI.md#w6-18), [C6-10](200_Comments-Core.md#c6-10)); S13 searches for any left.
 
 ## FeBuddy.UnitTests/Application/Airac
 
@@ -1332,6 +1353,20 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 
 **Proposed:** Delete each parenthetical; for the "Issue #NNN:" openers in WhatYoullGetTests keep the sentence after the colon (e.g. :100 "Only the area picked narrows - the ARTCCs, or the ROI - and the card is told of each change.").
 
+## FeBuddy.UnitTests/Wpf/Shell
+
+<a id="n1-41"></a>
+
+### N1-41 · Minor · Low · DeferredSave's timer, close and retry have no test; a save-failure test fails only at its first write
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.UnitTests/Wpf/Shell/DeferredSaveTests.cs:45-92`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/Shell/DeferredSaveTests.cs#L45-L92); [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigFileTests.cs:328-344`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigFileTests.cs#L328-L344)
+
+**Problem:** DeferredSaveTests call `SaveNowAsync` directly, so nothing covers the timer, the save at close or a retry. `save_values_that_cannot_be_written…` fails at the snapshot write, before the profile write, so the rollback after a failed profile write is untested.
+
+**Proposed:** Add: `Set`, then wait longer than `Delay`, and the file has the key; `Set`, then shut the dispatcher down, and the file has the key; the retry test from [N1-15](100_Bugs.md#n1-15). In UserConfigFileTests, a case with a read-only profile file: memory is rolled back and `CanUndo` stays false.
+
 ## FeBuddy.UnitTests/Wpf/ViewModels
 
 <a id="t3-9"></a>
@@ -1551,6 +1586,44 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 **Problem:** WhatsNewViewModel has only BackCommand and OpenGuideCommand (WhatsNewViewModel.cs:55-58); the export lives on the Alias Command Guide page. No Export test is in the section.
 
 **Proposed:** `// ---- Back and View the guide ----`
+
+<a id="n1-39"></a>
+
+### N1-39 · Wrong doc · Low · AiracGeneralTabViewModelTests: the "older build" case uses a key no release saved, and the summaries say Current or Next only
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AiracGeneralTabViewModelTests.cs:279-281`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AiracGeneralTabViewModelTests.cs#L279-L281), [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AiracGeneralTabViewModelTests.cs:294-303`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AiracGeneralTabViewModelTests.cs#L294-L303)
+
+**Says:** "a cycle ID an older build saved"
+
+**Problem:** The `("AiracCycleId", "2609")` row writes `Services.AiracService.General.AiracCycleId`, which only untagged commits ever saved; releases saved `Services.AiracService.AiracCycleId`. Only `CyclePosition` is read, so the row tests the same as "nothing saved". The summary at 294 explains the case by history ([H3](010_Decisions.md#h3)), and the one at 280 says only Current or Next are saved, though Previous is too.
+
+**Proposed:** Drop the row, or have the theory take full keys and use `Services.AiracService.AiracCycleId`, with the summary "Only `CyclePosition` is read; any other value or key opens on Current." Summary at 280: "`Previous`, `Current` or `Next`".
+
+<a id="n1-40"></a>
+
+### N1-40 · Minor · Low · New tests: summaries on the wrong helper, wall-clock limits that can fail on a busy runner, and an untested Telephony guard
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/TelephonyViewModelTests.cs:794-806`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/TelephonyViewModelTests.cs#L794-L806); [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Telephony/VatsimRadarVirtualAirlinesTests.cs:115-118`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Airac/Telephony/VatsimRadarVirtualAirlinesTests.cs#L115-L118), 137-149; [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/ServiceRunReviewTabViewModelTests.cs:154-165`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/ServiceRunReviewTabViewModelTests.cs#L154-L165); [`FeBuddy/FeBuddy.UnitTests/Application/Airac/DuplicateAliasChoicesTests.cs:145-163`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Airac/DuplicateAliasChoicesTests.cs#L145-L163); [`FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs:101-105`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L101-L105), 113-123
+
+**Problem:** `DownloadFinished` has two summaries, one of them `TabUsing`'s; a `Merge` summary in VatsimRadarVirtualAirlinesTests belongs on the test at 152. Three tests assert wall-clock limits (under 1 or 2 seconds) that include JIT and GC; CI runs test classes in parallel under coverage instrumentation, so they can fail for nothing. Telephony's "unless a download got there first" guard has no test and can't have one: `LoadVatsimRadarCopy` returns when `Application.Current` is null.
+
+**Proposed:** Move the summaries. Replace the timing asserts with work counts (count the group-key calls, ≤ 2 × 50,000; a counting `taken` set); for VatsimRadar, which has no seam, compare n and 10n with a loose ratio. Give the guard a seam (an internal `LoadVatsimRadarCopyAsync(Func<VatsimRadarCopy?> read)` without the `Application.Current` check) and test that a download finishing during the read keeps its copy.
+
+<a id="n1-42"></a>
+
+### N1-42 · Minor · Low · New tests that can't catch what they guard: the update watcher's retry and loaded copy, FieldState, Telephony's file name
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs:121-145`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs#L121-L145), [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs:51-68`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs#L51-L68); [`FeBuddy/FeBuddy.UnitTests/Wpf/Behaviors/FieldStateTests.cs:30-53`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/Behaviors/FieldStateTests.cs#L30-L53); [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/RunResultSummaryTests.cs:80-139`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/RunResultSummaryTests.cs#L80-L139)
+
+**Problem:** The watcher's retry test never deletes the folder, so the copy's own Created event triggers the check: it passes with the retry loop deleted. The loaded-copy test has no control assertion that `FileVersionInfo` really answers with the old version in its setup. FieldStateTests builds its own Style, so it proves WPF's precedence rule, not the app: it can't catch a local `ToolTip` on a box or the theme's setter going missing. RunResultSummaryTests covers renamed files for five sub-services but not Telephony.
+
+**Proposed:** Retry test: move the dll out, delete the folder, recreate it, let its check run and find nothing, then copy. Loaded-copy test: assert the control, `Unload` in a `finally`. FieldState: load `/FE-BUDDY;component/Theme/Controls.Inputs.xaml` with `Application.LoadComponent` and use its styles; add a scan that no XAML element sets both `bhv:FieldState.Error` and a local `ToolTip`. RunResultSummary: a Telephony result with `ZOB_Telephony.txt`.
 
 ## see
 

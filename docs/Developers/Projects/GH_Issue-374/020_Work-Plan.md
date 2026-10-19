@@ -8,18 +8,19 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 2. Each session below becomes one Claude Code brief and one pull request. A big session can be split. A brief is written from these files once the decisions it depends on are in, and covers only findings whose Status is Agreed or Agreed, changed.
 3. When the pull request merges, the Status of every finding it closed is updated, and the session is ticked on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
-**Order.** S1 first. S3 to S5 move code into Core, and S6 deletes code and does the [H4](010_Decisions.md#h4) renames, so do them before S7 and S8: fixing comments on code that moves, goes or is renamed is wasted work. S12 comes late because S3 to S5 may change GUI text. S13 is last. What was deferred is listed under [After 3.0](#after-30).
+**Order.** S1 first. [S14](#s14), the fixes to the code S2 to S5 added, comes straight after S5, before S6. S3 to S5 move code into Core, and S6 deletes code and does the [H4](010_Decisions.md#h4) renames, so do them before S7 and S8: fixing comments on code that moves, goes or is renamed is wasted work. S12 comes late because S3 to S5 may change GUI text. S13 is last. What was deferred is listed under [After 3.0](#after-30).
 
 ## Sessions
 
 | Session | What | Findings | Files |
 |---|---|---:|---|
-| [S1](#s1) | Fix-first bugs, plus [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | 14 + [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | [100](100_Bugs.md) |
-| [S2](#s2) | The other bugs, plus [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) and [Q7](010_Decisions.md#q7) | 14 + 2 | [100](100_Bugs.md) |
-| [S3](#s3) | GUI lag: AIRAC Service and File Conversions | 15 | [110](110_GUI-Lag.md) |
-| [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | 14 | [110](110_GUI-Lag.md) |
-| [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | 24 + 1 | [120](120_Logic-In-GUI.md) |
-| [S6](#s6) | Old-version code (D1), unused code and the H4 renames | 103 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
+| [S1](#s1) | Fix-first bugs, plus [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) | Done | [100](100_Bugs.md) |
+| [S2](#s2) | The other bugs, plus [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) and [Q7](010_Decisions.md#q7) | Done | [100](100_Bugs.md) |
+| [S3](#s3) | GUI lag: AIRAC Service and File Conversions | Done | [110](110_GUI-Lag.md) |
+| [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | Done | [110](110_GUI-Lag.md) |
+| [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | Done | [120](120_Logic-In-GUI.md) |
+| [S14](#s14) | **Next:** fixes to the code S2 to S5 added | 38 | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
+| [S6](#s6) | Old-version code (D1), unused code and the H4 renames | 104 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
 | [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
 | [S8](#s8) | Comments and XML docs: GUI | 94 | [220](220_Comments-GUI.md) |
 | [S9](#s9) | Unit tests | 101 | [300](300_Unit-Tests.md) |
@@ -101,6 +102,20 @@ Every finding in [120_Logic-In-GUI.md](120_Logic-In-GUI.md). Several overlap S3 
 **Done** (not yet merged): [U1-17](120_Logic-In-GUI.md#u1-17), with S3 and S4; [W2-19](120_Logic-In-GUI.md#w2-19), [W2-20](120_Logic-In-GUI.md#w2-20), [W1-10](120_Logic-In-GUI.md#w1-10), [W7-6](120_Logic-In-GUI.md#w7-6), [W3-12](120_Logic-In-GUI.md#w3-12), [W2-21](120_Logic-In-GUI.md#w2-21), [W2-25](120_Logic-In-GUI.md#w2-25), [W1-6](120_Logic-In-GUI.md#w1-6), [W1-12](120_Logic-In-GUI.md#w1-12), [W2-18](120_Logic-In-GUI.md#w2-18), [W1-9](120_Logic-In-GUI.md#w1-9), [W1-8](120_Logic-In-GUI.md#w1-8), [W4-6](120_Logic-In-GUI.md#w4-6), [W2-7](120_Logic-In-GUI.md#w2-7), [W2-22](120_Logic-In-GUI.md#w2-22), [W1-11](120_Logic-In-GUI.md#w1-11), [W2-23](120_Logic-In-GUI.md#w2-23), [W6-8](120_Logic-In-GUI.md#w6-8), [W3-14](120_Logic-In-GUI.md#w3-14), [W3-13](120_Logic-In-GUI.md#w3-13), [W3-10](120_Logic-In-GUI.md#w3-10), [W3-9](120_Logic-In-GUI.md#w3-9), [C2-6](120_Logic-In-GUI.md#c2-6) - every S5 finding.
 
 **Also:** move the Settings page's keys (the Facility, the coordinate precision and the default ROI) out of `Services.AiracService` into the Settings page's own node ([Q1](010_Decisions.md#q1), [H5](010_Decisions.md#h5)), with no settings-layout step. Do it with [W3-10](120_Logic-In-GUI.md#w3-10), [C6-13](200_Comments-Core.md#c6-13) and [D1a-3](500_Developer-Docs.md#d1a-3), which flag the copies of the Facility key. **Done** (not yet merged): they are under `General` (`General.Facility`, `General.CoordinatePrecision`, `General.DefaultRoi`), with W3-10, C6-13 and D1a-3. A settings file from before keeps the old values where they were, unread: Settings opens with no facility, 6 decimal places and no default ROI. Also fixed: [W6-3](100_Bugs.md#w6-3) (S2), with C2-6.
+
+<a id="s14"></a>
+
+### S14 · Fixes to the S2 to S5 code
+
+On 2026-10-19, after Nikolas's last push (`4893e32`), the code [S2](#s2) to [S5](#s5) added was reviewed the way the original review was, and each finding was checked in the code before it was written up: 39 findings, N1-5 to N1-43. S14 is 38 of them; [N1-34](130_Old-Version-Code.md#n1-34) goes away with [C6-1](130_Old-Version-Code.md#c6-1) in [S6](#s6). Do S14 before S6. Each finding's Problem and Proposed lines say what to change and the test to add.
+
+| Area | Findings |
+|---|---|
+| AIRAC Service and Procedure Charts | [N1-5](100_Bugs.md#n1-5) (Med), [N1-10](100_Bugs.md#n1-10), [N1-11](100_Bugs.md#n1-11), [N1-12](100_Bugs.md#n1-12), [N1-13](100_Bugs.md#n1-13), [N1-29](110_GUI-Lag.md#n1-29), [N1-35](200_Comments-Core.md#n1-35), [N1-39](300_Unit-Tests.md#n1-39), [N1-43](500_Developer-Docs.md#n1-43) |
+| Add Custom Aliases, File Conversions, Wx Stations, Telephony, File Names, Departures and Arrivals, the Map's GeoJSON reader | [N1-6](100_Bugs.md#n1-6) (Med), [N1-14](100_Bugs.md#n1-14), [N1-22](100_Bugs.md#n1-22), [N1-23](100_Bugs.md#n1-23), [N1-33](120_Logic-In-GUI.md#n1-33), [N1-40](300_Unit-Tests.md#n1-40) |
+| Settings files, profiles and saves, the Dashboard, folder pickers | [N1-7](100_Bugs.md#n1-7) (Med), [N1-8](100_Bugs.md#n1-8) (Med), [N1-15](100_Bugs.md#n1-15), [N1-16](100_Bugs.md#n1-16), [N1-17](100_Bugs.md#n1-17), [N1-18](100_Bugs.md#n1-18), [N1-19](100_Bugs.md#n1-19), [N1-20](100_Bugs.md#n1-20), [N1-21](100_Bugs.md#n1-21), [N1-30](110_GUI-Lag.md#n1-30), [N1-31](110_GUI-Lag.md#n1-31), [N1-32](110_GUI-Lag.md#n1-32), [N1-36](200_Comments-Core.md#n1-36), [N1-37](220_Comments-GUI.md#n1-37), [N1-41](300_Unit-Tests.md#n1-41) |
+| The update watcher ([#379](https://github.com/Nikolai558/FE-BUDDY/issues/379)), the setup window, the build counter | [N1-9](100_Bugs.md#n1-9) (Med), [N1-24](100_Bugs.md#n1-24), [N1-25](100_Bugs.md#n1-25), [N1-26](100_Bugs.md#n1-26), [N1-27](100_Bugs.md#n1-27), [N1-28](100_Bugs.md#n1-28), [N1-42](300_Unit-Tests.md#n1-42) |
+| House rules in the new code and tests | [N1-38](300_Unit-Tests.md#n1-38) |
 
 <a id="s6"></a>
 
@@ -229,6 +244,10 @@ the new file as the old version. Windows' version information (`FileVersionInfo`
 version is now read from the file's own metadata. Proven on the PC: a running FE-Buddy, its folder emptied, deleted and
 recreated with a newer build, logs the update about 3 seconds later and opens the restart offer. The watch also logs
 when it starts and what each check finds. **Retest** with two accounts on the VM pending.
+
+**Found in the review of the new code** (2026-10-19): the offer can come while the update is still installing, and an
+update that rolls back leaves runs blocked ([N1-9](100_Bugs.md#n1-9)); the watcher can also crash FE-Buddy or stop
+looking ([N1-25](100_Bugs.md#n1-25), [N1-26](100_Bugs.md#n1-26)). Fixed in [S14](#s14), before the two-account retest.
 
 ### [#375](https://github.com/Nikolai558/FE-BUDDY/issues/375) · The installer's shortcuts showed a cached 2.x icon
 

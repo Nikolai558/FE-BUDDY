@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) proposes removing what only 3.0 alpha/beta testers need, and keeping everything 2.x users need to upgrade. Session [S6](020_Work-Plan.md#s6).
 
-**17 findings** (5 Med, 12 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**18 findings** (5 Med, 13 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -27,6 +27,7 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 | [W1-20](#w1-20) | Old-version code | Low | AddCustomAliasFiles is saved under its 3.0.0-beta.2-to-beta.6 name, and the comment narrates that history | Open | S6 |
 | [W1-18](#w1-18) | Old-version code | Low | Saved full procedure names are converted to root names (3.0.0-beta.8 and earlier) | Agreed | S6 |
 | [T2-7](#t2-7) | Old-version code | Low | Credential entry with the old `useForFeBuddyGitHub` marker | Agreed | S6 |
+| [N1-34](#n1-34) | Old-version code | Low | The layout 1 -> 2 step reads the new Facility and default-ROI keys | Open | S6 |
 
 ## Med
 
@@ -345,6 +346,18 @@ Code that only exists for older FE-Buddy versions. [D1](010_Decisions.md#d1) pro
 **Future use:** n/a (no production code).
 
 **Note:** Proposed for removal under [D1](010_Decisions.md#d1).
+
+<a id="n1-34"></a>
+
+### N1-34 · Old-version code · Low · The layout 1 -> 2 step now reads the new Facility and default-ROI keys, which a layout-1 file never has
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S6](020_Work-Plan.md#s6)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigAreas.cs:41-45`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigAreas.cs#L41-L45), 91, 101, 117; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigMigrations.cs:38`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigMigrations.cs#L38); [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigAreasTests.cs:111-126`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigAreasTests.cs#L111-L126)
+
+**Problem:** Since the Settings keys moved to `General` ([S5](020_Work-Plan.md#s5)), `FacilityKey` and `DefaultRoiKey` are `General.Facility` and `General.DefaultRoi.FilterByRoi`. A layout-1 file has `Services.AiracService.UserArtccId` and `Services.AiracService.DefaultRoi.FilterByRoi`, so the step finds no facility and no default ROI, and every tab it sets gets Everything (Procedures: None). The test builds its input from the same constants, so it can't catch it.
+
+**Proposed:** Nothing to fix: [C6-1](#c6-1) deletes the step and its tests in S6. When deleting, also drop the constants' other uses: `UserConfigKeys.cs:65`'s cref; `GeojsonSubServiceViewModel.cs:958` keeps `DefaultFor` with the new keys; `AreaTests.cs:171,445`, `AiracGeneralTabViewModelTests.cs:198,211`.
 
 ## Reported more than once
 

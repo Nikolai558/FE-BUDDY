@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or are minor slips. Grouped by folder. Session [S7](020_Work-Plan.md#s7).
 
-**140 findings** (8 Med, 132 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**142 findings** (8 Med, 134 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -150,6 +150,8 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C7-24](#c7-24) | Minor | Low | The virtual-airline type and property are named after VATSIM-Radar but also hold GNG's rows | Open | S7 |
 | [C7-25](#c7-25) | Minor | Low | Invisible literal characters in `TelephonyHtmlParser.CleanText` and its hyphen regex | Open | S7 |
 | [C7-14](#c7-14) | Wrong doc | Low | `WxStationXmlParser.ParseAsync` names the wrong caller | Open | S7 |
+| [N1-35](#n1-35) | Wrong doc | Low | ProcedureChartTypes: Default is for an absent ChartTypes, not a blank one | Open | S14 |
+| [N1-36](#n1-36) | Stale doc | Low | Docs still name the Settings page's keys under `Services.AiracService` | Open | S14 |
 
 ## FeBuddy.Core
 
@@ -1538,6 +1540,20 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 **Proposed:** `Public because the Procedure Charts tab uses BaseName, RootName and IsContinuation to list the metafile's departures and arrivals by name, without building ProcedureAirports.`
 
+<a id="n1-35"></a>
+
+### N1-35 · Wrong doc · Low · ProcedureChartTypes: `Default` is for an absent `ChartTypes`, not a blank one
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Domain/Procedures/ProcedureChartTypes.cs:39-43`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Domain/Procedures/ProcedureChartTypes.cs#L39-L43); [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs:244-261`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs#L244-L261)
+
+**Says:** "absent or blank"
+
+**Problem:** Since the blank-means-none fix (97aab48), the parser returns `Default` only when the key is absent; blank gives no chart types. `Settings-Reference.md` already says "blank for none". The test `ProcedureSettingsParserTests.blank_chart_types_mean_none` covers the code.
+
+**Proposed:** "…when `ChartTypes` is absent; a blank value means none."
+
 ## FeBuddy.Core/Domain/Procedures/ChartRecall
 
 <a id="c4-5"></a>
@@ -1871,6 +1887,20 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 **Proposed:** "Layout 1 is the one 3.0.0-beta.2 to beta.5 saved; beta.2 and beta.3 wrote no stamp, and a file with no stamp is taken to be in it." Table: `| 1 | 3.0.0-beta.2 | (stamped from 3.0.0-beta.4) |`. Both go away if [C6-1](130_Old-Version-Code.md#c6-1) is taken.
 
 **Note:** Also found as [D1a-9](500_Developer-Docs.md#d1a-9).
+
+<a id="n1-36"></a>
+
+### N1-36 · Stale doc · Low · Docs still name the Settings page's keys under `Services.AiracService`
+
+**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:22`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L22), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:299`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L299); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:215`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L215); [`FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs:9-10`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs#L9-L10)
+
+**Says:** `(e.g. <c>Services.AiracService.UserArtccId</c>)`; SettingsViewModel: `Persists to <c>Services.AiracService.UserArtccId</c>`; DefaultRoiStore: `(<c>Services.AiracService.DefaultRoi</c> in <c>UserConfig.json</c>)`
+
+**Problem:** The Facility, coordinate precision and default ROI moved to `General` in [S5](020_Work-Plan.md#s5). These docs send a reader to the old node.
+
+**Proposed:** UserConfigFile.cs:22 and :299: `(e.g. <c>General.Facility</c>)`. SettingsViewModel.cs:215: `/// <summary>The selected facility's <c>RespArtccId</c>. Persists to <c>General.Facility</c> (<see cref="UserConfigKeys.Facility"/>).</summary>`. DefaultRoiStore.cs:9: `(<c>General.DefaultRoi</c> in the profile in use)`, which also does [W7-8](220_Comments-GUI.md#w7-8)'s line 9; do W7-8's line 29 too.
 
 ## FeBuddy.Core/Infrastructure/Credentials
 

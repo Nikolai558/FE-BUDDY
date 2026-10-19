@@ -18,7 +18,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 ///   <item>returns its subtree path from <see cref="NodePath"/> (e.g. <c>Services.AiracService.Airways</c>),</item>
 ///   <item>returns its rail label from <see cref="ServiceTabViewModel.Title"/>,</item>
 ///   <item>calls <see cref="LoadFromConfig"/> from its own constructor,</item>
-///   <item>calls <see cref="ServiceTabViewModel.MarkDirty"/> from every bound setting's setter,</item>
+///   <item>calls <see cref="MarkDirty"/> from every bound setting's setter,</item>
 ///   <item>implements <see cref="WriteToConfig"/> (push fields into <see cref="UserConfigFile"/> via <c>TrySetValue</c>)
 ///         and <see cref="ServiceTabViewModel.BuildPreviewSummary"/>, and optionally
 ///         <see cref="ServiceTabViewModel.Validate"/>.</item>
@@ -72,7 +72,8 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 
 	/// <summary>
 	/// Validates and persists this menu's subtree. Returns <see langword="false"/> (and toasts
-	/// the reason) when validation fails; the offending inputs stay highlighted.
+	/// the reason) when validation fails, the offending inputs staying highlighted, or when the
+	/// settings file can't be written; either way the tab keeps its unsaved changes.
 	/// </summary>
 	/// <returns><see langword="true"/> if the settings were saved.</returns>
 	public override bool Save()
@@ -86,7 +87,11 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 		}
 
 		WriteToConfig();
-		UserConfigFile.Save(NodePath);
+
+		if (!SettingsWrites.TrySave(NodePath, $"{Title} settings"))
+		{
+			return false;
+		}
 
 		ClearDirty();
 		OnPropertyChanged(nameof(CanUndo));
@@ -96,20 +101,23 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 		return true;
 	}
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Re-evaluates the tab after a setting changed, and re-validates. Call from every bound
+	/// setting's setter.
+	/// </summary>
 	/// <remarks>
 	/// Compares the tab's current values against the snapshot taken when it was last saved or
 	/// loaded, so changing a setting and changing it straight back leaves the tab clean rather
 	/// than permanently marked as edited.
 	/// </remarks>
-	protected override void MarkDirty()
+	protected virtual void MarkDirty()
 	{
 		IsDirty = _savedState is null || !MatchesSavedState();
 		Revalidate();
 	}
 
-	/// <inheritdoc />
-	protected override void ClearDirty()
+	/// <summary>Clears the dirty flag (after a successful save or a reload) and re-validates.</summary>
+	protected virtual void ClearDirty()
 	{
 		_savedState = SavedStateSnapshot.Of(CaptureCurrentValues());
 		IsDirty = false;
@@ -124,12 +132,17 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	/// the tab marked as edited.
 	/// </summary>
 	/// <remarks>
-	/// Deliberately does nothing while the tab has unsaved edits - re-snapshotting then would
-	/// adopt those edits as the saved state and lose the warning.
+	/// While the tab has unsaved edits it doesn't re-snapshot - that would adopt the edits as the
+	/// saved state and lose the warning - but works out again whether they still differ from it: a
+	/// list rebuilt for another cycle keeps what is ticked on screen, but can gain or lose entries.
 	/// </remarks>
 	protected void ResyncSavedState()
 	{
-		if (!IsDirty)
+		if (IsDirty)
+		{
+			MarkDirty();
+		}
+		else
 		{
 			ClearDirty();
 		}
@@ -150,7 +163,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	/// <summary>Restores this node's previous save, if a snapshot exists.</summary>
 	public void UndoLastSave()
 	{
-		if (!UserConfigFile.Undo(NodePath))
+		if (!SettingsWrites.TryUndo(NodePath, $"{Title} settings"))
 		{
 			return;
 		}
@@ -262,7 +275,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 			return ParseList(saved);
 		}
 
-		string? facility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim();
+		string? facility = UserConfigFile.GetValue(UserConfigKeys.Facility)?.Trim();
 
 		return string.IsNullOrEmpty(facility) ? ParseList(null) : ParseList(facility);
 	}

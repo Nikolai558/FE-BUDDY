@@ -1,7 +1,8 @@
 # Code structure
 
 Where code lives in `FeBuddy.Core` and `FeBuddy.Wpf`, the rules both follow, and where new code
-goes. For how the pieces work together, see [Architecture](Architecture.md).
+goes. For how the pieces work together, see [Architecture](Architecture.md). A pull request that
+moves or renames a type updates the folder maps below in the same pull request.
 
 ## Rules for Core and the app
 
@@ -17,8 +18,21 @@ goes. For how the pieces work together, see [Architecture](Architecture.md).
 - **Keep it plain.** Classes are mostly `static`; there is no dependency injection and no interface
   "just in case". Where a test needs to swap something out, the class takes it as a parameter (for
   example `AiracCycleDataCache` takes its download and parse functions).
-- **XML docs on every public member.** Comments explain *why*; they don't point at planning docs or
-  task numbers.
+- **XML docs on every public member.**
+- **Comments explain why the code is the way it is**, not how it got there:
+  - No issue, pull-request, feature or task numbers, bug references included. That history lives
+    in commits and pull requests. Where a bug shaped the code, say the reason in words; the bug's
+    regression test documents it.
+  - No history: not what the code used to do, what 2.x or an earlier beta did, and no "now",
+    "still", "no longer" or "the old …". A quirk outside our code is fine to explain: an FAA
+    format that has changed before, or a CRC or WPF behaviour we work around.
+  - Settings files by their real names (`UserConfig.<Profile>.json`, `Shared.json`); GUI text says
+    "your settings profile". Never name a file or folder that no longer exists.
+  - These rules apply to the developer docs too, except `ChangeLog.md` and `RELEASING*.md`.
+- **One settings node per page or tab.** No node sits inside another's: a save or an undo
+  replaces everything under its node. A page that needs another page's setting reads it, or calls
+  that page's code to change it; it never writes that node.
+  `UserConfigLayoutTests.no_settings_node_sits_inside_another` checks this.
 
 ## FeBuddy.Core
 
@@ -46,20 +60,22 @@ FeBuddy.Core/
 │   │                     NavaidTypes, FixUses, TelephonyNaming, …) and its models
 │   ├── Crc/              CRC feature properties and CrcPropertyValidator
 │   ├── Geo/              GeoMath, AntimeridianSplitter, LineStringMerger, SegmentJoiner, RoiFilter,
-│   │                     RadiusFilter, Wgs84
+│   │                     RadiusFilter, Wgs84, WebMercator
+│   ├── Map/              the map's shapes, read from GeoJSON or built from a cycle: GeoPoint,
+│   │                     MapGeometry, MapFeature (Models/)
 │   └── Procedures/       ProcedureChartTypes, ProcedureNaming
 │       └── ChartRecall/  the FAA Chart Recall command rules: ChartRecallCodes, ApproachCodes,
 │                         SidStarCodes, ChartRecallText
 ├── Infrastructure/
 │   ├── Configuration/    UserConfigFile (and the settings profiles), UserConfigKeys, DevMode,
 │   │                     OutputFormatting; the settings layout (UserConfigVersion,
-│   │                     UserConfigMigrations); and settings
+│   │                     UserConfigMigrations and their steps); and settings
 │   │                     export/import: UserConfigTransfer, UserConfigPortability, PortablePathTokens
-│   ├── Credentials/      CredentialStore, WindowsCredentialVault, CredentialHosts, UrlSecrets
-│   │                     (see Credentials.md)
+│   ├── Credentials/      CredentialStore, ICredentialVault, WindowsCredentialVault, CredentialHosts,
+│   │                     CredentialKindNames, UrlSecrets (see Credentials.md)
 │   ├── FileSystem/       AppPaths, TempWorkspace, ServiceOutputPaths, AppDataReset
-│   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet, SymbolFeatureMerger,
-│   │                     AttributesSignature
+│   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileReader (the map's),
+│   │                     GeojsonFileSet, SymbolFeatureMerger, AttributesSignature
 │   ├── GitHub/           GitHubAuth, GitHubRepository, GitHubFileUrl, GitHubTokenExpiry
 │   ├── Http/ Logging/ Markdown/   FeBuddyHttp, AppLog, MarkdownParser
 │   ├── Platform/         AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable,
@@ -71,14 +87,15 @@ FeBuddy.Core/
 │   │                     cycle folders
 │   ├── WxStations/       aviationweather.gov's station list (WxStationDownloader, WxStationXmlParser)
 │   ├── Telephony/        the FAA's telephony pages and the virtual airline list (GNG + VATSIM-Radar)
-│   │                     (TelephonyDownloader, TelephonyHtmlParser, VatsimRadarAirlineParser)
+│   │                     (TelephonyDownloader, TelephonyHtmlParser, GngAirlineParser,
+│   │                     VatsimRadarAirlineParser)
 │   ├── Dtpp/             the FAA d-TPP Metafile (DtppDownloader, DtppMetafileXmlParser)
 │   └── Dat/ Sct/ Eram/   the conversions' readers: DatFileReader, SctFileReader, EramGeoMapReader,
 │                         EramConsoleCommandControlReader
 └── Application/
     ├── Airac/            AiracService (the entry point), AiracCycleDataCache, AiracSharedDataLoader,
     │   │                 AiracOutputPaths, AiracOutputCatalog, DuplicateAliasReport,
-    │   │                 OutputFileNamesParser, FebProperties
+    │   │                 DuplicateAliasChoices, OutputFileNamesParser, FebProperties, EchoCards
     │   ├── Airports/ Airways/ Departures/ Arrivals/ Navaids/ ArtccBoundaries/ Fixes/
     │   │   WxStations/ Procedures/ Telephony/
     │   │                 one folder per sub-service (see "Adding a sub-service" below)
@@ -90,9 +107,10 @@ FeBuddy.Core/
     ├── Conversions/      ConversionSettingsReader, ConversionFiles, then DatToGeojson/,
     │                     SctToGeojson/ and EramToGeojson/
     ├── Launch/           LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice, WelcomeNotice, and a
-    │                     dev launch's choices (OptionalLaunchSteps, DevLaunchSettings)
+    │                     dev launch's choices (OptionalLaunchSteps, DevLaunchFile)
+    ├── Map/              AiracMapData: the Map screen's live AIRAC layers and the shapes each holds
     ├── News/             NewsService
-    ├── Settings/         SubServiceSettingsReader, CrcDefaultsReader, SettingsValueReader
+    ├── Settings/         SubServiceSettingsReader, SubServiceArea, CrcDefaultsReader, SettingsValueReader
     ├── Updates/          VersionCheck, UpdateInstaller, UpdateChannelSetting, AppUninstall
     └── Models/           ServiceResult, ServiceMessage
 ```
@@ -106,6 +124,7 @@ FeBuddy.Core/
 | `*Builder` | Builds domain objects from FAA rows | `DepartureBuilder` |
 | `*GeojsonWriter`, `*AliasWriter`, `*Writer` | Writes output files | `AirwayGeojsonWriter` |
 | `*Reader`, `*Parser` | Reads a file, a text format or a settings block | `NasrCsvReader`, `MarkdownParser` |
+| `*File` | Reads and writes one file of its own | `UserConfigFile`, `DevLaunchFile` |
 | `*Filter`, `*Check`, `*Validator` | Narrows, checks or validates; never writes | `RoiFilter`, `VersionCheck` |
 | `*OutputFiles` | A sub-service's file keys | `FixOutputFiles` |
 | `*Result`, `*Settings`, `*Progress` | Data, in `Models/` | `AiracServiceResult` |
@@ -128,13 +147,17 @@ FeBuddy.Wpf/
 │                        ComboBoxDropDownFocus), and MaximizeToWorkArea, a window hook the chrome
 │                        windows install from code
 ├── Controls/            Card, SectionHeader, OutputTag, OutputLine, OutputSummary, Option, CopyButton,
-│                        FilterPicker, MarkdownView, MapCanvas, AliasGuideDocumentView, BesideOrBelow,
-│                        CommandTablePanel, ChromeWindow, BrandMark
+│                        FilterPicker, FilterOption, MarkdownView, MapCanvas, AliasGuideDocumentView,
+│                        BesideOrBelow, CommandTablePanel, ChromeWindow, BrandMark
 ├── Converters/          one IValueConverter per file
-├── Map/                 GeoJsonReader, WebMercator, ProjectedLayer, AiracMapLayers, BaseMap
+├── Map/                 how the map draws Core's shapes: ProjectedLayer, AiracMapLayers, BaseMap,
+│                        FrozenBrush; Models/ for the drawing's records (MapLayer, GeoBounds, …)
 ├── Mvvm/                ObservableObject, RelayCommand
 ├── Shell/               app-wide services: Toast, Links, BrowserLauncher, DefaultRoiStore,
-│                        OutputPreferences, AppRestart, DevLaunchArgs
+│                        OutputPreferences, AppRestart, DevLaunchArgs, SettingsWrites (every
+│                        settings save the app makes, reported rather than crashing), CrashReport,
+│                        and the main window's placement (MainWindowPlacement,
+│                        WindowPlacementRules, NativeMonitors)
 ├── ViewModels/          ShellViewModel and one per screen or tab; AiracSubServices (the sub-service
 │   │                    catalogue); the map's MapViewModel and MapLayersState
 │   ├── Models/          small rows and records
@@ -145,14 +168,15 @@ FeBuddy.Wpf/
 │                        (ServiceValidation, ServiceAreas), the card interfaces (IAreaSettings, …)
 └── Views/               ShellWindow, TabbedServiceView (AIRAC Service), FileConversionsView, one view
     │                    per tab or conversion page, MapWorkspace (every map), the dialog windows
-    └── Cards/           the shared cards (Attention, What You'll Get, Area, What Files Do
-                         You Want?, FE-Buddy Helper Properties, CRC ERAM Defaults, Source
-                         Files, Run);
-                         CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
-                         Defaults; OutputStatusRow, an output's On/Off line (the Outputs
-                         cards of Procedure Charts and Telephony); CrcDefaultsPanel; and
-                         DuplicateAliasesCard, the AIRAC Service's Duplicate Alias Commands
-                         run option
+    ├── Cards/           the shared cards (Attention, What You'll Get, Area, What Files Do
+    │                    You Want?, FE-Buddy Helper Properties, CRC ERAM Defaults, Source
+    │                    Files, Run);
+    │                    CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
+    │                    Defaults; OutputStatusRow, an output's On/Off line (the Outputs
+    │                    cards of Procedure Charts and Telephony); CrcDefaultsPanel; and
+    │                    DuplicateAliasesCard, the AIRAC Service's Duplicate Alias Commands
+    │                    run option
+    └── Models/          ConfirmChoice (which button closed a ConfirmWindow)
 ```
 
 ### How the screens are built
@@ -186,6 +210,7 @@ FeBuddy.Wpf/
   a box (`AddField`, shown on it through `FieldState`) or to a whole card (`AddArea` with a
   `ServiceAreas` key, which the card binds as its own `FieldState.Error`). `AttentionCard` lists
   every problem at the top of the tab, and a `Card` holding one is outlined (`Card.NeedsAttention`).
+  A box with a hint sets `FieldState.Hint`, not `ToolTip`: a local tool-tip would hide its error.
 - **One map.** `Views/MapWorkspace` is the Map page and every map window (`RoiPickerWindow`).
   `MapViewModel` holds the box being edited and where it goes (`IRoiTarget`); everything else lives
   in `MapLayersState.Shared`, so every map shows the same layers. `Controls/MapCanvas` is a
@@ -207,7 +232,7 @@ FeBuddy.Wpf/
   underscore shows as written.
 - **A two-way ComboBox in a template** is safest with its items from `x:Static`, as `AirwaysView`'s
   High and Low Airway Classification drop-downs do. Whatever it binds to, test switching to another
-  tab and back: bug #251 lost the Airways choices that way.
+  tab and back: while WPF rebuilds the template, it can write an empty choice over the saved one.
 - **Fonts:** Segoe UI throughout (`Font.Display`, `Font.Body`), Cascadia Mono then Consolas for code
   (`Font.Mono`), and Segoe Fluent Icons for glyphs (`Font.Icon`), set in `Theme/Typography.xaml`.
   Body text is 14.5, captions 12.5; a size outside the `Text.*` styles keeps to the same scale.
@@ -217,10 +242,19 @@ FeBuddy.Wpf/
 ## Where new code goes
 
 - **A new aviation or geometry rule:** `Core/Domain/<Feature>/`.
-- **A new NASR CSV group:** its row model in `Infrastructure/Nasr/Models/`, its parser in
-  `Infrastructure/Nasr/Parsers/`, a `NasrCsvGroup` value, a `NasrCsvDataCollection` property and
-  `Require…` method, and a line in `NasrCsvParser.ParseGroupAsync`. The cycle cache parses it once
-  it's in `NasrCsvGroups.InUse`.
+- **A new NASR CSV group** (FAA code `XYZ`):
+  1. Its row models in `Infrastructure/Nasr/Models/XyzCsvDataModels.cs`, and its parser in
+     `Infrastructure/Nasr/Parsers/XyzCsvParser.cs`, with the group's `XyzCsvDataCollection` in the
+     same file.
+  2. A `NasrCsvGroup.Xyz` value. If the FAA's code isn't the value's name in capitals (it has an
+     underscore, like `CLS_ARSP`), an arm in `NasrCsvGroups.Code`.
+  3. In `NasrCsvDataCollection`: an `Xyz` property, a `RequireXyz()` method and an arm in `Group()`.
+     Without that arm, `ParsedGroups()` throws, and the cycle cache calls it after every parse.
+  4. In `NasrCsvParser`: a `ParseXyzAsync` method and an arm in `ParseGroupAsync`.
+  5. Sample files in `FeBuddy.UnitTests/Fixtures/Nasr` (the parser tests read every group from
+     there), and the new count in `NasrCsvGroupParseTests` (and in Architecture's "9 of the 24").
+
+  The cycle cache parses it once it's in `NasrCsvGroups.InUse`.
 - **Reading a group the cache doesn't parse yet:** add it to `NasrCsvGroups.InUse`, and read it
   through its `Require…` method.
 - **A new config key:** see [Adding a setting](Settings-Reference.md#adding-a-setting).
@@ -236,8 +270,11 @@ Say, Preferred Routes:
 1. **Core:** `Application/Airac/PreferredRoutes/` with `PreferredRouteService`,
    `PreferredRouteSettingsParser`, `PreferredRouteBuilder`, `PreferredRouteGeojsonWriter`,
    `PreferredRouteOutputFiles` and a `Models/` folder. Read the shared keys with
-   `SubServiceSettingsReader`, put files where `AiracOutputPaths` says, add its block to
-   `AiracServiceSettings` and its run to `AiracService`.
+   `SubServiceSettingsReader` and put files where `AiracOutputPaths` says. Add its block to
+   `AiracServiceSettings`, and in `AiracService` add its run, its block to `anySelected`, its alias
+   file (if any) to `aliasOutputs`, and its result to `AiracServiceResult`. Add its file keys to
+   `OutputFileNamesParser.CanRename` so the File Names tab can rename them, and its keys to the
+   [Settings reference](Settings-Reference.md).
 2. **App:** an entry in `ViewModels/AiracSubServices.cs`, with the outputs it offers (its columns on
    the General tab) and its tooltip text; a `PreferredRoutesViewModel` deriving
    from `GeojsonSubServiceViewModel` and implementing `ISubServiceRunTarget`; a `PreferredRoutesView`

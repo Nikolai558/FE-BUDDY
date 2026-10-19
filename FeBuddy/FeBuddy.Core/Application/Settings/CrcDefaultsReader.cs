@@ -42,6 +42,65 @@ public static class CrcDefaultsReader
 		_ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CRC feature kind.")
 	};
 
+	/// <summary>
+	/// Whether <paramref name="value"/> is one the readers below accept for <paramref name="property"/>: parsed as
+	/// they parse it and checked against <see cref="CrcPropertyValidator"/>'s ranges and styles. A screen asks it
+	/// for each box, so a value restored from a hand-edited file or an import is marked there rather than
+	/// failing the run.
+	/// </summary>
+	/// <param name="kind">The feature kind the value is a default for.</param>
+	/// <param name="property">One of the kind's <see cref="PropertyNames"/>, e.g. <c>bcg</c>.</param>
+	/// <param name="value">The value as saved; a blank one is never valid, since every property is required.</param>
+	/// <returns><see langword="true"/> when the run would accept it.</returns>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="property"/> isn't one of the kind's.</exception>
+	public static bool IsValidValue(CrcFeatureKind kind, string property, string? value)
+	{
+		ArgumentNullException.ThrowIfNull(property);
+
+		if (!PropertyNames(kind).Contains(property))
+		{
+			throw new ArgumentOutOfRangeException(nameof(property), property, $"Not a {kind} default.");
+		}
+
+		Dictionary<string, string> one = new(StringComparer.OrdinalIgnoreCase) { [property] = value ?? string.Empty };
+
+		try
+		{
+			return property.ToLowerInvariant() switch
+			{
+				"bcg" => InRange(SettingsValueReader.RequiredInt(one, property), CrcPropertyValidator.MinBcg, CrcPropertyValidator.MaxBcg),
+				"filters" => SettingsValueReader.RequiredIntList(one, property)
+					.All(filter => InRange(filter, CrcPropertyValidator.MinFilter, CrcPropertyValidator.MaxFilter)),
+				"style" => IsStyle(SettingsValueReader.RequiredString(one, property),
+					kind == CrcFeatureKind.Line ? CrcPropertyValidator.ValidLineStyles : CrcPropertyValidator.ValidSymbolStyles),
+				"thickness" => InRange(SettingsValueReader.RequiredInt(one, property), CrcPropertyValidator.MinThickness, CrcPropertyValidator.MaxThickness),
+				"size" => kind == CrcFeatureKind.Text
+					? InRange(SettingsValueReader.RequiredInt(one, property), CrcPropertyValidator.MinTextSize, CrcPropertyValidator.MaxTextSize)
+					: InRange(SettingsValueReader.RequiredInt(one, property), CrcPropertyValidator.MinSymbolSize, CrcPropertyValidator.MaxSymbolSize),
+				"underline" or "opaque" => Parses(() => SettingsValueReader.RequiredYesNo(one, property)),
+
+				// xOffset and yOffset: any whole number.
+				_ => Parses(() => SettingsValueReader.RequiredInt(one, property)),
+			};
+		}
+		catch (ArgumentException)
+		{
+			return false;
+		}
+	}
+
+	private static bool InRange(int value, int minimum, int maximum) => value >= minimum && value <= maximum;
+
+	/// <summary>Whether the value reads at all: <paramref name="read"/> throws when it doesn't.</summary>
+	private static bool Parses<T>(Func<T> read)
+	{
+		_ = read();
+		return true;
+	}
+
+	private static bool IsStyle(string raw, IReadOnlyList<string> styles) =>
+		styles.Contains(SettingsValueReader.NormalizeStyle(raw, styles)!, StringComparer.Ordinal);
+
 	/// <summary>Reads and validates the Line defaults under <paramref name="keyPrefix"/>.</summary>
 	/// <param name="settings">The raw settings block.</param>
 	/// <param name="keyPrefix">e.g. <c>Crc.Runways.Line</c>.</param>

@@ -98,10 +98,16 @@ public sealed class ResetViewModelTests
 		Assert.Equal(confirm, reset.Confirmed);
 	}
 
+	/// <summary>
+	/// The settings' backups live beside them, so a reset that keeps the settings keeps them too: they
+	/// are part of what deleting the settings loses, not of what always goes.
+	/// </summary>
 	[Fact]
 	public void every_reset_lists_what_always_goes()
 	{
-		Assert.Equal(4, ResetViewModel.AlwaysDeleted.Count);
+		Assert.Equal(3, ResetViewModel.AlwaysDeleted.Count);
+		Assert.DoesNotContain(ResetViewModel.AlwaysDeleted, line => line.Contains("backup", StringComparison.OrdinalIgnoreCase));
+		Assert.StartsWith("Every settings profile and its backups", ResetViewModel.SettingsLoss, StringComparison.Ordinal);
 		Assert.Throws<ArgumentNullException>(() => new ResetViewModel(true, 0, null!));
 	}
 }

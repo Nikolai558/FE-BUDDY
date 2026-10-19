@@ -1,3 +1,5 @@
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.Wpf.Map.Models;
 
 /// <summary>A lat/lon axis-aligned box (a region of interest).</summary>

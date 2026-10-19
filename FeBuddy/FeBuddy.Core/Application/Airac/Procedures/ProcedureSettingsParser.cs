@@ -39,13 +39,11 @@ public static class ProcedureSettingsParser
 	];
 
 	/// <summary>The keys only Procedures reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
-	/// <remarks><c>IncludeRoiAirports</c> is read only for a block without <c>Area</c> (see <see cref="ReadArea"/>).</remarks>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"GenerateChangesDocument", "GenerateProceduresJson", "GenerateAliasFile",
 		"IncludeHelpCommand", "HelpCommandName",
 		"Facilities", "PrimaryFacility",
-		"IncludeRoiAirports",
 		"Airports", "Procedures", "AirportProcedures",
 		IncludeFixInFacilityKey,
 		"ChartTypes", "JsonFields",
@@ -56,17 +54,23 @@ public static class ProcedureSettingsParser
 
 	/// <summary>
 	/// Whether a Procedures block will use the procedures-with-a-fix-in-my-facility rule: it is on
-	/// (the default) and names a facility. For the AIRAC Service, which loads the previous cycle's
-	/// NASR data only then.
+	/// (the default), names a facility, a document is on, and the area isn't Everything. For the
+	/// AIRAC Service, which loads the previous cycle's NASR data only then.
 	/// </summary>
 	/// <param name="procedureSettings">The raw settings dictionary.</param>
 	/// <returns><see langword="true"/> when the rule may run.</returns>
+	/// <exception cref="ArgumentException">Thrown when one of those settings has a value <see cref="Parse"/> would refuse.</exception>
 	public static bool IncludesProceduresWithFixInFacility(IReadOnlyDictionary<string, string> procedureSettings)
 	{
 		ArgumentNullException.ThrowIfNull(procedureSettings);
 
+		// Read as Parse reads them, with the same defaults: the rule only adds to what the documents
+		// cover, and Everything already covers every airport.
 		return SettingsValueReader.YesNo(procedureSettings, IncludeFixInFacilityKey, defaultValue: true)
-			&& SettingsValueReader.OptionalString(procedureSettings, "PrimaryFacility") is not null;
+			&& SettingsValueReader.OptionalString(procedureSettings, "PrimaryFacility") is not null
+			&& (SettingsValueReader.YesNo(procedureSettings, "GenerateChangesDocument", defaultValue: true)
+				|| SettingsValueReader.YesNo(procedureSettings, "GenerateProceduresJson", defaultValue: true))
+			&& ReadArea(procedureSettings) != SubServiceArea.Everything;
 	}
 
 	/// <summary>The areas Procedures offers: the facilities, the ROI, every airport, or none.</summary>
@@ -182,16 +186,13 @@ public static class ProcedureSettingsParser
 	}
 
 	/// <summary>
-	/// Reads <c>Area</c>. A block without it (the harness, or one written before there was a choice)
-	/// gets the area its settings meant: the facilities when <c>Facilities</c> lists any, otherwise the
-	/// ROI when <c>IncludeRoiAirports</c> is <c>Y</c>, otherwise none. <c>FilterByRoi</c> alone never
-	/// meant the ROI here: it was sent whenever a default ROI was set.
+	/// Reads <c>Area</c>. A block without it takes the facilities when <c>Facilities</c> lists any,
+	/// otherwise none.
 	/// </summary>
 	private static SubServiceArea ReadArea(IReadOnlyDictionary<string, string> procedureSettings) =>
 		SettingsValueReader.OptionalString(procedureSettings, SubServiceSettingsReader.AreaKey) is not null
-			? SubServiceSettingsReader.ReadArea(procedureSettings, Areas, artccListKey: null)
+			? SubServiceSettingsReader.ReadArea(procedureSettings, Areas)
 			: SettingsValueReader.StringList(procedureSettings, "Facilities").Count > 0 ? SubServiceArea.Artccs
-			: SettingsValueReader.YesNo(procedureSettings, "IncludeRoiAirports", defaultValue: false) ? SubServiceArea.Roi
 			: SubServiceArea.None;
 
 	/// <summary>
@@ -235,15 +236,23 @@ public static class ProcedureSettingsParser
 		return picks;
 	}
 
-	/// <summary>Parses <c>ChartTypes</c>, defaulting to <see cref="ProcedureChartTypes.Default"/> when absent or blank.</summary>
+	/// <summary>
+	/// Parses <c>ChartTypes</c>: <see cref="ProcedureChartTypes.Default"/> when it is absent, and none
+	/// when it is blank, as the tab reads a saved blank list.
+	/// </summary>
 	private static (IReadOnlyCollection<string> ChartTypes, IReadOnlyList<ServiceMessage> Messages) ParseChartTypes(
 		IReadOnlyDictionary<string, string> procedureSettings)
 	{
+		if (!procedureSettings.ContainsKey("ChartTypes"))
+		{
+			return (ProcedureChartTypes.Default, []);
+		}
+
 		IReadOnlyList<string> raw = SettingsValueReader.StringList(procedureSettings, "ChartTypes");
 
 		if (raw.Count == 0)
 		{
-			return (ProcedureChartTypes.Default, []);
+			return ([], []);
 		}
 
 		List<string> chartTypes = [.. raw
@@ -259,15 +268,24 @@ public static class ProcedureSettingsParser
 		return (chartTypes, messages);
 	}
 
-	/// <summary>Parses <c>JsonFields</c>, defaulting to <see cref="DefaultJsonFields"/> when absent or blank.</summary>
+	/// <summary>
+	/// Parses <c>JsonFields</c>: <see cref="DefaultJsonFields"/> when it is absent, and none of the
+	/// optional fields when it is blank - the user unticked them all, and gets only the fields that
+	/// are always written.
+	/// </summary>
 	private static (IReadOnlyCollection<ProcedureJsonField> Fields, IReadOnlyList<ServiceMessage> Messages) ParseJsonFields(
 		IReadOnlyDictionary<string, string> procedureSettings)
 	{
+		if (!procedureSettings.ContainsKey("JsonFields"))
+		{
+			return (DefaultJsonFields, []);
+		}
+
 		IReadOnlyList<string> raw = SettingsValueReader.StringList(procedureSettings, "JsonFields");
 
 		if (raw.Count == 0)
 		{
-			return (DefaultJsonFields, []);
+			return ([], []);
 		}
 
 		List<ProcedureJsonField> fields = [];

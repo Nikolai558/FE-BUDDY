@@ -1,6 +1,8 @@
 using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.ViewModels;
 
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
@@ -287,6 +289,37 @@ public sealed class MapViewModelTests
 		Assert.False(vm.CloseInspectCommand.CanExecute(null));
 	}
 
+	/// <summary>
+	/// The ROI card's state is worked out from the saved ROI as last read: typing corners reads it many times
+	/// and the target's ROI not once; a change from outside is read.
+	/// </summary>
+	[Fact]
+	public void the_roi_state_is_worked_out_from_the_roi_as_last_read()
+	{
+		CountingTarget target = new() { Roi = Saved };
+		MapViewModel vm = new(target) { IsEditingRoi = true };
+		int reads = target.Reads;
+
+		vm.SwLat = "39";
+		vm.SwLat = "39.5";
+
+		Assert.Equal("Unsaved", vm.RoiState);
+		Assert.Equal("Warn", vm.RoiStateKind);
+		Assert.True(vm.IsRoiDirty);
+		Assert.Equal(string.Empty, vm.RoiNotSetHint);
+		Assert.Equal(reads, target.Reads);
+
+		vm.CancelRoiCommand.Execute(null);
+		Assert.Equal("Saved", vm.RoiState);
+
+		target.Roi = null;
+		target.RaiseChanged();
+		System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+		Assert.Equal("Not set", vm.RoiState);
+		Assert.StartsWith("ROI has not been set, yet.", vm.RoiNotSetHint, StringComparison.Ordinal);
+	}
+
 	private static MapLayer Layer(params MapGeometry[] geometries) => new("ZOB_Test.geojson", geometries, System.Windows.Media.Brushes.Orange);
 
 	private static void Type(MapViewModel vm, string field, string value)
@@ -331,5 +364,46 @@ public sealed class MapViewModelTests
 		}
 
 		public void Cancel() => Cancels++;
+	}
+
+	/// <summary>A stand-in that counts how often its ROI is read.</summary>
+	private sealed class CountingTarget : IRoiTarget
+	{
+		private RegionOfInterest? _roi;
+
+		public event EventHandler? CurrentChanged;
+
+		public int Reads { get; private set; }
+
+		public RegionOfInterest? Roi { set => _roi = value; }
+
+		public string Title => "Test ROI";
+
+		public string Description => "Test";
+
+		public string SaveLabel => "Save";
+
+		public bool CanClear => true;
+
+		public bool StartsEditing => false;
+
+		public RegionOfInterest? Current
+		{
+			get
+			{
+				Reads++;
+				return _roi;
+			}
+		}
+
+		public RegionOfInterest? Reference => null;
+
+		public void Commit(RegionOfInterest? roi) => _roi = roi;
+
+		public void Cancel()
+		{
+		}
+
+		public void RaiseChanged() => CurrentChanged?.Invoke(this, EventArgs.Empty);
 	}
 }

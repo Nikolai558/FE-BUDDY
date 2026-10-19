@@ -26,7 +26,7 @@ public sealed class CommandTablePanelTests
 			new() { Width = 80, Height = 20 }, new() { Height = 50 }, new() { Width = 120, Height = 60 },
 		];
 
-		CommandTablePanel panel = new() { MiddleMinWidth = 240, ColumnSpacing = 24, RowPadding = 12, StackSpacing = 8 };
+		CommandTablePanel panel = new();
 
 		foreach (Border cell in cells)
 		{

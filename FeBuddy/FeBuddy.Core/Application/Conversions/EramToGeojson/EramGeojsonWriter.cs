@@ -190,8 +190,8 @@ public static class EramGeojsonWriter
 		foreach (EramElementKind kind in kindsWithoutCard.Order())
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"{sourceName}: no CRC {kind} defaults are set on the tab, so its {Plural(kind)} carry only their filters " +
-				"and CRC draws them with its own defaults."));
+				$"{sourceName}: no CRC {kind} defaults are set on the tab, so its {Plural(kind)} carry only filter 0 " +
+				"(shown at every filter setting) and CRC draws them with its own defaults."));
 		}
 
 		if (hidden > 0)

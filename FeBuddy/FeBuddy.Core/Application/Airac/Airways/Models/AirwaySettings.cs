@@ -6,10 +6,10 @@ using FeBuddy.Core.Domain.Geo.Models;
 namespace FeBuddy.Core.Application.Airac.Airways.Models;
 
 /// <summary>
-/// Fully-parsed, typed settings for the Airways services (GeoJSON generation and alias file
+/// Fully-parsed, typed settings for the Airways sub-service (GeoJSON generation and alias file
 /// generation). Built once by <c>AirwaySettingsParser.Parse</c> from the raw
 /// <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>) supplies; every
-/// other Airways service consumes this typed object, never the raw dictionary.
+/// other Airways type consumes this typed object, never the raw dictionary.
 /// </summary>
 public sealed record AirwaySettings
 {
@@ -28,7 +28,8 @@ public sealed record AirwaySettings
 	/// <summary>
 	/// When <see langword="true"/>, each airway leg is shortened around its endpoint waypoints
 	/// (<see cref="FixBufferNm"/> for 5-character fixes, <see cref="NavaidBufferNm"/> otherwise) so
-	/// lines stop short of waypoint symbols/text.
+	/// lines stop short of waypoint symbols/text. Only ever <see langword="true"/> when GeoJSON is
+	/// written: buffering shapes what is drawn, never the alias file.
 	/// </summary>
 	public required bool BufferAirwayWaypoints { get; init; }
 

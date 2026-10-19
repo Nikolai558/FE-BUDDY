@@ -116,4 +116,109 @@ public sealed record AiracServiceResult : ServiceResult
 	/// at the duplicate alias commands.
 	/// </summary>
 	public CombinedAliasResult? CombinedAlias { get; init; }
+
+	/// <summary>
+	/// Every file the run wrote, in sub-service order: each sub-service's GeoJSON and documents and its alias
+	/// file, then the duplicate alias report and the combined alias file. A run stopped at the duplicate review
+	/// names no alias file - they were deleted.
+	/// </summary>
+	public IReadOnlyList<string> FilesWritten
+	{
+		get
+		{
+			List<string> files = [];
+
+			if (Airways is { } airways)
+			{
+				files.AddRange(airways.GeojsonFilesWritten);
+
+				if (airways.AliasFilePath is { } airwayAlias)
+				{
+					files.Add(airwayAlias);
+				}
+			}
+
+			if (Airports is { } airports)
+			{
+				files.AddRange(airports.GeojsonFilesWritten);
+
+				if (airports.AliasFilePath is { } airportAlias)
+				{
+					files.Add(airportAlias);
+				}
+			}
+
+			if (Departures is { } departures)
+			{
+				files.AddRange(departures.GeojsonFilesWritten);
+
+				if (departures.AliasFilePath is { } departureAlias)
+				{
+					files.Add(departureAlias);
+				}
+			}
+
+			if (Arrivals is { } arrivals)
+			{
+				files.AddRange(arrivals.GeojsonFilesWritten);
+
+				if (arrivals.AliasFilePath is { } arrivalAlias)
+				{
+					files.Add(arrivalAlias);
+				}
+			}
+
+			if (Navaids is { } navaids)
+			{
+				files.AddRange(navaids.GeojsonFilesWritten);
+
+				if (navaids.AliasFilePath is { } navaidAlias)
+				{
+					files.Add(navaidAlias);
+				}
+			}
+
+			if (ArtccBoundaries is { } artccBoundaries)
+			{
+				files.AddRange(artccBoundaries.GeojsonFilesWritten);
+			}
+
+			if (Fixes is { } fixes)
+			{
+				files.AddRange(fixes.GeojsonFilesWritten);
+			}
+
+			if (WxStations is { } wxStations)
+			{
+				files.AddRange(wxStations.GeojsonFilesWritten);
+			}
+
+			if (Procedures is { } procedures)
+			{
+				files.AddRange(procedures.FilesWritten);
+
+				if (procedures.AliasFilePath is { } chartRecallAlias)
+				{
+					files.Add(chartRecallAlias);
+				}
+			}
+
+			if (Telephony?.AliasFilePath is { } telephonyAlias)
+			{
+				files.Add(telephonyAlias);
+			}
+
+			if (DuplicateAliasReport is { } duplicateAliasReport)
+			{
+				files.Add(duplicateAliasReport.FilePath);
+			}
+
+			if (CombinedAlias?.FilePath is { } combinedAlias)
+			{
+				files.Add(combinedAlias);
+			}
+
+			return [.. files];
+		}
+	}
 }

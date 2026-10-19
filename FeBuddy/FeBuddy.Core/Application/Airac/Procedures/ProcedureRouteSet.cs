@@ -16,9 +16,6 @@ public sealed class ProcedureRouteSet(IReadOnlyList<ProcedureRoute> routes, Rout
 		.SelectMany(route => route.Airports.Select(airport => (Airport: airport, Route: route)))
 		.ToLookup(pair => pair.Airport, pair => pair.Route, StringComparer.OrdinalIgnoreCase);
 
-	/// <summary>The procedures and their routes.</summary>
-	public IReadOnlyList<ProcedureRoute> Routes { get; } = routes;
-
 	/// <summary>Which ARTCCs the routes' points are in.</summary>
 	public RoutePointArtccResolver Points { get; } = points;
 

@@ -69,6 +69,26 @@ public record VersionCheckResult(
 	/// </summary>
 	public bool WasSkipped { get; init; }
 
+	/// <summary>
+	/// Where the check left FE-Buddy, decided once in this order: skipped, failed, an update, a pre-release
+	/// ahead of the channel, a build ahead of every release, a channel with no release, or the latest.
+	/// </summary>
+	public VersionCheckStatus Status =>
+		WasSkipped ? VersionCheckStatus.Skipped
+		: !CheckSucceeded ? VersionCheckStatus.Failed
+		: UpdateAvailable && LatestVersion is not null ? VersionCheckStatus.UpdateAvailable
+		: RunningPreReleaseChannel is not null ? VersionCheckStatus.RunningPreRelease
+		: IsAheadOfLatestRelease ? VersionCheckStatus.AheadOfLatest
+		: LatestVersion is null ? VersionCheckStatus.NoReleases
+		: VersionCheckStatus.Latest;
+
+	/// <summary>
+	/// The running version as FE-Buddy shows it: <c>3.0.0</c>, without a leading <c>v</c>; <c>dev</c> for a
+	/// build with no version (blank, or <c>0.0.0</c>).
+	/// </summary>
+	public string DisplayVersion =>
+		string.IsNullOrWhiteSpace(CurrentVersion) || CurrentVersion.Trim() is "0.0.0" or "v0.0.0" ? "dev" : CurrentVersion.Trim().TrimStart('v', 'V');
+
 	/// <summary>The result when a dev launch leaves the check out.</summary>
 	/// <param name="currentVersion">The running application's version string.</param>
 	/// <param name="channel">The user's channel.</param>
@@ -86,15 +106,6 @@ public record VersionCheckResult(
 	/// installer allows it, since the installed version is a pre-release.
 	/// </summary>
 	public bool CanGoBack => RunningPreReleaseChannel is not null && LatestVersion is not null;
-
-	/// <summary>
-	/// Parses the user's update channel from its stored name (<c>General.UpdateChannel</c>:
-	/// <c>Stable</c>, <c>ReleaseCandidate</c>, <c>Beta</c> or <c>Alpha</c>), falling back to
-	/// <see cref="ReleaseChannel.Stable"/> for a missing or unrecognized value.
-	/// </summary>
-	/// <param name="value">The stored channel name (case-insensitive).</param>
-	/// <returns>The parsed channel, or <see cref="ReleaseChannel.Stable"/>.</returns>
-	public static ReleaseChannel ParseChannel(string? value) => ParseChannel(value, ReleaseChannel.Stable);
 
 	/// <summary>
 	/// Parses the user's update channel from its stored name, falling back to <paramref name="fallback"/>
@@ -151,12 +162,3 @@ public sealed record ReleaseSummary(
 /// </param>
 /// <param name="SizeBytes">The size GitHub reports, or 0 when it reports none.</param>
 public sealed record ReleaseInstaller(string FileName, string DownloadUrl, long AssetId, long SizeBytes);
-
-/// <summary>Progress of an installer download.</summary>
-/// <param name="BytesReceived">Bytes written so far.</param>
-/// <param name="TotalBytes">The expected total, or <see langword="null"/> when unknown.</param>
-public readonly record struct DownloadProgress(long BytesReceived, long? TotalBytes)
-{
-	/// <summary>Whole-number percent complete, or <see langword="null"/> when the total is unknown.</summary>
-	public int? Percent => TotalBytes is > 0 ? (int)Math.Min(100, BytesReceived * 100 / TotalBytes.Value) : null;
-}

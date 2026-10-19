@@ -20,8 +20,8 @@ namespace FeBuddy.Wpf.Controls;
 /// Values come back sorted and de-duplicated, which also makes a saved config diff cleanly.
 /// </para>
 /// <para>
-/// The range defaults to what <see cref="CrcPropertyValidator"/> accepts, so the picker
-/// cannot offer a number the validator would reject.
+/// The range is what <see cref="CrcPropertyValidator"/> accepts, so the picker cannot offer a
+/// number the validator would reject.
 /// </para>
 /// </remarks>
 public partial class FilterPicker : UserControl, INotifyPropertyChanged
@@ -35,16 +35,6 @@ public partial class FilterPicker : UserControl, INotifyPropertyChanged
 			string.Empty,
 			FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
 			OnValueChanged));
-
-	/// <summary>The lowest selectable value.</summary>
-	public static readonly DependencyProperty MinimumProperty = DependencyProperty.Register(
-		nameof(Minimum), typeof(int), typeof(FilterPicker),
-		new PropertyMetadata(CrcPropertyValidator.MinFilter, OnRangeChanged));
-
-	/// <summary>The highest selectable value.</summary>
-	public static readonly DependencyProperty MaximumProperty = DependencyProperty.Register(
-		nameof(Maximum), typeof(int), typeof(FilterPicker),
-		new PropertyMetadata(CrcPropertyValidator.MaxFilter, OnRangeChanged));
 
 	/// <summary>Creates the control.</summary>
 	public FilterPicker()
@@ -63,20 +53,6 @@ public partial class FilterPicker : UserControl, INotifyPropertyChanged
 		set => SetValue(ValueProperty, value);
 	}
 
-	/// <summary>The lowest selectable value.</summary>
-	public int Minimum
-	{
-		get => (int)GetValue(MinimumProperty);
-		set => SetValue(MinimumProperty, value);
-	}
-
-	/// <summary>The highest selectable value.</summary>
-	public int Maximum
-	{
-		get => (int)GetValue(MaximumProperty);
-		set => SetValue(MaximumProperty, value);
-	}
-
 	/// <summary>The toggles shown in the popup.</summary>
 	public ObservableCollection<FilterOption> Options { get; } = [];
 
@@ -84,7 +60,7 @@ public partial class FilterPicker : UserControl, INotifyPropertyChanged
 	public string DisplayText => string.IsNullOrWhiteSpace(Value) ? "none selected" : Value;
 
 	/// <summary>The popup's heading line.</summary>
-	public string Prompt => $"Pick every filter this applies to ({Minimum}-{Maximum}). At least one is required.";
+	public string Prompt => $"Pick every filter this applies to ({CrcPropertyValidator.MinFilter}-{CrcPropertyValidator.MaxFilter}). At least one is required.";
 
 	/// <summary>The tool-tip on the closed field.</summary>
 	public string SelectionSummary => string.IsNullOrWhiteSpace(Value)
@@ -94,14 +70,11 @@ public partial class FilterPicker : UserControl, INotifyPropertyChanged
 	private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
 		((FilterPicker)d).SyncOptionsFromValue();
 
-	private static void OnRangeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
-		((FilterPicker)d).BuildOptions();
-
 	private void BuildOptions()
 	{
 		Options.Clear();
 
-		for (int number = Minimum; number <= Maximum; number++)
+		for (int number = CrcPropertyValidator.MinFilter; number <= CrcPropertyValidator.MaxFilter; number++)
 		{
 			Options.Add(new FilterOption(number, OnOptionChanged));
 		}
@@ -165,7 +138,7 @@ public partial class FilterPicker : UserControl, INotifyPropertyChanged
 	/// </summary>
 	/// <param name="value">The raw value.</param>
 	/// <returns>The selected numbers.</returns>
-	private HashSet<int> Parse(string? value)
+	private static HashSet<int> Parse(string? value)
 	{
 		HashSet<int> selected = [];
 
@@ -177,8 +150,8 @@ public partial class FilterPicker : UserControl, INotifyPropertyChanged
 		foreach (string part in value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
 		{
 			if (int.TryParse(part, NumberStyles.Integer, CultureInfo.InvariantCulture, out int number)
-				&& number >= Minimum
-				&& number <= Maximum)
+				&& number >= CrcPropertyValidator.MinFilter
+				&& number <= CrcPropertyValidator.MaxFilter)
 			{
 				selected.Add(number);
 			}
@@ -195,7 +168,6 @@ public partial class FilterPicker : UserControl, INotifyPropertyChanged
 	{
 		Raise(nameof(DisplayText));
 		Raise(nameof(SelectionSummary));
-		Raise(nameof(Prompt));
 	}
 
 	private void Raise([CallerMemberName] string? propertyName = null) =>

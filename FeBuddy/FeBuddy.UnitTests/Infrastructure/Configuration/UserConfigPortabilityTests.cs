@@ -29,7 +29,7 @@ public sealed class UserConfigPortabilityTests
 	[InlineData(UserConfigKeys.WelcomeShown, ConfigKeyScope.Local)]
 	[InlineData(UserConfigKeys.RememberWindowPlacement, ConfigKeyScope.Local)]
 	[InlineData(UserConfigKeys.MainWindowPlacement, ConfigKeyScope.Local)]
-	[InlineData("Services.AiracService.AiracCycleId", ConfigKeyScope.Shared)]
+	[InlineData("Services.AiracService.General.AiracCycleId", ConfigKeyScope.Shared)]
 	[InlineData(UserConfigKeys.MapOutputGeojson, ConfigKeyScope.Shared)]
 	[InlineData("Services.MapService.AiracLayers", ConfigKeyScope.Shared)]
 	[InlineData("Services.MapService.BaseMapLayers", ConfigKeyScope.Shared)]

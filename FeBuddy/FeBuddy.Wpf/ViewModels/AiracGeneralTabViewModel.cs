@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
@@ -19,8 +20,9 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 /// <remarks>
 /// <para>
-/// It is a settings tab like any other - it owns the <c>Services.AiracService</c> subtree, is dirty
-/// until saved, and has the same one-step undo. Ticking a sub-service brings its tab back from grey
+/// It is a settings tab like any other - it owns the <c>Services.AiracService.General</c> subtree, is
+/// dirty until saved, and has the same one-step undo. Its node sits beside the other tabs' nodes, not
+/// above them, so its save and undo can't reach their settings. Ticking a sub-service brings its tab back from grey
 /// straight away (the user asked for it, so they should see it), but like every other setting on
 /// this tab it is only kept once saved.
 /// </para>
@@ -33,11 +35,13 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 {
-	private const string Node = "Services.AiracService";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.General}";
 	private const string SelectedSubServicesKey = "SelectedSubServices";
 	private const string OutputsNode = "Outputs";
+	private const string CyclePositionKey = "CyclePosition";
 
 	private bool _loading;
+	private bool _cycleFromSave;
 	private bool _isReady;
 	private string _waitingMessage = string.Empty;
 	private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
@@ -48,15 +52,14 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	{
 		CycleOptions =
 		[
-			new(AiracCyclePosition.Previous, p => SelectedCyclePosition = p),
-			new(AiracCyclePosition.Current, p => SelectedCyclePosition = p),
-			new(AiracCyclePosition.Next, p => SelectedCyclePosition = p),
+			new(AiracCyclePosition.Previous, p => SelectedCyclePosition = p, OnCyclePicked),
+			new(AiracCyclePosition.Current, p => SelectedCyclePosition = p, OnCyclePicked),
+			new(AiracCyclePosition.Next, p => SelectedCyclePosition = p, OnCyclePicked),
 		];
 
 		SubServices = new ObservableCollection<SubServiceRow>(
 			AiracSubServices.All
 				.Where(d => d.Outputs != SubServiceOutputKinds.None)
-				.OrderBy(d => d.Order)
 				.Select(d => new SubServiceRow(d, OnSubServicesChanged)));
 
 		LoadFromConfig();
@@ -71,6 +74,12 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 	/// <summary>Raised when the user picks a different cycle, so the host can load that cycle's parsed data.</summary>
 	public event EventHandler? CycleChanged;
+
+	/// <summary>
+	/// Raised when the user picks the cycle that is already selected and failed, so the host can try
+	/// it again: a radio button already checked changes nothing, so <see cref="CycleChanged"/> doesn't fire.
+	/// </summary>
+	public event EventHandler? CycleRetryRequested;
 
 	/// <inheritdoc />
 	public override string NodePath => Node;
@@ -96,11 +105,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	public SubServiceRow? RowFor(string key) =>
 		SubServices.FirstOrDefault(row => string.Equals(row.Key, key, StringComparison.OrdinalIgnoreCase));
 
-	/// <summary>Whether a sub-service is in the table and included.</summary>
-	/// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
-	/// <returns><see langword="true"/> when it takes part in the run.</returns>
-	public bool IsIncluded(string key) => RowFor(key) is { IsIncluded: true };
-
 	/// <summary>Which cycle (relative to today) the run uses.</summary>
 	public AiracCyclePosition SelectedCyclePosition
 	{
@@ -124,6 +128,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 				return;
 			}
 
+			_cycleFromSave = false;
 			MarkDirty();
 			CycleChanged?.Invoke(this, EventArgs.Empty);
 		}
@@ -143,13 +148,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	public bool IsReady
 	{
 		get => _isReady;
-		private set
-		{
-			if (SetProperty(ref _isReady, value))
-			{
-				Revalidate();
-			}
-		}
+		private set => SetProperty(ref _isReady, value);
 	}
 
 	/// <summary>Shown while <see cref="IsReady"/> is <see langword="false"/>.</summary>
@@ -170,7 +169,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	}
 
 	/// <summary>Re-reads each cycle row's label and cache state.</summary>
-	public void RefreshCycleOptions()
+	private void RefreshCycleOptions()
 	{
 		foreach (CycleOption option in CycleOptions)
 		{
@@ -178,6 +177,47 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		}
 
 		OnPropertyChanged(nameof(SelectedCycleLabel));
+		OpenOnCurrentWhileSavedNextIsUnpublished();
+	}
+
+	/// <summary>
+	/// A saved Next cycle the FAA hasn't published yet opens on Current instead, and says why. The saved
+	/// choice stays as it is, so the tab doesn't read as unsaved. A Next picked this session is left alone.
+	/// </summary>
+	private void OpenOnCurrentWhileSavedNextIsUnpublished()
+	{
+		if (!_cycleFromSave
+			|| _selectedCyclePosition != AiracCyclePosition.Next
+			|| CycleOptions.Single(option => option.Position == AiracCyclePosition.Next).Status != CycleStatus.NotYetPublished)
+		{
+			return;
+		}
+
+		bool wasClean = !IsDirty;
+		string next = AppEnvironment.GetAiracCycle(AiracCyclePosition.Next).AiracCycleId;
+
+		SelectedCyclePosition = AiracCyclePosition.Current;
+
+		if (wasClean)
+		{
+			ClearDirty();
+		}
+
+		Toast.Info("Opened on the current AIRAC cycle",
+			$"You last used the next cycle, {next}, but the FAA hasn't published it yet.");
+	}
+
+	/// <summary>
+	/// A click on a cycle row, whether or not it changed the selection: picking the selected cycle again
+	/// while it has failed asks the host to try it again.
+	/// </summary>
+	private void OnCyclePicked(AiracCyclePosition position)
+	{
+		if (position == _selectedCyclePosition
+			&& AiracCycleDataCache.Instance.GetEntry(AppEnvironment.GetAiracCycle(position).AiracCycleId)?.State == CycleDataState.Failed)
+		{
+			CycleRetryRequested?.Invoke(this, EventArgs.Empty);
+		}
 	}
 
 	/// <inheritdoc />
@@ -205,6 +245,11 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		try
 		{
 			SelectedCyclePosition = ResolveSavedCyclePosition();
+			_cycleFromSave = true;
+
+			// A reload (Discard, Undo, an import, a profile switch) opens an unpublished saved Next on
+			// Current too, as launch does; while loading, that raises no CycleChanged and no unsaved mark.
+			OpenOnCurrentWhileSavedNextIsUnpublished();
 
 			// Nothing saved yet: everything is in.
 			string? savedSelection = Get(SelectedSubServicesKey);
@@ -214,8 +259,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			{
 				row.Load(included?.Contains(row.Key) ?? true, ReadOutputs(row));
 			}
-
-			OnPropertyChanged(nameof(IncludedSubServices));
 		}
 		finally
 		{
@@ -245,7 +288,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		Set("AiracCycleId", AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId);
+		Set(CyclePositionKey, SelectedCyclePosition.ToString());
 		Set(SelectedSubServicesKey, string.Join(',', IncludedSubServices.Select(s => s.Key)));
 
 		foreach (SubServiceRow row in SubServices)
@@ -265,7 +308,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		}
 
 		MarkDirty();
-		OnPropertyChanged(nameof(IncludedSubServices));
 		SubServicesChanged?.Invoke(this, EventArgs.Empty);
 	}
 
@@ -318,32 +360,15 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	}
 
 	/// <summary>
-	/// Maps the saved cycle id back onto previous / current / next. The id is saved rather than the
-	/// position because a position means something different every 28 days; if the saved id is no
-	/// longer one of the three, the user gets the current cycle.
+	/// The cycle to open on: the position last saved, so the tab reopens on the same kind of cycle
+	/// whichever cycles those are now. A saved Next opens on Next; anything else opens on Current - a
+	/// saved Previous too, so last cycle's data is never reopened without the user picking it.
 	/// </summary>
 	/// <returns>The cycle position to select.</returns>
-	private static AiracCyclePosition ResolveSavedCyclePosition()
-	{
-		string? savedId = Normalize(UserConfigFile.GetValue($"{Node}.AiracCycleId"));
-
-		if (savedId is null)
-		{
-			return AiracCyclePosition.Current;
-		}
-
-		foreach (AiracCyclePosition position in new[] { AiracCyclePosition.Previous, AiracCyclePosition.Current, AiracCyclePosition.Next })
-		{
-			if (string.Equals(AppEnvironment.GetAiracCycle(position).AiracCycleId, savedId, StringComparison.OrdinalIgnoreCase))
-			{
-				return position;
-			}
-		}
-
-		return AiracCyclePosition.Current;
-	}
-
-	private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+	private AiracCyclePosition ResolveSavedCyclePosition() =>
+		string.Equals(Get(CyclePositionKey)?.Trim(), nameof(AiracCyclePosition.Next), StringComparison.OrdinalIgnoreCase)
+			? AiracCyclePosition.Next
+			: AiracCyclePosition.Current;
 
 	/// <summary>What a cycle row's state means, for its colour.</summary>
 	public enum CycleStatus
@@ -367,7 +392,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <summary>One cycle row in the cycle menu, with its live cache state.</summary>
 	/// <param name="position">Which cycle relative to today this row is.</param>
 	/// <param name="onSelected">Called when the user picks this row.</param>
-	public sealed class CycleOption(AiracCyclePosition position, Action<AiracCyclePosition> onSelected) : ObservableObject
+	/// <param name="onPicked">Called on every click on this row, even one that leaves the selection as it was.</param>
+	public sealed class CycleOption(AiracCyclePosition position, Action<AiracCyclePosition> onSelected, Action<AiracCyclePosition> onPicked)
+		: ObservableObject
 	{
 		private string _label = position.ToString();
 		private string _state = string.Empty;
@@ -391,6 +418,12 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 				}
 			}
 		}
+
+		/// <summary>
+		/// Bound to the cycle radio button's command, which runs on every click: a click on the row that is
+		/// already selected changes nothing in <see cref="IsSelected"/>, but can still ask for a retry.
+		/// </summary>
+		public ICommand PickCommand { get; } = new RelayCommand(() => onPicked(position));
 
 		/// <summary>Called by the parent when the selection changes elsewhere.</summary>
 		/// <param name="selected">The newly selected position.</param>

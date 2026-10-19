@@ -21,6 +21,118 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ---
 
+## 3.0.0-beta.13
+### Updates
+- Bug #379 - FE-Buddy left open while another Windows account updates it now notices and offers a
+  restart, warning about unfinished work. Runs and file conversions wait until it restarts.
+- #374 (W3-14) - A failed update check says "Could not check for updates" instead of calling you
+  offline.
+
+### Dashboard
+- #374 (W3-3, W3-16) - The activity log keeps up with busy runs and shows the newest 2,000 entries
+  (the log file keeps them all). An entry logged while it opens no longer goes missing.
+
+### AIRAC Service
+- #374 (W2-1) - The General tab's **Save** and **Undo last save** no longer change other tabs'
+  settings.
+- #374 (D2-46) - The General tab remembers Current or Next, not a cycle number, so it opens on the
+  cycle in effect. A saved Next that isn't published yet opens on Current, with a note.
+- #374 (W1-14, W2-10) - Switching cycles keeps your unsaved ticks in the lists built from the cycle.
+- #374 (C1-1, W2-9, W2-8) - A cycle that won't load says why instead of "Loading" forever, and
+  picking it again tries again. A current cycle that can't be loaded says to check your connection
+  and your PC's clock. **Run** waits until the picked cycle's lists are in.
+- #374 (W2-11, C1-2, C1-3) - A problem before a run starts says so instead of closing FE-Buddy. A
+  stopped run no longer leaves a cycle unusable, and Procedure Charts' previous-cycle data can't
+  fail a run.
+- #374 (C3-18) - An empty `Combined_Alias.txt` is no longer written.
+- #374 (W2-12) - Duplicate alias review: with no line kept, each command keeps its last line, the
+  one CRC runs.
+- #374 (W2-5, W2-37) - The Review tab names each alias file as written (File Names renames
+  included), leaves out alias files a run stopped at the duplicate review deleted, and mentions the
+  ROI only when the tab uses one.
+- #374 (W2-22) - File Names: a new name can't clash with any other file in the same folder, renamed
+  or not.
+- #374 (W4-8, W5-3, W5-2) - CRC ERAM Defaults: a value the run would refuse (a bcg of 50, a style
+  of Dotted) is marked on the card instead of failing the run, errors show on hover on the
+  drop-downs, and the note says the values are saved in your settings profile.
+- #374 (W1-13) - Procedure Charts: unticking every `Procedures.json` field gives none of them, not
+  the 8 defaults.
+- #374 (W1-15) - Procedure Charts no longer keeps the previous cycle's chart lookups after a cycle
+  switch.
+- #374 (C2-3) - Airways: an airway shorter than the waypoint buffer stays in `Airways.txt`.
+- #374 (C3-16) - NAVAIDs: the "nothing written" message is right when NASR has no NAVAIDs.
+- #374 (W1-7, C3-1) - Telephony: the "real operator" note leaves out expired U.S. special call
+  signs, as the run does. A virtual airline list saved by beta.4 or earlier is no longer read.
+- #374 (W1-8) - Add Custom Aliases: a run refuses a GitHub page that isn't a file, and a credential
+  for a plain `http` address, as the tab does.
+- #374 - Fewer pauses: switching cycles or tabs, Procedure Charts, Telephony, Add Custom Aliases and
+  the Review tab do their work in the background, and each tab's page is kept once built.
+
+### File Conversions
+- #374 (C5-1) - DAT and SCT: two sources with the same name no longer overwrite each other. The
+  second is written as `ZOB (2)` (SCT: its folder), with a note.
+- #374 (W4-7) - A source folder that can't be read says why, instead of "does not exist".
+- #374 (C5-8) - ERAM to GeoJSON: the card-mode warning says each element carries filter 0.
+- #374 (U1-6) - Source files are counted in the background, so typing a folder doesn't pause.
+
+### Map
+- #374 (U1-9) - Panning is smooth: the drawing moves instead of being redrawn, and the grid labels
+  stay on the edges.
+- #374 (W6-3) - Towered Airports no longer includes an airport whose only tower code is `TRACON`.
+- #374 (N1-23) - GeoJSON files must be UTF-8, as the GeoJSON standard says. Any other file is
+  refused with "save it as UTF-8".
+- #374 (W7-1, W3-1, W7-22) - The base map loads in the background, clicks no longer write the
+  settings file each time, and the menus' shadows no longer fall on the toolbar.
+
+### Info
+- #374 (W6-6, W3-4) - The **Alias Command Guide** and **News** open without rebuilding each time.
+
+### Settings
+- #374 (W2-1, W3-10) - **After this update, set your Facility, coordinate precision and default ROI
+  again**, and check the AIRAC Service's General tab, which starts on its defaults. They're now
+  saved in their own place.
+- #374 (C6-2) - Settings from 3.0.0-beta.3 or earlier aren't carried over. To bring them in, use
+  **Import…** on `%APPDATA%\FE-Buddy\UserConfig.json`, before any **Reset FE-Buddy…**, which deletes
+  that file.
+- #374 (C4-12, W1-18) - Settings from beta.4 or beta.5 still load, but a Procedure Charts tab that
+  used the ROI's airports with no facilities opens on None: choose ROI again. Procedure picks saved
+  as full names by beta.8 or earlier show as missing: remove them and add them again.
+- #374 (N1-4, W7-3) - A save can no longer wipe your settings file while it's briefly locked, and a
+  file that can't be written shows an error instead of closing FE-Buddy.
+- #374 (W3-15, W7-2, W3-13) - **Reset FE-Buddy…** no longer says backups are always deleted, shows
+  FE-Buddy's mark while a reset runs, and won't copy your profiles into FE-Buddy's own folder.
+- #374 (C5-23) - An ROI corner of `NaN` or `Infinity` is refused.
+- #374 - Fewer pauses: importing, switching profiles, the Facility list and the file pickers work
+  in the background.
+
+### Installing and uninstalling
+- Bug #375 - The installer's shortcuts use the MSI's icon instead of the exe's, so Windows can't
+  show a cached 2.x icon.
+- #374 (C1-5) - Setup reopens FE-Buddy as the signed-in user, never as the administrator who
+  approved the install.
+- Bug #378 - Declining Windows' admin prompt shows "Setup didn't run", not "up to date".
+- #374 (O1-30) - If the setup window can't open, Windows Installer's own window takes over instead
+  of the install being cancelled.
+
+### Look and feel
+- FE-Buddy starts faster, and each page opens without a pause the first time: FE-Buddy is now
+  precompiled.
+
+### Dev notes
+- #374 - Sessions S1 to S6, S11 and S14 of the
+  [3.0 pre-release code review](https://github.com/Nikolai558/FE-BUDDY/blob/3.0.0-beta.13/docs/Developers/Projects/GH_Issue-374/000_ReadMe.md):
+  bug fixes, work moved off the UI thread, GUI rules moved into Core, old-version and unused code
+  removed, naming and file moves, and the developer docs and house rules.
+- `build.ps1` publishes with ReadyToRun.
+- #374 (O1-1) - CI runs Build, Test and Installer on every pull request, docs-only ones too.
+- #374 (W7-27) - Only `--dev` starts a dev launch; `--devmode` is gone.
+- #374 (W7-4) - The crash report also catches exceptions off the UI thread.
+- #374 (O1-23, O1-42, O1-2, T1c-26, T2-8, T2-9) - The installer counter is written without a BOM,
+  `DEV-CleanBuild.bat` clears every `bin` and `obj`, Any CPU builds the tests, and three tests no
+  longer depend on the clock, the culture or build output.
+
+---
+
 ## 3.0.0-beta.12
 ### AIRAC Service
 - Procedure Charts: a renamed chart recall help command must be letters and numbers only.

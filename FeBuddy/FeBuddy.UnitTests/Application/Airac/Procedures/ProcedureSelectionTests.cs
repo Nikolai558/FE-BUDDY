@@ -6,6 +6,7 @@ using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Procedures.Fixtures;
+using FeBuddy.Core.Domain.Geo.Models;
 
 namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 
@@ -562,5 +563,24 @@ public sealed class ProcedureSelectionTests
 
 		Assert.Single(result);
 		Assert.Empty(messages);
+	}
+
+	/// <summary>The area's rule for taking an airport whole, which the tab says "already included" by.</summary>
+	[Theory]
+	[InlineData(SubServiceArea.Everything, null, null, null, true)]
+	[InlineData(SubServiceArea.None, "ZOB", 41.4, -81.8, false)]
+	[InlineData(SubServiceArea.Artccs, " zob ", null, null, true)]
+	[InlineData(SubServiceArea.Artccs, "ZNY", 41.4, -81.8, false)]
+	[InlineData(SubServiceArea.Artccs, null, null, null, false)]
+	[InlineData(SubServiceArea.Roi, null, 41.4, -81.8, true)]
+	[InlineData(SubServiceArea.Roi, "ZOB", 30.0, -81.8, false)]
+	[InlineData(SubServiceArea.Roi, "ZOB", null, -81.8, false)]
+	public void the_area_takes_an_airport_whole_by_its_artcc_or_place(SubServiceArea area, string? artcc, double? lat, double? lon, bool included)
+	{
+		HashSet<string> facilities = new(["ZOB"], StringComparer.OrdinalIgnoreCase);
+		RegionOfInterest roi = new(40, -83, 42, -80);
+
+		Assert.Equal(included, ProcedureSelection.AreaIncludes(area, facilities, roi, artcc, lat, lon));
+		Assert.False(ProcedureSelection.AreaIncludes(SubServiceArea.Roi, facilities, null, artcc, 41.4, -81.8));
 	}
 }

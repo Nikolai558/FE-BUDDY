@@ -1,7 +1,6 @@
 using System.Text;
 
 using FeBuddy.Core.Application.Airac.Navaids.Models;
-using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Navaids;
 using FeBuddy.Core.Domain.Navaids.Models;
 
@@ -48,17 +47,15 @@ public static class NavaidAliasWriter
 	/// </summary>
 	/// <param name="navaids">Every built NAVAID, whatever its type or place.</param>
 	/// <param name="settings">The parsed NAVAIDs settings.</param>
-	/// <returns>The path written (or <see langword="null"/> when there was nothing to write), the command count, and any messages.</returns>
+	/// <returns>The path written (or <see langword="null"/> when there was nothing to write) and the command count.</returns>
 	public static NavaidAliasGenerateResult Generate(IReadOnlyList<Navaid> navaids, NavaidSettings settings)
 	{
 		ArgumentNullException.ThrowIfNull(navaids);
 		ArgumentNullException.ThrowIfNull(settings);
 
-		List<ServiceMessage> messages = [];
-
 		if (navaids.Count == 0)
 		{
-			return new NavaidAliasGenerateResult(null, 0, messages);
+			return new NavaidAliasGenerateResult(null, 0);
 		}
 
 		Dictionary<string, List<string>> blocksByCommand = new(StringComparer.OrdinalIgnoreCase);
@@ -101,7 +98,7 @@ public static class NavaidAliasWriter
 		// UTF-8 without a BOM, like every other alias writer.
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-		return new NavaidAliasGenerateResult(path, commandOrder.Count, messages);
+		return new NavaidAliasGenerateResult(path, commandOrder.Count);
 	}
 
 	/// <summary>Appends a block to a command's list, recording the command's first-seen order.</summary>

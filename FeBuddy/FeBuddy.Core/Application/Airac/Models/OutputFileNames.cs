@@ -29,9 +29,11 @@ public sealed class OutputFileNames
 	// The extensions a key can end in. Every other key is a GeoJSON file's.
 	private static readonly string[] KeyExtensions = [".txt", ".md", ".json"];
 
-	// Every extension an output file has, .geojson before .json so a name ending in .geojson is
-	// reported as that.
-	private static readonly string[] OutputExtensions = [GeojsonExtension, .. KeyExtensions];
+	/// <summary>
+	/// Every extension an AIRAC Service output file has: <c>.geojson</c>, then <c>.txt</c>, <c>.md</c> and
+	/// <c>.json</c> - <c>.geojson</c> before <c>.json</c>, so a name ending in it is taken as that.
+	/// </summary>
+	public static IReadOnlyList<string> OutputExtensions { get; } = [GeojsonExtension, .. KeyExtensions];
 
 	private static readonly char[] InvalidNameChars = ['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
 
@@ -64,20 +66,15 @@ public sealed class OutputFileNames
 			_newNames[key] = name.Trim();
 		}
 
-		// Two files given one name would be written over each other.
-		if (_newNames.Keys.GroupBy(FileName, StringComparer.OrdinalIgnoreCase).FirstOrDefault(names => names.Count() > 1) is { } clash)
+		// Two files in one folder given one name would be written over each other.
+		if (Clashes(_newNames, []).FirstOrDefault() is { Key: { } clashing } clash)
 		{
-			throw new ArgumentException(
-				$"{string.Join(" and ", clash.Select(DefaultFileName))} would both be named {clash.Key}. Give each file its own name.",
-				nameof(newNames));
+			throw new ArgumentException($"The new name for {DefaultFileName(clashing)}, '{_newNames[clashing]}', can't be used. {clash.Value}", nameof(newNames));
 		}
 	}
 
 	/// <summary>Every file keeps FE-Buddy's name.</summary>
 	public static OutputFileNames None { get; } = new(new Dictionary<string, string>());
-
-	/// <summary>Each renamed file's key and its new name, without an extension.</summary>
-	public IReadOnlyDictionary<string, string> NewNames => _newNames;
 
 	/// <summary>The name a file is written under: its new name and its own extension, or FE-Buddy's name for it.</summary>
 	/// <param name="fileKey">The file's key, e.g. <c>Airways_High_Lines</c> or <c>Airways.txt</c>.</param>
@@ -107,6 +104,68 @@ public sealed class OutputFileNames
 		ArgumentNullException.ThrowIfNull(fileKey);
 
 		return ExtensionOf(fileKey) == GeojsonExtension ? fileKey + GeojsonExtension : fileKey;
+	}
+
+	/// <summary>
+	/// The folder a file is written in, inside the cycle folder: every GeoJSON file in <c>Geojson</c>, the
+	/// alias files in <c>Aliases</c>, the Procedures documents in <c>Publication_Docs</c>, and the duplicate
+	/// alias report in the cycle folder itself. Two files clash only in one folder.
+	/// </summary>
+	/// <param name="fileKey">The file's key.</param>
+	/// <returns>The folder, relative to the cycle folder; empty for the cycle folder.</returns>
+	public static string FolderOf(string fileKey)
+	{
+		ArgumentNullException.ThrowIfNull(fileKey);
+
+		if (fileKey.Equals(AiracOutputPaths.DuplicateAliasReportFileName, StringComparison.OrdinalIgnoreCase))
+		{
+			return string.Empty;
+		}
+
+		return ExtensionOf(fileKey) switch
+		{
+			GeojsonExtension => AiracOutputPaths.GeojsonFolder,
+			".txt" => AiracOutputPaths.AliasFolder,
+			_ => AiracOutputPaths.PublicationDocsFolder,
+		};
+	}
+
+	/// <summary>
+	/// The new names that would write one file over another, each with why: a name another renamed file in the
+	/// same folder is given too, or the name of a file there that keeps FE-Buddy's. The File Names tab shows
+	/// these as the names are typed, and a run refuses them.
+	/// </summary>
+	/// <param name="newNames">Each renamed file's key and its new name, without an extension.</param>
+	/// <param name="otherKeys">Every other file written beside them, which keeps FE-Buddy's name unless it is renamed too.</param>
+	/// <returns>Why each clashing file's new name can't be used, by its key; empty when none clash.</returns>
+	public static IReadOnlyDictionary<string, string> Clashes(IReadOnlyDictionary<string, string> newNames, IEnumerable<string> otherKeys)
+	{
+		ArgumentNullException.ThrowIfNull(newNames);
+		ArgumentNullException.ThrowIfNull(otherKeys);
+
+		Dictionary<string, string> written = newNames.ToDictionary(
+			entry => entry.Key, entry => entry.Value.Trim() + ExtensionOf(entry.Key), StringComparer.OrdinalIgnoreCase);
+		string[] kept = [.. otherKeys.Where(key => !written.ContainsKey(key)).Distinct(StringComparer.OrdinalIgnoreCase)];
+		Dictionary<string, string> problems = new(StringComparer.OrdinalIgnoreCase);
+
+		foreach ((string key, string name) in written)
+		{
+			string folder = FolderOf(key);
+
+			if (written.FirstOrDefault(other => !other.Key.Equals(key, StringComparison.OrdinalIgnoreCase)
+				&& FolderOf(other.Key).Equals(folder, StringComparison.OrdinalIgnoreCase)
+				&& other.Value.Equals(name, StringComparison.OrdinalIgnoreCase)) is { Key: { } renamed } other)
+			{
+				problems[key] = $"{DefaultFileName(renamed)} is being renamed {other.Value} too. Give each file its own name.";
+			}
+			else if (kept.FirstOrDefault(other => FolderOf(other).Equals(folder, StringComparison.OrdinalIgnoreCase)
+				&& DefaultFileName(other).Equals(name, StringComparison.OrdinalIgnoreCase)) is { } keeping)
+			{
+				problems[key] = $"{DefaultFileName(keeping)} is already the name of another file. Give this file a name of its own.";
+			}
+		}
+
+		return problems;
 	}
 
 	/// <summary>

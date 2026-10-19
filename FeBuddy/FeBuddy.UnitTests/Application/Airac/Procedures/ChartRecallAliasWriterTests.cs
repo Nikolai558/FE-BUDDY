@@ -30,8 +30,8 @@ public sealed class ChartRecallAliasWriterTests : IDisposable
 
 	private static readonly ChartRecallAliasLine[] TwoLines =
 	[
-		new("DTW", "IAP", ".dtwI22Lc", "https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF", "DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L"),
-		new("DTW", "IAP", ".dtwL22Lc", "https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF", "DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L"),
+		new(".dtwI22Lc", "https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF", "DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L"),
+		new(".dtwL22Lc", "https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF", "DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L"),
 	];
 
 	[Fact]

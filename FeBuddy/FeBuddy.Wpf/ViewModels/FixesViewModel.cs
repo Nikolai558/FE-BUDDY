@@ -6,13 +6,14 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Fixes;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Fixes;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 using DomainFixUses = FeBuddy.Core.Domain.Fixes.FixUses;
 
@@ -33,7 +34,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Fixes";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Fixes}";
 
 	private FixOutputBy _outputBy = FixOutputBy.All;
 	private HashSet<string> _savedExcludedFixUses = new(StringComparer.OrdinalIgnoreCase);
@@ -234,27 +235,27 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	/// <remarks>
 	/// Builds the fix use and chart toggle lists (and their combination-editor options) from the
 	/// cycle's <c>FIX_BASE</c>, then adds a CRC defaults row for each chart (and any fix use the
-	/// cycle has that FE-Buddy does not already know about).
+	/// cycle has that FE-Buddy does not already know about). An entry already listed keeps what is
+	/// ticked on screen; a new one starts as saved.
 	/// </remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
+		ArgumentNullException.ThrowIfNull(lists);
+
 		_savedExcludedFixUses = ParseList(Get("ExcludedFixUses"));
 		_savedExcludedCharts = ParseList(Get("ExcludedCharts"));
-
-		string[] fixUseNames = [.. data.RequireFix().FixBase
-			.Select(f => DomainFixUses.Name(f.FixUseCode))
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.OrderBy(KnownFixUseOrder)
-			.ThenBy(name => name, StringComparer.OrdinalIgnoreCase)];
+		Dictionary<string, bool> fixUsesShown = FixUses.ToDictionary(t => t.Token, t => t.IsSelected, StringComparer.OrdinalIgnoreCase);
+		Dictionary<string, bool> chartsShown = Charts.ToDictionary(t => t.Token, t => t.IsSelected, StringComparer.OrdinalIgnoreCase);
 
 		_suppressFixUseChanges = true;
 		try
 		{
 			FixUses.Clear();
-			foreach (string name in fixUseNames)
+			foreach (string name in lists.FixUseNames)
 			{
 				string token = DomainFixUses.Token(name);
-				FixUses.Add(new FixGroupToggle(token, name, !_savedExcludedFixUses.Contains(token), OnFixUseToggled));
+				bool selected = fixUsesShown.TryGetValue(token, out bool onScreen) ? onScreen : !_savedExcludedFixUses.Contains(token);
+				FixUses.Add(new FixGroupToggle(token, name, selected, OnFixUseToggled));
 			}
 		}
 		finally
@@ -262,39 +263,20 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 			_suppressFixUseChanges = false;
 		}
 
-		Dictionary<string, string> chartNameByToken = new(StringComparer.OrdinalIgnoreCase);
-		bool hasNoChartFix = false;
-
-		foreach (var row in data.RequireFix().FixBase)
-		{
-			IReadOnlyList<string> charts = FixCharts.Parse(row.Charts);
-
-			if (charts.Count == 0)
-			{
-				hasNoChartFix = true;
-				continue;
-			}
-
-			foreach (string chart in charts)
-			{
-				chartNameByToken.TryAdd(FixCharts.Token(chart), chart);
-			}
-		}
-
-		string[] chartTokens = [.. chartNameByToken.Keys.OrderBy(token => chartNameByToken[token], StringComparer.OrdinalIgnoreCase)];
-
 		_suppressChartChanges = true;
 		try
 		{
 			Charts.Clear();
-			foreach (string token in chartTokens)
+			foreach ((string token, string name) in lists.FixCharts)
 			{
-				Charts.Add(new FixGroupToggle(token, chartNameByToken[token], !_savedExcludedCharts.Contains(token), OnChartToggled));
+				bool selected = chartsShown.TryGetValue(token, out bool onScreen) ? onScreen : !_savedExcludedCharts.Contains(token);
+				Charts.Add(new FixGroupToggle(token, name, selected, OnChartToggled));
 			}
 
-			if (hasNoChartFix)
+			if (lists.HasFixOnNoChart)
 			{
-				Charts.Add(new FixGroupToggle(FixCharts.NoChart, "No chart", !_savedExcludedCharts.Contains(FixCharts.NoChart), OnChartToggled));
+				bool selected = chartsShown.TryGetValue(FixCharts.NoChart, out bool onScreen) ? onScreen : !_savedExcludedCharts.Contains(FixCharts.NoChart);
+				Charts.Add(new FixGroupToggle(FixCharts.NoChart, "No chart", selected, OnChartToggled));
 			}
 		}
 		finally
@@ -311,17 +293,17 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		List<EramClassDefault> newRows = [];
 
-		foreach (string token in chartTokens)
+		foreach ((string token, _) in lists.FixCharts)
 		{
 			newRows.AddRange(RowsFor(token));
 		}
 
-		if (hasNoChartFix)
+		if (lists.HasFixOnNoChart)
 		{
 			newRows.AddRange(RowsFor(FixCharts.NoChart));
 		}
 
-		foreach (string name in fixUseNames.Where(name => !DomainFixUses.IsKnown(name)))
+		foreach (string name in lists.FixUseNames.Where(name => !DomainFixUses.IsKnown(name)))
 		{
 			newRows.AddRange(RowsFor(DomainFixUses.Token(name)));
 		}
@@ -605,20 +587,6 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	{
 		yield return new EramClassDefault(className, EramFieldKind.Symbol, MarkDirty);
 		yield return new EramClassDefault(className, EramFieldKind.Text, MarkDirty);
-	}
-
-	/// <summary>A fix use name's position in <see cref="DomainFixUses.All"/>, or last (alphabetically) when it is not one FE-Buddy recognizes.</summary>
-	private static int KnownFixUseOrder(string name)
-	{
-		for (int i = 0; i < DomainFixUses.All.Count; i++)
-		{
-			if (DomainFixUses.All[i].Equals(name, StringComparison.OrdinalIgnoreCase))
-			{
-				return i;
-			}
-		}
-
-		return int.MaxValue;
 	}
 
 	/// <summary>
@@ -921,7 +889,9 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 		}
 	}
 
-	private static string CombinationFileNames(string group) => $"Fix_{group}_Symbols / _Text";
+	/// <summary>A combination's two files as its row names them, e.g. <c>Fix_ENROUTE-LOW-WYPNT_Symbols / _Text</c>.</summary>
+	private static string CombinationFileNames(string group) =>
+		$"{FixOutputFiles.GroupKey(group, CrcFeatureKind.Symbol)} / _{AiracOutputPaths.FileKindSuffix(CrcFeatureKind.Text)}";
 
 	/// <summary>A chart token's NASR name once the cycle's data is known, otherwise the token itself.</summary>
 	private string ChartLabel(string chartToken) =>
@@ -980,26 +950,10 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		foreach (string entry in entries)
 		{
-			string[] parts = entry.Split('+');
-
-			if (parts.Length != 2)
+			// Read as the run reads it (FixCombination.TryParse); one it would refuse is left out here.
+			if (FixCombination.TryParse(entry, out FixCombination? combination) && seen.Add((combination.Chart, combination.FixUse)))
 			{
-				continue;
-			}
-
-			// Tokenized the way the parser does, so a hand-edited "ENROUTE LOW+wypnt" still names
-			// the same files and CRC class.
-			string chart = FixCharts.Token(parts[0]);
-			string fixUse = DomainFixUses.Token(parts[1]);
-
-			if (chart.Length == 0 || fixUse.Length == 0)
-			{
-				continue;
-			}
-
-			if (seen.Add((chart, fixUse)))
-			{
-				result.Add((chart, fixUse));
+				result.Add((combination.Chart, combination.FixUse));
 			}
 		}
 

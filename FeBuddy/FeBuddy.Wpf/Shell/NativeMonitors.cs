@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
+using FeBuddy.Wpf.Shell.Models;
+
 namespace FeBuddy.Wpf.Shell;
 
 /// <summary>

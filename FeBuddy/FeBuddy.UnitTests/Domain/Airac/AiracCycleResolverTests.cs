@@ -133,13 +133,4 @@ public sealed class AiracCycleResolverTests
 		Assert.Throws<ArgumentOutOfRangeException>(() =>
 			AiracCycleResolver.GetCycle((AiracCyclePosition)99, new DateOnly(2026, 9, 6)));
 	}
-
-	[Fact]
-	public void without_a_date_the_current_utc_date_is_used()
-	{
-		AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current);
-
-		Assert.True(current.EffectiveDateUtc <= DateOnly.FromDateTime(DateTime.UtcNow));
-		Assert.True(AiracCycleResolver.GetCycle(AiracCyclePosition.Next).EffectiveDateUtc > DateOnly.FromDateTime(DateTime.UtcNow));
-	}
 }

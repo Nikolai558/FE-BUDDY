@@ -3,13 +3,20 @@
 <!--
   The install's state under HKLM\Software\FE-BUDDY. The key, every value name and their meaning
   are the same as FE-Buddy 2.x's installer, on purpose: a 3.x MSI reads 2.x's InstallLocation,
-  shortcut choices and ProductSemVer to upgrade it in place, and the app reads InstallLocation,
-  ProductSemVer and ProductCode (FeBuddy.Core InstalledProduct). Do not rename any of them.
+  shortcut choices and ProductSemVer to upgrade it in place, the setup window reads them too
+  (InstalledFeBuddy), and the app reads InstallLocation and ProductCode (FeBuddy.Core
+  InstalledProduct). Do not rename any of them.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>
 
-    <Property Id="INSTALLFOLDER">
+    <!--
+      Secure: the setup window sets these five from the user's choices (SetupChoices), and Windows
+      Installer passes a property set by an unelevated setup window on to the elevated install only
+      when it is secure - otherwise the install would use the defaults. FE-Buddy's update and
+      uninstall start msiexec unelevated, as does a double-click.
+    -->
+    <Property Id="INSTALLFOLDER" Secure="yes">
       <RegistrySearch Id="FindExistingInstallLocation"
                       Root="HKLM"
                       Key="Software\FE-BUDDY"
@@ -18,12 +25,14 @@
     </Property>
 
     <Property Id="CREATE_STARTMENU_SHORTCUT"
-          Value="1" />
+              Value="1"
+              Secure="yes" />
 
     <Property Id="CREATE_DESKTOP_SHORTCUT"
-              Value="1" />
+              Value="1"
+              Secure="yes" />
 
-    <Property Id="SAVED_STARTMENU_SHORTCUT">
+    <Property Id="SAVED_STARTMENU_SHORTCUT" Secure="yes">
       <RegistrySearch Id="FindSavedStartMenuShortcutPreference"
                       Root="HKLM"
                       Key="Software\FE-BUDDY"
@@ -31,7 +40,7 @@
                       Type="raw" />
     </Property>
 
-    <Property Id="SAVED_DESKTOP_SHORTCUT">
+    <Property Id="SAVED_DESKTOP_SHORTCUT" Secure="yes">
       <RegistrySearch Id="FindSavedDesktopShortcutPreference"
                       Root="HKLM"
                       Key="Software\FE-BUDDY"

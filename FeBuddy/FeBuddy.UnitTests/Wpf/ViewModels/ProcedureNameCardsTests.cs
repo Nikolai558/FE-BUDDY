@@ -1,6 +1,9 @@
 using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
 
+using FeBuddy.Core.Application.Airac.Procedures;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -63,8 +66,27 @@ public sealed class ProcedureNameCardsTests : IDisposable
 	private static ProceduresViewModel Tab()
 	{
 		ProceduresViewModel tab = new();
-		tab.SetDtppData("2611", Metafile(), "2610", previousAvailable: true, downloadedLocal: DateTime.Now);
+		tab.SetDtppData("2611", ProcedureNameIndex.Build(Metafile()), "2610", previousAvailable: true, downloadedLocal: DateTime.Now);
 		return tab;
+	}
+
+	/// <summary>
+	/// Another cycle picked: the old cycle's chart data no longer describes it, so it goes until the new
+	/// cycle's arrives - the cards don't offer, or resolve against, last cycle's procedures meanwhile.
+	/// </summary>
+	[Fact]
+	public void picking_another_cycle_drops_the_old_cycles_chart_data()
+	{
+		ProceduresViewModel tab = Tab();
+		tab.SetSelectedCycle(AiracCycleResolver.GetCycle(AiracCyclePosition.Next, new DateOnly(2026, 10, 5)));
+
+		Assert.Equal("2611", tab.DtppCycleId);
+
+		tab.SetSelectedCycle(AiracCycleResolver.GetCycle(AiracCyclePosition.Next, new DateOnly(2026, 11, 2)));
+
+		Assert.Null(tab.DtppCycleId);
+		Assert.Empty(tab.ProcedureNameOptions);
+		Assert.Null(tab.DtppWarning);
 	}
 
 	// ---- departures and arrivals only ----
@@ -129,10 +151,10 @@ public sealed class ProcedureNameCardsTests : IDisposable
 	}
 
 	[Fact]
-	public void full_names_an_earlier_fe_buddy_saved_read_as_their_roots_without_unsaved_changes()
+	public void saved_picks_read_as_they_are_without_unsaved_changes()
 	{
-		UserConfigFile.TrySetValue($"{Node}.Procedures", "BRWNZ FOUR (RNAV),BRWNZ FIVE,GRUUB ONE (RNAV)");
-		UserConfigFile.TrySetValue($"{Node}.AirportProcedures", "LAS|BRWNZ FOUR (RNAV),LAS|BRWNZ FIVE (RNAV)");
+		UserConfigFile.TrySetValue($"{Node}.Procedures", "BRWNZ,GRUUB");
+		UserConfigFile.TrySetValue($"{Node}.AirportProcedures", "LAS|BRWNZ");
 
 		ProceduresViewModel tab = Tab();
 
@@ -141,16 +163,29 @@ public sealed class ProcedureNameCardsTests : IDisposable
 		Assert.Equal(("LAS", "BRWNZ", "LAS — BRWNZ"), (pair.Airport, pair.ProcedureName, pair.Label));
 		Assert.False(tab.IsDirty);
 
-		// The FAA renumbered BRWNZ FOUR (RNAV) to FIVE: the card shows what the pick brings in now.
+		// The card shows what the pick brings in this cycle.
 		Assert.Equal("Cycle 2611: BRWNZ FIVE (RNAV)", tab.ProcedureNameRows[0].Detail);
 		Assert.Equal("Cycle 2611: BRWNZ FIVE (RNAV)", pair.Detail);
 		Assert.False(pair.IsMissing);
 	}
 
+	/// <summary>A pick is read as it was saved: a full name isn't a root name, so the cycle has nothing by it.</summary>
+	[Fact]
+	public void a_saved_full_name_is_read_as_it_is()
+	{
+		UserConfigFile.TrySetValue($"{Node}.Procedures", "BRWNZ FOUR (RNAV)");
+
+		ProceduresViewModel tab = Tab();
+
+		Assert.Equal(["BRWNZ FOUR (RNAV)"], tab.ProcedureNames);
+		Assert.True(tab.ProcedureNameRows[0].IsMissing);
+		Assert.False(tab.IsDirty);
+	}
+
 	[Fact]
 	public void a_listed_name_the_cycle_has_no_departure_or_arrival_for_is_flagged()
 	{
-		UserConfigFile.TrySetValue($"{Node}.Procedures", "ZZZZZ ONE,ILS OR LOC RWY 26L");
+		UserConfigFile.TrySetValue($"{Node}.Procedures", "ZZZZZ,ILS OR LOC RWY 26L");
 		UserConfigFile.TrySetValue($"{Node}.AirportProcedures", "PIT|BRWNZ,LAS|ILS OR LOC RWY 26L");
 
 		ProceduresViewModel tab = Tab();

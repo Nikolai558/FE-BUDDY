@@ -73,8 +73,6 @@ public sealed class ArrivalBuilderTests
 		Assert.Equal(
 			["BRYCE CANYON TRANSITION", "ENOCH TRANSITION", "PAGE TRANSITION"],
 			procedure.Transitions.Select(t => t.Name));
-		Assert.Equal(["BCE.BLAID2", "EHK.BLAID2", "PGA.BLAID2"], procedure.Transitions.Select(t => t.TransitionCode));
-		Assert.All(procedure.Bodies, body => Assert.Null(body.TransitionCode));
 		Assert.Equal("ZLA", procedure.ArtccFor("LAS"));
 	}
 

@@ -114,7 +114,7 @@ public static class ArrivalBuilder
 				continue;
 			}
 
-			string codeId = ArrivalNaming.CodeIdFor(computerCode, row.AmendmentNo, arrivalName, out _);
+			string codeId = ArrivalNaming.CodeIdFor(computerCode, row.AmendmentNo, arrivalName);
 
 			if (codeId.Length == 0)
 			{
@@ -315,7 +315,7 @@ public static class ArrivalBuilder
 			: NavaidPointTypes.Contains(rawPoint.PointType) ? WaypointLocator.WaypointType.Navaid
 			: null;
 
-		(double waypointLat, double waypointLon, string foundIn)? found =
+		(double waypointLat, double waypointLon)? found =
 			WaypointLocator.Find(allNasrCsvData, rawPoint.Id, type);
 
 		return found is { } hit
@@ -363,7 +363,7 @@ public static class ArrivalBuilder
 	}
 
 	/// <summary>Splits the raw <c>ARTCC</c> text on whitespace, trims, upper-cases and de-duplicates it, keeping publication order.</summary>
-	private static IReadOnlyList<string> SplitArtccs(string artccText)
+	internal static IReadOnlyList<string> SplitArtccs(string artccText)
 	{
 		List<string> artccs = [];
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
@@ -484,7 +484,7 @@ public static class ArrivalBuilder
 				continue;
 			}
 
-			routes.Add(new ArrivalRawRoute(name, sequence, kind, transitionCode.Length > 0 ? transitionCode : null, points));
+			routes.Add(new ArrivalRawRoute(name, sequence, kind, points));
 		}
 
 		return routes;

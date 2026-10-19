@@ -1,4 +1,3 @@
-using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.SharedData;
 using FeBuddy.Core.Infrastructure.SharedData.Models;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
@@ -82,7 +81,7 @@ public static class TelephonyDownloader
 	/// to use a copy under <see cref="VirtualAirlineListMaxAge"/> as it is (a run).
 	/// </param>
 	/// <param name="cancellationToken">Cancels the downloads.</param>
-	/// <returns>Each part's copy to use, and the older single copy while neither part has one.</returns>
+	/// <returns>Each part's copy to use.</returns>
 	/// <exception cref="OperationCanceledException">Thrown only when <paramref name="cancellationToken"/> is cancelled.</exception>
 	public static Task<VirtualAirlineListRefreshResult> RefreshVirtualAirlineListAsync(bool downloadNow, CancellationToken cancellationToken = default) =>
 		RefreshVirtualAirlineListFromUrlsAsync(
@@ -90,7 +89,6 @@ public static class TelephonyDownloader
 			TelephonyFiles.GngAirlinesFilePath,
 			TelephonyFiles.VatsimRadarAirlinesUrl,
 			TelephonyFiles.VatsimRadarAirlinesFilePath,
-			TelephonyFiles.OlderVatsimRadarAirlinesFilePath,
 			downloadNow,
 			cancellationToken);
 
@@ -98,16 +96,11 @@ public static class TelephonyDownloader
 	/// Same as <see cref="RefreshVirtualAirlineListAsync"/>, with the URLs and kept-copy paths supplied,
 	/// so tests can point it at local test servers and a scratch folder.
 	/// </summary>
-	/// <remarks>
-	/// The older single copy is read only while neither part has a copy, and deleted once both have
-	/// one: from then on it can never be used again.
-	/// </remarks>
 	internal static async Task<VirtualAirlineListRefreshResult> RefreshVirtualAirlineListFromUrlsAsync(
 		string gngUrl,
 		string gngPath,
 		string vatsimRadarUrl,
 		string vatsimRadarPath,
-		string olderCopyPath,
 		bool downloadNow,
 		CancellationToken cancellationToken)
 	{
@@ -131,34 +124,7 @@ public static class TelephonyDownloader
 			reuseYoungerThan,
 			cancellationToken).ConfigureAwait(false);
 
-		if (gng.HasCopy && vatsimRadar.HasCopy)
-		{
-			DeleteOlderCopy(olderCopyPath);
-			return new VirtualAirlineListRefreshResult(gng, vatsimRadar);
-		}
-
-		return !gng.HasCopy && !vatsimRadar.HasCopy && File.Exists(olderCopyPath)
-			? new VirtualAirlineListRefreshResult(gng, vatsimRadar, olderCopyPath, File.GetLastWriteTimeUtc(olderCopyPath))
-			: new VirtualAirlineListRefreshResult(gng, vatsimRadar);
-	}
-
-	/// <summary>Deletes the older single copy, once both parts have a copy of their own. One that can't be deleted is tried again next time.</summary>
-	private static void DeleteOlderCopy(string path)
-	{
-		if (!File.Exists(path))
-		{
-			return;
-		}
-
-		try
-		{
-			File.Delete(path);
-			AppLog.Info("TelephonyDownloader", $"Deleted FE-Buddy's older copy of the virtual airline list, '{path}': both parts have a copy of their own now.");
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			AppLog.Warning("TelephonyDownloader", $"Could not delete FE-Buddy's older copy of the virtual airline list, '{path}': {ex.Message}");
-		}
+		return new VirtualAirlineListRefreshResult(gng, vatsimRadar);
 	}
 
 	/// <summary>The pages are kept exactly as downloaded.</summary>

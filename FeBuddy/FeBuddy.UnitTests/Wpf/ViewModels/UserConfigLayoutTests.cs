@@ -37,7 +37,6 @@ public sealed class UserConfigLayoutTests : IDisposable
 	/// </summary>
 	private static readonly Dictionary<int, string> SampleFingerprints = new()
 	{
-		[1] = "DBFE66FA9DAECE3CB37C161017294B8738C55FA2012E375C1CFC8D3A7BCD47D7",
 		[2] = "4FF1F465DCE3FC23E03C96F9562F3267FC781B6E5396D3509FEC9ABCD667A33E",
 	};
 
@@ -127,7 +126,6 @@ public sealed class UserConfigLayoutTests : IDisposable
 		.. typeof(UserConfigKeys).GetFields(BindingFlags.Public | BindingFlags.Static)
 			.Where(field => field.IsLiteral && field.FieldType == typeof(string))
 			.Select(field => (string)field.GetRawConstantValue()!),
-		SettingsViewModel.ArtccKey,
 		DefaultRoiStore.FilterKey,
 		DefaultRoiStore.SwLatKey,
 		DefaultRoiStore.SwLonKey,
@@ -139,6 +137,43 @@ public sealed class UserConfigLayoutTests : IDisposable
 		MapLayersState.AiracKey,
 		MapLayersState.HomeKey,
 	];
+
+	/// <summary>
+	/// Settings no layout step brings forward, on purpose: the General tab's, which sit in their own
+	/// <c>Services.AiracService.General</c> node (a file that has them directly under <c>Services.AiracService</c>
+	/// opens the General tab on its defaults), and the Settings page's Facility, coordinate precision and default
+	/// ROI, which sit under <c>General</c> (a file that has them under <c>Services.AiracService</c> opens Settings
+	/// with no facility, 6 decimal places and no default ROI).
+	/// </summary>
+	private static bool LeftBehindOnPurpose(string key) =>
+		key is "Services.AiracService.AiracCycleId" or "Services.AiracService.SelectedSubServices"
+			or "Services.AiracService.UserArtccId" or "Services.AiracService.CoordinatePrecision"
+		|| key.StartsWith("Services.AiracService.Outputs.", StringComparison.Ordinal)
+		|| key.StartsWith("Services.AiracService.DefaultRoi.", StringComparison.Ordinal);
+
+	/// <summary>
+	/// Every page and tab saves under a node of its own, and no node sits inside another's: a save or
+	/// an undo of one node replaces everything under it, so a node inside another would be saved and
+	/// undone with it.
+	/// </summary>
+	[Fact]
+	public void no_settings_node_sits_inside_another()
+	{
+		string[] nodes =
+		[
+			.. EveryPage().Select(page => page.NodePath),
+			DuplicateAliasesCardViewModel.Node,
+			DefaultRoiStore.Node,
+			MapLayersState.Node,
+		];
+
+		Assert.Equal(nodes.Length, nodes.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+		Assert.Empty(
+			from outer in nodes
+			from inner in nodes
+			where inner.StartsWith(outer + ".", StringComparison.OrdinalIgnoreCase)
+			select $"{inner} is inside {outer}");
+	}
 
 	[Fact]
 	public void every_layout_has_a_sample_and_a_fingerprint_and_nothing_else_does()
@@ -228,7 +263,7 @@ public sealed class UserConfigLayoutTests : IDisposable
 					problems.Add($"{key}: saved as '{now}', not '{value}'");
 				}
 			}
-			else if (!elsewhere.Contains(key))
+			else if (!elsewhere.Contains(key) && !LeftBehindOnPurpose(key))
 			{
 				problems.Add($"{key}: no longer read or saved");
 			}

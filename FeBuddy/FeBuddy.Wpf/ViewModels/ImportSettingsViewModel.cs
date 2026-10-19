@@ -249,7 +249,7 @@ public sealed class ImportSettingsViewModel : ObservableObject
 
 	/// <summary>The file's facility, when it has one and no profile is called that; else nothing.</summary>
 	private static string SuggestName(UserConfigPackage package, IReadOnlyList<string> profiles) =>
-		package.Values.GetValueOrDefault(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
+		package.Values.GetValueOrDefault(UserConfigKeys.Facility)?.Trim() is { Length: > 0 } facility
 			&& ProfileNameViewModel.ProblemWith(facility, profiles, renaming: null) is null
 			? facility
 			: string.Empty;

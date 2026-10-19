@@ -169,7 +169,7 @@ public static class ChartRecallAliasBuilder
 						continue;
 					}
 
-					lines.Add(new ChartRecallAliasLine(airportId, record.ChartCode.Trim().ToUpperInvariant(), command, url, comment));
+					lines.Add(new ChartRecallAliasLine(command, url, comment));
 					Increment(commandsByChartType, record.ChartCode.Trim().ToUpperInvariant());
 					airportsWithCommands.Add(airportId);
 				}

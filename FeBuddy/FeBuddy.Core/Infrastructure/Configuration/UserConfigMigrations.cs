@@ -4,9 +4,10 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 
 /// <summary>
 /// Brings settings saved in an older <c>UserConfig</c> layout up to this version's
-/// (<see cref="UserConfigVersion.Current"/>), one step per layout: at launch, for
-/// <c>UserConfig.json</c> (<see cref="UserConfigFile.ReadAll"/>), and for a settings file being
-/// imported (<see cref="UserConfigTransfer.Read(string)"/>).
+/// (<see cref="UserConfigVersion.Current"/>), one step per layout: at launch, for the active
+/// profile's <c>UserConfig.&lt;Profile&gt;.json</c> and for <c>Shared.json</c>
+/// (<see cref="UserConfigFile.ReadAll"/>), and for a settings file being imported
+/// (<see cref="UserConfigTransfer.Read(string)"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -14,6 +15,11 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// layout into the new one to <see cref="All"/>, and add a sample file of the new layout to the unit
 /// tests (<c>Fixtures\UserConfig</c>). The tests load every sample, bring it forward and save it
 /// through every settings page; a setting a page no longer reads shows up there.
+/// </para>
+/// <para>
+/// The settings every profile shares (<see cref="UserConfigPortability.SharedByProfiles"/>) go through
+/// the same steps: <c>Shared.json</c> is brought forward on its own, by its own stamp, so a step that
+/// renames a shared setting renames it there too. A step sees only one file's settings at a time.
 /// </para>
 /// <para>
 /// A change that moves the settings file itself (a new folder, or one file split into two) is also a
@@ -25,12 +31,10 @@ public static class UserConfigMigrations
 {
 	/// <summary>
 	/// Every step, oldest first: the step with <see cref="UserConfigMigration.ToVersion"/> N turns a
-	/// layout N - 1 file into layout N. There is one for each layout after <see cref="UserConfigVersion.Oldest"/>.
+	/// layout N - 1 file into layout N. There is one for each layout after <see cref="UserConfigVersion.Oldest"/>,
+	/// so none while that is <see cref="UserConfigVersion.Current"/>.
 	/// </summary>
-	public static IReadOnlyList<UserConfigMigration> All { get; } =
-	[
-		new(2, "Each AIRAC sub-service tab's Area saved; Procedures' IncludeRoiAirports and Telephony's ROI dropped", UserConfigAreas.SaveForEveryTab),
-	];
+	public static IReadOnlyList<UserConfigMigration> All { get; } = [];
 
 	private static int _currentVersion = UserConfigVersion.Current;
 	private static IReadOnlyList<UserConfigMigration> _steps = All;
@@ -100,6 +104,6 @@ public static class UserConfigMigrations
 			applied.Add(step.Description);
 		}
 
-		return new UserConfigMigrationResult(migrated, fromVersion, toVersion, applied);
+		return new UserConfigMigrationResult(migrated, toVersion, applied);
 	}
 }

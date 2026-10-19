@@ -1,5 +1,7 @@
 using System.Windows.Media;
 
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.Wpf.Map.Models;
 
 /// <summary>A named set of geometries drawn with one stroke style.</summary>

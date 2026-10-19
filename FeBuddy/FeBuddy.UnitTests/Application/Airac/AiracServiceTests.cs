@@ -51,8 +51,8 @@ public sealed class AiracServiceTests : IDisposable
 			OutputDirectory = _output,
 			AddFeBuddyOutputFolder = addFeBuddyOutputFolder,
 			ExistingOutput = existingOutput,
-			Airports = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
-			Departures = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+			Airports = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
+			Departures = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
 
 	private string CycleFolder => Path.Combine(_output, "FE-Buddy_Output", "AIRAC_2610");
@@ -90,7 +90,7 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			// GeoJSON off: only the alias file is written.
-			Airways = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+			Airways = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
@@ -179,8 +179,8 @@ public sealed class AiracServiceTests : IDisposable
 	{
 		SelectedCycle = Cycle,
 		OutputDirectory = _output,
-		Departures = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
-		Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+		Departures = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
+		Arrivals = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 	};
 
 	[Fact]
@@ -270,6 +270,8 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.False(File.Exists(AliasPath("Departures.txt")));
 		Assert.False(File.Exists(AliasPath("Arrivals.txt")));
 		Assert.False(File.Exists(earlierCombined));
+		Assert.Null(result.Departures!.AliasFilePath);
+		Assert.Null(result.Arrivals!.AliasFilePath);
 		Assert.Null(result.CombinedAlias);
 		Assert.Empty(result.DuplicateAliasChoicesMade);
 		Assert.Single(result.DuplicateAliasReport!.Duplicates);
@@ -373,7 +375,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+			Arrivals = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, ArrivalTestData.Blaid(), new AiracSupplementalData());
@@ -396,7 +398,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Arrivals = new Dictionary<string, string> { { "GenerateAliasFile", "N" } },
+			Arrivals = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateAliasFile", "N" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, ArrivalTestData.Blaid(), new AiracSupplementalData());
@@ -416,7 +418,7 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
-			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+			Arrivals = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
 
 		await AiracService.RunAsync(settings, ArrivalTestData.Blaid(), new AiracSupplementalData());
@@ -443,7 +445,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Navaids = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+			Navaids = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]), new AiracSupplementalData());
@@ -466,7 +468,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Navaids = new Dictionary<string, string> { { "GenerateAliasFile", "N" } },
+			Navaids = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateAliasFile", "N" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]), new AiracSupplementalData());
@@ -485,7 +487,7 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
-			Navaids = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+			Navaids = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
 
 		await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]), new AiracSupplementalData());
@@ -516,7 +518,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			ArtccBoundaries = new Dictionary<string, string>(),
+			ArtccBoundaries = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
@@ -539,7 +541,7 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
-			ArtccBoundaries = new Dictionary<string, string>(),
+			ArtccBoundaries = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
@@ -572,7 +574,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Fixes = new Dictionary<string, string>(),
+			Fixes = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
@@ -591,7 +593,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Fixes = new Dictionary<string, string>(),
+			Fixes = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
@@ -610,7 +612,7 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
-			Fixes = new Dictionary<string, string>(),
+			Fixes = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]), new AiracSupplementalData());
@@ -639,7 +641,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			WxStations = new Dictionary<string, string>(),
+			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
@@ -658,7 +660,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			WxStations = new Dictionary<string, string>(),
+			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
@@ -679,7 +681,7 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
-			WxStations = new Dictionary<string, string>(),
+			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
@@ -706,7 +708,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			WxStations = new Dictionary<string, string>(),
+			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		// No Wx station data at all (WxStationService.Run receives a null WxStationDataCollection):
@@ -733,7 +735,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			WxStations = new Dictionary<string, string>(),
+			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(
@@ -1017,7 +1019,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Fixes = new Dictionary<string, string>(),
+			Fixes = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]), new AiracSupplementalData());
@@ -1157,7 +1159,7 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
-			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
 		// No Dtpp is supplied, so the Procedures sub-service completes with its advisory (see
@@ -1174,7 +1176,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
@@ -1197,7 +1199,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
 		// Empty supplemental data has no Dtpp: the Procedures sub-service must complete with its
@@ -1222,7 +1224,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings, nasr, new AiracSupplementalData { Dtpp = dtpp });
@@ -1250,7 +1252,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(

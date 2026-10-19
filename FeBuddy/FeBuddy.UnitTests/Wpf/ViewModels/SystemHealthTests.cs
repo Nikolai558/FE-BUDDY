@@ -152,7 +152,7 @@ public sealed class SystemHealthTests
 	}
 
 	[Theory]
-	[InlineData(AiracCycleReadiness.Unavailable, "current cycle failed to download or parse", StatusKind.Down)]
+	[InlineData(AiracCycleReadiness.Unavailable, "current cycle couldn't be downloaded or read", StatusKind.Down)]
 	[InlineData(AiracCycleReadiness.Waiting, "downloading and parsing…", StatusKind.Warn)]
 	public void a_cycle_not_ready_says_why(AiracCycleReadiness readiness, string detail, StatusKind kind)
 	{

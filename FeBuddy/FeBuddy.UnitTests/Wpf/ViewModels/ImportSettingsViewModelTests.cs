@@ -14,7 +14,7 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 [Collection("AppLog")]
 public sealed class ImportSettingsViewModelTests
 {
-	private const string Artcc = "Services.AiracService.UserArtccId";
+	private const string Artcc = UserConfigKeys.Facility;
 	private const string Pretty = "General.PrettyPrintGeojson";
 	private const string Dat = "Services.FileConversions.DatToGeojson.SourceFolder";
 
@@ -32,7 +32,7 @@ public sealed class ImportSettingsViewModelTests
 		string? appVersion = "3.1.0",
 		Func<string, bool>? directoryExists = null)
 	{
-		UserConfigPackage package = new("zob.json", UserConfigTransfer.FormatVersion, appVersion, new DateTimeOffset(2026, 10, 7, 12, 0, 0, TimeSpan.Zero), file);
+		UserConfigPackage package = new("zob.json", UserConfigTransfer.FormatVersion, appVersion, new DateTimeOffset(2026, 10, 7, 12, 0, 0, TimeSpan.Zero), file, UserConfigVersion.Current);
 
 		return new ImportSettingsViewModel(
 			UserConfigTransfer.Plan(package, current, Bob, directoryExists ?? (_ => true), mode: UserConfigImportMode.Replace),

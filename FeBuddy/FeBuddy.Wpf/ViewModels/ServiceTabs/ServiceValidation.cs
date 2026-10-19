@@ -14,9 +14,6 @@ public sealed class ServiceValidation
 	/// <summary>Failures that belong to a specific input, keyed by field key.</summary>
 	public IReadOnlyDictionary<string, string> FieldErrors => _fieldErrors;
 
-	/// <summary>Whether anything failed.</summary>
-	public bool HasErrors => _messages.Count > 0;
-
 	/// <summary>
 	/// Records a failure that belongs to a part of the tab rather than one input, such as no
 	/// GeoJSON files ticked. The view outlines that part by binding its card's

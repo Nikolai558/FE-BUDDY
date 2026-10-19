@@ -15,7 +15,8 @@ public sealed class FixSettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
-		{ "OutputDirectory", @"C:\Output" }
+		{ "OutputDirectory", @"C:\Output" },
+		{ "Area", "Everything" }
 	};
 
 	private static void AddSymbolDefaults(Dictionary<string, string> settings, string prefix, bool withStyle = true)
@@ -564,6 +565,7 @@ public sealed class FixSettingsParserTests
 	public void roi_is_parsed_when_filter_by_roi_is_set()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
 		settings["FilterByRoi"] = "Y";
 		settings["RoiSwLat"] = "40.0";
 		settings["RoiSwLon"] = "-89.0";
@@ -579,4 +581,24 @@ public sealed class FixSettingsParserTests
 	[Fact]
 	public void parse_rejects_a_null_argument() =>
 		Assert.Throws<ArgumentNullException>(() => FixSettingsParser.Parse(null!));
+
+	/// <summary>
+	/// A <c>Combinations</c> entry, as the run and the Fixes tab both read it: a chart and a fix use joined by
+	/// <c>+</c>, each tokenized as the files name them; anything else isn't one.
+	/// </summary>
+	[Theory]
+	[InlineData("ENROUTE-LOW+WYPNT", "ENROUTE-LOW", "WYPNT")]
+	[InlineData(" enroute low + wypnt ", "ENROUTE-LOW", "WYPNT")]
+	[InlineData("ENROUTE-LOW", null, null)]
+	[InlineData("A+B+C", null, null)]
+	[InlineData("ENROUTE-LOW+--", null, null)]
+	[InlineData(null, null, null)]
+	public void a_combination_entry_is_a_chart_and_a_fix_use(string? entry, string? chart, string? fixUse)
+	{
+		bool parsed = FixCombination.TryParse(entry, out FixCombination? combination);
+
+		Assert.Equal(chart is not null, parsed);
+		Assert.Equal(chart, combination?.Chart);
+		Assert.Equal(fixUse, combination?.FixUse);
+	}
 }

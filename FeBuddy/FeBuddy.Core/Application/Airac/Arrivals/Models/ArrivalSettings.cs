@@ -7,7 +7,7 @@ namespace FeBuddy.Core.Application.Airac.Arrivals.Models;
 /// <summary>
 /// Fully-parsed, typed settings for the Arrivals sub-service. Built once by
 /// <c>ArrivalSettingsParser.Parse</c> from the raw <c>Dictionary&lt;string, string&gt;</c> the
-/// GUI (or <c>FeBuddy.Harness</c>) supplies; every other Arrivals service consumes this typed
+/// GUI (or <c>FeBuddy.Harness</c>) supplies; every other Arrivals type consumes this typed
 /// object, never the raw dictionary.
 /// </summary>
 /// <remarks>

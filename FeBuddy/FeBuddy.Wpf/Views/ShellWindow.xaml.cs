@@ -7,6 +7,7 @@ using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Wpf.Behaviors;
+using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels;
 
@@ -40,6 +41,9 @@ public partial class ShellWindow : Window
 		SourceInitialized += (_, _) => MainWindowPlacement.Restore(this);
 		StateChanged += OnStateChanged;
 		ContentRendered += (_, _) => Dispatcher.InvokeAsync(PrepareFileConversions, DispatcherPriority.ApplicationIdle);
+
+		// The base map's files are parsed off the UI thread once FE-Buddy is idle, so the first map opens at once.
+		ContentRendered += (_, _) => Dispatcher.InvokeAsync(() => Task.Run(BaseMap.Preload), DispatcherPriority.ApplicationIdle);
 	}
 
 	/// <summary>

@@ -38,6 +38,7 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 	private readonly Func<IReadOnlyList<string>> _reload;
 	private readonly Dispatcher _dispatcher;
 	private string? _selectedProfile;
+	private Task _working = Task.CompletedTask;
 
 	/// <summary>Creates the card, asking the user in FE-Buddy's own windows.</summary>
 	public SettingsProfilesViewModel()
@@ -66,9 +67,10 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 		_reload = reload;
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
-		NewCommand = new RelayCommand(New);
-		RenameCommand = new RelayCommand(Rename);
-		DeleteCommand = new RelayCommand(Delete, () => CanDelete);
+		NewCommand = new RelayCommand(New, () => !SettingsBusy.IsBusy);
+		RenameCommand = new RelayCommand(Rename, () => !SettingsBusy.IsBusy);
+		DeleteCommand = new RelayCommand(Delete, () => CanDelete && !SettingsBusy.IsBusy);
+		SettingsBusy.Changed += (_, _) => OnPropertyChanged(nameof(CanChooseProfile));
 
 		Refresh();
 	}
@@ -110,6 +112,9 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 	/// <summary>Whether there is another profile to switch to, so the one in use can be deleted.</summary>
 	public bool CanDelete => Profiles.Count > 1;
 
+	/// <summary>Whether another profile can be chosen in the list: not while a profile change or an import runs.</summary>
+	public bool CanChooseProfile => !SettingsBusy.IsBusy;
+
 	/// <summary>Makes a new profile - from a copy of the one in use, or every default - and switches to it.</summary>
 	public ICommand NewCommand { get; }
 
@@ -118,6 +123,12 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 
 	/// <summary>Switches to another profile, then deletes the one that was in use.</summary>
 	public ICommand DeleteCommand { get; }
+
+	/// <summary>
+	/// The profile change under way - its file work off the UI thread, then the pages reading the
+	/// profile on it - or a finished task. Unit tests wait for it.
+	/// </summary>
+	internal Task Working => _working;
 
 	/// <summary>Reads the profiles again: after an import made one, say.</summary>
 	public void Refresh()
@@ -152,8 +163,9 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 	/// <param name="profile">The profile chosen.</param>
 	internal void SwitchTo(string profile)
 	{
-		if (profile.Equals(ActiveProfile, StringComparison.OrdinalIgnoreCase))
+		if (SettingsBusy.IsBusy || profile.Equals(ActiveProfile, StringComparison.OrdinalIgnoreCase))
 		{
+			ShowActive();
 			return;
 		}
 
@@ -170,17 +182,25 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 			return;
 		}
 
-		if (!Try("Could not switch settings profile", () => UserConfigFile.SwitchProfile(profile)))
+		Run([("Could not switch settings profile", () => UserConfigFile.SwitchProfile(profile))], done =>
 		{
-			Refresh();
-			return;
-		}
+			if (done == 0)
+			{
+				Refresh();
+				return;
+			}
 
-		AfterSwitch("Settings profile switched", $"FE-Buddy now uses the {ActiveProfile} profile.");
+			AfterSwitch("Settings profile switched", $"FE-Buddy now uses the {ActiveProfile} profile.");
+		});
 	}
 
 	private void New()
 	{
+		if (SettingsBusy.IsBusy)
+		{
+			return;
+		}
+
 		string active = ActiveProfile;
 		ProfileNameViewModel question = new(
 			"New Settings Profile",
@@ -199,24 +219,36 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 		string name = question.TrimmedName;
 		IReadOnlyDictionary<string, string>? values = question.CopyCurrent ? UserConfigFile.SnapshotValues() : null;
 
-		if (!Try("Could not create the profile", () => UserConfigFile.CreateProfile(name, values)))
-		{
-			return;
-		}
-
-		if (!Try("Could not switch settings profile", () => UserConfigFile.SwitchProfile(name)))
-		{
-			Refresh();
-			return;
-		}
-
-		AfterSwitch("Settings profile created", values is null
-			? $"FE-Buddy now uses {ActiveProfile}, with every setting at its default."
-			: $"FE-Buddy now uses {ActiveProfile}, a copy of {active}'s settings.");
+		Run(
+			[
+				("Could not create the profile", () => UserConfigFile.CreateProfile(name, values)),
+				("Could not switch settings profile", () => UserConfigFile.SwitchProfile(name)),
+			],
+			done =>
+			{
+				switch (done)
+				{
+					case 0:
+						return;
+					case 1:
+						Refresh();
+						return;
+					default:
+						AfterSwitch("Settings profile created", values is null
+							? $"FE-Buddy now uses {ActiveProfile}, with every setting at its default."
+							: $"FE-Buddy now uses {ActiveProfile}, a copy of {active}'s settings.");
+						return;
+				}
+			});
 	}
 
 	private void Rename()
 	{
+		if (SettingsBusy.IsBusy)
+		{
+			return;
+		}
+
 		string active = ActiveProfile;
 		ProfileNameViewModel question = new(
 			"Rename Settings Profile",
@@ -227,18 +259,30 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 			copyFrom: null,
 			unsavedPages: []);
 
-		if (!_askName(question)
-			|| !Try("Could not rename the profile", () => UserConfigFile.RenameProfile(active, question.TrimmedName)))
+		if (!_askName(question))
 		{
 			return;
 		}
 
-		Refresh();
-		Toast.Success("Settings profile renamed", $"{active} is now called {ActiveProfile}.");
+		string name = question.TrimmedName;
+
+		Run([("Could not rename the profile", () => UserConfigFile.RenameProfile(active, name))], done =>
+		{
+			if (done == 1)
+			{
+				Refresh();
+				Toast.Success("Settings profile renamed", $"{active} is now called {ActiveProfile}.");
+			}
+		});
 	}
 
 	private void Delete()
 	{
+		if (SettingsBusy.IsBusy)
+		{
+			return;
+		}
+
 		string active = ActiveProfile;
 		string? next = Profiles.FirstOrDefault(p => !p.Equals(active, StringComparison.OrdinalIgnoreCase)
 				&& p.Equals(UserConfigFile.DefaultProfile, StringComparison.OrdinalIgnoreCase))
@@ -261,17 +305,24 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 			return;
 		}
 
-		if (!Try("Could not switch settings profile", () => UserConfigFile.SwitchProfile(next)))
-		{
-			Refresh();
-			return;
-		}
+		Run(
+			[
+				("Could not switch settings profile", () => UserConfigFile.SwitchProfile(next)),
+				($"Could not delete {active}", () => UserConfigFile.DeleteProfile(active)),
+			],
+			done =>
+			{
+				if (done == 0)
+				{
+					Refresh();
+					return;
+				}
 
-		bool deleted = Try($"Could not delete {active}", () => UserConfigFile.DeleteProfile(active));
-
-		AfterSwitch(deleted ? "Settings profile deleted" : "Settings profile switched", deleted
-			? $"{active} is deleted. FE-Buddy now uses {ActiveProfile}."
-			: $"FE-Buddy now uses {ActiveProfile}.");
+				bool deleted = done == 2;
+				AfterSwitch(deleted ? "Settings profile deleted" : "Settings profile switched", deleted
+					? $"{active} is deleted. FE-Buddy now uses {ActiveProfile}."
+					: $"FE-Buddy now uses {ActiveProfile}.");
+			});
 	}
 
 	/// <summary>Shows the profile in use in the list, once the list has finished changing too.</summary>
@@ -300,19 +351,89 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>Does <paramref name="action"/>, and tells the user why when it fails.</summary>
-	private static bool Try(string failure, Action action)
+	/// <summary>
+	/// Does a profile change's file work off the UI thread - the profile's files can be slow to answer
+	/// (OneDrive, a network profile) - one step after another until one fails, telling the user why. The
+	/// map's changes still waiting are saved first, into the profile they were made in. Then, on the UI
+	/// thread, <paramref name="then"/> takes how many steps were done, to have the pages follow. Meanwhile
+	/// <see cref="SettingsBusy"/> keeps the profile list, Import, New, Rename and Delete off, and refuses
+	/// the pages' saves.
+	/// </summary>
+	/// <param name="steps">Each step's message should it fail, and the step.</param>
+	/// <param name="then">What follows, given how many steps were done.</param>
+	private void Run(IReadOnlyList<(string Failure, Action Step)> steps, Action<int> then)
 	{
+		SettingsBusy.Start();
+		Task<bool> mapSaved = MapLayersState.SaveWaitingChangesIfCreated();
+
+		Task<(int Done, Exception? Error)> fileWork = mapSaved.ContinueWith(
+			_ => RunSteps(steps), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+		SettingsBusy.Track(fileWork);
+
+		_working = fileWork
+			.ContinueWith(
+				work => _dispatcher.InvokeAsync(() => Finished(work, steps, then)).Task,
+				CancellationToken.None,
+				TaskContinuationOptions.None,
+				TaskScheduler.Default)
+			.Unwrap();
+	}
+
+	/// <summary>Runs each step in turn until one fails as a step can: how many were done, and why the next failed.</summary>
+	private static (int Done, Exception? Error) RunSteps(IReadOnlyList<(string Failure, Action Step)> steps)
+	{
+		for (int i = 0; i < steps.Count; i++)
+		{
+			try
+			{
+				steps[i].Step();
+			}
+			catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+			{
+				return (i, ex);
+			}
+		}
+
+		return (steps.Count, null);
+	}
+
+	/// <summary>
+	/// The profile change's file work is over: says why a step failed, then <paramref name="then"/> has the
+	/// pages follow. A failure no step expects - in the file work, or as the pages follow - is logged and
+	/// shown too, rather than lost in a task nothing waits for.
+	/// </summary>
+	private void Finished(Task<(int Done, Exception? Error)> work, IReadOnlyList<(string Failure, Action Step)> steps, Action<int> then)
+	{
+		SettingsBusy.Finish();
+
 		try
 		{
-			action();
-			return true;
+			if (work.Exception?.GetBaseException() is { } unexpected)
+			{
+				ReportUnexpected(unexpected);
+				Refresh();
+				return;
+			}
+
+			(int done, Exception? error) = work.Result;
+
+			if (error is not null)
+			{
+				AppLog.Warning(LogSource, $"{steps[done].Failure}: {error.Message}");
+				Toast.Error(steps[done].Failure, error.Message);
+			}
+
+			then(done);
 		}
-		catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+		catch (Exception ex)
 		{
-			AppLog.Warning(LogSource, $"{failure}: {ex.Message}");
-			Toast.Error(failure, ex.Message);
-			return false;
+			ReportUnexpected(ex);
 		}
+	}
+
+	private static void ReportUnexpected(Exception ex)
+	{
+		AppLog.Error(LogSource, $"Changing the settings profile failed: {ex.Message}");
+		Toast.Error("Settings profile change failed", ex.Message);
 	}
 }

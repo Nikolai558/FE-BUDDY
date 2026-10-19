@@ -259,19 +259,6 @@ public sealed class CredentialStoreTests : IDisposable
 		Assert.Null(request.Headers.Authorization);
 	}
 
-	/// <summary>An entry saved while credentials could be marked for FE-Buddy's requests still reads.</summary>
-	[Fact]
-	public void an_entry_with_the_old_marker_still_reads()
-	{
-		Guid id = Guid.NewGuid();
-		Plant(id, """{"version":1,"name":"Old","kind":"GitHubToken","hosts":["github.com"],"useForFeBuddyGitHub":true,"secret":"abc"}""");
-		using HttpRequestMessage request = new(HttpMethod.Get, "https://api.github.com/rate_limit");
-
-		Assert.Equal("Old", _store.Find(id)!.Name);
-		Assert.True(_store.AuthorizeGitHubToken(request, id));
-		Assert.Equal("abc", request.Headers.Authorization!.Parameter);
-	}
-
 	// ============================ authorize ============================
 
 	/// <summary>A user name and password go as Basic, a token as Bearer, on its own website and its subdomains.</summary>

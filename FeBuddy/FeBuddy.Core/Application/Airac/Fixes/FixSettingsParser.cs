@@ -109,7 +109,7 @@ public static class FixSettingsParser
 			SubServiceSettingsReader.ReadFebProperties<FixFebProperty>(fixSettings, example: "fixId,fixUseCode,charts");
 
 		// Only the area chosen applies: the ROI, or everything.
-		SubServiceArea area = SubServiceSettingsReader.ReadArea(fixSettings, SubServiceSettingsReader.RoiAreas, artccListKey: null);
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(fixSettings, SubServiceSettingsReader.RoiAreas);
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(fixSettings, area);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(fixSettings);
 
@@ -217,26 +217,20 @@ public static class FixSettingsParser
 
 		foreach (string entry in SettingsValueReader.StringList(fixSettings, "Combinations"))
 		{
-			string[] parts = entry.Split('+');
-			string chartToken = parts.Length == 2 ? FixCharts.Token(parts[0]) : string.Empty;
-			string fixUseToken = parts.Length == 2 ? FixUses.Token(parts[1]) : string.Empty;
-
 			// A side with no letters or digits tokenizes to nothing, which would name no file.
-			if (chartToken.Length == 0 || fixUseToken.Length == 0)
+			if (!FixCombination.TryParse(entry, out FixCombination? combination))
 			{
 				throw new ArgumentException(
 					$"'Combinations' entry '{entry}' is not valid. Each entry must be a chart and a fix use joined " +
 					"by '+', e.g. \"ENROUTE-LOW+WYPNT\".");
 			}
 
-			if (!FixUses.IsKnown(fixUseToken))
+			if (!FixUses.IsKnown(combination.FixUse))
 			{
 				messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-					$"'Combinations' entry '{entry}' names fix use '{fixUseToken}', which is not a fix use FE-Buddy knows " +
+					$"'Combinations' entry '{entry}' names fix use '{combination.FixUse}', which is not a fix use FE-Buddy knows " +
 					$"({string.Join(", ", FixUses.All)}). It is still used."));
 			}
-
-			FixCombination combination = new(chartToken, fixUseToken);
 
 			if (!combinations.Contains(combination))
 			{

@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
@@ -20,8 +19,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// version on the user's channel, and the notes for every release in between, newest first.
 /// </summary>
 /// <remarks>
-/// <b>Update now</b> downloads the release's MSI (with progress), runs it elevated with its
-/// normal UI, and sets <see cref="InstallerStarted"/> so the shell closes FE-Buddy - the MSI
+/// <b>Update now</b> downloads the release's MSI (with progress), runs it with its normal UI
+/// (not elevated: Windows Installer asks for administrator permission itself), and sets <see cref="InstallerStarted"/> so the shell closes FE-Buddy - the MSI
 /// cannot replace files that are in use, and relaunches FE-Buddy when it finishes. It first
 /// warns if closing would lose unfinished work. A copy the MSI did not install (a dev build), a
 /// release with no MSI, or a failed download opens the release page instead. <b>Later</b>
@@ -35,9 +34,6 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class UpdateWindowViewModel : ObservableObject
 {
 	private const string ReleasesPage = "https://github.com/Nikolai558/FE-BUDDY/releases/latest";
-
-	// ERROR_CANCELLED: the user said no at the UAC prompt.
-	private const int ErrorCancelled = 1223;
 
 	private readonly bool _isMsiInstalled;
 	private readonly ReleaseInstaller? _installer;
@@ -66,7 +62,7 @@ public sealed class UpdateWindowViewModel : ObservableObject
 		_unfinishedWork = unfinishedWork;
 
 		IsGoingBack = !version.UpdateAvailable && version.CanGoBack;
-		CurrentVersion = string.IsNullOrWhiteSpace(version.CurrentVersion) ? "dev" : version.CurrentVersion.TrimStart('v', 'V');
+		CurrentVersion = version.DisplayVersion;
 		LatestVersion = version.LatestVersion ?? "unknown";
 		Channel = version.Channel.DisplayName();
 		ReleaseUrl = string.IsNullOrWhiteSpace(version.LatestReleaseUrl) ? ReleasesPage : version.LatestReleaseUrl!;
@@ -249,21 +245,8 @@ public sealed class UpdateWindowViewModel : ObservableObject
 
 		try
 		{
-			Process.Start(new ProcessStartInfo("msiexec.exe", UpdateInstaller.InstallerArguments(msiPath))
-			{
-				UseShellExecute = true,
-				Verb = "runas",
-			});
-		}
-		catch (Win32Exception ex) when (ex.NativeErrorCode == ErrorCancelled)
-		{
-			AppLog.Info("UpdateInstaller", "Update cancelled at the administrator prompt.");
-			IsBusy = false;
-			ProgressText = null;
-			ErrorText = IsGoingBack
-				? "Cancelled - installing needs administrator permission. Choose Go back now to try again."
-				: "Update cancelled - installing needs administrator permission. Choose Update now to try again.";
-			return;
+			// Not elevated, as for the uninstall: Windows Installer asks for permission itself (see UpdateInstaller).
+			Process.Start(new ProcessStartInfo("msiexec.exe", UpdateInstaller.InstallerArguments(msiPath)) { UseShellExecute = true });
 		}
 		catch (Exception ex)
 		{

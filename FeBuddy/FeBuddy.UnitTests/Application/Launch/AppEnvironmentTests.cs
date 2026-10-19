@@ -31,9 +31,14 @@ public sealed class AppEnvironmentTests : IDisposable
 	public void before_the_time_check_the_machine_clock_stands_in()
 	{
 		Assert.Null(AppEnvironment.LaunchUtcNow);
-		Assert.Equal(DateOnly.FromDateTime(DateTime.UtcNow), AppEnvironment.CheckedUtcDate);
-		Assert.Equal(
-			AiracCycleResolver.GetCycle(AiracCyclePosition.Current),
-			AppEnvironment.GetAiracCycle(AiracCyclePosition.Current));
+
+		// Read before and after, so 0000Z passing between the reads can't fail the test.
+		DateOnly before = DateOnly.FromDateTime(DateTime.UtcNow);
+		DateOnly checkedDate = AppEnvironment.CheckedUtcDate;
+		AiracCycleInfo cycle = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current);
+		DateOnly after = DateOnly.FromDateTime(DateTime.UtcNow);
+
+		Assert.InRange(checkedDate, before, after);
+		Assert.Contains(cycle, new[] { before, after }.Select(date => AiracCycleResolver.GetCycle(AiracCyclePosition.Current, asOfUtc: date)));
 	}
 }

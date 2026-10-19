@@ -33,6 +33,12 @@ namespace FeBuddy.Installer.UI;
 /// Installer's basic progress UI; on a PC whose policy disables embedded UIs, Windows Installer
 /// shows the package's stock dialogs (FeBuddy.UI.wxs) instead.
 /// </para>
+/// <para>
+/// If the window itself fails to open (its theme or the window can't be built), <see cref="Initialize"/>
+/// logs why and returns <see langword="false"/>, so Windows Installer carries on with its own UI at the
+/// level asked for: the stock dialogs, or its basic progress. Should the window fail later, while the
+/// install runs, the install goes on without it rather than ending msiexec.
+/// </para>
 /// </remarks>
 public sealed class SetupUI : IEmbeddedUI
 {
@@ -49,7 +55,11 @@ public sealed class SetupUI : IEmbeddedUI
 
 	private bool _cancelSent;
 	private bool _fatalExit;
-	private int _installResult = -1;
+
+	// Set on the window's thread when the window fails; read once its events are set.
+	private volatile bool _windowFailed;
+	private Exception? _windowFailure;
+	private int _installResult = SetupOutcomeRules.ResultNotSent;
 	private string? _lastAction;
 	private int _updatePosted;
 
@@ -80,6 +90,11 @@ public sealed class SetupUI : IEmbeddedUI
 			// Nothing to ask: install with whatever the command line set, keeping the recorded
 			// shortcut choices on an update the way the full UI does.
 			_windowReady.WaitOne();
+			if (_windowFailed)
+			{
+				return HandBack(session);
+			}
+
 			_choices = new SetupChoices(
 				context.Mode == SetupMode.Uninstall ? SetupOperation.Remove : SetupOperation.Install,
 				context.InstallFolder, context.StartMenuShortcut, context.DesktopShortcut);
@@ -90,6 +105,11 @@ public sealed class SetupUI : IEmbeddedUI
 		}
 		else if (WaitHandle.WaitAny([_started, _left]) == 1)
 		{
+			if (_windowFailed)
+			{
+				return HandBack(session);
+			}
+
 			session.Log("FE-BUDDY setup window: closed before installing.");
 			throw new InstallCanceledException();
 		}
@@ -105,6 +125,16 @@ public sealed class SetupUI : IEmbeddedUI
 		return true;
 	}
 
+	/// <summary>
+	/// The window couldn't open: says why in the install log, and declines, so Windows Installer
+	/// carries on with its own UI.
+	/// </summary>
+	private bool HandBack(Session session)
+	{
+		session.Log($"FE-BUDDY setup window: could not open, so Windows Installer's own UI is used instead. {_windowFailure}");
+		return false;
+	}
+
 	/// <inheritdoc />
 	public MessageResult ProcessMessage(
 		InstallMessage messageType,
@@ -113,7 +143,8 @@ public sealed class SetupUI : IEmbeddedUI
 		MessageIcon icon,
 		MessageDefaultButton defaultButton)
 	{
-		if (_viewModel is null || _dispatcher is null)
+		// A window that failed can't be asked anything: its thread has ended.
+		if (_windowFailed || _viewModel is null || _dispatcher is null)
 		{
 			return MessageResult.None;
 		}
@@ -164,14 +195,16 @@ public sealed class SetupUI : IEmbeddedUI
 			case InstallMessage.FatalExit:
 				_fatalExit = true;
 				string fatal = messageRecord.ToString();
-				_dispatcher.Invoke(() => _viewModel.AddError(fatal));
+				WindowCalls.Invoke(_dispatcher, () => _viewModel.AddError(fatal));
 				return MessageResult.OK;
 
 			case InstallMessage.InstallEnd:
 				// Fields: product name, product code, and how the installation ended - an action
 				// result, as an MSI log's "Return value": 1 succeeded, 2 cancelled, 3 failed. Not an
 				// error code such as 1603.
-				_installResult = messageRecord.FieldCount >= 3 && !messageRecord.IsNull(3) ? messageRecord.GetInteger(3) : -1;
+				_installResult = messageRecord.FieldCount >= 3 && !messageRecord.IsNull(3)
+					? messageRecord.GetInteger(3)
+					: SetupOutcomeRules.ResultNotSent;
 				return MessageResult.OK;
 
 			case InstallMessage.Initialize:
@@ -187,18 +220,22 @@ public sealed class SetupUI : IEmbeddedUI
 	/// <inheritdoc />
 	public void Shutdown()
 	{
-		if (_viewModel is null || _dispatcher is null)
+		if (_windowFailed || _viewModel is null || _dispatcher is null)
 		{
 			return;
 		}
 
-		SetupOutcome outcome = _cancelSent || _installResult == ResultUserExit
-			? SetupOutcome.Cancelled
-			: _fatalExit || _installResult is ResultFailure or ResultNone
-				? SetupOutcome.Failed
-				: SetupOutcome.Succeeded;
+		SetupContext context = _viewModel.Context;
+		SetupOutcome outcome = SetupOutcomeRules.Decide(
+			_cancelSent,
+			_fatalExit,
+			_installResult,
+			removing: _choices?.Operation == SetupOperation.Remove,
+			context.InstalledVersion,
+			context.Version,
+			() => InstalledFeBuddy.Read().Version);
 
-		_dispatcher.Invoke(() =>
+		WindowCalls.Invoke(_dispatcher, () =>
 		{
 			_viewModel.Finish(outcome);
 
@@ -209,17 +246,11 @@ public sealed class SetupUI : IEmbeddedUI
 			}
 		});
 
-		// The finish page stays up until the user closes it.
+		// The finish page stays up until the user closes it; a window that failed has already gone.
 		_uiThread?.Join();
 	}
 
 	// ------------------------------------------------------------------ window thread
-
-	// INSTALLMESSAGE_INSTALLEND's result field: the installation's action result. 0 (no result)
-	// is what Wine's msi sends for a failure, and is taken as one.
-	private const int ResultNone = 0;
-	private const int ResultUserExit = 2;
-	private const int ResultFailure = 3;
 
 	private void RunWindow(SetupContext context)
 	{
@@ -241,6 +272,15 @@ public sealed class SetupUI : IEmbeddedUI
 			_window.Loaded += (_, _) => _windowReady.Set();
 			_window.Closed += (_, _) => _left.Set();
 			app.Run(_window);
+		}
+		catch (Exception ex)
+		{
+			// Uncaught, this would end msiexec from a background thread. Initialize reads it, if it's
+			// still waiting, and hands the install back to Windows Installer's own UI. A call Windows
+			// Installer's thread is waiting on, or makes later, ends rather than waiting for good.
+			_windowFailure = ex;
+			_windowFailed = true;
+			WindowCalls.EndWindowThread();
 		}
 		finally
 		{
@@ -275,7 +315,8 @@ public sealed class SetupUI : IEmbeddedUI
 
 	private MessageResult Ask(PromptRequest request, InstallMessage messageType)
 	{
-		MessageResult answer = (MessageResult)_dispatcher!.Invoke(new Func<object>(() =>
+		// A window that has failed meanwhile can't answer: Windows Installer decides, as it does with no window.
+		MessageResult answer = WindowCalls.Invoke(_dispatcher!, () =>
 		{
 			if (messageType is InstallMessage.Error or InstallMessage.OutOfDiskSpace)
 			{
@@ -283,7 +324,7 @@ public sealed class SetupUI : IEmbeddedUI
 			}
 
 			return _viewModel!.AskUser(request);
-		}));
+		}, MessageResult.None);
 
 		if (answer is MessageResult.Cancel or MessageResult.Abort)
 		{

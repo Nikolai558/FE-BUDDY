@@ -16,6 +16,7 @@ using FeBuddy.Wpf.Views;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
@@ -77,14 +78,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
 	private const string AddFolderKey = UserConfigKeys.AddFeBuddyOutputFolder;
 	/// <summary>
-	/// Where the selected facility persists. Internal (rather than private) so the Procedures tab
-	/// can read it directly at settings-build time, as <c>PrimaryFacility</c>, without copying the
-	/// value into its own config node.
-	/// </summary>
-	internal const string ArtccKey = "Services.AiracService.UserArtccId";
-
-	/// <summary>
-	/// Raised after Save writes the settings, the facility (<see cref="ArtccKey"/>) among them, so a page
+	/// Raised after Save writes the settings, the facility (<see cref="UserConfigKeys.Facility"/>) among them, so a page
 	/// that names the facility - Procedure Charts' option for other airports' procedures - can say it again.
 	/// </summary>
 	public static event EventHandler? FacilitySaved;
@@ -100,7 +94,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	private string? _selectedFacility;
 	private string _outputDir = string.Empty;
 	private bool _addFeBuddyFolder = true;
-	private int _coordinatePrecision = 6;
+	private int _coordinatePrecision = GeojsonFileWriter.DefaultPrecision;
 	private bool _prettyPrintGeojson;
 	private RegionOfInterest? _defaultRoi;
 	private RegionOfInterest? _savedRoi;
@@ -139,7 +133,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		EditRoiCommand = new RelayCommand(EditRoi);
 		ClearRoiCommand = new RelayCommand(ClearRoi, () => DefaultRoi is not null);
 		ExportCommand = new RelayCommand(Export);
-		ImportCommand = new RelayCommand(Import);
+		ImportCommand = new RelayCommand(() => _ = ImportAsync(), () => !SettingsBusy.IsBusy);
 		NewGitHubTokenCommand = new RelayCommand(NewGitHubToken);
 		ResetCommand = new RelayCommand(Reset);
 		UninstallCommand = new RelayCommand(Uninstall, () => CanUninstall);
@@ -203,7 +197,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		[AddFolderKey] = AddFeBuddyOutputFolder ? "Y" : "N",
 		[PrecisionKey] = CoordinatePrecision.ToString(CultureInfo.InvariantCulture),
 		[UserConfigKeys.PrettyPrintGeojson] = PrettyPrintGeojson ? "Y" : "N",
-		[ArtccKey] = SelectedFacility ?? string.Empty,
+		[UserConfigKeys.Facility] = SelectedFacility ?? string.Empty,
 		[UserConfigKeys.FeBuddyGitHubCredentialId] = GitHubCredentialValue,
 	};
 
@@ -217,7 +211,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Facilities from the current cycle's parsed airports, as <c>ArtccName (RespArtccId)</c>.</summary>
 	public ObservableCollection<FacilityOption> Facilities { get; } = [];
 
-	/// <summary>The selected facility's <c>RespArtccId</c>. Persists to <c>Services.AiracService.UserArtccId</c>.</summary>
+	/// <summary>The selected facility's <c>RespArtccId</c>. Persists to <c>General.Facility</c> (<see cref="UserConfigKeys.Facility"/>).</summary>
 	public string? SelectedFacility
 	{
 		get => _selectedFacility;
@@ -570,9 +564,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	public string ChannelWarning =>
 		$"We recommend staying on Stable. The {Channel.DisplayName()} channel may change or break things you are used to.";
 
-	/// <summary>Whether the machine has internet; the update check needs it.</summary>
-	public bool IsOnline => AppEnvironment.HasInternetConnection;
-
 	/// <summary>Re-runs the version check, then opens the update window or toasts that there is nothing new.</summary>
 	public ICommand CheckNowCommand { get; }
 
@@ -653,7 +644,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 
 		VersionCheckResult? version = AppEnvironment.Version;
-		if (version is null || !version.CheckSucceeded)
+		if (version is null or { Status: VersionCheckStatus.Failed or VersionCheckStatus.Skipped })
 		{
 			Toast.Warn("Could not check for updates", version?.Message ?? "The version service did not answer.");
 			return;
@@ -665,31 +656,33 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		// An update, or - running a pre-release on the more stable channel saved here - that channel's
 		// latest release to go back to (not while another channel waits to be saved).
-		if (version.UpdateAvailable || (version.CanGoBack && !isUnsaved))
+		if (version.Status == VersionCheckStatus.UpdateAvailable || (version.CanGoBack && !isUnsaved))
 		{
 			_openUpdateWindow?.Invoke();
 			return;
 		}
 
-		string current = version.CurrentVersion.TrimStart('v', 'V');
+		string current = version.DisplayVersion;
 
-		if (version.RunningPreReleaseChannel is { } running)
+		switch (version.Status)
 		{
-			Toast.Success("No update available",
-				$"v{current} is a {running.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
-		}
-		else if (version.IsAheadOfLatestRelease)
-		{
-			Toast.Success("No update available",
-				$"This development build (v{current}) is ahead of the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
-		}
-		else if (version.LatestVersion is null)
-		{
-			Toast.Success("No update available", $"There are no releases on the {version.Channel.DisplayName()} channel yet.{unsaved}");
-		}
-		else
-		{
-			Toast.Success("You're up to date", $"v{current} is the latest {version.Channel.DisplayName()} release.{unsaved}");
+			case VersionCheckStatus.RunningPreRelease:
+				Toast.Success("No update available",
+					$"v{current} is a {version.RunningPreReleaseChannel!.Value.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
+				break;
+
+			case VersionCheckStatus.AheadOfLatest:
+				Toast.Success("No update available",
+					$"This development build (v{current}) is ahead of the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
+				break;
+
+			case VersionCheckStatus.NoReleases:
+				Toast.Success("No update available", $"There are no releases on the {version.Channel.DisplayName()} channel yet.{unsaved}");
+				break;
+
+			default:
+				Toast.Success("You're up to date", $"v{current} is the latest {version.Channel.DisplayName()} release.{unsaved}");
+				break;
 		}
 	}
 
@@ -707,24 +700,29 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		UserConfigFile.TrySetValue(UserConfigKeys.FeBuddyGitHubCredentialId, GitHubCredentialValue);
 		if (!string.IsNullOrWhiteSpace(SelectedFacility))
 		{
-			UserConfigFile.TrySetValue(ArtccKey, SelectedFacility!);
+			UserConfigFile.TrySetValue(UserConfigKeys.Facility, SelectedFacility!);
 		}
 
-		UserConfigFile.Write();
+		if (!SettingsWrites.TryWrite("settings"))
+		{
+			return;
+		}
+
 		FacilitySaved?.Invoke(this, EventArgs.Empty);
 
 		// Only an ROI set or cleared here: an untouched one is left as the Map page last saved it.
+		bool roiSaved = true;
+
 		if (IsRoiPending)
 		{
+			RegionOfInterest? previous = _savedRoi;
 			_savedRoi = DefaultRoi;
+			roiSaved = DefaultRoi is { } roi ? DefaultRoiStore.Set(roi) : DefaultRoiStore.Clear();
 
-			if (DefaultRoi is { } roi)
+			if (!roiSaved)
 			{
-				DefaultRoiStore.Set(roi);
-			}
-			else
-			{
-				DefaultRoiStore.Clear();
+				// Everything else is saved; the ROI is still to save, so the page stays unsaved.
+				_savedRoi = previous;
 			}
 		}
 
@@ -733,8 +731,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		_savedChannel = Channel;
 		_savedState = SavedStateSnapshot.Of(CurrentValues());
-		IsDirty = false;
-		Toast.Success("Settings saved", $"Saved to the {UserConfigFile.ActiveProfile} profile.");
+		IsDirty = !roiSaved;
+
+		if (roiSaved)
+		{
+			Toast.Success("Settings saved", $"Saved to the {UserConfigFile.ActiveProfile} profile.");
+		}
 
 		// A new channel is checked straight away: its newer releases, or - running a pre-release after
 		// choosing a more stable channel - its latest release to go back to.
@@ -752,10 +754,10 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	{
 		Channel = UpdateChannelSetting.Read(AppVersion.Current);
 		_savedChannel = Channel;
-		SelectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
+		SelectedFacility = Blank(UserConfigFile.GetValue(UserConfigKeys.Facility));
 		OutputDirectory = OutputPreferences.Directory;
 		AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder;
-		CoordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
+		CoordinatePrecision = SubServiceSettingsReader.CoordinatePrecisionOrDefault(UserConfigFile.GetValue(PrecisionKey));
 		PrettyPrintGeojson = string.Equals(
 			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
 		GitHubCredentialId = Guid.TryParse(UserConfigFile.GetValue(UserConfigKeys.FeBuddyGitHubCredentialId), out Guid gitHubId) ? gitHubId : Guid.Empty;
@@ -815,7 +817,38 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 	}
 
-	private void Import()
+	/// <summary>
+	/// Imports a settings file the user picks. The file is read, planned and applied off the UI thread - it
+	/// can be 2 MB, and the plan looks for every folder it names, which on a disconnected drive takes
+	/// seconds; the windows and the pages reading the import stay on it. Meanwhile
+	/// <see cref="SettingsBusy"/> keeps the profile card and Import off, and refuses the pages' saves.
+	/// </summary>
+	private async Task ImportAsync()
+	{
+		if (SettingsBusy.IsBusy)
+		{
+			return;
+		}
+
+		SettingsBusy.Start();
+
+		try
+		{
+			await ImportPickedAsync();
+		}
+		catch (Exception ex)
+		{
+			// Nothing waits for this task: a failure nothing below expects is reported here, not lost.
+			AppLog.Error("Settings", $"The settings import failed: {ex.Message}");
+			Toast.Error("Import failed", ex.Message);
+		}
+		finally
+		{
+			SettingsBusy.Finish();
+		}
+	}
+
+	private async Task ImportPickedAsync()
 	{
 		Window? owner = Application.Current?.MainWindow;
 
@@ -835,10 +868,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		ImportSettingsViewModel choice;
 		try
 		{
-			UserConfigPackage package = UserConfigTransfer.Read(dialog.FileName);
+			string path = dialog.FileName;
+			(UserConfigImportPlan replace, UserConfigImportPlan merge) = await Task.Run(() => UserConfigTransfer.ReadAndPlan(path));
 			choice = new ImportSettingsViewModel(
-				UserConfigTransfer.Plan(package, UserConfigImportMode.Replace),
-				UserConfigTransfer.Plan(package, UserConfigImportMode.Merge),
+				replace,
+				merge,
 				UserConfigFile.ActiveProfile,
 				UserConfigFile.Profiles(),
 				ConfigPages.WithUnsavedChanges(),
@@ -860,14 +894,25 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		string profile = UserConfigFile.ActiveProfile;
 		try
 		{
-			if (choice.IsNewProfile)
+			string newProfile = choice.IsNewProfile ? choice.NewProfileName.Trim() : string.Empty;
+
+			// The map's changes still waiting are saved first, into the profile they were made in.
+			await MapLayersState.SaveWaitingChangesIfCreated();
+
+			Task apply = Task.Run(() =>
 			{
-				UserConfigTransfer.ApplyAsNewProfile(plan, choice.NewProfileName.Trim());
-			}
-			else
-			{
-				UserConfigTransfer.Apply(plan);
-			}
+				if (newProfile.Length > 0)
+				{
+					UserConfigTransfer.ApplyAsNewProfile(plan, newProfile);
+				}
+				else
+				{
+					UserConfigTransfer.Apply(plan);
+				}
+			});
+
+			SettingsBusy.Track(apply);
+			await apply;
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
 		{
@@ -1055,37 +1100,20 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			return false;
 		}
 
-		// Both empty FE-Buddy's own folder, so a copy saved in it would go too.
-		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-		if (Path.GetFullPath(dialog.FileName).StartsWith(folder, StringComparison.OrdinalIgnoreCase))
-		{
-			Toast.Warn("Choose another folder", $"The {action} empties {AppDataReset.RootDirectory}, copy and all. Nothing was {done}.");
-			return false;
-		}
-
 		try
 		{
-			string active = UserConfigFile.ActiveProfile;
-			string stem = Path.Combine(Path.GetDirectoryName(dialog.FileName)!, Path.GetFileNameWithoutExtension(dialog.FileName));
-			string extension = Path.GetExtension(dialog.FileName);
-			int copied = 0;
-
-			foreach (string profile in UserConfigFile.Profiles())
+			if (UserConfigFile.IsInsideAppData(dialog.FileName))
 			{
-				string from = UserConfigFile.ProfileFilePath(profile);
-
-				if (File.Exists(from))
-				{
-					bool inUse = profile.Equals(active, StringComparison.OrdinalIgnoreCase);
-					File.Copy(from, inUse ? dialog.FileName : $"{stem} ({profile}){extension}", overwrite: true);
-					copied++;
-				}
+				// Both empty FE-Buddy's own folder, so a copy saved in it would go too.
+				Toast.Warn("Choose another folder", $"The {action} empties {AppDataReset.RootDirectory}, copy and all. Nothing was {done}.");
+				return false;
 			}
 
+			int copied = UserConfigFile.CopyProfilesTo(dialog.FileName);
 			AppLog.Info("Settings", $"Saved a copy of {copied} settings profile(s) to '{dialog.FileName}' before the {action}.");
 			return true;
 		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
 		{
 			AppLog.Warning("Settings", $"Could not save a copy of the settings to '{dialog.FileName}': {ex.Message}");
 			Toast.Error("Could not save the copy", $"{ex.Message} Nothing was {done}.");
@@ -1095,13 +1123,10 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	private void RefreshFacilities()
 	{
-		AiracCycleReadiness readiness = AiracCycleDataCache.Instance.Entries.Count == 0
-			? AiracCycleReadiness.Waiting
-			: AiracCycleDataCache.Instance.ComputeReadiness();
+		AiracCycleReadiness readiness = AiracCycleDataCache.Instance.ComputeReadiness();
 
 		FacilitiesReady = readiness is AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded;
 		OnPropertyChanged(nameof(FacilitiesReady));
-		OnPropertyChanged(nameof(IsOnline));
 		CommandManager.InvalidateRequerySuggested();
 
 		// A dev launch can leave the current cycle unloaded; opening this page loads it, for the
@@ -1127,13 +1152,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		{
 			AiracCycleInfo current = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current);
 			var data = await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).ConfigureAwait(false);
+			data.RequireApt();
 
-			var options = data.RequireApt().AptBase
-				.Where(a => !string.IsNullOrWhiteSpace(a.RespArtccId))
-				.Select(a => new FacilityOption(a.RespArtccId.Trim(), string.IsNullOrWhiteSpace(a.ArtccName) ? a.RespArtccId.Trim() : a.ArtccName.Trim()))
-				.DistinctBy(o => o.ArtccId, StringComparer.OrdinalIgnoreCase)
-				.OrderBy(o => o.Display, StringComparer.OrdinalIgnoreCase)
-				.ToList();
+			// Off the UI thread: a cycle already parsed hands its data back at once, on the UI thread.
+			// Core keeps the list with the cycle's data, so it is worked out once per cycle.
+			FacilityOption[] options = await Task.Run(() => AiracCycleOptionListBuilder.For(data).FacilityNames
+				.Select(facility => new FacilityOption(facility.ArtccId, facility.Name))
+				.ToArray()).ConfigureAwait(false);
 
 			await _dispatcher.BeginInvoke(() =>
 			{
@@ -1147,7 +1172,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 				// when the page opens) finds the drop-down bound to an empty list, which clears the
 				// facility it couldn't find yet. The user can't have chosen one meanwhile - the list is
 				// hidden until it's ready - so the saved one is put back, and the page stays unchanged.
-				SelectedFacility ??= Blank(UserConfigFile.GetValue(ArtccKey));
+				SelectedFacility ??= Blank(UserConfigFile.GetValue(UserConfigKeys.Facility));
 			});
 		}
 		catch (Exception ex)

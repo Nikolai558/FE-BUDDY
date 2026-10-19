@@ -101,6 +101,26 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 	private static string GeometryType(JsonElement feature) =>
 		feature.GetProperty("geometry").GetProperty("type").GetString()!;
 
+	/// <summary>
+	/// ZXX.sct and ZXX.sct2 in one folder would both write into ZXX\, the second over the first. Each
+	/// gets a folder of its own, and the run says which one was renamed.
+	/// </summary>
+	[Fact]
+	public void two_sector_files_with_one_name_get_a_folder_each()
+	{
+		WriteFullSector("ZXX.sct2");
+		WriteSector("ZXX.sct", "[GEO]", $"{A} {B} COAST");
+
+		SourceFilesConversionResult result = SctToGeojsonService.Run(Settings());
+
+		Assert.True(Directory.Exists(Converted("ZXX")));
+		Assert.True(Directory.Exists(Converted("ZXX (2)")));
+		Assert.Equal(2, result.Files.Count);
+		Assert.Empty(result.Files[0].OutputPaths.Intersect(result.Files[1].OutputPaths, StringComparer.OrdinalIgnoreCase));
+		Assert.Contains(result.Messages, message => message.Level == LogLevel.Info
+			&& message.Text.EndsWith("another file in this run has the same name, so its files are in the folder ZXX (2).", StringComparison.Ordinal));
+	}
+
 	[Fact]
 	public void converts_every_section_into_its_own_file_in_a_folder_per_sector_file()
 	{
@@ -132,7 +152,6 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 		SourceFileConversion file = Assert.Single(result.Files);
 		// Two ARTCC names, one feature in each other line file, one SID, one STAR, one label, one region.
 		Assert.Equal(11, file.FeaturesWritten);
-		Assert.Equal(0, file.RecordsSkipped);
 	}
 
 	[Fact]
@@ -282,7 +301,6 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 
 		SourceFileConversion empty = Assert.Single(result.Files);
 		Assert.Empty(empty.OutputPaths);
-		Assert.Equal(1, empty.RecordsSkipped);
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains("has nothing FE-Buddy converts"));
 		Assert.Contains(result.Warnings, w => w.StartsWith("EMPTY.sct2: Line 5:"));
 	}

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -21,30 +22,38 @@ namespace FeBuddy.Wpf.Controls;
 ///                   IssueUrlBase="https://github.com/owner/repo/issues/" /&gt;
 /// </code>
 /// </summary>
+/// <remarks>
+/// Built once its properties are set (when it is initialized), then again on each change, rather than
+/// once per property as XAML sets them. Each text is parsed once and its blocks kept with it, so a
+/// page shown again - the Dashboard's News posts on every visit - doesn't parse it again.
+/// </remarks>
 public sealed class MarkdownView : Decorator
 {
 	/// <summary>Identifies the <see cref="Markdown"/> dependency property.</summary>
 	public static readonly DependencyProperty MarkdownProperty = DependencyProperty.Register(
 		nameof(Markdown), typeof(string), typeof(MarkdownView),
-		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).Rebuild()));
+		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).RebuildOnceInitialized()));
 
 	/// <summary>Identifies the <see cref="IssueUrlBase"/> dependency property.</summary>
 	public static readonly DependencyProperty IssueUrlBaseProperty = DependencyProperty.Register(
 		nameof(IssueUrlBase), typeof(string), typeof(MarkdownView),
-		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).Rebuild()));
+		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).RebuildOnceInitialized()));
 
 	/// <summary>Identifies the <see cref="LinkBase"/> dependency property.</summary>
 	public static readonly DependencyProperty LinkBaseProperty = DependencyProperty.Register(
 		nameof(LinkBase), typeof(string), typeof(MarkdownView),
-		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).Rebuild()));
+		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).RebuildOnceInitialized()));
 
 	/// <summary>Identifies the <see cref="HeadingOffset"/> dependency property.</summary>
 	public static readonly DependencyProperty HeadingOffsetProperty = DependencyProperty.Register(
 		nameof(HeadingOffset), typeof(int), typeof(MarkdownView),
-		new PropertyMetadata(0, (d, _) => ((MarkdownView)d).Rebuild()));
+		new PropertyMetadata(0, (d, _) => ((MarkdownView)d).RebuildOnceInitialized()));
 
 	// Bullet glyph per nesting depth, cycling after the third level.
 	private static readonly string[] Bullets = ["•", "◦", "▪"];
+
+	// Each text's blocks, kept with the text for as long as something holds it (a News post does).
+	private static readonly ConditionalWeakTable<string, Parsed> ParsedTexts = new();
 
 	/// <summary>The Markdown text to show.</summary>
 	public string? Markdown
@@ -81,13 +90,51 @@ public sealed class MarkdownView : Decorator
 		set => SetValue(HeadingOffsetProperty, value);
 	}
 
+	/// <inheritdoc />
+	/// <remarks>Builds the view once, with every property XAML set.</remarks>
+	protected override void OnInitialized(EventArgs e)
+	{
+		base.OnInitialized(e);
+		Rebuild();
+	}
+
+	/// <summary>Builds the view again after a property changed - not while XAML is still setting them.</summary>
+	private void RebuildOnceInitialized()
+	{
+		if (IsInitialized)
+		{
+			Rebuild();
+		}
+	}
+
 	private void Rebuild()
 	{
 		var root = new StackPanel();
-		Uri? linkBase = Uri.TryCreate(LinkBase, UriKind.Absolute, out Uri? uri) ? uri : null;
-		AddBlocks(root, Demote(MarkdownParser.Parse(Markdown, IssueUrlBase, linkBase), HeadingOffset), 0);
+		AddBlocks(root, Demote(Parse(Markdown, IssueUrlBase, LinkBase), HeadingOffset), 0);
 		Child = root;
 	}
+
+	/// <summary>A text's blocks: parsed the first time, then kept with the text while its links resolve the same way.</summary>
+	internal static IReadOnlyList<MarkdownBlock> Parse(string? markdown, string? issueUrlBase, string? linkBase)
+	{
+		if (markdown is null)
+		{
+			return [];
+		}
+
+		if (ParsedTexts.TryGetValue(markdown, out Parsed? parsed) && parsed.IssueUrlBase == issueUrlBase && parsed.LinkBase == linkBase)
+		{
+			return parsed.Blocks;
+		}
+
+		Uri? linkBaseUri = Uri.TryCreate(linkBase, UriKind.Absolute, out Uri? uri) ? uri : null;
+		parsed = new Parsed(issueUrlBase, linkBase, MarkdownParser.Parse(markdown, issueUrlBase, linkBaseUri));
+		ParsedTexts.AddOrUpdate(markdown, parsed);
+		return parsed.Blocks;
+	}
+
+	/// <summary>A text's blocks, and the link bases they were parsed with.</summary>
+	private sealed record Parsed(string? IssueUrlBase, string? LinkBase, IReadOnlyList<MarkdownBlock> Blocks);
 
 	private static IReadOnlyList<MarkdownBlock> Demote(IReadOnlyList<MarkdownBlock> blocks, int offset)
 	{

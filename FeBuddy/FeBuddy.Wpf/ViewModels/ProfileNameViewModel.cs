@@ -140,19 +140,8 @@ public sealed class ProfileNameViewModel : ObservableObject
 	/// <param name="profiles">Every profile now.</param>
 	/// <param name="renaming">The profile being renamed, which may keep its own name; <see langword="null"/> for a new one.</param>
 	/// <returns>A sentence saying what is wrong, or <see langword="null"/>.</returns>
-	internal static string? ProblemWith(string? name, IReadOnlyList<string> profiles, string? renaming)
-	{
-		if (UserConfigFile.ProfileNameProblem(name) is { } problem)
-		{
-			return problem;
-		}
-
-		string trimmed = name!.Trim();
-		string? taken = profiles.FirstOrDefault(p => p.Equals(trimmed, StringComparison.OrdinalIgnoreCase)
-			&& !p.Equals(renaming, StringComparison.OrdinalIgnoreCase));
-
-		return taken is null ? null : $"There is already a profile called {taken}.";
-	}
+	internal static string? ProblemWith(string? name, IReadOnlyList<string> profiles, string? renaming) =>
+		UserConfigFile.NewProfileNameProblem(name, profiles, renaming);
 
 	private void Close(bool confirmed)
 	{

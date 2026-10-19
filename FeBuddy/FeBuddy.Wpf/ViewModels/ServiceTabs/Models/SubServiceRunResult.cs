@@ -1,0 +1,148 @@
+using System.Windows.Input;
+
+using FeBuddy.Wpf.Mvvm;
+
+using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Infrastructure.Logging.Models;
+
+namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
+
+/// <summary>
+/// One sub-service's block in a finished run's review (the Review tab, or under a conversion's
+/// Run card): what it produced, and its warnings and routine notices, each behind its own toggle.
+/// </summary>
+/// <remarks>
+/// Errors and advisories (<see cref="ServiceMessage.IsAdvisory"/>) are left out: the run's review
+/// already lists them in its own ERRORS and ADVISORIES cards, for every sub-service at once.
+/// The warnings and routine notices both start collapsed on every run, like the Dashboard
+/// activity log - a run can report thousands of them. Each list is shown flat
+/// (<see cref="AttentionRows"/>, <see cref="InfoRows"/>), each group's heading then its messages,
+/// so the view can virtualize it and build only the rows on screen.
+/// </remarks>
+public sealed class SubServiceRunResult : ObservableObject
+{
+	private bool _isAttentionExpanded;
+	private bool _isInfoExpanded;
+
+	/// <summary>Builds a sub-service's block from its run messages.</summary>
+	/// <param name="name">The sub-service's name, as the tab rail shows it.</param>
+	/// <param name="summary">One line of what the run produced, e.g. its counts.</param>
+	/// <param name="messages">Every message the sub-service emitted.</param>
+	/// <param name="groupKey">
+	/// The heading each message is grouped under, e.g. the airway it names; <see langword="null"/>
+	/// groups by severity.
+	/// </param>
+	public SubServiceRunResult(
+		string name,
+		string summary,
+		IEnumerable<ServiceMessage> messages,
+		Func<ServiceMessage, string>? groupKey = null)
+	{
+		Name = name;
+		Summary = summary;
+
+		ServiceMessage[] shown = [.. messages.Where(m => !m.IsAdvisory && m.Level != LogLevel.Error)];
+
+		Func<ServiceMessage, string> key = groupKey ?? (m => m.Level.ToString());
+
+		Attention = Group(shown.Where(m => m.Level >= LogLevel.Warning), key);
+		Info = Group(shown.Where(m => m.Level < LogLevel.Warning), key);
+		AttentionMessageCount = Attention.Sum(g => g.Count);
+		InfoMessageCount = Info.Sum(g => g.Count);
+		AttentionRows = Flatten(Attention);
+		InfoRows = Flatten(Info);
+
+		ToggleAttentionCommand = new RelayCommand(() => IsAttentionExpanded = !IsAttentionExpanded);
+		ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
+	}
+
+	/// <summary>The sub-service's name.</summary>
+	public string Name { get; }
+
+	/// <summary>One line of what the run produced.</summary>
+	public string Summary { get; }
+
+	/// <summary>The warnings, grouped; shown behind <see cref="ToggleAttentionCommand"/>.</summary>
+	public IReadOnlyList<SubServiceMessageGroup> Attention { get; }
+
+	/// <summary>
+	/// <see cref="Attention"/> as the view lists it: each group's heading (a <see cref="SubServiceMessageGroup"/>),
+	/// then its messages (each a <see cref="SubServiceMessageRow"/>).
+	/// </summary>
+	public IReadOnlyList<object> AttentionRows { get; }
+
+	/// <summary>Whether there is any warning to show.</summary>
+	public bool HasAttention => Attention.Count > 0;
+
+	/// <summary>How many warnings there are, across every group.</summary>
+	public int AttentionMessageCount { get; }
+
+	/// <summary>Whether the warnings are expanded.</summary>
+	public bool IsAttentionExpanded
+	{
+		get => _isAttentionExpanded;
+		set { if (SetProperty(ref _isAttentionExpanded, value)) OnPropertyChanged(nameof(AttentionToggleLabel)); }
+	}
+
+	/// <summary>The label on the warnings toggle.</summary>
+	public string AttentionToggleLabel => IsAttentionExpanded
+		? "Hide warnings"
+		: $"Show {AttentionMessageCount} warning(s)";
+
+	/// <summary>Expands or collapses the warnings.</summary>
+	public ICommand ToggleAttentionCommand { get; }
+
+	/// <summary>The routine notices, grouped; shown behind <see cref="ToggleInfoCommand"/>.</summary>
+	public IReadOnlyList<SubServiceMessageGroup> Info { get; }
+
+	/// <summary><see cref="Info"/> as the view lists it, as <see cref="AttentionRows"/> lists the warnings.</summary>
+	public IReadOnlyList<object> InfoRows { get; }
+
+	/// <summary>Whether there is any routine notice to show.</summary>
+	public bool HasInfo => Info.Count > 0;
+
+	/// <summary>How many routine notices there are, across every group.</summary>
+	public int InfoMessageCount { get; }
+
+	/// <summary>Whether the routine notices are expanded.</summary>
+	public bool IsInfoExpanded
+	{
+		get => _isInfoExpanded;
+		set { if (SetProperty(ref _isInfoExpanded, value)) OnPropertyChanged(nameof(InfoToggleLabel)); }
+	}
+
+	/// <summary>The label on the routine-notices toggle.</summary>
+	public string InfoToggleLabel => IsInfoExpanded
+		? "Hide routine messages"
+		: $"Show {InfoMessageCount} routine message(s)";
+
+	/// <summary>Expands or collapses the routine notices.</summary>
+	public ICommand ToggleInfoCommand { get; }
+
+	/// <summary>Each group's heading, then its messages, the last of each marked.</summary>
+	private static IReadOnlyList<object> Flatten(IReadOnlyList<SubServiceMessageGroup> groups)
+	{
+		List<object> rows = new(groups.Count + groups.Sum(g => g.Count));
+
+		foreach (SubServiceMessageGroup group in groups)
+		{
+			rows.Add(group);
+
+			for (int i = 0; i < group.Messages.Count; i++)
+			{
+				rows.Add(new SubServiceMessageRow(group.Messages[i], i == group.Messages.Count - 1));
+			}
+		}
+
+		return rows;
+	}
+
+	private static IReadOnlyList<SubServiceMessageGroup> Group(
+		IEnumerable<ServiceMessage> messages,
+		Func<ServiceMessage, string> key) =>
+		[.. messages
+			.GroupBy(key)
+			.Select(g => new SubServiceMessageGroup(g.Key, g.Max(m => m.Level), [.. g.Select(m => m.Text)]))
+			.OrderByDescending(g => g.Level)
+			.ThenBy(g => g.Title, StringComparer.OrdinalIgnoreCase)];
+}

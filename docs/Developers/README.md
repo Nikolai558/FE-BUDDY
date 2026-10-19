@@ -28,7 +28,7 @@ harness and the tests all drive it the same way.
 | `FeBuddy.Wpf` | The app, `FE-BUDDY.exe`: MVVM screens over Core. |
 | `FeBuddy.Versioning` | The version number and the upgrade rule, shared by Core and the installer (netstandard2.0). |
 | `FeBuddy.Installer` | The MSI (WiX). |
-| `FeBuddy.Installer.CustomActions` | The MSI's code: enforce the upgrade rule, and remove saved credentials on uninstall (net472). |
+| `FeBuddy.Installer.CustomActions` | The MSI's code: enforce the upgrade rule, remove saved credentials on uninstall, and open FE-Buddy as the signed-in user from the stock dialogs' Finish (net472). |
 | `FeBuddy.Installer.UI` | The MSI's setup window, in the app's theme: install, update, roll back, repair and uninstall (WPF, net472, an MSI embedded UI). |
 | `FeBuddy.Harness` | A console app that runs the services with settings written in code. |
 | `FeBuddy.UnitTests` | xUnit tests for Core, Versioning and the app's view-models and controls. |
@@ -65,7 +65,7 @@ in a release; the release checks fail if it's on.
 A dev launch skips the launch steps you aren't testing, so FE-Buddy is ready in moments.
 
 - **Start it** by choosing **FE-Buddy (Dev launch)** from Visual Studio's Start drop-down
-  (`Properties/launchSettings.json`), or with `--dev` or `--devmode` in any case:
+  (`Properties/launchSettings.json`), or with `--dev` in any case:
 
   ```bash
   dotnet run --project FeBuddy/FeBuddy.Wpf -- --dev
@@ -155,8 +155,9 @@ skipped in a session with no Windows sign-in behind it, such as some build agent
 ./FeBuddy/build.ps1
 ```
 
-(or double-click `FeBuddy/build.cmd`). It publishes the app self-contained for win-x64, builds the
-MSI and copies it to `FeBuddy/releases/FE-BUDDY-Setup.msi`. It also advances
+(or double-click `FeBuddy/build.cmd`). It publishes the app self-contained for win-x64 and
+precompiled (ReadyToRun), so the first use of each page isn't held up by compiling its code. It
+then builds the MSI and copies it to `FeBuddy/releases/FE-BUDDY-Setup.msi`. It also advances
 `FeBuddy/FeBuddy.Installer/installer-version-counter.json`: discard that change, since only the
 release workflow commits it ([why](VERSIONING.md#the-msis-own-version-number)).
 
@@ -164,14 +165,15 @@ release workflow commits it ([why](VERSIONING.md#the-msis-own-version-number)).
 
 `.github/workflows/ci.yml` runs on pushes and pull requests to `v3-development` and pull requests
 into `releases`: **Build**, **Test** (the coverage gate) and **Installer** (the MSI, kept a day for
-testing). CodeQL runs separately, on pull requests and pushes to both branches, and weekly. A pull
-request into `v3-development` that changes only `.md` files outside `FeBuddy/` skips Build, Test
-and Installer - except the root `News.md`, which is built into the app.
+testing). CodeQL runs separately, on pull requests and pushes to both branches, and weekly. Every
+pull request runs all three, documentation-only ones included: the tests read the docs (their links
+and every file's encoding).
 
 ## Odds and ends
 
-- **`DEV-CleanBuild.bat`** (repository root) empties every project's `bin\` folder, for when a build
-  gets confused.
+- **`DEV-CleanBuild.bat`** (repository root) deletes every `bin\` and `obj\` folder under `FeBuddy\`,
+  and `publish\` and `TestResults\`, for when a build gets confused. It leaves `releases\` (the built
+  MSI) alone.
 - **News** is `News.md` at the repository root (its format is at the top of the file); the app reads
   it from `v3-development`. `FeBuddy/FeBuddy.Core/News.md` is not News: it is a final notice for
   3.0.0-alpha.1, which reads that path.

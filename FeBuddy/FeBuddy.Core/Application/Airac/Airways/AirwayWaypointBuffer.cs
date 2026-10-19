@@ -57,8 +57,8 @@ public static class AirwayWaypointBuffer
 		IReadOnlyList<LineString> lineStrings,
 		IReadOnlyList<AirwayPoint> airwayPoints,
 		string awyId,
-		double fixRadiusNm = DefaultFixRadiusNm,
-		double navaidRadiusNm = DefaultNavaidRadiusNm)
+		double fixRadiusNm,
+		double navaidRadiusNm)
 	{
 		ArgumentNullException.ThrowIfNull(lineStrings);
 		ArgumentNullException.ThrowIfNull(airwayPoints);
@@ -85,7 +85,7 @@ public static class AirwayWaypointBuffer
 				Location startLocation = new(start.Y, start.X);
 				Location endLocation = new(end.Y, end.X);
 
-				double legDistanceNm = GeoMath.Distance(startLocation, endLocation, round: false);
+				double legDistanceNm = GeoMath.Distance(startLocation, endLocation);
 
 				if (legDistanceNm <= startRadius + endRadius)
 				{
@@ -94,7 +94,8 @@ public static class AirwayWaypointBuffer
 						$"Airway '{awyId}': a leg between ({start.Y:F5}, {start.X:F5}) and " +
 						$"({end.Y:F5}, {end.X:F5}) is {legDistanceNm:F2} NM long, shorter than " +
 						$"its combined waypoint buffer radius of {startRadius + endRadius:F1} NM. " +
-						"This leg was dropped."));
+						"This leg was dropped.")
+					{ Subject = awyId });
 					continue;
 				}
 

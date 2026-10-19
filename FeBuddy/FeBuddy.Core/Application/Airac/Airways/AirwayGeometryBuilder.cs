@@ -67,7 +67,8 @@ public static class AirwayGeometryBuilder
 
 				unresolvedWaypointIds.Add(unresolvedId);
 				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayGeometryBuilder",
-					$"Airway '{awyId}': unable to locate coordinates for segment {whichEnd} waypoint '{unresolvedId}'. This airway was excluded from all output."));
+					$"Airway '{awyId}': unable to locate coordinates for segment {whichEnd} waypoint '{unresolvedId}'. This airway was excluded from all output.")
+				{ Subject = awyId });
 
 				// Border crossings were normalized away upstream, so this is a real data fault and
 				// AirwayBuilder will exclude the airway. With nothing resolvable left there is

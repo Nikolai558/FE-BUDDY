@@ -40,8 +40,32 @@ public static partial class AirwayOutputFiles
 	public static bool IsKind(string key, CrcFeatureKind kind) =>
 		IsGeojsonKey(key) && key.EndsWith($"_{AiracOutputPaths.FileKindSuffix(kind)}", StringComparison.OrdinalIgnoreCase);
 
+	/// <summary>Reads a GeoJSON file's key back into its group and kind, e.g. <c>Airways_J_Text</c> into <c>J</c> and Text.</summary>
+	/// <param name="key">The file key.</param>
+	/// <param name="group">The altitude class or designation, when the key is one.</param>
+	/// <param name="kind">The kind of feature, when the key is one.</param>
+	/// <returns><see langword="true"/> when the key is an Airways GeoJSON file's.</returns>
+	public static bool TryParseGeojsonKey(string key, out string group, out CrcFeatureKind kind)
+	{
+		ArgumentNullException.ThrowIfNull(key);
+
+		group = string.Empty;
+		kind = CrcFeatureKind.Line;
+		Match match = GeojsonKeyPattern().Match(key);
+
+		if (!match.Success)
+		{
+			return false;
+		}
+
+		group = match.Groups["group"].Value;
+		kind = Enum.GetValues<CrcFeatureKind>().First(candidate =>
+			AiracOutputPaths.FileKindSuffix(candidate).Equals(match.Groups["kind"].Value, StringComparison.OrdinalIgnoreCase));
+		return true;
+	}
+
 	// Designations are the ID's leading letters (AirwayClassifier.DeriveDesignation), so a group
 	// is always letters only.
-	[GeneratedRegex("^Airways_[A-Za-z]+_(Lines|Symbols|Text)$", RegexOptions.IgnoreCase)]
+	[GeneratedRegex("^Airways_(?<group>[A-Za-z]+)_(?<kind>Lines|Symbols|Text)$", RegexOptions.IgnoreCase)]
 	private static partial Regex GeojsonKeyPattern();
 }

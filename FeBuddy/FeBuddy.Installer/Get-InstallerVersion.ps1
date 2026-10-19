@@ -48,8 +48,10 @@ if ($RealVersion -notmatch '^(?<major>\d+)\.') {
 $realMajor = [int]$Matches['major']
 
 $counter = $null
+$counterText = $null
 if (Test-Path $CounterFilePath) {
-    $counter = Get-Content -Path $CounterFilePath -Raw | ConvertFrom-Json
+    $counterText = Get-Content -Path $CounterFilePath -Raw
+    $counter = $counterText | ConvertFrom-Json
 }
 
 if ($null -eq $counter -or [int]$counter.major -ne $realMajor) {
@@ -78,6 +80,20 @@ else {
     $counter.counterBuild = $nextBuild
 }
 
-($counter | ConvertTo-Json) | Set-Content -Path $CounterFilePath -Encoding utf8
+# Written out by hand, not with ConvertTo-Json and Set-Content: Windows PowerShell 5.1 (build.cmd)
+# indents differently and writes a UTF-8 byte-order mark, which FileEncodingTests refuses. This way
+# both PowerShells write the same bytes, with the line ending the file already has (the repository
+# stores it with LF; a checkout may give it CRLF), so a build's diff is the one number it changed.
+$newline = "`n"
+if ($null -ne $counterText -and $counterText.Contains("`r`n")) {
+    $newline = "`r`n"
+}
+$json = "{$newline" +
+    "  `"major`": $([int]$counter.major),$newline" +
+    "  `"counterMinor`": $([int]$counter.counterMinor),$newline" +
+    "  `"counterBuild`": $([int]$counter.counterBuild)$newline" +
+    "}$newline"
+$counterFullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($CounterFilePath)
+[System.IO.File]::WriteAllText($counterFullPath, $json, (New-Object System.Text.UTF8Encoding $false))
 
 Write-Output "$($counter.major).$($counter.counterMinor).$($counter.counterBuild)"

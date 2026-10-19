@@ -474,6 +474,5 @@
     start(questions.map((_, i) => i).filter(i => !section || questions[i].section === section));
   }));
 
-  window.feBuddyPractice = { diagnose, questions };
   start(questions.map((_, i) => i));
 })();

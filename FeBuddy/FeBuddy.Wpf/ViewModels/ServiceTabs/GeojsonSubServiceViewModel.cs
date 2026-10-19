@@ -6,8 +6,7 @@ using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
-
-using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo;
@@ -60,8 +59,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private const string NoCrcFilesMessage =
 		"CRC-ERAM defaults are set to go on specific files, but none is ticked. Tick at least one, or choose No CRC-ERAM defaults.";
 
-	private const string OverrideRoiKey = "Roi.OverrideDefaultRoi";
-
 	private const string OverrideCornersNode = "Roi.OverrideCorners";
 
 	private const string CrcDefaultsScopeKey = "CrcDefaultsScope";
@@ -84,6 +81,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private string _neLat = string.Empty;
 	private string _neLon = string.Empty;
 	private bool _isCycleReady;
+	private string? _cycleUnavailable;
 
 	/// <summary>Wires the ROI picker and follows the shared default ROI.</summary>
 	protected GeojsonSubServiceViewModel()
@@ -108,8 +106,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	public bool GenerateAliasFile => HasAliasFile && _outputs.Alias;
 
 	/// <summary>Whether the sub-service's GeoJSON files are written.</summary>
-	/// <remarks>Turned on and off on the General tab. Always off for a sub-service with no GeoJSON choice.</remarks>
-	public virtual bool GenerateGeojson => _outputs.Geojson;
+	/// <remarks>Turned on and off on the General tab; off for a sub-service that doesn't offer GeoJSON there.</remarks>
+	public bool GenerateGeojson => _outputs.Geojson;
 
 	/// <inheritdoc />
 	public override SubServiceOutputKinds OutputsOn =>
@@ -138,9 +136,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	/// <inheritdoc />
 	public bool EmitText { get => _emitText; set { if (SetProperty(ref _emitText, value)) MarkDirty(); } }
-
-	/// <summary>Whether the tab's current settings write its alias file.</summary>
-	public bool WritesAliasFile => HasAliasFile && GenerateAliasFile;
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -205,7 +200,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	// ================= which files get CRC ERAM defaults =================
 
 	/// <summary>Whether the tab's current settings write any GeoJSON file, so CRC-ERAM defaults apply.</summary>
-	public bool HasGeojsonFiles => CrcFileRows.Count > 0;
+	private bool HasGeojsonFiles => CrcFileRows.Count > 0;
 
 	/// <inheritdoc />
 	/// <remarks>While the tab writes a GeoJSON file.</remarks>
@@ -396,15 +391,29 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		private set => SetProperty(ref _isCycleReady, value);
 	}
 
-	/// <summary>What a list built from the cycle says until <see cref="IsCycleReady"/>, e.g. <c>Loading AIRAC 2611…</c>.</summary>
-	public string CycleWaitingText => SelectedCycle is { } cycle ? $"Loading AIRAC {cycle.AiracCycleId}…" : "Waiting for AIRAC data…";
+	/// <summary>
+	/// What a list built from the cycle says until <see cref="IsCycleReady"/>: e.g. <c>Loading AIRAC 2611…</c>,
+	/// or why the cycle won't load.
+	/// </summary>
+	public string CycleWaitingText => _cycleUnavailable
+		?? (SelectedCycle is { } cycle ? $"Loading AIRAC {cycle.AiracCycleId}…" : "Waiting for AIRAC data…");
 
 	/// <summary>
 	/// Called by the parent whenever the selected cycle's data is ready or not (see
 	/// <see cref="ISubServiceRunTarget"/>).
 	/// </summary>
 	/// <param name="ready">Whether the selected cycle's data has loaded.</param>
-	public void SetReadiness(bool ready) => IsCycleReady = ready;
+	/// <param name="unavailableReason">Why the selected cycle won't load, or <see langword="null"/> while it is loading or loaded.</param>
+	public void SetReadiness(bool ready, string? unavailableReason = null)
+	{
+		IsCycleReady = ready;
+
+		if (_cycleUnavailable != unavailableReason)
+		{
+			_cycleUnavailable = unavailableReason;
+			OnPropertyChanged(nameof(CycleWaitingText));
+		}
+	}
 
 	// ================= for the derived tab =================
 
@@ -429,7 +438,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// Whether the area matters right now: while any output it narrows (<see cref="AreaOutputs"/>) is
 	/// on. Only then is it checked.
 	/// </summary>
-	protected virtual bool IsAreaInUse => (AreaOutputs & OutputsOn) != SubServiceOutputKinds.None;
+	private bool IsAreaInUse => (AreaOutputs & OutputsOn) != SubServiceOutputKinds.None;
 
 	/// <summary>After the area changes, for a tab with more that follows from it. The base does nothing.</summary>
 	protected virtual void OnAreaChanged()
@@ -451,6 +460,13 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	protected virtual bool HasAliasFile => true;
 
 	/// <summary>
+	/// Whether the sub-service writes GeoJSON at all. When <see langword="false"/> (Procedure Charts,
+	/// Telephony), the run isn't sent the coordinate precision, the FE-Buddy properties or the files
+	/// that get CRC-ERAM defaults, which its parser would only ignore.
+	/// </summary>
+	protected virtual bool HasGeojson => true;
+
+	/// <summary>
 	/// After the General tab turns an output on or off: the properties that follow from the outputs
 	/// are announced, the file lists rebuilt and the tab re-checked. The tab isn't marked unsaved:
 	/// the outputs are the General tab's to save.
@@ -460,7 +476,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		OnPropertyChanged(nameof(GenerateAliasFile));
 		OnPropertyChanged(nameof(GenerateGeojson));
-		OnPropertyChanged(nameof(WritesAliasFile));
 		OnPropertyChanged(nameof(OutputsOn));
 		RefreshOutputFiles();
 		Revalidate();
@@ -487,7 +502,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		ArgumentNullException.ThrowIfNull(file);
 
-		return file.IsGeojson ? AiracOutputPaths.GeojsonFolder : AiracOutputPaths.AliasFolder;
+		return OutputFileNames.FolderOf(file.Key);
 	}
 
 	/// <summary>Where a CRC defaults row is saved under this tab's config node.</summary>
@@ -571,7 +586,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 				]));
 			}
 
-			OnPropertyChanged(nameof(HasGeojsonFiles));
 			OnPropertyChanged(nameof(ShowsCrcDefaultsCard));
 		}
 
@@ -593,7 +607,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	/// <summary>
 	/// Restores the shared settings from config, without marking the tab dirty. Call from
-	/// <see cref="SubServiceSettingsViewModel.LoadFromConfig"/> before <see cref="ServiceTabViewModel.ClearDirty"/>.
+	/// <see cref="SubServiceSettingsViewModel.LoadFromConfig"/> before <see cref="SubServiceSettingsViewModel.ClearDirty"/>.
 	/// </summary>
 	protected void LoadSharedSettings()
 	{
@@ -627,7 +641,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		if (Areas.Count > 0)
 		{
 			_area = SavedArea();
-			_overrideRoi = GetBool(OverrideRoiKey, false);
+			_overrideRoi = GetBool(UserConfigAreas.OverrideRoiKey, false);
 			_swLat = Get($"{OverrideCornersNode}.SwLat") ?? string.Empty;
 			_swLon = Get($"{OverrideCornersNode}.SwLon") ?? string.Empty;
 			_neLat = Get($"{OverrideCornersNode}.NeLat") ?? string.Empty;
@@ -659,6 +673,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			}
 		}
 
+		// A tab with no GeoJSON saves these and the CRC-ERAM choices too, and loads them back, though
+		// it never shows them: dropping them from saved settings would need a settings layout step.
 		Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
 		Set("FebProperties", SelectedFebPropertyNames());
 
@@ -676,7 +692,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		if (Areas.Count > 0)
 		{
 			Set(UserConfigAreas.AreaKey, Area.ToString());
-			Set(OverrideRoiKey, YesNo(OverrideRoi));
+			Set(UserConfigAreas.OverrideRoiKey, YesNo(OverrideRoi));
 			Set($"{OverrideCornersNode}.SwLat", SwLat);
 			Set($"{OverrideCornersNode}.SwLon", SwLon);
 			Set($"{OverrideCornersNode}.NeLat", NeLat);
@@ -688,12 +704,16 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// Adds the settings every GeoJSON sub-service's parser reads the same way: coordinate
 	/// precision, alias file, file choices, FE-Buddy properties, the files that get CRC-ERAM defaults
 	/// and the values they need, and the area with its ROI. The tab adds its ARTCCs itself. The AIRAC
-	/// Service adds the output folder.
+	/// Service adds the output folder. A tab with no GeoJSON (<see cref="HasGeojson"/>) leaves out the
+	/// precision, the FE-Buddy properties and the CRC-ERAM files.
 	/// </summary>
 	/// <param name="settings">The settings block being built.</param>
 	protected void AddSharedSettings(Dictionary<string, string> settings)
 	{
-		settings["CoordinatePrecision"] = OutputPreferences.CoordinatePrecision.ToString(CultureInfo.InvariantCulture);
+		if (HasGeojson)
+		{
+			settings["CoordinatePrecision"] = OutputPreferences.CoordinatePrecision.ToString(CultureInfo.InvariantCulture);
+		}
 
 		if (HasAliasFile)
 		{
@@ -708,11 +728,14 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			}
 		}
 
-		settings["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties);
-		settings["FebProperties"] = SelectedFebPropertyNames();
+		if (HasGeojson)
+		{
+			settings["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties);
+			settings["FebProperties"] = SelectedFebPropertyNames();
 
-		// Only files that are actually written, so the parser sees exactly what the run will do.
-		settings["CrcDefaultsFor"] = string.Join(',', CrcFiles().Select(file => file.Key));
+			// Only files that are actually written, so the parser sees exactly what the run will do.
+			settings["CrcDefaultsFor"] = string.Join(',', CrcFiles().Select(file => file.Key));
+		}
 
 		// Only the rows those files need: the parser requires exactly those, and would only
 		// ignore any others.
@@ -941,7 +964,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	private SubServiceArea SavedArea()
 	{
-		string tab = NodePath[(NodePath.LastIndexOf('.') + 1)..];
+		string tab = AiracTabs.TabOf(NodePath) ?? string.Empty;
 
 		foreach (string? saved in new[] { Get(UserConfigAreas.AreaKey), UserConfigAreas.DefaultFor(tab, UserConfigFile.GetValue) })
 		{
@@ -989,6 +1012,16 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		OnPropertyChanged(nameof(DefaultRoiSummary));
 		OnPropertyChanged(nameof(HasDefaultRoi));
 		RaiseWhatYoullGetChanged();
+		OnRoiChanged();
+	}
+
+	/// <summary>
+	/// After the ROI in use may have changed - the tab's own, the choice between it and the default, or
+	/// the default itself, which changes without the tab being edited. For a tab that keeps something
+	/// worked out from the ROI.
+	/// </summary>
+	protected virtual void OnRoiChanged()
+	{
 	}
 
 	private void RaiseAreaChoices()
@@ -1009,8 +1042,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <summary>Every output on, never changing: the outputs of a tab not attached to a General tab.</summary>
 	private sealed class EveryOutput : ObservableObject, ISubServiceOutputs
 	{
-		public bool IsIncluded => true;
-
 		public bool Alias => true;
 
 		public bool Geojson => true;

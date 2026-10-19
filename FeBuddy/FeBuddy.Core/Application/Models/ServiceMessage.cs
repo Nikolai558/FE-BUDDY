@@ -18,4 +18,10 @@ public sealed record ServiceMessage(LogLevel Level, string Source, string Text)
 	/// filters, so no files were written" - rather than the routine per-feature notices.
 	/// </summary>
 	public bool IsAdvisory { get; init; }
+
+	/// <summary>
+	/// What the message is about, when it is about one thing - e.g. the airway it names - for a run's review
+	/// to group the messages by; <see langword="null"/> otherwise.
+	/// </summary>
+	public string? Subject { get; init; }
 }

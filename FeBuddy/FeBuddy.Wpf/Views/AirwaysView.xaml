@@ -20,7 +20,7 @@
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside. A second scroller would
          steal the wheel and hide the lower sections. -->
-    <StackPanel x:Name="Root">
+    <StackPanel>
 
             <cards:AttentionCard />
 
@@ -119,7 +119,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Designation}" Margin="0,0,8,0" VerticalAlignment="Center"
                                                Style="{StaticResource Text.Body.Strong}" FontFamily="{StaticResource Font.Mono}" />
-                                    <ComboBox Grid.Column="1" Style="{StaticResource Themed.ComboBox}" Width="110"
+                                    <ComboBox Grid.Column="1" Width="110"
                                               ItemsSource="{x:Static vm:AirwaysViewModel.StratumValues}"
                                               SelectedItem="{Binding Stratum}"
                                               bhv:FieldState.Error="{Binding StratumError}" />

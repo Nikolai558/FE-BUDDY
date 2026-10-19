@@ -108,7 +108,11 @@ public sealed class ServiceTabValidationTests
 
 		public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() => [];
 
-		internal void Edit() => MarkDirty();
+		internal void Edit()
+		{
+			IsDirty = true;
+			Revalidate();
+		}
 
 		protected override void Validate(ServiceValidation validation)
 		{

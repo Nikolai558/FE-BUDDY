@@ -104,4 +104,25 @@ public sealed class SettingsValueReaderTests
 		Assert.Equal("shortDashed", SettingsValueReader.NormalizeStyle("SHORTDASHED", valid));
 		Assert.Equal("zigzag", SettingsValueReader.NormalizeStyle("zigzag", valid));
 	}
+
+	/// <summary>A positive decimal as a page checks it while typed, by the same rule the run reads it by.</summary>
+	[Theory]
+	[InlineData("12.5", true)]
+	[InlineData(" 50 ", true)]
+	[InlineData("0", false)]
+	[InlineData("-3", false)]
+	[InlineData("50.01", false)]
+	[InlineData("1,000", false)]
+	[InlineData("abc", false)]
+	[InlineData(null, false)]
+	public void a_positive_decimal_is_parsed_as_the_run_reads_it(string? value, bool valid)
+	{
+		Assert.Equal(valid, SettingsValueReader.TryParsePositiveDecimal(value, 50, out double parsed));
+
+		if (valid)
+		{
+			Dictionary<string, string> settings = new() { ["Distance"] = value! };
+			Assert.Equal(parsed, SettingsValueReader.OptionalPositiveDecimal(settings, "Distance", 50));
+		}
+	}
 }

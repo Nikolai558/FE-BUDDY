@@ -1,8 +1,12 @@
+using System.Collections.Specialized;
+
+using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
@@ -22,7 +26,7 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 [Collection("AppLog")]
 public sealed class AiracGeneralTabViewModelTests : IDisposable
 {
-	private const string Node = "Services.AiracService";
+	private const string Node = "Services.AiracService.General";
 
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_General_" + Guid.NewGuid().ToString("N"));
 
@@ -105,9 +109,9 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		airports.Alias = false;
 		fixes.Geojson = false;
 
-		Assert.False(general.IsIncluded(AiracSubServices.AirportsKey));
+		Assert.False(general.RowFor(AiracSubServices.AirportsKey)!.IsIncluded);
 		Assert.Equal(SubServiceOutputKinds.None, airports.OutputsOn);
-		Assert.False(general.IsIncluded(AiracSubServices.FixesKey));
+		Assert.False(general.RowFor(AiracSubServices.FixesKey)!.IsIncluded);
 		Assert.Equal(3, changes);
 	}
 
@@ -121,7 +125,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		airports.IsIncluded = false;
 
-		Assert.False(general.IsIncluded(AiracSubServices.AirportsKey));
+		Assert.False(general.RowFor(AiracSubServices.AirportsKey)!.IsIncluded);
 		Assert.False(airports.Alias);
 		Assert.False(airports.Geojson);
 		Assert.True(airports.OffersAlias);
@@ -153,7 +157,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		airports.Geojson = true;
 
-		Assert.True(general.IsIncluded(AiracSubServices.AirportsKey));
+		Assert.True(general.RowFor(AiracSubServices.AirportsKey)!.IsIncluded);
 		Assert.Equal(SubServiceOutputKinds.Geojson, airports.OutputsOn);
 		Assert.Equal(1, changes);
 	}
@@ -175,11 +179,40 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.Null(UserConfigFile.GetValue($"{Node}.Outputs.Fixes.Alias"));
 
 		AiracGeneralTabViewModel reloaded = new();
-		Assert.False(reloaded.IsIncluded(AiracSubServices.WxStationsKey));
+		Assert.False(reloaded.RowFor(AiracSubServices.WxStationsKey)!.IsIncluded);
 		Assert.Equal(SubServiceOutputKinds.None, Row(reloaded, AiracSubServices.WxStationsKey).OutputsOn);
 		Assert.False(Row(reloaded, AiracSubServices.AirportsKey).Geojson);
 		Assert.False(Row(reloaded, AiracSubServices.ProceduresKey).ProceduresJson);
 		Assert.True(Row(reloaded, AiracSubServices.ProceduresKey).ProcedureChanges);
+	}
+
+	/// <summary>
+	/// The General tab's node sits beside the other tabs' nodes, so saving another tab or the Map's
+	/// default ROI doesn't offer the General tab an undo, and the General tab's undo restores only its
+	/// own settings, not every AIRAC tab's.
+	/// </summary>
+	[Fact]
+	public void the_general_tabs_save_and_undo_never_reach_another_tabs_settings()
+	{
+		const string airwaysKey = "Services.AiracService.Airways.FixBufferNm";
+		AiracGeneralTabViewModel general = new();
+
+		UserConfigFile.TrySetValue(airwaysKey, "2");
+		UserConfigFile.Save("Services.AiracService.Airways");
+		UserConfigFile.TrySetValue(UserConfigKeys.DefaultRoiFilter, "Y");
+		UserConfigFile.Save("General.DefaultRoi");
+
+		Assert.False(general.CanUndo);
+
+		Row(general, AiracSubServices.FixesKey).IsIncluded = false;
+		Assert.True(general.Save());
+		Row(general, AiracSubServices.FixesKey).IsIncluded = true;
+		Assert.True(general.Save());
+		general.UndoLastSave();
+
+		Assert.False(general.RowFor(AiracSubServices.FixesKey)!.IsIncluded);
+		Assert.Equal("2", UserConfigFile.GetValue(airwaysKey));
+		Assert.Equal("Y", UserConfigFile.GetValue(UserConfigKeys.DefaultRoiFilter));
 	}
 
 	/// <summary>Settings edited by hand with every output off would make nothing: they load with every output on.</summary>
@@ -247,6 +280,94 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.StartsWith("Cycle 2611's NASR data is ready, but its d-TPP Metafile isn't.", next.ToolTip, StringComparison.Ordinal);
 	}
 
+	/// <summary>
+	/// The tab saves which cycle - <c>Previous</c>, <c>Current</c> or <c>Next</c> - not its ID, so next cycle it reopens
+	/// on the same kind of cycle, never on last cycle's data by mistake.
+	/// </summary>
+	[Fact]
+	public void the_cycle_is_saved_as_its_position_and_reopens_on_it()
+	{
+		AiracGeneralTabViewModel general = new() { SelectedCyclePosition = AiracCyclePosition.Next };
+		Assert.True(general.Save());
+
+		Assert.Equal("Next", UserConfigFile.GetValue($"{Node}.CyclePosition"));
+		Assert.Null(UserConfigFile.GetValue($"{Node}.AiracCycleId"));
+		Assert.Equal(AiracCyclePosition.Next, new AiracGeneralTabViewModel().SelectedCyclePosition);
+	}
+
+	/// <summary>Only <c>CyclePosition</c> is read; any other value or key opens on Current.</summary>
+	[Theory]
+	[InlineData($"{Node}.CyclePosition", "Previous")]
+	[InlineData($"{Node}.CyclePosition", "Current")]
+	[InlineData($"{Node}.CyclePosition", "2")]
+	[InlineData("Services.AiracService.AiracCycleId", "2609")]
+	public void anything_but_a_saved_next_opens_on_current(string key, string value)
+	{
+		AppEnvironment.LaunchUtcNow = new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc);
+		UserConfigFile.TrySetValue(key, value);
+
+		AiracGeneralTabViewModel general = new();
+
+		Assert.Equal(AiracCyclePosition.Current, general.SelectedCyclePosition);
+		Assert.False(general.IsDirty);
+	}
+
+	/// <summary>
+	/// A saved Next the FAA hasn't published yet opens on Current, still clean, so the saved choice
+	/// stands for when it is; a Next picked this session stays picked.
+	/// </summary>
+	[Fact]
+	public async Task a_saved_next_cycle_not_yet_published_opens_on_current()
+	{
+		UserConfigFile.TrySetValue($"{Node}.CyclePosition", "Next");
+		await PrepareCyclesAsync(new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc), withDtpp: _ => true, notPublished: "2611");
+		int cycleChanges = 0;
+
+		AiracGeneralTabViewModel general = new();
+		general.CycleChanged += (_, _) => cycleChanges++;
+
+		Assert.Equal(AiracCyclePosition.Current, general.SelectedCyclePosition);
+		Assert.False(general.IsDirty);
+
+		general.SelectedCyclePosition = AiracCyclePosition.Next;
+		general.SetReadiness(general.IsReady, general.WaitingMessage);
+
+		Assert.Equal(AiracCyclePosition.Next, general.SelectedCyclePosition);
+		Assert.Equal(1, cycleChanges);
+	}
+
+	/// <summary>
+	/// Reading the settings again (here Discard) keeps an unpublished saved Next on Current, as launch
+	/// does: no unsaved mark, no cycle change, and the same message.
+	/// </summary>
+	[Fact]
+	public async Task a_reload_keeps_an_unpublished_saved_next_on_current()
+	{
+		UserConfigFile.TrySetValue($"{Node}.CyclePosition", "Next");
+		await PrepareCyclesAsync(new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc), withDtpp: _ => true, notPublished: "2611");
+		AiracGeneralTabViewModel general = new();
+		int cycleChanges = 0;
+		general.CycleChanged += (_, _) => cycleChanges++;
+		List<string> toasts = [];
+		NotifyCollectionChangedEventHandler shown = (_, e) => toasts.AddRange(e.NewItems?.OfType<ToastItem>().Select(toast => toast.Title) ?? []);
+		Toast.Items.CollectionChanged += shown;
+
+		try
+		{
+			general.SubServices[0].IsIncluded = false;
+			general.RevertChanges();
+		}
+		finally
+		{
+			Toast.Items.CollectionChanged -= shown;
+		}
+
+		Assert.Equal(AiracCyclePosition.Current, general.SelectedCyclePosition);
+		Assert.False(general.IsDirty);
+		Assert.Equal(0, cycleChanges);
+		Assert.Contains("Opened on the current AIRAC cycle", toasts);
+	}
+
 	[Fact]
 	public void a_cycle_still_being_prepared_is_working_and_has_no_tooltip()
 	{
@@ -291,12 +412,14 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 	/// Fixes the launch clock at <paramref name="utcNow"/> and prepares the three cycles from it, each
 	/// in its own folder, writing a d-TPP Metafile into the folders <paramref name="withDtpp"/> picks.
 	/// </summary>
-	private async Task PrepareCyclesAsync(DateTime utcNow, Func<string, bool> withDtpp)
+	private async Task PrepareCyclesAsync(DateTime utcNow, Func<string, bool> withDtpp, string? notPublished = null)
 	{
 		AppEnvironment.LaunchUtcNow = utcNow;
 
 		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
-			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
+			probe: (cycle, _) => Task.FromResult(cycle.AiracCycleId == notPublished
+				? AiracCyclePublicationState.NotYetPublished
+				: AiracCyclePublicationState.Published),
 			download: (cycle, _) => Task.FromResult(Directory.CreateDirectory(Path.Combine(_root, "cycles", cycle.AiracCycleId)).FullName),
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
 			ensureDtpp: (cycleDirectory, cycleId, _) =>
@@ -312,6 +435,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		await AiracCycleDataCache.Instance.PrepareCyclesAsync(
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Previous),
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Current),
-			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next));
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next),
+			AiracLaunchPlan.Everything);
 	}
 }

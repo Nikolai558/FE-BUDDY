@@ -1,10 +1,12 @@
 using System.Windows.Threading;
 
 using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.Shell.Models;
 using FeBuddy.Wpf.ViewModels;
 
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
@@ -17,7 +19,7 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 [Collection("AppLog")]
 public sealed class SettingsProfilesViewModelTests : IDisposable
 {
-	private const string Artcc = "Services.AiracService.UserArtccId";
+	private const string Artcc = UserConfigKeys.Facility;
 
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_ProfileCard_" + Guid.NewGuid().ToString("N"));
 	private readonly List<string> _asked = [];
@@ -69,6 +71,15 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 
 	private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
 
+	/// <summary>Lets the card's profile change finish: its file work off the UI thread, then the pages on it.</summary>
+	private static void Finish(SettingsProfilesViewModel card)
+	{
+		DispatcherFrame frame = new();
+		card.Working.ContinueWith(_ => frame.Continue = false, TaskScheduler.Default);
+		Dispatcher.PushFrame(frame);
+		card.Working.GetAwaiter().GetResult();
+	}
+
 	[Fact]
 	public void the_card_lists_the_profiles_and_shows_the_one_in_use() => StaThread.Run(() =>
 	{
@@ -91,6 +102,7 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		Assert.Equal("Default", UserConfigFile.ActiveProfile);
 
 		Pump();
+		Finish(card);
 
 		Assert.Equal("ZNY", UserConfigFile.ActiveProfile);
 		Assert.Equal("ZNY", UserConfigFile.GetValue(Artcc));
@@ -98,6 +110,74 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		Assert.Equal(1, _reloads);
 		Assert.Empty(_asked);
 		Assert.Contains(Toast.Items, t => t.Title == "Settings profile switched");
+	});
+
+	/// <summary>
+	/// While a profile change runs - and while an import does - the profile list, New, Rename, Delete and Import
+	/// are off, so nothing else changes the profiles or the settings meanwhile; they are back once it is done.
+	/// </summary>
+	[Fact]
+	public void the_list_and_import_are_off_while_a_profile_change_or_an_import_runs() => StaThread.Run(() =>
+	{
+		SettingsProfilesViewModel card = Card();
+		using ManualResetEventSlim writing = new();
+		using ManualResetEventSlim release = new();
+		UserConfigFile.WritingFileForTesting = _ =>
+		{
+			writing.Set();
+			release.Wait();
+		};
+
+		card.SelectedProfile = "ZNY";
+		Pump();
+
+		try
+		{
+			// The ten seconds are only a guard against hanging: the switch reaches its file at once.
+			Assert.True(writing.Wait(TimeSpan.FromSeconds(10)));
+			Assert.False(card.CanChooseProfile);
+			Assert.True(SettingsBusy.IsBusy);
+			Assert.False(card.NewCommand.CanExecute(null));
+			Assert.False(card.DeleteCommand.CanExecute(null));
+		}
+		finally
+		{
+			// Whatever happened above, the switch holding the settings is let go.
+			UserConfigFile.WritingFileForTesting = null;
+			release.Set();
+		}
+
+		Finish(card);
+
+		Assert.True(card.CanChooseProfile);
+		Assert.True(card.NewCommand.CanExecute(null));
+
+		SettingsBusy.Start();
+
+		try
+		{
+			Assert.False(card.CanChooseProfile);
+			Assert.False(card.RenameCommand.CanExecute(null));
+		}
+		finally
+		{
+			SettingsBusy.Finish();
+		}
+	});
+
+	/// <summary>A failure nothing expects as the pages follow a switch - here, one throwing - is logged and shown, not lost.</summary>
+	[Fact]
+	public void a_failure_after_the_switch_is_reported() => StaThread.Run(() =>
+	{
+		SettingsProfilesViewModel card = new((_, _, _) => true, _ => false, () => [], () => throw new InvalidOperationException("boom"));
+
+		card.SelectedProfile = "ZNY";
+		Pump();
+		Finish(card);
+
+		Assert.Contains(Toast.Items, t => t.Kind == ToastKind.Error && t.Message == "boom");
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Error && e.Message.EndsWith("boom", StringComparison.Ordinal));
+		Assert.False(SettingsBusy.IsBusy);
 	});
 
 	/// <summary>The list going empty, or choosing the profile in use, is no choice.</summary>
@@ -133,6 +213,7 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 
 		_answer = true;
 		card.SwitchTo("ZNY");
+		Finish(card);
 		Assert.Equal("ZNY", UserConfigFile.ActiveProfile);
 	});
 
@@ -143,6 +224,7 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		File.Delete(UserConfigFile.ProfileFilePath("ZNY"));
 
 		card.SwitchTo("ZNY");
+		Finish(card);
 
 		Assert.Equal("Default", UserConfigFile.ActiveProfile);
 		Assert.Equal(["Default"], card.Profiles);
@@ -168,6 +250,8 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		SettingsProfilesViewModel card = Card();
 
 		card.NewCommand.Execute(null);
+		Assert.False(card.NewCommand.CanExecute(null));
+		Finish(card);
 
 		Assert.Equal("New Settings Profile", asked!.Heading);
 		Assert.Equal("Default", asked.CopyFrom);
@@ -206,6 +290,7 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		SettingsProfilesViewModel card = Card();
 
 		card.RenameCommand.Execute(null);
+		Finish(card);
 
 		Assert.Equal("ZOB", UserConfigFile.ActiveProfile);
 		Assert.Equal(["ZNY", "ZOB"], card.Profiles);
@@ -222,12 +307,14 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		SettingsProfilesViewModel card = Card();
 
 		card.DeleteCommand.Execute(null);
+		Finish(card);
 
 		Assert.Equal("Default", UserConfigFile.ActiveProfile);
 		Assert.Equal(["AAA", "Default"], card.Profiles);
 		Assert.StartsWith("Delete settings profile|Delete the ZNY profile? FE-Buddy switches to Default", Assert.Single(_asked), StringComparison.Ordinal);
 
 		card.DeleteCommand.Execute(null);
+		Finish(card);
 
 		Assert.Equal("AAA", UserConfigFile.ActiveProfile);
 		Assert.Equal(["AAA"], card.Profiles);

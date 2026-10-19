@@ -1,10 +1,10 @@
 using System.Globalization;
-using System.Windows.Threading;
 
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -12,16 +12,15 @@ namespace FeBuddy.Wpf.ViewModels;
 /// The background reference every map draws under everything else: which base layers
 /// (<see cref="BaseMap"/>) are on and how strongly they are drawn, and whether the lat/lon
 /// gridlines are. Set from the map toolbar's base-map menu and saved under
-/// <c>Services.MapService</c> the moment they change.
+/// <c>Services.MapService</c> a moment after they change, off the UI thread (<see cref="DeferredSave"/>,
+/// shared with <see cref="MapLayersState"/>).
 /// </summary>
 public sealed class BaseMapSettings : ObservableObject
 {
-	private const string Node = "Services.MapService";
-
 	// Internal so the unit tests can check every settings layout's keys are still the ones read here.
-	internal const string GridlinesKey = Node + ".Gridlines";
-	internal const string LayersKey = Node + ".BaseMapLayers";
-	internal const string OpacityKey = Node + ".BaseMapOpacity";
+	internal const string GridlinesKey = MapLayersState.Node + ".Gridlines";
+	internal const string LayersKey = MapLayersState.Node + ".BaseMapLayers";
+	internal const string OpacityKey = MapLayersState.Node + ".BaseMapOpacity";
 
 	/// <summary>The opacity, in percent, before the user has chosen one: there to steer by, not to look at.</summary>
 	internal const int DefaultOpacityPercent = 50;
@@ -29,19 +28,17 @@ public sealed class BaseMapSettings : ObservableObject
 	/// <summary>The faintest the slider goes: any fainter and the layers may as well be off.</summary>
 	public const int MinOpacityPercent = 10;
 
-	private readonly DispatcherTimer _saveOpacity;
+	private readonly DeferredSave _save;
 	private bool _showGridlines;
 	private int _opacityPercent;
 	private bool _isMenuOpen;
 	private IReadOnlyList<MapLayer> _layers = [];
 
 	/// <summary>Reads the saved choices.</summary>
-	/// <param name="dispatcher">The UI thread's dispatcher, for the opacity's delayed save.</param>
-	internal BaseMapSettings(Dispatcher dispatcher)
+	/// <param name="save">The map's settings save, shared with <see cref="MapLayersState"/>.</param>
+	internal BaseMapSettings(DeferredSave save)
 	{
-		// A slider drag changes the opacity many times a second: draw each, save once it settles.
-		_saveOpacity = new DispatcherTimer(TimeSpan.FromMilliseconds(400), DispatcherPriority.Background, (_, _) => SaveOpacity(), dispatcher);
-		_saveOpacity.Stop();
+		_save = save;
 
 		HashSet<BaseMapLayer> on = ReadLayers();
 		Toggles = [.. Enum.GetValues<BaseMapLayer>().Select(layer => new BaseMapToggle(layer, on.Contains(layer), OnLayerToggled))];
@@ -63,8 +60,9 @@ public sealed class BaseMapSettings : ObservableObject
 			{
 				OnPropertyChanged(nameof(Opacity));
 				OnPropertyChanged(nameof(OpacityText));
-				_saveOpacity.Stop();
-				_saveOpacity.Start();
+
+				// A slider drag changes it many times a second: each is drawn, the last is saved.
+				_save.Set(OpacityKey, () => OpacityPercent.ToString(CultureInfo.InvariantCulture));
 			}
 		}
 	}
@@ -90,8 +88,7 @@ public sealed class BaseMapSettings : ObservableObject
 		{
 			if (SetProperty(ref _showGridlines, value))
 			{
-				UserConfigFile.TrySetValue(GridlinesKey, value ? "Y" : "N");
-				UserConfigFile.Save(Node);
+				_save.Set(GridlinesKey, () => ShowGridlines ? "Y" : "N");
 			}
 		}
 	}
@@ -112,7 +109,6 @@ public sealed class BaseMapSettings : ObservableObject
 			toggle.SetVisibleSilently(on.Contains(toggle.Layer));
 		}
 
-		_saveOpacity.Stop();
 		SetProperty(ref _showGridlines, ReadGridlines(), nameof(ShowGridlines));
 		if (SetProperty(ref _opacityPercent, ReadOpacity(), nameof(OpacityPercent)))
 		{
@@ -125,16 +121,8 @@ public sealed class BaseMapSettings : ObservableObject
 
 	private void OnLayerToggled()
 	{
-		UserConfigFile.TrySetValue(LayersKey, string.Join(',', Toggles.Where(t => t.IsVisible).Select(t => t.Layer)));
-		UserConfigFile.Save(Node);
+		_save.Set(LayersKey, () => string.Join(',', Toggles.Where(t => t.IsVisible).Select(t => t.Layer)));
 		Rebuild();
-	}
-
-	private void SaveOpacity()
-	{
-		_saveOpacity.Stop();
-		UserConfigFile.TrySetValue(OpacityKey, OpacityPercent.ToString(CultureInfo.InvariantCulture));
-		UserConfigFile.Save(Node);
 	}
 
 	private void Rebuild() =>

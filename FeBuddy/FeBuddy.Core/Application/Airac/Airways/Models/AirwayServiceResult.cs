@@ -3,7 +3,7 @@ using FeBuddy.Core.Application.Models;
 namespace FeBuddy.Core.Application.Airac.Airways.Models;
 
 /// <summary>
-/// The result of running the top-level Airways service (<c>AirwayService.Run</c>): what was
+/// The result of running the top-level Airways sub-service (<c>AirwayService.Run</c>): what was
 /// built and written, plus timing and warnings.
 /// </summary>
 public sealed record AirwayServiceResult : ServiceResult
@@ -14,7 +14,7 @@ public sealed record AirwayServiceResult : ServiceResult
 	/// <summary>Full paths of every GeoJSON file written.</summary>
 	public required IReadOnlyList<string> GeojsonFilesWritten { get; init; }
 
-	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>.</summary>
+	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>. For the Harness's report and tests.</summary>
 	public required IReadOnlyDictionary<string, int> GeojsonFeatureCountsByFile { get; init; }
 
 	/// <summary>The alias file's path, or <see langword="null"/> when it was not generated or had nothing to write.</summary>

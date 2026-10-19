@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -9,6 +10,7 @@ using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.News;
 using FeBuddy.Core.Application.News.Models;
@@ -27,14 +29,33 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class DashboardViewModel : ObservableObject
 {
 	/// <summary>The FE-Buddy description shown in the description box, word for word.</summary>
-	public const string DescriptionText =
+	private const string DescriptionText =
 		"An application designed to assist VATUSA Facility Engineers with routine, " +
 		"tedious, and sometimes complex tasks, including the production and maintenance " +
 		"of AIRAC cycle release resources, alias files, and GeoJSON files, ERAM and STARS " +
 		"adaptation conversions for use in CRC; and other facility engineering workflows.";
 
+	/// <summary>
+	/// The most entries the activity log shows, newest first: a run can log thousands, and the log file
+	/// (and <see cref="AppLog.Entries"/>) keep every one.
+	/// </summary>
+	internal const int MaxShownEntries = 2000;
+
+	/// <summary>
+	/// A batch bigger than this is shown with one change to the list rather than one per entry: the filtered
+	/// view handles each change on its own, so a run's burst of hundreds would stall the UI thread.
+	/// </summary>
+	private const int BurstSize = 50;
+
 	private readonly Dispatcher _dispatcher;
-	private readonly ObservableCollection<LogEntry> _allLog = [];
+	private readonly BulkObservableCollection<LogEntry> _allLog = [];
+
+	// Entries logged since the last batch was shown; any thread adds, the UI thread takes them.
+	private readonly ConcurrentQueue<LogEntry> _incoming = new();
+	private int _batchQueued;
+
+	// How many entries of each level the log shows, kept as entries come and go rather than counted.
+	private readonly Dictionary<LogLevel, int> _counts = [];
 
 	private bool _newsButtonHighlighted;
 	private string _nextCycleLine = "Next AIRAC cycle: …";
@@ -42,7 +63,7 @@ public sealed class DashboardViewModel : ObservableObject
 	private bool _isLogCollapsed = true;
 	private LogLevel? _levelFilter;
 
-	/// <summary>Creates the view-model, seeds the log from <see cref="AppLog.DisplayEntries"/>, and starts following it.</summary>
+	/// <summary>Creates the view-model, seeds the log from <see cref="AppLog.DisplayEntries"/> and follows it (<see cref="AppLog.FollowDisplay"/>).</summary>
 	public DashboardViewModel()
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -58,13 +79,14 @@ public sealed class DashboardViewModel : ObservableObject
 		ClearLogCommand = new RelayCommand(ClearLog);
 		DismissCycleDayCommand = new RelayCommand(DismissCycleDay);
 
-		// Seed from whatever the log already holds since the last Clear, then follow it live.
-		foreach (LogEntry entry in AppLog.DisplayEntries.Reverse())
+		// Seed from whatever the log already holds since the last Clear and follow it live, in one step: the
+		// launch logs from another thread while this is built, and each entry must show exactly once.
+		foreach (LogEntry entry in AppLog.FollowDisplay(OnLogEntryAdded).Reverse().Take(MaxShownEntries))
 		{
 			_allLog.Add(entry);
+			Count(entry, 1);
 		}
 
-		AppLog.EntryAdded += OnLogEntryAdded;
 		AppEnvironment.Changed += OnEnvironmentChanged;
 		AiracCycleDataCache.Instance.StateChanged += OnCycleStateChanged;
 
@@ -96,9 +118,6 @@ public sealed class DashboardViewModel : ObservableObject
 
 	/// <summary>Hides the cycle-day banner for the rest of the session.</summary>
 	public ICommand DismissCycleDayCommand { get; }
-
-	/// <summary>The Discord invite the description box links to.</summary>
-	public string DiscordUrl => Links.Discord;
 
 	/// <summary>The description-box body: <see cref="DescriptionText"/>.</summary>
 	public string Description => DescriptionText;
@@ -151,10 +170,10 @@ public sealed class DashboardViewModel : ObservableObject
 	}
 
 	/// <summary>The active level filter, or <see langword="null"/> for "All".</summary>
-	public LogLevel? LevelFilter
+	private LogLevel? LevelFilter
 	{
 		get => _levelFilter;
-		private set
+		set
 		{
 			if (SetProperty(ref _levelFilter, value))
 			{
@@ -187,23 +206,77 @@ public sealed class DashboardViewModel : ObservableObject
 	public int AllCount => _allLog.Count;
 
 	/// <summary>How many Info entries there are.</summary>
-	public int InfoCount => _allLog.Count(e => e.Level == LogLevel.Info);
+	public int InfoCount => _counts.GetValueOrDefault(LogLevel.Info);
 
 	/// <summary>How many Success entries there are.</summary>
-	public int SuccessCount => _allLog.Count(e => e.Level == LogLevel.Success);
+	public int SuccessCount => _counts.GetValueOrDefault(LogLevel.Success);
 
 	/// <summary>How many Warning entries there are.</summary>
-	public int WarningCount => _allLog.Count(e => e.Level == LogLevel.Warning);
+	public int WarningCount => _counts.GetValueOrDefault(LogLevel.Warning);
 
 	/// <summary>How many Error entries there are.</summary>
-	public int ErrorCount => _allLog.Count(e => e.Level == LogLevel.Error);
+	public int ErrorCount => _counts.GetValueOrDefault(LogLevel.Error);
 
-	private void OnLogEntryAdded(object? sender, LogEntry entry) =>
-		_dispatcher.BeginInvoke(() =>
+	/// <summary>
+	/// Queues the entry, and the first since the last batch asks the UI thread to show them all, at
+	/// Background priority: a run logs hundreds a second, which one dispatcher item each would flood.
+	/// </summary>
+	private void OnLogEntryAdded(object? sender, LogEntry entry)
+	{
+		_incoming.Enqueue(entry);
+
+		if (Interlocked.Exchange(ref _batchQueued, 1) == 0)
 		{
-			_allLog.Insert(0, entry); // newest first
+			_dispatcher.BeginInvoke(ShowIncoming, DispatcherPriority.Background);
+		}
+	}
+
+	/// <summary>Shows the entries logged since the last batch, newest first, and drops the oldest past <see cref="MaxShownEntries"/>.</summary>
+	internal void ShowIncoming()
+	{
+		Interlocked.Exchange(ref _batchQueued, 0);
+
+		List<LogEntry> batch = [];
+
+		while (_incoming.TryDequeue(out LogEntry? entry))
+		{
+			batch.Add(entry);
+		}
+
+		if (batch.Count > BurstSize)
+		{
+			// The whole list, newest first and capped, swapped in as one change; then counted again.
+			batch.Reverse();
+			_allLog.ReplaceAll(batch.Concat(_allLog).Take(MaxShownEntries));
+			_counts.Clear();
+
+			foreach (LogEntry entry in _allLog)
+			{
+				Count(entry, 1);
+			}
+		}
+		else
+		{
+			foreach (LogEntry entry in batch)
+			{
+				_allLog.Insert(0, entry);
+				Count(entry, 1);
+			}
+
+			while (_allLog.Count > MaxShownEntries)
+			{
+				Count(_allLog[^1], -1);
+				_allLog.RemoveAt(_allLog.Count - 1);
+			}
+		}
+
+		if (batch.Count > 0)
+		{
 			RaiseLogCounts();
-		});
+		}
+	}
+
+	private void Count(LogEntry entry, int by) => _counts[entry.Level] = _counts.GetValueOrDefault(entry.Level) + by;
 
 	private void OnEnvironmentChanged(object? sender, EventArgs e) =>
 		_dispatcher.BeginInvoke(() =>
@@ -219,14 +292,22 @@ public sealed class DashboardViewModel : ObservableObject
 	private void OnCycleStateChanged(object? sender, AiracCycleDataCacheEntry e) =>
 		_dispatcher.BeginInvoke(RefreshNextCycleLine);
 
+	/// <summary>Shows the latest News check now, as an environment change does. Unit tests only.</summary>
+	internal void RefreshNewsForTesting() => RefreshNews();
+
+	/// <summary>
+	/// Shows the latest News check: the posts are put in again only when they changed, since every
+	/// environment change (six during launch) comes here, and each post put in builds its view again.
+	/// </summary>
 	private void RefreshNews()
 	{
 		NewsCheckResult? news = AppEnvironment.News;
+		IReadOnlyList<NewsPost> posts = news?.Posts ?? [];
 
-		Posts.Clear();
-		if (news is not null)
+		if (!posts.SequenceEqual(Posts))
 		{
-			foreach (NewsPost post in news.Posts)
+			Posts.Clear();
+			foreach (NewsPost post in posts)
 			{
 				Posts.Add(post);
 			}
@@ -265,10 +346,20 @@ public sealed class DashboardViewModel : ObservableObject
 		NewsCheckResult? news = AppEnvironment.News;
 		if (news is { ParseSucceeded: true, LatestPostId: { } latest })
 		{
-			UserConfigFile.TrySetValue(UserConfigKeys.NewsLastOpen, latest.ToString());
-			UserConfigFile.Save("General");
+			MarkNewsRead(latest);
 			NewsButtonHighlighted = false;
 		}
+	}
+
+	/// <summary>
+	/// Records the newest News post read (<see cref="UserConfigKeys.NewsLastOpen"/>), saving that one setting to
+	/// <c>Shared.json</c>, where it is kept: the profile and its undo snapshot are left as they are.
+	/// </summary>
+	/// <param name="latest">The newest post's ID.</param>
+	internal static void MarkNewsRead(NewsPostId latest)
+	{
+		UserConfigFile.TrySetValue(UserConfigKeys.NewsLastOpen, latest.ToString());
+		SettingsWrites.TrySaveShared([UserConfigKeys.NewsLastOpen], "News you have read");
 	}
 
 	private void DismissCycleDay()
@@ -298,7 +389,9 @@ public sealed class DashboardViewModel : ObservableObject
 		// AppLog remembers the clear, so the next Dashboard (one is made per navigation) seeds
 		// from after it. Every entry is cleared, whatever the filter shows; the filter stays.
 		AppLog.ClearDisplay();
+		_incoming.Clear();
 		_allLog.Clear();
+		_counts.Clear();
 		RaiseLogCounts();
 	}
 

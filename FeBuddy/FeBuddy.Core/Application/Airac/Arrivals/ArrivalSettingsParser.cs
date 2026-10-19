@@ -77,7 +77,7 @@ public static class ArrivalSettingsParser
 		}
 
 		// Only the area chosen applies: the ARTCCs listed, or the ROI, or neither.
-		SubServiceArea area = SubServiceSettingsReader.ReadArea(arrivalSettings, SubServiceSettingsReader.ArtccOrRoiAreas, artccListKey: "ArtccFilter");
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(arrivalSettings, SubServiceSettingsReader.ArtccOrRoiAreas);
 		IReadOnlyCollection<string> artccFilter = SubServiceSettingsReader.ReadAreaArtccs(arrivalSettings, area, "ArtccFilter");
 
 		// Only the value the chosen mode uses is read (and required); the others are ignored.
@@ -87,11 +87,11 @@ public static class ArrivalSettingsParser
 				"\"Days\" (with AmendedWithinDays) or \"Date\" (with AmendedOnOrAfter).");
 
 		int amendedWithinCycles = amendmentFilter == ArrivalAmendmentFilter.Cycles
-			? SettingsValueReader.RequiredIntInRange(arrivalSettings, "AmendedWithinCycles", minimum: 1, maximum: 1000)
+			? SettingsValueReader.RequiredIntInRange(arrivalSettings, "AmendedWithinCycles", minimum: 1, maximum: ProcedureAmendmentFilter.MaxWithinCycles)
 			: 0;
 
 		int amendedWithinDays = amendmentFilter == ArrivalAmendmentFilter.Days
-			? SettingsValueReader.RequiredIntInRange(arrivalSettings, "AmendedWithinDays", minimum: 1, maximum: 36500)
+			? SettingsValueReader.RequiredIntInRange(arrivalSettings, "AmendedWithinDays", minimum: 1, maximum: ProcedureAmendmentFilter.MaxWithinDays)
 			: 0;
 
 		DateOnly? amendedOnOrAfter = amendmentFilter == ArrivalAmendmentFilter.Date
@@ -165,10 +165,10 @@ public static class ArrivalSettingsParser
 	{
 		string raw = SettingsValueReader.RequiredString(settings, "AmendedOnOrAfter");
 
-		if (!DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
+		if (!DateOnly.TryParseExact(raw, ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
 		{
 			throw new ArgumentException(
-				$"'AmendedOnOrAfter' value '{raw}' is not a valid date. Use the format yyyy-MM-dd, e.g. \"2026-01-01\".");
+				$"'AmendedOnOrAfter' value '{raw}' is not a valid date. Use the format {ProcedureAmendmentFilter.DateFormat}, e.g. \"2026-01-01\".");
 		}
 
 		return date;

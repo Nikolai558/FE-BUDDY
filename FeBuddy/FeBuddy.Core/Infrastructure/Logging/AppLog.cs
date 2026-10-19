@@ -26,6 +26,11 @@ namespace FeBuddy.Core.Infrastructure.Logging;
 /// </remarks>
 public static class AppLog
 {
+	// A day's log file: FE-Buddy_yyyy-MM-dd.log (LogFileName).
+	private const string FileNamePrefix = "FE-Buddy_";
+	private const string FileDateFormat = "yyyy-MM-dd";
+	private const string FileExtension = ".log";
+
 	private static readonly Lock Gate = new();
 	private static readonly List<LogEntry> RecordedEntries = [];
 
@@ -73,6 +78,24 @@ public static class AppLog
 	}
 
 	/// <summary>
+	/// Starts following the log: <paramref name="onEntry"/> is called for every entry recorded from now on (as
+	/// <see cref="EntryAdded"/>), and the entries the display already holds are returned - both at once, so an
+	/// entry another thread logs meanwhile is in one or the other, exactly once.
+	/// </summary>
+	/// <param name="onEntry">Called for each later entry, on the thread that logs it.</param>
+	/// <returns>The <see cref="DisplayEntries"/> recorded before, oldest first.</returns>
+	public static IReadOnlyList<LogEntry> FollowDisplay(EventHandler<LogEntry> onEntry)
+	{
+		ArgumentNullException.ThrowIfNull(onEntry);
+
+		lock (Gate)
+		{
+			EntryAdded += onEntry;
+			return [.. RecordedEntries.Skip(_displayStart)];
+		}
+	}
+
+	/// <summary>
 	/// The folder log files are written to: <c>%APPDATA%\FE-Buddy\Logs</c> by default.
 	/// </summary>
 	public static string LogDirectory
@@ -102,10 +125,14 @@ public static class AppLog
 		}
 
 		LogEntry entry = new(DateTime.UtcNow, level, source ?? string.Empty, message ?? string.Empty);
+		EventHandler<LogEntry>? entryAdded;
 
+		// The subscribers are taken with the entry, so one that started following with FollowDisplay
+		// either has the entry in its snapshot or is told of it - never both, never neither.
 		lock (Gate)
 		{
 			RecordedEntries.Add(entry);
+			entryAdded = EntryAdded;
 		}
 
 		// Fire-and-forget onto the background writer. TryWrite on an unbounded channel only
@@ -114,7 +141,7 @@ public static class AppLog
 
 		try
 		{
-			EntryAdded?.Invoke(null, entry);
+			entryAdded?.Invoke(null, entry);
 		}
 		catch
 		{
@@ -208,7 +235,7 @@ public static class AppLog
 
 			DateTime cutoffUtc = DateTime.UtcNow.Date.AddDays(-Math.Abs(retentionDays));
 
-			foreach (string file in Directory.EnumerateFiles(directory, "FE-Buddy_*.log"))
+			foreach (string file in Directory.EnumerateFiles(directory, FileNamePrefix + "*" + FileExtension))
 			{
 				DateTime fileDate = TryParseLogFileDate(file, out DateTime parsed)
 					? parsed
@@ -240,7 +267,7 @@ public static class AppLog
 	/// <param name="utcDate">The date whose log file path is wanted.</param>
 	/// <returns>The absolute log file path.</returns>
 	public static string GetLogFilePath(DateTime utcDate) =>
-		Path.Combine(LogDirectory, $"FE-Buddy_{utcDate:yyyy-MM-dd}.log");
+		Path.Combine(LogDirectory, LogFileName(utcDate));
 
 	/// <summary>
 	/// Points the log directory somewhere else and resets in-memory state. For unit tests only,
@@ -307,7 +334,7 @@ public static class AppLog
 			{
 				Directory.CreateDirectory(directory);
 
-				string path = Path.Combine(directory, $"FE-Buddy_{entry.UtcTimestamp:yyyy-MM-dd}.log");
+				string path = Path.Combine(directory, LogFileName(entry.UtcTimestamp));
 				string line = string.Format(
 					CultureInfo.InvariantCulture,
 					"{0:yyyy-MM-dd HH:mm:ss}Z  {1,-7}  {2,-24}  {3}{4}",
@@ -330,15 +357,18 @@ public static class AppLog
 	private static string GetDefaultLogDirectory() =>
 		Path.Combine(AppPaths.AppDataDirectory, "Logs");
 
+	/// <summary>A day's log file name, e.g. <c>FE-Buddy_2026-10-19.log</c>.</summary>
+	private static string LogFileName(DateTime utcDate) =>
+		FileNamePrefix + utcDate.ToString(FileDateFormat, CultureInfo.InvariantCulture) + FileExtension;
+
 	private static bool TryParseLogFileDate(string filePath, out DateTime date)
 	{
 		string name = Path.GetFileNameWithoutExtension(filePath);
-		const string prefix = "FE-Buddy_";
 
-		if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+		if (name.StartsWith(FileNamePrefix, StringComparison.OrdinalIgnoreCase)
 			&& DateTime.TryParseExact(
-				name[prefix.Length..],
-				"yyyy-MM-dd",
+				name[FileNamePrefix.Length..],
+				FileDateFormat,
 				CultureInfo.InvariantCulture,
 				DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
 				out date))

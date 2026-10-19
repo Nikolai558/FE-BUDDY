@@ -1,3 +1,5 @@
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.Wpf.Map.Models;
 
 /// <summary>One shape a Ctrl+click on the map landed on.</summary>

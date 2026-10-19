@@ -3,102 +3,10 @@ using FeBuddy.Core.Domain.Geo;
 namespace FeBuddy.UnitTests.Domain.Geo;
 
 /// <summary>
-/// Covers <see cref="GeoMath"/>: DMS and decimal validation and conversion, distance, bearing,
-/// and antimeridian handling.
+/// Covers <see cref="GeoMath"/>: decimal validation, distance, bearing, and antimeridian handling.
 /// </summary>
 public sealed class GeoMathTests
 {
-	/// <summary>
-	/// Check to make sure that if you pass in a valid DMS latitude AND longitude, that the method returns true.
-	/// </summary>
-	/// <param name="lat">string: lattitude</param>
-	/// <param name="lon">string: longitude</param>
-	[Theory]
-	[InlineData("N043.31.08.418", "W112.03.50.103")]
-	[InlineData("N051.52.16.430", "W176.40.26.800")]
-	[InlineData("N000.00.00.000", "E000.00.00.000")]
-	[InlineData("S000.00.00.000", "E000.00.00.000")]
-	[InlineData("S000.00.00.000", "W112.03.50.103")]
-	[InlineData("N043.31.08.418", "W000.00.00.000")]
-	public void validate_dms_input_should_be_true(string lat, string lon)
-	{
-		bool result = GeoMath.IsValidDms(lat, lon);
-
-		Assert.True(result);
-	}
-
-	/// <summary>
-	/// Check to make sure that if you pass in an invalid DMS latitude OR longitude, that the method returns false.
-	/// </summary>
-	/// <param name="lat"></param>
-	/// <param name="lon"></param>
-	[Theory]
-	[InlineData("043.31.08.418", "W112.03.50.103")]
-	[InlineData("N051.52.16.430", "176.40.26.800")]
-	[InlineData("N043.31.08.418", null)]
-	[InlineData(null, "W112.03.50.103")]
-	[InlineData(null, null)]
-	[InlineData("", "176.40.26.800")]
-	[InlineData("", "")]
-	[InlineData("N043.31.08.418", "")]
-	[InlineData("N043.31.08", "W112.03.50.103")]
-	[InlineData("N0X3.31.08.418", "W112.03.50.103")]
-	[InlineData("N091.00.00.000", "W112.03.50.103")]
-	[InlineData("N043.31.08.418", "W112.60.50.103")]
-	public void validate_dms_input_should_be_false(string? lat, string? lon)
-	{
-		bool result = GeoMath.IsValidDms(lat, lon);
-
-		Assert.False(result);
-	}
-
-	/// <summary>
-	/// Check to make sure that the conversion between DMS and decimal is correct.
-	/// </summary>
-	/// <param name="dms">string: DMS Latitude OR Longitude</param>
-	/// <param name="expectedResult">double: Expected Result of the DMS in decimal format.</param>
-	[Theory]
-	[InlineData("N045.00.00.000", 45.0)]
-	[InlineData("S045.00.00.000", -45.0)]
-	[InlineData("E118.00.00.000", 118.0)]
-	[InlineData("W118.00.00.000", -118.0)]
-	[InlineData("N041.32.50.000", 41.5472222)]
-	[InlineData("W112.07.40.000", -112.1277778)]
-	[InlineData("N045.49.43.089", 45.8286358)]
-	[InlineData("W108.18.16.490", -108.3045806)]
-	[InlineData("N043.31.08.418", 43.5190050)]
-	[InlineData("W112.03.50.103", -112.0639175)]
-	public void converting_dms_to_dec_should_be_correct(string dms, double expectedResult)
-	{
-		double actualResult = GeoMath.ToDecimal(dms);
-		Assert.Equal(expectedResult, actualResult);
-	}
-
-	/// <summary>
-	/// Check to make sure that the conversion between decimal and DMS is correct.
-	/// </summary>
-	/// <param name="dec">double: Decimal version of the Lattitude OR longitude.</param>
-	/// <param name="isLat">bool: True, if the Decimal passed in is a Lattitude, otherwise False.</param>
-	/// <param name="expectedResult">string: DMS Latitude OR Longitude</param>
-	[Theory]
-	[InlineData(45.0, true, "N045.00.00.000")]
-	[InlineData(-45.0, true, "S045.00.00.000")]
-	[InlineData(118.0, false, "E118.00.00.000")]
-	[InlineData(-118.0, false, "W118.00.00.000")]
-	[InlineData(41.5472222, true, "N041.32.50.000")]
-	[InlineData(-112.1277778, false, "W112.07.40.000")]
-	[InlineData(45.8286358, true, "N045.49.43.089")]
-	[InlineData(-108.3045806, false, "W108.18.16.490")]
-	[InlineData(43.5190050, true, "N043.31.08.418")]
-	[InlineData(-112.0639175, false, "W112.03.50.103")]
-	[InlineData(-176.6741111, false, "W176.40.26.800")] // seconds >= .5 must not round up the whole seconds
-	[InlineData(45.99999989, true, "N046.00.00.000")] // 59.9996" rounds up and carries into the next degree
-	public void converting_dec_to_dms_should_be_correct(double dec, bool isLat, string expectedResult)
-	{
-		string actualResult = GeoMath.ToDms(dec, isLat);
-		Assert.Equal(expectedResult, actualResult);
-	}
-
 	/// <summary>
 	/// Verify that a valid decimal latitude AND longitude returns true.
 	/// </summary>
@@ -142,26 +50,7 @@ public sealed class GeoMathTests
 	}
 
 	/// <summary>
-	/// Check to make sure the distance between two DMS coordinates is correct when rounding.
-	/// </summary>
-	/// <param name="pointA">string: First point with Lattitude and Longitude seperated by a space.</param>
-	/// <param name="pointB">string: Second point with Lattitude and Longitude seperated by a space.</param>
-	/// <param name="expectedResult">double: Expected result rounded to the nearest whole number.</param>
-	[Theory]
-	[InlineData("N45.00.00.000 W045.00.00.000", "N50.00.00.000 W050.00.00.000", (double)362)]
-	[InlineData("N45.00.00.000 W45.00.00.000", "N50.00.00.000 W50.00.00.000", (double)362)]
-	[InlineData("N043.31.08.418 W112.03.50.103", "N041.32.50.000 W108.18.16.490", (double)204)]
-	public void distance_rounded_whole_number_between_two_dms_coords_should_be_correct(string pointA, string pointB, double expectedResult)
-	{
-		Location _pointA = new(pointA.Split(' ')[0], pointA.Split(' ')[1]); ;
-		Location _pointB = new(pointB.Split(' ')[0], pointB.Split(' ')[1]); ;
-
-		double actualResult = GeoMath.Distance(_pointA, _pointB);
-		Assert.Equal(expectedResult, actualResult);
-	}
-
-	/// <summary>
-	/// Check to make sure the distance between two decimal coordinates is correct when rounding.
+	/// Check to make sure the distance between two decimal coordinates is correct to the nearest whole mile.
 	/// </summary>
 	/// <param name="pointALat">double: First point Lattitude</param>
 	/// <param name="pointALon">double: First point Longitude</param>
@@ -173,18 +62,18 @@ public sealed class GeoMathTests
 	[InlineData(45.0, -45.0, 46.0, -46.0, (double)73)]
 	[InlineData(45.0, -45.0, 45.1, -45.1, (double)7)]
 	[InlineData(45.0, -45.0, 45.0001, -45.0001, (double)0)]
-	public void distance_rounded_whole_number_between_two_decimal_coords_should_be_correct(double pointALat, double pointALon, double pointBLat, double pointBLon, double expectedResult)
+	public void distance_between_two_decimal_coords_is_correct_to_the_nearest_mile(double pointALat, double pointALon, double pointBLat, double pointBLon, double expectedResult)
 	{
 		Location _pointA = new(pointALat, pointALon);
 		Location _pointB = new(pointBLat, pointBLon);
 
-		double actualResult = GeoMath.Distance(_pointA, _pointB);
+		double actualResult = Math.Round(GeoMath.Distance(_pointA, _pointB));
 
 		Assert.Equal(expectedResult, actualResult);
 	}
 
 	/// <summary>
-	/// Check to make sure that the distance between two DMS coordinates is correct when not rounding.
+	/// Check to make sure that the distance between two decimal coordinates is correct to 6 places.
 	/// </summary>
 	/// <param name="pointALat">double: First point Lattitude<</param>
 	/// <param name="pointALon">double: First point Longitude<</param>
@@ -199,7 +88,7 @@ public sealed class GeoMathTests
 		Location _pointA = new(pointALat, pointALon);
 		Location _pointB = new(pointBLat, pointBLon);
 
-		double actualResult = GeoMath.Distance(_pointA, _pointB, round: false);
+		double actualResult = GeoMath.Distance(_pointA, _pointB);
 
 		Assert.Equal(expectedResult, actualResult);
 	}
@@ -291,7 +180,7 @@ public sealed class GeoMathTests
 
 		Location destination = GeoMath.PointAtDistanceAndBearing(origin, bearingDegrees, distanceNm);
 
-		double actualDistance = GeoMath.Distance(origin, destination, round: false);
+		double actualDistance = GeoMath.Distance(origin, destination);
 		Assert.Equal(distanceNm, actualDistance, precision: 1);
 
 		double actualBearing = GeoMath.Bearing(origin, destination);

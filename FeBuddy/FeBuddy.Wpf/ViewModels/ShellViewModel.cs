@@ -63,8 +63,6 @@ public sealed class ShellViewModel : ObservableObject
 	private string _airacStatus = "Preparing AIRAC data…";
 	private string _versionText = "…";
 	private bool _isUpdateAvailable;
-	private bool _isOnline = true;
-	private string _versionBrushKey = "Brush.Accent.Text";
 	private string _updateTooltipTitle = "Checking for updates…";
 	private string _updateTooltipBody = string.Empty;
 	private string _updateBadgeVersionText = string.Empty;
@@ -132,6 +130,12 @@ public sealed class ShellViewModel : ObservableObject
 		RefreshAiracStatus();
 		RefreshSystemHealth();
 		StartGitHubTokenCheck();
+
+		// An update installed while this copy is open (from another Windows account): offer a restart.
+		if (Application.Current is not null)
+		{
+			InstalledUpdate.Start(_dispatcher, DescribeUnfinishedWork);
+		}
 
 		// The launch sequence may have found a first launch, or the old token variable, before this subscribed.
 		_dispatcher.InvokeAsync(ShowLaunchWindows, DispatcherPriority.ApplicationIdle);
@@ -210,37 +214,14 @@ public sealed class ShellViewModel : ObservableObject
 		{
 			if (SetProperty(ref _isUpdateAvailable, value))
 			{
+				OnPropertyChanged(nameof(VersionIsWarning));
 				CommandManager.InvalidateRequerySuggested();
 			}
 		}
 	}
 
-	/// <summary>Whether the machine currently has internet - gates the update tooltip.</summary>
-	public bool IsOnline
-	{
-		get => _isOnline;
-		private set => SetProperty(ref _isOnline, value);
-	}
-
-	/// <summary>
-	/// Resource key for the version text brush: <c>Brush.Accent.Text</c> normally, or
-	/// <c>Brush.Warn</c> for the rest of the session once the user declines an available
-	/// update.
-	/// </summary>
-	public string VersionBrushKey
-	{
-		get => _versionBrushKey;
-		private set
-		{
-			if (SetProperty(ref _versionBrushKey, value))
-			{
-				OnPropertyChanged(nameof(VersionIsWarning));
-			}
-		}
-	}
-
 	/// <summary><see langword="true"/> once the user has declined an available update this session - the version text and the update badge turn amber.</summary>
-	public bool VersionIsWarning => _versionBrushKey == "Brush.Warn";
+	public bool VersionIsWarning => IsUpdateAvailable && _updateDeclinedThisSession;
 
 	/// <summary>Title line of the FE-BUDDY caption tooltip - update state only.</summary>
 	public string UpdateTooltipTitle
@@ -335,7 +316,7 @@ public sealed class ShellViewModel : ObservableObject
 
 		if (readiness == AiracCycleReadiness.Unavailable)
 		{
-			return new HealthRow(Name, "current cycle failed to download or parse", StatusKind.Down);
+			return new HealthRow(Name, "current cycle couldn't be downloaded or read", StatusKind.Down);
 		}
 
 		if (readiness == AiracCycleReadiness.NotLoaded)
@@ -587,7 +568,7 @@ public sealed class ShellViewModel : ObservableObject
 
 	private void RefreshVersionState()
 	{
-		IsOnline = AppEnvironment.HasInternetConnection;
+		bool online = AppEnvironment.HasInternetConnection;
 
 		VersionCheckResult? version = AppEnvironment.Version;
 
@@ -595,13 +576,12 @@ public sealed class ShellViewModel : ObservableObject
 		{
 			VersionText = AppEnvironment.LaunchCompleted ? "dev" : "…";
 			IsUpdateAvailable = false;
-			UpdateTooltipTitle = IsOnline ? "Checking for updates…" : "Update state unknown offline";
+			UpdateTooltipTitle = online ? "Checking for updates…" : "Update state unknown offline";
 			UpdateTooltipBody = string.Empty;
-			VersionBrushKey = "Brush.Accent.Text";
 			return;
 		}
 
-		VersionText = version.CurrentVersion is "0.0.0" or "" ? "dev" : $"v{version.CurrentVersion.TrimStart('v', 'V')}";
+		VersionText = version.DisplayVersion == "dev" ? "dev" : $"v{version.DisplayVersion}";
 
 		// As in 2.x: a copy the MSI did not install (a dev build, or one run from elsewhere) says so.
 		if (!AppEnvironment.IsMsiInstalled && VersionText != "dev")
@@ -609,46 +589,43 @@ public sealed class ShellViewModel : ObservableObject
 			VersionText += " - DEV";
 		}
 
-		IsUpdateAvailable = version.UpdateAvailable && version.LatestVersion is not null;
+		IsUpdateAvailable = version.Status == VersionCheckStatus.UpdateAvailable;
 
-		if (version.WasSkipped)
+		switch (version.Status)
 		{
-			UpdateTooltipTitle = "Not checked for updates";
-			UpdateTooltipBody = "This dev launch left out the check for a newer version.";
-			VersionBrushKey = "Brush.Accent.Text";
-		}
-		else if (!version.CheckSucceeded)
-		{
-			UpdateTooltipTitle = "Update state unknown offline";
-			UpdateTooltipBody = version.Message ?? string.Empty;
-			VersionBrushKey = "Brush.Accent.Text";
-		}
-		else if (IsUpdateAvailable)
-		{
-			UpdateTooltipTitle = $"v{version.LatestVersion} available!";
-			UpdateTooltipBody = $"You are on v{version.CurrentVersion.TrimStart('v', 'V')}. Click to review and update.";
-			UpdateBadgeVersionText = $"v{version.LatestVersion} available";
-			VersionBrushKey = _updateDeclinedThisSession ? "Brush.Warn" : "Brush.Accent.Text";
-		}
-		else if (version.RunningPreReleaseChannel is { } running)
-		{
-			UpdateTooltipTitle = $"Running a {running.DisplayName()} release";
-			UpdateTooltipBody = $"Newer than the latest {version.Channel.DisplayName()} release, v{version.LatestVersion}.";
-			VersionBrushKey = "Brush.Accent.Text";
-		}
-		else if (version.IsAheadOfLatestRelease)
-		{
-			UpdateTooltipTitle = "Running a development build";
-			UpdateTooltipBody = version.LatestVersion is not null
-				? $"Ahead of the latest published v{version.LatestVersion}."
-				: string.Empty;
-			VersionBrushKey = "Brush.Accent.Text";
-		}
-		else
-		{
-			UpdateTooltipTitle = "You are running the latest version.";
-			UpdateTooltipBody = string.Empty;
-			VersionBrushKey = "Brush.Accent.Text";
+			case VersionCheckStatus.Skipped:
+				UpdateTooltipTitle = "Not checked for updates";
+				UpdateTooltipBody = "This dev launch left out the check for a newer version.";
+				break;
+
+			case VersionCheckStatus.Failed:
+				// Offline only when FE-Buddy is: a check can fail online too (GitHub's rate limit, an error).
+				UpdateTooltipTitle = online ? "Could not check for updates" : "Update state unknown offline";
+				UpdateTooltipBody = version.Message ?? string.Empty;
+				break;
+
+			case VersionCheckStatus.UpdateAvailable:
+				UpdateTooltipTitle = $"v{version.LatestVersion} available!";
+				UpdateTooltipBody = $"You are on v{version.DisplayVersion}. Click to review and update.";
+				UpdateBadgeVersionText = $"v{version.LatestVersion} available";
+				break;
+
+			case VersionCheckStatus.RunningPreRelease:
+				UpdateTooltipTitle = $"Running a {version.RunningPreReleaseChannel!.Value.DisplayName()} release";
+				UpdateTooltipBody = $"Newer than the latest {version.Channel.DisplayName()} release, v{version.LatestVersion}.";
+				break;
+
+			case VersionCheckStatus.AheadOfLatest:
+				UpdateTooltipTitle = "Running a development build";
+				UpdateTooltipBody = version.LatestVersion is not null
+					? $"Ahead of the latest published v{version.LatestVersion}."
+					: string.Empty;
+				break;
+
+			default:
+				UpdateTooltipTitle = "You are running the latest version.";
+				UpdateTooltipBody = string.Empty;
+				break;
 		}
 	}
 
@@ -694,7 +671,7 @@ public sealed class ShellViewModel : ObservableObject
 
 		AiracStatus = readiness switch
 		{
-			AiracCycleReadiness.Unavailable => "AIRAC data unavailable — current cycle failed",
+			AiracCycleReadiness.Unavailable => "AIRAC data unavailable — current cycle couldn't be loaded",
 			AiracCycleReadiness.NotLoaded => "AIRAC data not loaded (dev launch)",
 			_ => "Waiting for AIRAC data…",
 		};
@@ -713,9 +690,7 @@ public sealed class ShellViewModel : ObservableObject
 				: new HealthRow("Internet", "offline — online features are disabled", StatusKind.Down));
 
 		AiracCycleDataCache cache = AiracCycleDataCache.Instance;
-		AiracCycleReadiness readiness = cache.Entries.Count == 0
-			? AiracCycleReadiness.Waiting
-			: cache.ComputeReadiness();
+		AiracCycleReadiness readiness = cache.ComputeReadiness();
 
 		// A cycle's metafile is fetched before it is parsed, so a ready cycle without one stays
 		// without one until the next launch - as the General tab's "partial" says.
@@ -724,14 +699,16 @@ public sealed class ShellViewModel : ObservableObject
 			[.. cache.Entries.Where(e => cache.LoadsOnDemand && !AiracCycleDataCache.IsSettled(e) && !cache.IsLoading(e)).Select(e => e.Position)]));
 
 		VersionCheckResult? version = AppEnvironment.Version;
-		SystemHealth.Add(version switch
+		SystemHealth.Add(version?.Status switch
 		{
 			null => new HealthRow("Updates", "checking…", StatusKind.Warn),
-			{ WasSkipped: true } => new HealthRow("Updates", "not checked (dev launch)", StatusKind.Ok),
-			{ CheckSucceeded: false } => new HealthRow("Updates", "state unknown (offline)", StatusKind.Warn),
-			{ UpdateAvailable: true } v => new HealthRow("Updates", $"v{v.LatestVersion} available", StatusKind.Warn),
-			{ RunningPreReleaseChannel: { } running } v => new HealthRow("Updates", $"{running.DisplayName()} release — ahead of {v.Channel.DisplayName()}", StatusKind.Ok),
-			{ IsAheadOfLatestRelease: true } => new HealthRow("Updates", "dev build — ahead of release", StatusKind.Ok),
+			VersionCheckStatus.Skipped => new HealthRow("Updates", "not checked (dev launch)", StatusKind.Ok),
+			VersionCheckStatus.Failed => new HealthRow("Updates",
+				AppEnvironment.HasInternetConnection ? "could not check" : "state unknown (offline)", StatusKind.Warn),
+			VersionCheckStatus.UpdateAvailable => new HealthRow("Updates", $"v{version.LatestVersion} available", StatusKind.Warn),
+			VersionCheckStatus.RunningPreRelease => new HealthRow("Updates",
+				$"{version.RunningPreReleaseChannel!.Value.DisplayName()} release — ahead of {version.Channel.DisplayName()}", StatusKind.Ok),
+			VersionCheckStatus.AheadOfLatest => new HealthRow("Updates", "dev build — ahead of release", StatusKind.Ok),
 			_ => new HealthRow("Updates", "latest version", StatusKind.Ok),
 		});
 
@@ -779,7 +756,7 @@ public sealed class ShellViewModel : ObservableObject
 		if (vm.UserDeclined && !vm.IsGoingBack)
 		{
 			_updateDeclinedThisSession = true;
-			RefreshVersionState();
+			OnPropertyChanged(nameof(VersionIsWarning));
 		}
 	}
 

@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Domain.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -85,15 +86,7 @@ public static class ProcedureSelection
 
 		foreach (ProcedureAirport airport in airports)
 		{
-			bool wholeAirport = settings.Area switch
-			{
-				SubServiceArea.Everything => true,
-				SubServiceArea.Artccs => airport.ResponsibleArtcc is { Length: > 0 } artcc && facilities.Contains(artcc),
-				SubServiceArea.Roi => settings.Roi is { } roi
-					&& airport.Latitude is { } latitude && airport.Longitude is { } longitude
-					&& RoiFilter.Contains(roi, latitude, longitude),
-				_ => false,
-			};
+			bool wholeAirport = AreaIncludes(settings.Area, facilities, settings.Roi, airport.ResponsibleArtcc, airport.Latitude, airport.Longitude);
 
 			// Checked for every airport, whole-airport match or not, so a pick that also names an
 			// already-included airport is still marked matched (no false "not found" warning).
@@ -217,6 +210,38 @@ public static class ProcedureSelection
 		}
 
 		return result;
+	}
+
+	/// <summary>
+	/// Whether the area takes an airport whole: every airport for <see cref="SubServiceArea.Everything"/>; one
+	/// whose responsible ARTCC is a facility ticked for <see cref="SubServiceArea.Artccs"/>; one inside the ROI for
+	/// <see cref="SubServiceArea.Roi"/>; none for <see cref="SubServiceArea.None"/>. The run's rule, which the
+	/// Procedure Charts tab also says "already included" by.
+	/// </summary>
+	/// <param name="area">The area chosen.</param>
+	/// <param name="facilities">The facilities ticked, compared as the set compares them.</param>
+	/// <param name="roi">The ROI, or <see langword="null"/>.</param>
+	/// <param name="responsibleArtcc">The airport's responsible ARTCC (<c>APT_BASE.RESP_ARTCC_ID</c>), or <see langword="null"/>.</param>
+	/// <param name="latitude">The airport's latitude, or <see langword="null"/>.</param>
+	/// <param name="longitude">The airport's longitude, or <see langword="null"/>.</param>
+	/// <returns><see langword="true"/> when the area takes the airport.</returns>
+	public static bool AreaIncludes(
+		SubServiceArea area,
+		IReadOnlySet<string> facilities,
+		RegionOfInterest? roi,
+		string? responsibleArtcc,
+		double? latitude,
+		double? longitude)
+	{
+		ArgumentNullException.ThrowIfNull(facilities);
+
+		return area switch
+		{
+			SubServiceArea.Everything => true,
+			SubServiceArea.Artccs => responsibleArtcc?.Trim() is { Length: > 0 } artcc && facilities.Contains(artcc),
+			SubServiceArea.Roi => roi is not null && latitude is { } lat && longitude is { } lon && RoiFilter.Contains(roi, lat, lon),
+			_ => false,
+		};
 	}
 
 	/// <summary>

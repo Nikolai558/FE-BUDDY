@@ -10,6 +10,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.Views;
 
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -237,41 +238,48 @@ public sealed class FileConversionsViewModel : ObservableObject, IOpensAtStart
 	/// <param name="conversion">The page whose Convert button was pressed.</param>
 	private async Task RunAsync(ConversionTabViewModel conversion)
 	{
-		if (IsRunning || !TrySave(conversion))
-		{
-			return;
-		}
-
-		conversion.Revalidate();
-
-		if (conversion.Status == ServiceTabStatus.Invalid)
-		{
-			Toast.Warn("Cannot run", $"{conversion.Title} has settings that need fixing.");
-			return;
-		}
-
-		IReadOnlyDictionary<string, string> settings = conversion.BuildSettingsBlock(
-			OutputPreferences.Directory, OutputPreferences.AddFeBuddyOutputFolder);
-
-		if (!conversion.ConfirmRun(settings))
-		{
-			return;
-		}
-
-		ServiceRunReviewTabViewModel results = ResultsFor(conversion);
-
-		SetRunning(conversion);
-		results.BeginRun([]);
+		// Set once the run has begun, so a failure before it (saving the page, looking at the output
+		// folder) says the conversion didn't start rather than that it failed.
+		ServiceRunReviewTabViewModel? results = null;
+		bool running = false;
 
 		try
 		{
+			if (IsRunning || !InstalledUpdate.AllowsRun() || !TrySave(conversion))
+			{
+				return;
+			}
+
+			conversion.Revalidate();
+
+			if (conversion.Status == ServiceTabStatus.Invalid)
+			{
+				Toast.Warn("Cannot run", $"{conversion.Title} has settings that need fixing.");
+				return;
+			}
+
+			IReadOnlyDictionary<string, string> settings = conversion.BuildSettingsBlock(
+				OutputPreferences.Directory, OutputPreferences.AddFeBuddyOutputFolder);
+
+			if (!conversion.ConfirmRun(settings))
+			{
+				return;
+			}
+
+			ServiceRunReviewTabViewModel review = ResultsFor(conversion);
+
+			SetRunning(conversion);
+			running = true;
+			review.BeginRun([]);
+			results = review;
+
 			ServiceResult result = await Task.Run(() => conversion.Execute(
 				settings,
-				(step, message, isComplete) => _dispatcher.BeginInvoke(() => results.ReportStep(step, message, isComplete))));
+				(step, message, isComplete) => _dispatcher.BeginInvoke(() => review.ReportStep(step, message, isComplete))));
 
 			ConversionRunOutcome outcome = conversion.DescribeRun(result);
 
-			results.CompleteRun(result, outcome.Summary, [outcome.Details], outcome.FilesWritten, outcome.OutputDirectory);
+			review.CompleteRun(result, outcome.Summary, [outcome.Details], outcome.FilesWritten, outcome.OutputDirectory);
 
 			// A run where some files failed still finished, but should not read as all-clear.
 			if (result.Messages.Any(m => m.Level == LogLevel.Error))
@@ -283,14 +291,22 @@ public sealed class FileConversionsViewModel : ObservableObject, IOpensAtStart
 				Toast.Success($"{conversion.Title} complete", outcome.Summary);
 			}
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (results is not null)
 		{
 			results.FailRun(ex.Message);
 			Toast.Error($"{conversion.Title} failed", ex.Message);
 		}
+		catch (Exception ex)
+		{
+			AppLog.Error("FileConversions", $"{conversion.Title} could not start: {ex.Message}");
+			Toast.Error($"{conversion.Title} didn't start", ex.Message);
+		}
 		finally
 		{
-			SetRunning(null);
+			if (running)
+			{
+				SetRunning(null);
+			}
 		}
 	}
 

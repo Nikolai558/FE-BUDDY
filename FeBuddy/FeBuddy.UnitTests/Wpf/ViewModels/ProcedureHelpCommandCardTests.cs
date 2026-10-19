@@ -241,7 +241,7 @@ public sealed class ProcedureHelpCommandCardTests : IDisposable
 
 	[Theory]
 	[InlineData($"{Node}.IncludeHelpCommand")]
-	[InlineData("Services.AiracService.Outputs.Procedures.Alias")]
+	[InlineData("Services.AiracService.General.Outputs.Procedures.Alias")]
 	public void with_the_help_command_or_the_alias_file_off_the_guide_has_no_name_for_it(string key)
 	{
 		UserConfigFile.TrySetValue($"{Node}.RenameHelpCommand", "Y");

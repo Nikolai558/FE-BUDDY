@@ -37,7 +37,7 @@
         </Style>
 
         <!-- one sub-service's line in the feed -->
-        <DataTemplate x:Key="RunStepRow" DataType="{x:Type tabs:RunStep}">
+        <DataTemplate x:Key="RunStepRow" DataType="{x:Type tabm:RunStep}">
             <StackPanel Margin="0,4">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}"
@@ -60,44 +60,73 @@
             <TextBlock bhv:InlineCode.Text="{Binding Converter={StaticResource FileNamesAsCode}}" Style="{StaticResource Text.Prose}" Margin="0,3" />
         </DataTemplate>
 
-        <!-- one group of a sub-service's messages: its heading (a severity, or e.g. an airway ID)
-             with the count and a copy button (every message in the group) on the right, then the
-             messages, a gap between each -->
-        <DataTemplate x:Key="MessageGroup" DataType="{x:Type tabm:SubServiceMessageGroup}">
-            <Border Margin="0,4" Padding="10" CornerRadius="{StaticResource Radius.Chip}"
+        <!-- An expanded message list shows each group as a panel: its heading row (a severity, or
+             e.g. an airway ID, with the count and a copy button for every message in the group),
+             then its message rows, the last closing the panel. Rows, not nested lists, so the list
+             can be virtualized: a run can report thousands of messages, and only those on screen
+             are built. -->
+        <DataTemplate DataType="{x:Type tabm:SubServiceMessageGroup}">
+            <Border Margin="0,4,0,0" Padding="10,10,10,4" CornerRadius="{StaticResource Radius.Chip.Top}"
                     Background="{StaticResource Brush.Bg.Sunken}">
-                <StackPanel>
-                    <DockPanel>
-                        <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}" VerticalAlignment="Center"
-                                        Margin="6,0,0,0" Value="{Binding CopyText}" ToolTip="{Binding CopyToolTip}"
-                                        ToolTipService.InitialShowDelay="200" />
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding Count, StringFormat={}{0} msg}"
-                                   Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock bhv:InlineCode.Text="{Binding Converter={StaticResource FileNamesAsCode}}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
+                <DockPanel>
+                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}" VerticalAlignment="Center"
+                                    Margin="6,0,0,0" Value="{Binding CopyText}" ToolTip="{Binding CopyToolTip}"
+                                    ToolTipService.InitialShowDelay="200" />
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Count, StringFormat={}{0} msg}"
+                               Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type tabm:SubServiceMessageRow}">
+            <Border Background="{StaticResource Brush.Bg.Sunken}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Padding" Value="10,4" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLast}" Value="True">
+                                <Setter Property="Padding" Value="10,4,10,10" />
+                                <Setter Property="Margin" Value="0,0,0,4" />
+                                <Setter Property="CornerRadius" Value="{StaticResource Radius.Chip.Bottom}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock bhv:InlineCode.Text="{Binding Text, Converter={StaticResource FileNamesAsCode}}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
             </Border>
         </DataTemplate>
 
         <!-- an expanded message list: bounded, with its own scroll bar, so a long list does not
              stretch the page; the wheel passes to the page once the list reaches either end -->
-        <Style x:Key="MessageListScroller" TargetType="ScrollViewer">
+        <Style x:Key="MessageList" TargetType="ItemsControl">
             <Setter Property="MaxHeight" Value="320" />
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
-            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-            <Setter Property="bhv:WheelScroll.BubbleUp" Value="True" />
+            <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+            <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+            <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      CanContentScroll="True" bhv:WheelScroll.BubbleUp="True">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- one sub-service's results: what it produced, then its warnings and its routine
              notices, each behind a toggle, collapsed on every run -->
-        <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type tabs:SubServiceRunResult}">
+        <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type tabm:SubServiceRunResult}">
             <StackPanel Margin="0,4,0,8">
                 <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" />
                 <TextBlock bhv:InlineCode.Text="{Binding Summary, Converter={StaticResource FileNamesAsCode}}" Style="{StaticResource Text.Body}"
@@ -107,19 +136,15 @@
                     <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                             Foreground="{StaticResource Brush.Warn}"
                             Content="{Binding AttentionToggleLabel}" Command="{Binding ToggleAttentionCommand}" />
-                    <ScrollViewer Style="{StaticResource MessageListScroller}"
-                                  Visibility="{Binding IsAttentionExpanded, Converter={StaticResource BoolToVis}}">
-                        <ItemsControl ItemsSource="{Binding Attention}" ItemTemplate="{StaticResource MessageGroup}" />
-                    </ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding AttentionRows}" Style="{StaticResource MessageList}"
+                                  Visibility="{Binding IsAttentionExpanded, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
                 <StackPanel Margin="0,6,0,0" Visibility="{Binding HasInfo, Converter={StaticResource BoolToVis}}">
                     <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                             Content="{Binding InfoToggleLabel}" Command="{Binding ToggleInfoCommand}" />
-                    <ScrollViewer Style="{StaticResource MessageListScroller}"
-                                  Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}">
-                        <ItemsControl ItemsSource="{Binding Info}" ItemTemplate="{StaticResource MessageGroup}" />
-                    </ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding InfoRows}" Style="{StaticResource MessageList}"
+                                  Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
             </StackPanel>
         </DataTemplate>
@@ -199,7 +224,7 @@
                            bhv:InlineCode.Text="{Binding OutputDirectory, StringFormat=`{0}`}"
                            Visibility="{Binding OutputDirectory, Converter={StaticResource StringToVis}}" />
                 <TextBlock Style="{StaticResource Text.Caption}">
-                    <Run Text="{Binding FilesWritten.Count, Mode=OneWay, StringFormat={}{0:N0} file(s) written in }" /><Run Text="{Binding ElapsedText, Mode=OneWay}" />
+                    <Run Text="{Binding FilesWrittenCount, Mode=OneWay, StringFormat={}{0:N0} file(s) written in }" /><Run Text="{Binding ElapsedText, Mode=OneWay}" />
                 </TextBlock>
 
                 <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,10,0,0"

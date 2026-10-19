@@ -156,7 +156,8 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 		await tab.CheckAsync(row);
 
 		Assert.Equal("https://github.com/vZOB/facility/raw/refs/heads/main/ZOB-Alias.txt", row.Location);
-		Assert.True(row.CheckFailed);
+		Assert.True(row.HasCheckMessage);
+		Assert.False(row.CheckSucceeded);
 		Assert.True(row.AsksIfPrivate);
 
 		row.AnswerPrivateCommand.Execute(null);
@@ -206,37 +207,109 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 		Assert.Equal(AliasTroubleshooting.None, tab.Sources[0].Troubleshooting);
 	}
 
-	/// <summary>A file on this PC with no alias command in it isn't an alias file, so the tab can't be saved with it.</summary>
+	/// <summary>
+	/// A file on this PC with no alias command in it isn't an alias file, so the tab can't be saved with
+	/// it. The files are looked at off the UI thread; the tab holds what was found against the user.
+	/// </summary>
 	[Fact]
-	public void a_file_on_this_pc_with_no_alias_commands_cannot_be_saved()
+	public async Task a_file_on_this_pc_with_no_alias_commands_cannot_be_saved()
 	{
 		Directory.CreateDirectory(_root);
 		string notes = Path.Combine(_root, "Notes.txt");
 		File.WriteAllText(notes, "Remember to upload the aliases.\r\n");
 		UserConfigFile.TrySetValue("Services.AiracService.ConcatenateAliases.Sources.1.FilePath", notes);
 		ConcatenateAliasesViewModel tab = NewTab();
+		await tab.CheckLocalFilesAsync();
 
 		Assert.StartsWith("It has no alias commands", tab.Sources[0].Error, StringComparison.Ordinal);
 		Assert.StartsWith("Custom alias file 1: It has no alias commands", tab.ValidationError, StringComparison.Ordinal);
 		Assert.False(tab.Save());
 
 		File.WriteAllText(notes, ".zob .msg ZOB\r\n");
-		tab.Revalidate();
+		await tab.CheckLocalFilesAsync();
 
 		Assert.Null(tab.Sources[0].Error);
 		Assert.True(tab.Save());
+	}
+
+	/// <summary>
+	/// Once the user has fixed the file, <b>Check</b> looks at the files on this PC again: the row's error
+	/// goes, and the tab can be saved.
+	/// </summary>
+	[Fact]
+	public async Task checking_a_fixed_file_clears_its_no_alias_commands_error()
+	{
+		Directory.CreateDirectory(_root);
+		string notes = Path.Combine(_root, "Notes.txt");
+		File.WriteAllText(notes, "Remember to upload the aliases.\r\n");
+		UserConfigFile.TrySetValue("Services.AiracService.ConcatenateAliases.Sources.1.FilePath", notes);
+		ConcatenateAliasesViewModel tab = NewTab();
+		await tab.CheckLocalFilesAsync();
+		Assert.False(tab.Save());
+
+		File.WriteAllText(notes, ".zob .msg ZOB\r\n");
+		await tab.CheckAsync(tab.Sources[0]);
+
+		Assert.Equal("Read 1 alias command(s).", tab.Sources[0].CheckMessage);
+		Assert.Null(tab.Sources[0].Error);
+		Assert.True(tab.Save());
+	}
+
+	/// <summary>Two checks of the files can run at once; an older one that finishes last doesn't undo the newer one.</summary>
+	[Fact]
+	public async Task an_older_check_of_the_files_that_finishes_last_is_not_shown()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.ConcatenateAliases.Sources.1.FilePath", Path.Combine(_root, "ZOB-Alias.txt"));
+		ConcatenateAliasesViewModel tab = NewTab();
+		using ManualResetEventSlim release = new();
+		tab.InspectLocalFile = _ =>
+		{
+			release.Wait();
+			return LocalAliasFileState.NoAliasCommands;
+		};
+		Task older = tab.CheckLocalFilesAsync();
+
+		tab.InspectLocalFile = _ => LocalAliasFileState.HasAliasCommands;
+		await tab.CheckLocalFilesAsync();
+		release.Set();
+		await older;
+
+		Assert.Null(tab.Sources[0].Error);
+		Assert.True(tab.Save());
+	}
+
+	/// <summary>
+	/// Typing a path looks at no file on the UI thread: until the check runs, the tab says nothing about
+	/// a file it hasn't looked at, rather than stat or read it on every keystroke.
+	/// </summary>
+	[Fact]
+	public async Task typing_a_path_looks_at_no_file_until_the_check_runs()
+	{
+		ConcatenateAliasesViewModel tab = NewTab();
+		AliasSourceRow row = new(tab, AliasSourceKind.File, string.Empty, Guid.Empty);
+		tab.Sources.Add(row);
+
+		row.Location = Path.Combine(_root, "nowhere", "ZOB-Alias.txt");
+
+		Assert.Null(row.Notice);
+
+		await tab.CheckLocalFilesAsync();
+
+		Assert.Equal("This file is not on this PC. It may have been moved or renamed.", row.Notice);
 	}
 
 	// ---- the one-line rows (issue #326) ----
 
 	/// <summary>A saved file loads closed: one line with its name, and what's wrong with it in amber.</summary>
 	[Fact]
-	public void a_saved_file_is_one_line_with_its_name_and_status()
+	public async Task a_saved_file_is_one_line_with_its_name_and_status()
 	{
 		string missing = Path.Combine(_root, "gone", "ZOB-Alias.txt");
 		UserConfigFile.TrySetValue("Services.AiracService.ConcatenateAliases.Sources.1.FilePath", missing);
+		ConcatenateAliasesViewModel tab = NewTab();
+		await tab.CheckLocalFilesAsync();
 
-		AliasSourceRow row = Assert.Single(NewTab().Sources);
+		AliasSourceRow row = Assert.Single(tab.Sources);
 
 		Assert.False(row.IsExpanded);
 		Assert.Equal("ZOB-Alias.txt", row.Title);

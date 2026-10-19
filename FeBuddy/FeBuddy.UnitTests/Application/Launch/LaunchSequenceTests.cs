@@ -27,7 +27,7 @@ using FeBuddy.Wpf.ViewModels;
 namespace FeBuddy.UnitTests.Application.Launch;
 
 /// <summary>
-/// Runs <see cref="LaunchSequence.RunAsync(string, LaunchOptions, IProgress{LaunchProgress}?, CancellationToken)"/> end to end with every outside dependency stubbed:
+/// Runs <see cref="LaunchSequence.RunAsync"/> end to end with every outside dependency stubbed:
 /// HTTP through <see cref="AppEnvironment.HttpClientForTesting"/>, the AIRAC cache through
 /// <see cref="AiracCycleDataCache.ConfigureForTesting"/>, and config, temp and log folders
 /// redirected to a throwaway directory.
@@ -84,12 +84,12 @@ public sealed class LaunchSequenceTests : IDisposable
 				return Task.FromResult(cycle.AiracCycleId);
 			},
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection())));
-		DevLaunchSettings.ConfigureForTesting(_root);
+		DevLaunchFile.ConfigureForTesting(_root);
 	}
 
 	public void Dispose()
 	{
-		DevLaunchSettings.ConfigureForTesting(null);
+		DevLaunchFile.ConfigureForTesting(null);
 		AppEnvironment.HttpClientForTesting?.Dispose();
 		AppEnvironment.ResetForTesting();
 		WelcomeNotice.ResetForTesting();
@@ -127,48 +127,22 @@ public sealed class LaunchSequenceTests : IDisposable
 			: new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) };
 	}
 
-	/// <summary>Records every report; optionally throws when a step (not the final Complete) succeeds.</summary>
-	private sealed class RecordingProgress(bool failEveryStep = false) : IProgress<LaunchProgress>
-	{
-		public List<LaunchProgress> Reports { get; } = [];
-
-		public void Report(LaunchProgress value)
-		{
-			lock (Reports)
-			{
-				Reports.Add(value);
-			}
-
-			if (failEveryStep && value.Status == LaunchStepStatus.Succeeded && value.Step != LaunchStep.Complete)
-			{
-				throw new InvalidOperationException("step blew up");
-			}
-		}
-	}
-
 	[Fact]
 	public async Task online_launch_publishes_time_version_news_and_airac_state()
 	{
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
 		int changes = 0;
 		AppEnvironment.Changed += (_, _) => Interlocked.Increment(ref changes);
-		RecordingProgress progress = new();
 
-		LaunchResult result = await LaunchSequence.RunAsync("3.0.0", progress);
-
-		Assert.Equal(UtcTimeSource.TimeApi, result.Time.Source);
-		Assert.True(result.Time.HasInternetConnection);
-		Assert.Equal(new DateTime(2026, 9, 7, 12, 34, 56, DateTimeKind.Utc), result.Time.UtcNow);
-		Assert.True(result.Version.UpdateAvailable);
-		Assert.Equal("3.1.0", result.Version.LatestVersion);
-		Assert.Equal(ReleaseChannel.Stable, result.Version.Channel);
-		Assert.Equal(0, result.TempClearFailures);
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);
 
 		Assert.True(AppEnvironment.HasInternetConnection);
-		Assert.Equal(result.Time.UtcNow, AppEnvironment.LaunchUtcNow);
+		Assert.Equal(new DateTime(2026, 9, 7, 12, 34, 56, DateTimeKind.Utc), AppEnvironment.LaunchUtcNow);
 		Assert.Equal(UtcTimeSource.TimeApi, AppEnvironment.LaunchUtcSource);
-		Assert.Same(result.Version, AppEnvironment.Version);
-		Assert.True(AppEnvironment.News!.FromNetwork);
+		Assert.True(AppEnvironment.Version!.UpdateAvailable);
+		Assert.Equal("3.1.0", AppEnvironment.Version.LatestVersion);
+		Assert.Equal(ReleaseChannel.Stable, AppEnvironment.Version.Channel);
+		Assert.Contains(AppLog.Entries, e => e.Message.EndsWith("from GitHub; newest is 2026-09-02.1.", StringComparison.Ordinal));
 		Assert.True(AppEnvironment.LaunchCompleted);
 		Assert.True(changes >= 4);
 
@@ -176,8 +150,8 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Equal(["2608", "2609", "2610"], _preparedCycles.Order());
 		Assert.Equal(AiracCycleReadiness.Ready, AiracCycleDataCache.Instance.ComputeReadiness());
 
-		Assert.DoesNotContain(progress.Reports, r => r.Status == LaunchStepStatus.Failed);
-		Assert.Equal(new LaunchProgress(LaunchStep.Complete, LaunchStepStatus.Succeeded, "Launch complete"), progress.Reports[^1]);
+		Assert.DoesNotContain(AppLog.Entries, e => e.Message.EndsWith("Continuing launch.", StringComparison.Ordinal));
+		Assert.Equal("Launch sequence complete.", AppLog.Entries.Last(e => e.Source == "Launch").Message);
 	}
 
 	// ---- Dev launch ----
@@ -186,6 +160,7 @@ public sealed class LaunchSequenceTests : IDisposable
 	private sealed class DevLaunchRun
 	{
 		public int Requests;
+		public int NewsRequests;
 		public int Probes;
 		public int Downloads;
 		public int Parses;
@@ -205,6 +180,12 @@ public sealed class LaunchSequenceTests : IDisposable
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(request =>
 		{
 			Interlocked.Increment(ref run.Requests);
+
+			if (request.RequestUri!.ToString() == NewsService.RawUrl)
+			{
+				Interlocked.Increment(ref run.NewsRequests);
+			}
+
 			return Online(request);
 		}));
 
@@ -234,33 +215,36 @@ public sealed class LaunchSequenceTests : IDisposable
 		return run;
 	}
 
+	/// <summary>The log lines saying a launch step was left out, in order.</summary>
+	private static string[] SkippedSteps() =>
+		[.. AppLog.Entries.Where(e => e.Source == "Launch" && e.Message.EndsWith(": skipped (dev launch).", StringComparison.Ordinal)).Select(e => e.Message).Order()];
+
 	/// <summary>Which optional steps a launch ran, from the traces <see cref="WireDevLaunch"/> sets up.</summary>
-	private Dictionary<OptionalLaunchStep, bool> StepsThatRan(DevLaunchRun run, RecordingProgress progress) => new()
+	private Dictionary<OptionalLaunchStep, bool> StepsThatRan(DevLaunchRun run) => new()
 	{
 		[OptionalLaunchStep.CheckClockAndInternet] = AppEnvironment.LaunchUtcSource is not null,
 		[OptionalLaunchStep.DownloadAiracData] = run.Probes + run.Downloads > 0,
 		[OptionalLaunchStep.ParseAiracData] = run.Parses > 0,
 		[OptionalLaunchStep.RemoveOldAiracCycles] = run.Prunes > 0,
 		[OptionalLaunchStep.CheckForNewerVersion] = AppEnvironment.Version is { WasSkipped: false },
-		[OptionalLaunchStep.DownloadNews] = AppEnvironment.News is { FromNetwork: true },
+		[OptionalLaunchStep.DownloadNews] = run.NewsRequests > 0,
 		[OptionalLaunchStep.CheckGitHubTokens] = ShellViewModel.ChecksGitHubTokensAtLaunch(AppEnvironment.LaunchOptions),
 		[OptionalLaunchStep.LegacyGitHubTokenNotice] = LegacyGitHubTokenNotice.Take().Count > 0,
 		[OptionalLaunchStep.WelcomeWindow] = WelcomeNotice.Take(),
 		[OptionalLaunchStep.RemoveLegacyInstall] = _squirrelRuns.Count > 0
-			&& !progress.Reports.Any(r => r.Step == LaunchStep.RemoveLegacyShortcuts && r.Status == LaunchStepStatus.Skipped),
+			&& !AppLog.Entries.Any(e => e.Message == "Removing FE-Buddy 2.x's dead shortcuts: skipped (dev launch)."),
 	};
 
 	[Fact]
 	public async Task a_dev_launch_with_every_step_off_touches_no_network_tracks_the_cycles_and_completes()
 	{
 		DevLaunchRun run = WireDevLaunch();
-		RecordingProgress progress = new();
 
-		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(OptionalLaunchStep.None), progress);
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(OptionalLaunchStep.None));
 
 		Assert.Equal(0, run.Requests);
 		Assert.Equal(0, run.Probes + run.Downloads + run.Parses + run.Prunes);
-		Assert.All(StepsThatRan(run, progress), step => Assert.False(step.Value, $"{step.Key} ran."));
+		Assert.All(StepsThatRan(run), step => Assert.False(step.Value, $"{step.Key} ran."));
 
 		// The PC's clock, online until found otherwise, and nothing claimed about updates.
 		Assert.True(AppEnvironment.HasInternetConnection);
@@ -275,14 +259,13 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.True(AppEnvironment.LaunchCompleted);
 		Assert.True(AppEnvironment.LaunchOptions.IsDevLaunch);
 
-		LaunchStep[] skipped = [.. progress.Reports.Where(r => r.Status == LaunchStepStatus.Skipped).Select(r => r.Step).Order()];
 		Assert.Equal(
 			new[]
 			{
-				LaunchStep.CheckLegacyGitHubToken, LaunchStep.RemoveLegacySquirrelInstall, LaunchStep.RemoveLegacyShortcuts,
-				LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion,
-			}.Order(),
-			skipped);
+				"Checking for FE-Buddy 2.x's GitHub token variable", "Removing FE-Buddy 2.x's old install", "Removing FE-Buddy 2.x's dead shortcuts",
+				"Checking the clock and internet connection", "Checking for a newer version",
+			}.Select(step => $"{step}: skipped (dev launch).").Order(),
+			SkippedSteps());
 		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Dev launch. Running: none. Skipping: Check the clock", StringComparison.Ordinal));
 		Assert.Contains(AppLog.Entries, e => e.Message == "Checking for a newer version: skipped (dev launch).");
 
@@ -296,12 +279,11 @@ public sealed class LaunchSequenceTests : IDisposable
 	public async Task a_dev_launch_with_every_step_on_runs_like_a_normal_launch()
 	{
 		DevLaunchRun run = WireDevLaunch();
-		RecordingProgress progress = new();
 
-		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(OptionalLaunchStep.All), progress);
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(OptionalLaunchStep.All));
 
-		Assert.All(StepsThatRan(run, progress), step => Assert.True(step.Value, $"{step.Key} didn't run."));
-		Assert.DoesNotContain(progress.Reports, r => r.Status == LaunchStepStatus.Skipped);
+		Assert.All(StepsThatRan(run), step => Assert.True(step.Value, $"{step.Key} didn't run."));
+		Assert.Empty(SkippedSteps());
 		Assert.Equal(3, run.Parses);
 		Assert.Equal(AiracCycleReadiness.Ready, AiracCycleDataCache.Instance.ComputeReadiness());
 		Assert.True(AppEnvironment.LaunchCompleted);
@@ -322,11 +304,10 @@ public sealed class LaunchSequenceTests : IDisposable
 	public async Task a_dev_launch_runs_just_the_step_chosen(OptionalLaunchStep chosen)
 	{
 		DevLaunchRun run = WireDevLaunch();
-		RecordingProgress progress = new();
 
-		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(chosen), progress);
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.DevLaunch(chosen));
 
-		Assert.All(StepsThatRan(run, progress), step => Assert.Equal(step.Key == chosen, step.Value));
+		Assert.All(StepsThatRan(run), step => Assert.Equal(step.Key == chosen, step.Value));
 		Assert.True(AppEnvironment.LaunchCompleted);
 	}
 
@@ -334,14 +315,13 @@ public sealed class LaunchSequenceTests : IDisposable
 	[Fact]
 	public async Task a_normal_launch_runs_every_step_whatever_the_saved_dev_choices_are()
 	{
-		DevLaunchSettings.Save(OptionalLaunchStep.None);
+		DevLaunchFile.Save(OptionalLaunchStep.None);
 		DevLaunchRun run = WireDevLaunch();
-		RecordingProgress progress = new();
 
-		await LaunchSequence.RunAsync("3.0.0", progress);
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);
 
 		Assert.False(AppEnvironment.LaunchOptions.IsDevLaunch);
-		Assert.All(StepsThatRan(run, progress), step => Assert.True(step.Value, $"{step.Key} didn't run."));
+		Assert.All(StepsThatRan(run), step => Assert.True(step.Value, $"{step.Key} didn't run."));
 		Assert.DoesNotContain(AppLog.Entries, e => e.Message.StartsWith("Dev launch.", StringComparison.Ordinal));
 	}
 
@@ -364,10 +344,35 @@ public sealed class LaunchSequenceTests : IDisposable
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
 		LegacyGitHubTokenNotice.ConfigureForTesting(() => forUser);
 
-		await LaunchSequence.RunAsync("3.0.0");
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);
 
 		Assert.Equal(forUser, LegacyGitHubTokenNotice.Take());
 		Assert.True(LegacyGitHubTokenNotice.HasBeenShown);
+	}
+
+	/// <summary>
+	/// The app reads the settings before it builds any page (<see cref="LaunchSequence.ReadSettings"/>),
+	/// so a page never starts from defaults; the launch then doesn't read them again, which would drop
+	/// what a page has set in memory meanwhile.
+	/// </summary>
+	[Fact]
+	public async Task settings_read_before_the_window_are_there_at_once_and_not_read_again()
+	{
+		const string key = "Services.AiracService.Airways.OutputBy";
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+		Directory.CreateDirectory(UserConfigFile.Directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, """{ "ConfigVersion": 2, "Services": { "AiracService": { "Airways": { "OutputBy": "HighLow" } } } }""");
+
+		Assert.True(LaunchSequence.ReadSettings("3.0.0", LaunchOptions.Normal));
+		Assert.Equal("HighLow", UserConfigFile.GetValue(key));
+
+		UserConfigFile.TrySetValue(key, "Designation");
+		int reads = AppLog.Entries.Count(e => e.Message == "Reading saved settings...");
+
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal with { SettingsRead = true });
+
+		Assert.Equal("Designation", UserConfigFile.GetValue(key));
+		Assert.Equal(reads, AppLog.Entries.Count(e => e.Message == "Reading saved settings..."));
 	}
 
 	/// <summary>Issue #351: the first launch leaves the welcome for the shell; a launch after it doesn't.</summary>
@@ -376,10 +381,10 @@ public sealed class LaunchSequenceTests : IDisposable
 	{
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
 
-		await LaunchSequence.RunAsync("3.0.0");
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);
 		Assert.True(WelcomeNotice.Take());
 
-		await LaunchSequence.RunAsync("3.0.0");
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);
 		Assert.False(WelcomeNotice.Take());
 	}
 
@@ -392,14 +397,14 @@ public sealed class LaunchSequenceTests : IDisposable
 	{
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
 
-		await LaunchSequence.RunAsync("3.1.0-dev");
+		await LaunchSequence.RunAsync("3.1.0-dev", LaunchOptions.Normal);
 		Assert.False(File.Exists(UserConfigFile.ConfigFilePath));
 
-		await LaunchSequence.RunAsync("3.1.0-dev");
+		await LaunchSequence.RunAsync("3.1.0-dev", LaunchOptions.Normal);
 		Assert.True(WelcomeNotice.Take());
 		Assert.True(File.Exists(UserConfigFile.ConfigFilePath));
 
-		await LaunchSequence.RunAsync("3.1.0-dev");
+		await LaunchSequence.RunAsync("3.1.0-dev", LaunchOptions.Normal);
 		Assert.False(WelcomeNotice.Take());
 	}
 
@@ -411,7 +416,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		Directory.CreateDirectory(UserConfigFile.Directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, """{ "General": { "UpdateChannel": "Beta" } }""");
 
-		await LaunchSequence.RunAsync("3.0.0-beta.7");
+		await LaunchSequence.RunAsync("3.0.0-beta.7", LaunchOptions.Normal);
 
 		Assert.False(WelcomeNotice.Take());
 	}
@@ -422,13 +427,13 @@ public sealed class LaunchSequenceTests : IDisposable
 	{
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
 
-		await LaunchSequence.RunAsync("3.0.0");
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);
 		Assert.Empty(_squirrelRuns);
 
 		string updateExe = Path.Combine(Directory.CreateDirectory(Path.Combine(_root, "squirrel")).FullName, "Update.exe");
 		File.WriteAllText(updateExe, "exe");
 
-		await LaunchSequence.RunAsync("3.0.0");
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);
 		Assert.Equal($"{updateExe} --uninstall", Assert.Single(_squirrelRuns));
 	}
 
@@ -437,40 +442,32 @@ public sealed class LaunchSequenceTests : IDisposable
 	{
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(_ => throw new HttpRequestException("no network")));
 
-		LaunchResult result = await LaunchSequence.RunAsync("3.0.0");
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);
 
-		Assert.Equal(UtcTimeSource.LocalClock, result.Time.Source);
+		Assert.Equal(UtcTimeSource.LocalClock, AppEnvironment.LaunchUtcSource);
 		Assert.False(AppEnvironment.HasInternetConnection);
-		Assert.False(result.Version.CheckSucceeded);
-		Assert.False(AppEnvironment.News!.FromNetwork);
+		Assert.False(AppEnvironment.Version!.CheckSucceeded);
+		Assert.Contains(AppLog.Entries, e => e.Message.EndsWith("from the bundled copy.", StringComparison.Ordinal) || e.Message.Contains("from the bundled copy;", StringComparison.Ordinal));
 		Assert.True(AppEnvironment.LaunchCompleted);
 	}
 
+	/// <summary>A step that throws is logged and replaced by its default, and the launch still completes.</summary>
 	[Fact]
 	public async Task a_failing_step_is_logged_and_replaced_by_its_default_so_launch_still_completes()
 	{
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
-		RecordingProgress progress = new(failEveryStep: true);
+		LegacyGitHubTokenNotice.ConfigureForTesting(() => throw new InvalidOperationException("step blew up"));
+		using CancellationTokenSource cancelled = new();
+		await cancelled.CancelAsync();
 
-		LaunchResult result = await LaunchSequence.RunAsync("3.0.0", progress);
+		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal, cancelled.Token);
 
-		// Every step's result is the fallback: offline local clock, no version check, no news.
-		Assert.Equal(UtcTimeSource.LocalClock, result.Time.Source);
-		Assert.False(result.Time.HasInternetConnection);
-		Assert.Equal(0, result.TempClearFailures);
-		Assert.Equal("Version check did not run.", result.Version.Message);
-		Assert.False(AppEnvironment.News!.ParseSucceeded);
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning
+			&& e.Message == "Checking for FE-Buddy 2.x's GitHub token variable failed: step blew up. Continuing launch.");
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning
+			&& e.Message.StartsWith("Preparing AIRAC data (download + parse) failed:", StringComparison.Ordinal));
+		Assert.False(LegacyGitHubTokenNotice.HasBeenShown);
 		Assert.True(AppEnvironment.LaunchCompleted);
-
-		LaunchStep[] failed = [.. progress.Reports.Where(r => r.Status == LaunchStepStatus.Failed).Select(r => r.Step).Order()];
-		Assert.Equal(
-			new[]
-			{
-				LaunchStep.ClearTempWorkspace, LaunchStep.ReadUserConfig, LaunchStep.CheckLegacyGitHubToken,
-				LaunchStep.RemoveLegacySquirrelInstall, LaunchStep.RemoveLegacyShortcuts, LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
-			}.Order(),
-			failed);
-		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("step blew up. Continuing launch.", StringComparison.Ordinal));
 	}
 
 	/// <summary>Issue #299: an alpha tester who updates keeps the Alpha channel the first launch saved.</summary>
@@ -479,12 +476,12 @@ public sealed class LaunchSequenceTests : IDisposable
 	{
 		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
 
-		await LaunchSequence.RunAsync("3.0.0-alpha.5");
+		await LaunchSequence.RunAsync("3.0.0-alpha.5", LaunchOptions.Normal);
 		Assert.Equal("Alpha", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
 
-		LaunchResult afterUpdate = await LaunchSequence.RunAsync("3.0.0-beta.1");
+		await LaunchSequence.RunAsync("3.0.0-beta.1", LaunchOptions.Normal);
 
-		Assert.Equal(ReleaseChannel.Alpha, afterUpdate.Version.Channel);
+		Assert.Equal(ReleaseChannel.Alpha, AppEnvironment.Version!.Channel);
 		Assert.Equal("Alpha", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
 	}
 
@@ -496,9 +493,9 @@ public sealed class LaunchSequenceTests : IDisposable
 		Directory.CreateDirectory(UserConfigFile.Directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
 
-		LaunchResult result = await LaunchSequence.RunAsync("3.0.0-alpha.5");
+		await LaunchSequence.RunAsync("3.0.0-alpha.5", LaunchOptions.Normal);
 
-		Assert.Equal(ReleaseChannel.Alpha, result.Version.Channel);
+		Assert.Equal(ReleaseChannel.Alpha, AppEnvironment.Version!.Channel);
 		Assert.Equal("{ not json", File.ReadAllText(UserConfigFile.ConfigFilePath));
 	}
 
@@ -522,7 +519,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
 		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
 		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
-		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything);
 
 		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
@@ -575,7 +572,7 @@ public sealed class LaunchSequenceTests : IDisposable
 				return Task.FromResult(found);
 			}));
 
-		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything);
 
 		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
@@ -583,7 +580,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			{
 				SelectedCycle = current,
 				OutputDirectory = Path.Combine(_root, "output"),
-				Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+				Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 			},
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
@@ -617,7 +614,7 @@ public sealed class LaunchSequenceTests : IDisposable
 				return new NasrCsvDataCollection();
 			}));
 
-		Task prepare = AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+		Task prepare = AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything);
 		await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).WaitAsync(TimeSpan.FromSeconds(5));
 		Assert.Equal(AiracCycleReadiness.Ready, AiracCycleDataCache.Instance.ComputeReadiness());
 
@@ -664,14 +661,14 @@ public sealed class LaunchSequenceTests : IDisposable
 				return Task.FromResult<DtppMetafileDataCollection?>(new DtppMetafileDataCollection { Cycle = cycleDirectory });
 			}));
 
-		Task prepare = AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+		Task prepare = AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything);
 		await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).WaitAsync(TimeSpan.FromSeconds(5));
 
 		Task<AiracServiceResult> run = AiracService.RunAsync(new AiracServiceSettings
 		{
 			SelectedCycle = current,
 			OutputDirectory = Path.Combine(_root, "output"),
-			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		});
 
 		await Task.Delay(50);
@@ -710,7 +707,7 @@ public sealed class LaunchSequenceTests : IDisposable
 
 		try
 		{
-			await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+			await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything);
 
 			List<AiracServiceProgress> reports = [];
 			AiracServiceResult result = await AiracService.RunAsync(
@@ -718,7 +715,7 @@ public sealed class LaunchSequenceTests : IDisposable
 				{
 					SelectedCycle = current,
 					OutputDirectory = Path.Combine(_root, "output"),
-					WxStations = new Dictionary<string, string>(),
+					WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 					Telephony = new Dictionary<string, string>(),
 				},
 				new SynchronousProgress<AiracServiceProgress>(reports.Add));
@@ -752,7 +749,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
 		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
 		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
-		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything);
 
 		Directory.CreateDirectory(_root);
 		string customFile = Path.Combine(_root, "ZOB-Alias.txt");
@@ -793,7 +790,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
 		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
 		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
-		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything);
 
 		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(

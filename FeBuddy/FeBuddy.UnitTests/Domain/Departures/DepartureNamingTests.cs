@@ -17,10 +17,9 @@ public sealed class DepartureNamingTests
 	public void the_code_id_comes_from_the_computer_code_with_the_amendment_digit_removed(
 		string computerCode, string amendmentNo, string dpName, string expected)
 	{
-		string codeId = DepartureNaming.CodeIdFor(computerCode, amendmentNo, dpName, out bool usedFallback);
+		string codeId = DepartureNaming.CodeIdFor(computerCode, amendmentNo, dpName);
 
 		Assert.Equal(expected, codeId);
-		Assert.False(usedFallback);
 	}
 
 	[Theory]
@@ -32,18 +31,16 @@ public sealed class DepartureNamingTests
 	public void the_code_id_falls_back_to_the_cleaned_name_when_the_code_is_unusable(
 		string computerCode, string amendmentNo, string dpName, string expected)
 	{
-		string codeId = DepartureNaming.CodeIdFor(computerCode, amendmentNo, dpName, out bool usedFallback);
+		string codeId = DepartureNaming.CodeIdFor(computerCode, amendmentNo, dpName);
 
 		Assert.Equal(expected, codeId);
-		Assert.True(usedFallback);
 	}
 
 	[Fact]
 	public void a_null_computer_code_falls_back_to_the_name()
 	{
-		string codeId = DepartureNaming.CodeIdFor(null, "ONE", "PORTLAND", out bool usedFallback);
+		string codeId = DepartureNaming.CodeIdFor(null, "ONE", "PORTLAND");
 
 		Assert.Equal("PORTLAND", codeId);
-		Assert.True(usedFallback);
 	}
 }

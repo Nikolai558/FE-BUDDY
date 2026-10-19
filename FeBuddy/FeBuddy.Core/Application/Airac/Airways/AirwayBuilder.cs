@@ -47,36 +47,26 @@ public static class AirwayBuilder
 		List<string> excludedAirwayIds = [];
 		bool warnedUnknownDesignation = false;
 
-		/*
-		 * Build a dictionary of all airway IDs from AWY_BASE.
-		 * GroupBy is used so duplicate AWY_BASE records with the same AwyId do not cause
-		 * ToDictionary() to throw an exception; the first occurrence wins.
-		 */
-		var airwayBaseRecords =
+		// Every airway ID in AWY_BASE, once: a duplicate record adds nothing.
+		IEnumerable<string> airwayIds =
 			allNasrCsvData.Awy.AwyBase
 				.Where(x => !string.IsNullOrWhiteSpace(x.AwyId))
-				.GroupBy(x => x.AwyId.Trim(), StringComparer.OrdinalIgnoreCase)
-				.ToDictionary(
-					group => group.Key,
-					group => group.First(),
-					StringComparer.OrdinalIgnoreCase);
+				.Select(x => x.AwyId.Trim())
+				.Distinct(StringComparer.OrdinalIgnoreCase);
 
 		ILookup<string, AwyCsvDataModel.AwySegAlt> airwaySegmentLookup =
 			allNasrCsvData.Awy.AwySegAlt
 				.Where(x => !string.IsNullOrWhiteSpace(x.AwyId))
 				.ToLookup(x => x.AwyId.Trim(), StringComparer.OrdinalIgnoreCase);
 
-		foreach (KeyValuePair<string, AwyCsvDataModel.AwyBase> entry in airwayBaseRecords)
+		foreach (string awyId in airwayIds)
 		{
-			string awyId = entry.Key;
-			AwyCsvDataModel.AwyBase baseRecord = entry.Value;
-
 			string designation = AirwayClassifier.DeriveDesignation(awyId);
 
 			if (designation == AirwayClassifier.UnknownDesignation && !warnedUnknownDesignation)
 			{
 				warnedUnknownDesignation = true;
-				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder", $"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'."));
+				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder", $"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'.") { Subject = awyId });
 			}
 
 			// Drop excluded designations before any geometry work, so GeoJSON and the alias
@@ -107,7 +97,8 @@ public static class AirwayBuilder
 
 				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder",
 					$"Airway '{awyId}': excluded from all output - {distinctIds.Length} waypoint(s) " +
-					$"could not be resolved ({string.Join(", ", distinctIds)})."));
+					$"could not be resolved ({string.Join(", ", distinctIds)}).")
+				{ Subject = awyId });
 				excludedAirwayIds.Add(awyId);
 				continue;
 			}
@@ -144,7 +135,11 @@ public static class AirwayBuilder
 				}
 			}
 
-			// Buffering only shapes what is drawn, so an airway outside the ROI skips it.
+			// Buffering only shapes what is drawn, so an airway outside the ROI skips it. An airway it
+			// leaves no legs of is kept, not drawn, on its unbuffered line: the alias file still owes
+			// the user every airway.
+			bool isDrawn = true;
+
 			if (crossesRoi && settings.BufferAirwayWaypoints)
 			{
 				AirwayBufferResult bufferResult =
@@ -152,29 +147,28 @@ public static class AirwayBuilder
 
 				messages.AddRange(bufferResult.Messages);
 
-				lineStrings = bufferResult.LineStrings;
-
-				if (lineStrings.Count == 0)
+				if (bufferResult.LineStrings.Count > 0)
+				{
+					lineStrings = bufferResult.LineStrings;
+				}
+				else
 				{
 					// Every leg was shorter than its combined buffer radius.
-					continue;
+					isDrawn = false;
 				}
 			}
 
-			(AirwayAltitudeClass altitudeClass, int? maxAuthAlt) =
-				AirwayClassifier.Classify(normalizedSegments);
+			AirwayAltitudeClass altitudeClass = AirwayClassifier.Classify(normalizedSegments).AltitudeClass;
 
 			Airway airway = new()
 			{
 				AwyId = awyId,
 				Designation = designation,
-				AwyLocation = (baseRecord.AwyLocation ?? string.Empty).Trim(),
-				MaxAuthAlt = maxAuthAlt,
 				AltitudeClass = altitudeClass,
-				Segments = normalizedSegments,
 				Points = points,
 				Geometry = Combine(lineStrings),
-				CrossesRoi = crossesRoi
+				CrossesRoi = crossesRoi,
+				IsDrawn = isDrawn
 			};
 
 			airways.Add(airway);
@@ -255,8 +249,7 @@ public static class AirwayBuilder
 			trimmedId,
 			pointType,
 			coordinates.Value.waypointLat,
-			coordinates.Value.waypointLon,
-			coordinates.Value.foundIn));
+			coordinates.Value.waypointLon));
 	}
 
 	/// <summary>

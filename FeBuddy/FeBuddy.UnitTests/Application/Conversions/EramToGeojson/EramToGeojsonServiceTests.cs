@@ -607,6 +607,7 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 
 		string warning = Assert.Single(result.Warnings);
 		Assert.Contains("no CRC Symbol defaults are set on the tab", warning);
+		Assert.EndsWith("carry only filter 0 (shown at every filter setting) and CRC draws them with its own defaults.", warning, StringComparison.Ordinal);
 	}
 
 	// ================= the run =================
@@ -832,14 +833,13 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 	}
 
 	[Fact]
-	public void reader_problems_are_warned_about_and_counted()
+	public void reader_problems_are_warned_about()
 	{
 		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB + "<GeoMapSymbol><Latitude>40000000N</Latitude></GeoMapSymbol>"));
 
 		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings());
 
-		Assert.Equal(1, result.Files[0].RecordsSkipped);
-		Assert.Contains(result.Warnings, w => w.StartsWith("Geomaps.xml: Line"));
+		Assert.Single(result.Warnings, w => w.StartsWith("Geomaps.xml: Line"));
 	}
 
 	[Fact]
@@ -864,5 +864,27 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 	private sealed class InlineProgress(Action<ConversionProgress> report) : IProgress<ConversionProgress>
 	{
 		public void Report(ConversionProgress value) => report(value);
+	}
+
+	/// <summary>The folder a run would empty first is named only when an earlier run left something in it.</summary>
+	[Fact]
+	public void existing_output_is_the_folder_a_run_would_empty_when_it_has_anything()
+	{
+		Dictionary<string, string> settings = new() { ["OutputDirectory"] = Output, ["AddFeBuddyOutputFolder"] = "N" };
+		string folder = EramGeojsonWriter.OutputDirectory(Output, addFeBuddyOutputFolder: false);
+
+		Assert.Null(EramToGeojsonService.ExistingOutput(settings));
+
+		Directory.CreateDirectory(folder);
+		Assert.Null(EramToGeojsonService.ExistingOutput(settings));
+
+		File.WriteAllText(Path.Combine(folder, "old.geojson"), "{}");
+		Assert.Equal(folder, EramToGeojsonService.ExistingOutput(settings));
+
+		settings["AddFeBuddyOutputFolder"] = "Y";
+		Assert.Null(EramToGeojsonService.ExistingOutput(settings));
+
+		Assert.Throws<ArgumentException>(() => EramToGeojsonService.ExistingOutput(new Dictionary<string, string>()));
+		Assert.Throws<ArgumentNullException>(() => EramToGeojsonService.ExistingOutput(null!));
 	}
 }

@@ -102,9 +102,9 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 	/// </summary>
 	private string Generate(bool includeFeb, params AirwayFebProperty[] febProperties)
 	{
-		AirwayPoint a = new("AAAAA", "WP", 40.0, -80.0, "fix");
-		AirwayPoint b = new("BBBBB", "WP", 41.0, -81.0, "fix");
-		AirwayPoint c = new("CCCCC", "WP", 42.0, -82.0, "fix");
+		AirwayPoint a = new("AAAAA", "WP", 40.0, -80.0);
+		AirwayPoint b = new("BBBBB", "WP", 41.0, -81.0);
+		AirwayPoint c = new("CCCCC", "WP", 42.0, -82.0);
 
 		AirwaySettings settings = new()
 		{
@@ -129,9 +129,7 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 	{
 		AwyId = awyId,
 		Designation = "J",
-		AwyLocation = "C",
 		AltitudeClass = AirwayAltitudeClass.High,
-		Segments = [new AirwaySegment(from.PointId, to.PointId, IsGap: false, MaxAuthAlt: null)],
 		Points = [from, to],
 		Geometry = Wgs84.Factory.CreateLineString(
 		[

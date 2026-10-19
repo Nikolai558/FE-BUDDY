@@ -23,6 +23,12 @@ public static class GeojsonFileWriter
 	/// </summary>
 	public const int NoRounding = 0;
 
+	/// <summary>The decimal places kept per coordinate when none is chosen: about 0.1 m.</summary>
+	public const int DefaultPrecision = 6;
+
+	/// <summary>The most decimal places a coordinate can be rounded to: as many as a double holds.</summary>
+	public const int MaxPrecision = 15;
+
 	/// <summary>
 	/// Serializes <paramref name="collection"/> to RFC 7946 GeoJSON and writes it to
 	/// <paramref name="directory"/>/<paramref name="fileName"/>.

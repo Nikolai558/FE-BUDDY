@@ -23,8 +23,6 @@
                         bare ComboBox now picks it up on its own.
         DatePicker   -> Themed.DatePicker (Field look + calendar glyph; its drop-down
                         is Themed.Calendar.DropDown)
-        Calendar     -> Themed.Calendar (dark panel, amber today ring, amber-soft
-                        selected day; month and year views re-skinned too)
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -160,8 +158,10 @@
     <!-- The implicit TextBox style. It also carries the validation-failure look: a box whose
          bhv:FieldState.Error is bound to its tab's FieldErrors[<key>] gets a red edge, a faint
          red wash and the validator's own message as its tool-tip, so the box that needs fixing is
-         obvious without reading the error list above the form. -->
+         obvious without reading the error list above the form. Its hint, if any, is
+         bhv:FieldState.Hint: a setter here, so the error can replace it. -->
     <Style TargetType="TextBox" BasedOn="{StaticResource Field}">
+        <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Hint), RelativeSource={RelativeSource Self}}" />
         <Style.Triggers>
             <Trigger Property="bhv:FieldState.HasError" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
@@ -425,7 +425,6 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource Themed.ComboBoxItem}" />
 
     <!-- The text box an editable ComboBox types into: bare text on the combo's own fill, so the
          combo's border, focus ring and error look stay the only frame. -->
@@ -459,6 +458,8 @@
          measured in items or in pixels - leaving it implicit is what made a single wheel notch
          jump the whole list. -->
     <Style x:Key="Themed.ComboBox" TargetType="ComboBox">
+        <!-- The hint (bhv:FieldState.Hint) as a setter, so the error trigger below can replace it. -->
+        <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Hint), RelativeSource={RelativeSource Self}}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
         <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
@@ -870,7 +871,8 @@
         </Setter>
     </Style>
 
-    <!-- Keyed AND implicit, like Themed.ComboBox: a bare Calendar anywhere gets this look. -->
+    <!-- The calendar look: dark panel, amber today ring, amber-soft selected day, month and year
+         views re-skinned too. The DatePicker's drop-down builds on it (Themed.Calendar.DropDown). -->
     <Style x:Key="Themed.Calendar" TargetType="Calendar">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
@@ -895,8 +897,6 @@
             </Setter.Value>
         </Setter>
     </Style>
-
-    <Style TargetType="Calendar" BasedOn="{StaticResource Themed.Calendar}" />
 
     <!-- The DatePicker's drop-down calendar: the same, plus the ComboBox drop-down's gap and shadow. -->
     <Style x:Key="Themed.Calendar.DropDown" TargetType="Calendar" BasedOn="{StaticResource Themed.Calendar}">

@@ -26,6 +26,34 @@ public sealed class RoiFilterTests
 		Assert.NotNull(error);
 	}
 
+	/// <summary>Each corner, with each value that parses but isn't a number on the map.</summary>
+	public static TheoryData<int, string> NotFinite()
+	{
+		TheoryData<int, string> data = new();
+
+		for (int corner = 0; corner < 4; corner++)
+		{
+			foreach (string value in new[] { "NaN", "Infinity", "-Infinity" })
+			{
+				data.Add(corner, value);
+			}
+		}
+
+		return data;
+	}
+
+	[Theory]
+	[MemberData(nameof(NotFinite))]
+	public void is_coordinate_valid_format_rejects_a_value_that_is_not_finite(int corner, string value)
+	{
+		string[] coordinates = ["38.0", "-85.0", "43.0", "-78.0"];
+		string[] fields = ["Southwest Latitude", "Southwest Longitude", "Northeast Latitude", "Northeast Longitude"];
+		coordinates[corner] = value;
+
+		Assert.False(RoiFilter.IsCoordinateValidFormat(coordinates[0], coordinates[1], coordinates[2], coordinates[3], out string? error));
+		Assert.Equal($"{fields[corner]} '{value}' is not a valid decimal coordinate.", error);
+	}
+
 	[Fact]
 	public void is_coordinates_relative_position_valid_accepts_a_proper_box()
 	{

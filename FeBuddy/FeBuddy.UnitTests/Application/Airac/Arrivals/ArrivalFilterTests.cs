@@ -46,7 +46,7 @@ public sealed class ArrivalFilterTests
 			AmendmentNo = "ONE",
 			AmendmentEffectiveDateText = string.Empty,
 			ServedAirports = servedAirports,
-			Bodies = [new ArrivalRawRoute("BODY", 1, ArrivalRouteKind.Body, null, [new ArrivalRawPoint("ALPHA", "RP")])],
+			Bodies = [new ArrivalRawRoute("BODY", 1, ArrivalRouteKind.Body, [new ArrivalRawPoint("ALPHA", "RP")])],
 			Transitions = [],
 			BodiesByAirport = new Dictionary<string, IReadOnlyList<(string Name, int Sequence)>>()
 		};

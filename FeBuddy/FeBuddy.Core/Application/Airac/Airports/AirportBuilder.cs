@@ -28,6 +28,9 @@ public static class AirportBuilder
 	private const string PermanentlyClosedStatus = "CP";
 	private const string NonToweredCode = "NON-ATCT";
 
+	/// <summary>The <c>TWR_TYPE_CODE</c> every towered field's code is or starts with: <c>ATCT</c>, <c>ATCT-A/C</c>, <c>ATCT-TRACON</c>...</summary>
+	private const string ToweredCode = "ATCT";
+
 	/// <summary>
 	/// Builds every eligible airport from the parsed NASR data.
 	/// </summary>
@@ -113,6 +116,7 @@ public static class AirportBuilder
 				TrafficPatternAltitude = row.Tpa,
 				FssId = Normalize(row.FssId),
 				TowerType = AirportFieldMaps.MapTowerType(row.TwrTypeCode),
+				IsTowered = IsTowered(row),
 				FacilityType = AirportFieldMaps.MapFacilityType(row.SiteTypeCode),
 				CtafFrequency = Normalize(ctaf?.Freq),
 				WeatherFrequency = Normalize(weather?.Freq),
@@ -163,6 +167,10 @@ public static class AirportBuilder
 
 	private static bool IsPermanentlyClosed(AptCsvDataModel.AptBase row) =>
 		(row.ArptStatus?.Trim() ?? string.Empty).Equals(PermanentlyClosedStatus, StringComparison.OrdinalIgnoreCase);
+
+	/// <summary>Whether the field has a control tower (<see cref="Airport.IsTowered"/>): a <c>TWR_TYPE_CODE</c> that starts with <c>ATCT</c>.</summary>
+	private static bool IsTowered(AptCsvDataModel.AptBase row) =>
+		(row.TwrTypeCode?.Trim() ?? string.Empty).StartsWith(ToweredCode, StringComparison.OrdinalIgnoreCase);
 
 	/// <summary>Whether the field has no tower (<c>TWR_TYPE_CODE</c> of <c>NON-ATCT</c>), so it gets no attendance hours.</summary>
 	private static bool IsNonTowered(AptCsvDataModel.AptBase row) =>

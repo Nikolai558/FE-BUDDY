@@ -30,6 +30,7 @@ public sealed class NavaidServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Everything",
 		};
 
 		foreach ((string key, string value) in overrides)
@@ -65,7 +66,7 @@ public sealed class NavaidServiceTests : IDisposable
 		// A box around Chicago only: ELY (Nevada) falls outside it.
 		NavaidServiceResult result = NavaidService.Run(data, Settings(
 			("ExcludedTypes", "FAN MARKER"),
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", "40.0"), ("RoiSwLon", "-89.0"), ("RoiNeLat", "43.0"), ("RoiNeLon", "-86.0")));
 
 		// CGT and ELY are left for the GeoJSON (FAN MARKER excluded); only CGT is inside the ROI.
@@ -85,7 +86,7 @@ public sealed class NavaidServiceTests : IDisposable
 
 		// Nowhere near Chicago.
 		NavaidServiceResult result = NavaidService.Run(data, Settings(
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", "24.0"), ("RoiSwLon", "-82.0"), ("RoiNeLat", "26.0"), ("RoiNeLon", "-80.0")));
 
 		Assert.Equal(1, result.NavaidCount);
@@ -112,6 +113,16 @@ public sealed class NavaidServiceTests : IDisposable
 			m.IsAdvisory
 			&& m.Text.Contains("No NAVAIDs matched the configured filters", StringComparison.Ordinal)
 			&& m.Text.Contains("alias file still covers every NAVAID", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public void a_nasr_file_with_no_navaids_says_none_were_found()
+	{
+		NavaidServiceResult result = NavaidService.Run(NavaidTestData.Build([]), Settings(("GenerateAliasFile", "N")));
+
+		Assert.Equal(0, result.NavaidCount);
+		Assert.Contains(result.Messages, m =>
+			m.IsAdvisory && m.Text == "No NAVAIDs were found, so no NAVAIDs GeoJSON files were written.");
 	}
 
 	[Fact]

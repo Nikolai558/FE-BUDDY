@@ -37,9 +37,9 @@ public static class ProcedureChartTypes
 	public static IReadOnlyList<string> All { get; } = [Iap, Min, Star, Dp, Apd, Odp, Hot, Lah, Dau];
 
 	/// <summary>
-	/// The chart types the Procedures sub-service includes when <c>ChartTypes</c> is absent or
-	/// blank - every kind of procedure a pilot flies, but none of the volume-wide reference sheets
-	/// (<see cref="Min"/>, <see cref="Hot"/>, <see cref="Lah"/>).
+	/// The chart types the Procedures sub-service includes when <c>ChartTypes</c> is absent; a blank
+	/// value means none - every kind of procedure a pilot flies, but none of the volume-wide reference
+	/// sheets (<see cref="Min"/>, <see cref="Hot"/>, <see cref="Lah"/>).
 	/// </summary>
 	public static IReadOnlyList<string> Default { get; } = [Iap, Star, Dp, Odp, Dau, Apd];
 

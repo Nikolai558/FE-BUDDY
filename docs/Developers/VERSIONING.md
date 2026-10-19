@@ -74,10 +74,11 @@ channel is Stable.
   `Assembly.GetName().Version`, which drops the tag.
 - **The version check** (`VersionCheck`) reads the repository's last 100 releases, parses each tag
   as strict SemVer (a leading `v` is fine; anything else is skipped), keeps those on the user's
-  channel, and compares by SemVer (`ProductVersion`).
+  channel or a more stable one, and compares by SemVer (`ProductVersion`).
 - **Update now** downloads the release's `.msi` to `%TEMP%\FE-Buddy\Updates` (`UpdateInstaller`),
-  runs `msiexec /i <msi> REINSTALLMODE=amus` elevated, and closes FE-Buddy; the MSI relaunches it
-  from its last page. It warns first if closing would lose a run or unsaved edits. A development
+  runs `msiexec /i <msi> REINSTALLMODE=amus` (not elevated: Windows Installer asks for
+  administrator permission itself), and closes FE-Buddy; the MSI relaunches it, as the signed-in
+  user, from its last page. It warns first if closing would lose a run or unsaved edits. A development
   build or a release with no `.msi` opens the release page instead; after a failed download,
   **Open release page** is offered.
 - **Going back.** Saving a more stable channel in Settings while running a pre-release offers that

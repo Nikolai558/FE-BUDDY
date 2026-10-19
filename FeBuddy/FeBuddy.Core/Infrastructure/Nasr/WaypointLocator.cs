@@ -26,11 +26,8 @@ internal static class WaypointLocator
 		Airport
 	}
 
-	/// <summary>
-	/// A single resolved waypoint lookup entry: latitude, longitude, and which NASR data
-	/// source the waypoint was found in.
-	/// </summary>
-	private readonly record struct CoordinateEntry(double Lat, double Lon, string FoundIn);
+	/// <summary>A single resolved waypoint lookup entry: latitude and longitude.</summary>
+	private readonly record struct CoordinateEntry(double Lat, double Lon);
 
 	/// <summary>
 	/// Holds the lazily-built lookup dictionaries for one <see cref="NasrCsvDataCollection"/>
@@ -60,13 +57,12 @@ internal static class WaypointLocator
 	/// a fix; anything else is tried as a navaid first, then as an airport.
 	/// </param>
 	/// <returns>
-	/// The coordinates and the table they came from (<c>fix</c>, <c>navaid</c> or
-	/// <c>airport</c>), or <see langword="null"/> when not found.
+	/// The coordinates, or <see langword="null"/> when not found.
 	/// </returns>
 	/// <exception cref="ArgumentNullException">Thrown when <paramref name="allNasrCsvData"/> is null.</exception>
 	/// <exception cref="ArgumentException">Thrown when <paramref name="waypointId"/> is blank.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when a group the search needs (FIX, NAV or APT) wasn't parsed.</exception>
-	internal static (double waypointLat, double waypointLon, string foundIn)? Find(
+	internal static (double waypointLat, double waypointLon)? Find(
 		NasrCsvDataCollection allNasrCsvData,
 		string waypointId,
 		WaypointType? waypointType = null)
@@ -124,7 +120,7 @@ internal static class WaypointLocator
 	/// <summary>
 	/// Searches the cached FIX_BASE index for a matching 5-character fix.
 	/// </summary>
-	private static (double waypointLat, double waypointLon, string foundIn)? FindFix(
+	private static (double waypointLat, double waypointLon)? FindFix(
 		NasrCsvDataCollection allNasrCsvData,
 		CoordinateIndexSet indexSet,
 		string waypointId)
@@ -135,13 +131,13 @@ internal static class WaypointLocator
 		if (!index.TryGetValue(waypointId, out CoordinateEntry entry))
 			return null;
 
-		return (entry.Lat, entry.Lon, entry.FoundIn);
+		return (entry.Lat, entry.Lon);
 	}
 
 	/// <summary>
 	/// Searches the cached NAV_BASE index for a matching NAVAID.
 	/// </summary>
-	private static (double waypointLat, double waypointLon, string foundIn)? FindNavaid(
+	private static (double waypointLat, double waypointLon)? FindNavaid(
 		NasrCsvDataCollection allNasrCsvData,
 		CoordinateIndexSet indexSet,
 		string waypointId)
@@ -152,13 +148,13 @@ internal static class WaypointLocator
 		if (!index.TryGetValue(waypointId, out CoordinateEntry entry))
 			return null;
 
-		return (entry.Lat, entry.Lon, entry.FoundIn);
+		return (entry.Lat, entry.Lon);
 	}
 
 	/// <summary>
 	/// Searches the cached APT_BASE index for a matching airport using either ICAO ID or airport ID.
 	/// </summary>
-	private static (double waypointLat, double waypointLon, string foundIn)? FindAirport(
+	private static (double waypointLat, double waypointLon)? FindAirport(
 		NasrCsvDataCollection allNasrCsvData,
 		CoordinateIndexSet indexSet,
 		string waypointId)
@@ -169,7 +165,7 @@ internal static class WaypointLocator
 		if (!index.TryGetValue(waypointId, out CoordinateEntry entry))
 			return null;
 
-		return (entry.Lat, entry.Lon, entry.FoundIn);
+		return (entry.Lat, entry.Lon);
 	}
 
 	/// <summary>
@@ -188,7 +184,7 @@ internal static class WaypointLocator
 			// First occurrence wins.
 			index.TryAdd(
 				fix.FixId,
-				new CoordinateEntry(fix.LatDecimal, fix.LongDecimal, "fix"));
+				new CoordinateEntry(fix.LatDecimal, fix.LongDecimal));
 		}
 
 		return index;
@@ -210,7 +206,7 @@ internal static class WaypointLocator
 			// First occurrence wins.
 			index.TryAdd(
 				navaid.NavId,
-				new CoordinateEntry(navaid.LatDecimal, navaid.LongDecimal, "navaid"));
+				new CoordinateEntry(navaid.LatDecimal, navaid.LongDecimal));
 		}
 
 		return index;
@@ -227,10 +223,7 @@ internal static class WaypointLocator
 
 		foreach (var airport in allNasrCsvData.RequireApt().AptBase)
 		{
-			CoordinateEntry entry = new(
-				airport.BaseLatDecimal,
-				airport.BaseLongDecimal,
-				"airport");
+			CoordinateEntry entry = new(airport.BaseLatDecimal, airport.BaseLongDecimal);
 
 			if (!string.IsNullOrWhiteSpace(airport.IcaoId))
 			{

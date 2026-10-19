@@ -13,7 +13,8 @@ public sealed class ArrivalSettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
-		{ "OutputDirectory", @"C:\Output" }
+		{ "OutputDirectory", @"C:\Output" },
+		{ "Area", "Everything" }
 	};
 
 	/// <summary>Adds a complete, valid set of CRC defaults for one class and kind.</summary>
@@ -51,6 +52,7 @@ public sealed class ArrivalSettingsParserTests
 	private static Dictionary<string, string> WithRoi(string swLat, string swLon, string neLat, string neLon)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
 		settings["FilterByRoi"] = "Y";
 		settings["RoiSwLat"] = swLat;
 		settings["RoiSwLon"] = swLon;
@@ -166,6 +168,7 @@ public sealed class ArrivalSettingsParserTests
 	public void the_artcc_filter_is_trimmed_and_upper_cased()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Artccs";
 		settings["ArtccFilter"] = "zla, zoa";
 
 		ArrivalSettings parsed = ArrivalSettingsParser.Parse(settings).Settings;
@@ -211,19 +214,6 @@ public sealed class ArrivalSettingsParserTests
 		ArrivalSettings parsed = ArrivalSettingsParser.Parse(settings).Settings;
 
 		Assert.Empty(parsed.ArtccFilter);
-		Assert.Null(parsed.Roi);
-	}
-
-	/// <summary>A block without <c>Area</c> that sets both, as one could before there was a choice, uses its ARTCCs.</summary>
-	[Fact]
-	public void a_block_without_an_area_that_sets_both_uses_its_artccs()
-	{
-		Dictionary<string, string> settings = WithRoi("32.5", "-120", "37", "-114");
-		settings["ArtccFilter"] = "ZLA";
-
-		ArrivalSettings parsed = ArrivalSettingsParser.Parse(settings).Settings;
-
-		Assert.Equal(["ZLA"], parsed.ArtccFilter);
 		Assert.Null(parsed.Roi);
 	}
 

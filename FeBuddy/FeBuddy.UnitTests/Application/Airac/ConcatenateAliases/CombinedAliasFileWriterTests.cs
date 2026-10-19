@@ -10,8 +10,8 @@ namespace FeBuddy.UnitTests.Application.Airac.ConcatenateAliases;
 /// <summary>
 /// Covers <see cref="CombinedAliasFileWriter"/>: <c>Combined_Alias.txt</c> is FE-Buddy's alias files
 /// between a start and an end line, then the custom alias files, so CRC (last copy wins) uses the
-/// user's commands; a <c>.FeUseOnly</c> line stays first; an old combined file used as a
-/// custom file loses its FE-Buddy section, in either layout; commands in more than one file are
+/// user's commands; a <c>.FeUseOnly</c> line stays first; an earlier combined file used as a custom
+/// file loses its FE-Buddy section; a command a custom file shares with another merged file is
 /// reported; and a custom file that could not be read is left out with a warning.
 /// </summary>
 public sealed class CombinedAliasFileWriterTests : IDisposable
@@ -69,7 +69,6 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 		Assert.Equal(2, result.CustomCommandCount);
 		Assert.Equal(["Airways.txt", "Telephony.txt"], result.FeBuddyFiles);
 		Assert.Equal(3, result.FeBuddyCommandCount);
-		Assert.Equal(0, result.DuplicateCommandCount);
 		Assert.Empty(result.Messages);
 	}
 
@@ -102,34 +101,7 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 			File.ReadAllText(CombinedAliasPath));
 	}
 
-	/// <summary>A file uploaded before the end line existed: FE-Buddy's section was last, so it runs to the end.</summary>
-	[Fact]
-	public void an_old_combined_alias_file_with_the_fe_buddy_section_last_loses_it()
-	{
-		string oldUpload = Lines(
-			".mine .ECHO mine",
-			"",
-			"; ===== FE-Buddy aliases (AIRAC 2609) start here. FE-Buddy replaces everything below this line every cycle. =====",
-			"; ----- Airways.txt -----",
-			".J60F .FF OLD");
-
-		CombinedAliasResult result = CombinedAliasFileWriter.Write(
-			[Read(1, "ZOB-Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
-
-		Assert.Equal(
-			Lines(Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End, "", ".mine .ECHO mine"),
-			File.ReadAllText(CombinedAliasPath));
-		Assert.Equal(1, result.CustomCommandCount);
-		Assert.Equal(0, result.DuplicateCommandCount);
-
-		ServiceMessage notice = Assert.Single(result.Messages);
-		Assert.Equal(LogLevel.Info, notice.Level);
-		Assert.Equal(
-			"custom alias file 1 (ZOB-Alias.txt) holds FE-Buddy aliases from an earlier Combined_Alias.txt; they were left out, so they are not added twice.",
-			notice.Text);
-	}
-
-	/// <summary>A file in today's layout: only the lines outside FE-Buddy's section are the user's.</summary>
+	/// <summary>Only the lines outside FE-Buddy's section are the user's.</summary>
 	[Fact]
 	public void an_old_combined_alias_file_with_the_fe_buddy_section_first_keeps_what_is_around_it()
 	{
@@ -239,6 +211,37 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 		Assert.True(result.Messages[1].IsAdvisory);
 	}
 
+	/// <summary>
+	/// Custom files with no aliases of their own - last cycle's upload that was only FE-Buddy's section,
+	/// an empty file, a lone .FeUseOnly line - and no alias file from the run: an empty file uploaded
+	/// would empty the facility's aliases, so none is written and an earlier one is deleted.
+	/// </summary>
+	[Fact]
+	public void custom_files_with_no_aliases_of_their_own_and_no_run_aliases_write_no_file()
+	{
+		CombinedAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
+		string oldUpload = Lines(
+			"; ===== FE-Buddy aliases (AIRAC 2609) start here. FE-Buddy replaces everything down to the end line every cycle. =====",
+			".J60F .FF OLD",
+			End);
+
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
+			[Read(1, "Combined_Alias.txt", oldUpload), Read(2, "empty.txt", string.Empty), Read(3, "header.txt", ".FeUseOnly ZOB")],
+			[],
+			"2610",
+			_output);
+
+		Assert.Null(result.FilePath);
+		Assert.False(File.Exists(CombinedAliasPath));
+		ServiceMessage warning = result.Messages[^1];
+		Assert.Equal(LogLevel.Warning, warning.Level);
+		Assert.True(warning.IsAdvisory);
+		Assert.Equal(
+			"Combined_Alias.txt was not written: the custom alias files have no aliases of their own, and the run wrote no alias file. " +
+			"The one an earlier run wrote was deleted, so it cannot be uploaded by mistake.",
+			warning.Text);
+	}
+
 	[Fact]
 	public void nothing_to_merge_deletes_the_file_an_earlier_run_wrote()
 	{
@@ -277,8 +280,6 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 			"2610",
 			_output);
 
-		Assert.Equal(1, result.DuplicateCommandCount);
-
 		ServiceMessage notice = Assert.Single(result.Messages);
 		Assert.True(notice.IsAdvisory);
 		Assert.Equal(LogLevel.Info, notice.Level);
@@ -296,7 +297,6 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "a.txt", ".same .ECHO a"), Read(2, "b.txt", ".same .ECHO b")], [], "2610", _output);
 
-		Assert.Equal(1, result.DuplicateCommandCount);
 		Assert.Contains(".same (a.txt, b.txt)", Assert.Single(result.Messages).Text, StringComparison.Ordinal);
 	}
 
@@ -313,7 +313,6 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 			"2610",
 			_output);
 
-		Assert.Equal(0, result.DuplicateCommandCount);
 		Assert.Empty(result.Messages);
 	}
 
@@ -325,8 +324,8 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "a.txt", commands)], [FeBuddyFile("Airways.txt", commands)], "2610", _output);
 
-		Assert.Equal(12, result.DuplicateCommandCount);
 		string text = Assert.Single(result.Messages).Text;
+		Assert.StartsWith("12 alias command(s) ", text, StringComparison.Ordinal);
 		Assert.Contains(".c10 (Airways.txt, a.txt), ...", text, StringComparison.Ordinal);
 		Assert.DoesNotContain(".c11", text, StringComparison.Ordinal);
 	}

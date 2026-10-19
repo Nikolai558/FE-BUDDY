@@ -187,6 +187,6 @@ public sealed class ProceduresWithFixInFacilityTests
 		Assert.Throws<ArgumentException>(() => ProceduresWithFixInFacility.Find([], " ", New, null, false));
 		Assert.Throws<ArgumentNullException>(() => ProceduresWithFixInFacility.Find([], Facility, null!, null, false));
 		Assert.Throws<ArgumentNullException>(() => ProceduresWithFixInFacility.Matches(null!, Star("A", null)));
-		Assert.Throws<ArgumentNullException>(() => ProceduresWithFixInFacility.Matches(New.Routes[0], null!));
+		Assert.Throws<ArgumentNullException>(() => ProceduresWithFixInFacility.Matches(New.At("PHL").First(), null!));
 	}
 }

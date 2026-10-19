@@ -110,7 +110,7 @@ public static class NavaidSettingsParser
 			SubServiceSettingsReader.ReadFebProperties<NavaidFebProperty>(navaidSettings, example: "navId,navType,freq");
 
 		// Only the area chosen applies: the ROI, or everything.
-		SubServiceArea area = SubServiceSettingsReader.ReadArea(navaidSettings, SubServiceSettingsReader.RoiAreas, artccListKey: null);
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(navaidSettings, SubServiceSettingsReader.RoiAreas);
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadAreaRoi(navaidSettings, area);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(navaidSettings);
 

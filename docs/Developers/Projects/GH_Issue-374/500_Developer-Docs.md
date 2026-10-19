@@ -33,7 +33,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [C2-32](#c2-32) | Wrong doc | Low | Settings-Reference: Airways CRC keys for unwritten or excluded files | Fixed | S11 |
 | [C3-15](#c3-15) | History wording | Low | Settings-Reference: "the key keeps its old name" | Fixed | S11 |
 | [D1a-10](#d1a-10) | History wording | Low | Procedure lists: "saved before 3.0.0-beta.9" | Fixed | S11 |
-| [D1a-11](#d1a-11) | History wording | Low | "the old `IncludeRoiAirports`", "before there was a choice", "never meant" | Agreed | S6 |
+| [D1a-11](#d1a-11) | History wording | Low | "the old `IncludeRoiAirports`", "before there was a choice", "never meant" | Fixed | S6 |
 | [D1a-13](#d1a-13) | History wording | Low | "as the profiles did" / "no migration step was needed" (duplicated) | Fixed | S11 |
 | [D1a-14](#d1a-14) | History wording | Low | Import: "beta.3 `UserConfig.json`" | Fixed | S11 |
 | [D1a-18](#d1a-18) | Minor | Low | Readability: duplication and placement | Fixed | S11 |
@@ -396,7 +396,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1a-11 · History wording · Low · "the old `IncludeRoiAirports`", "before there was a choice", "never meant"
 
-**Status:** Agreed: the doc lines go with the code they describe, in S6 with [C4-12](130_Old-Version-Code.md#c4-12) (Kyle, [decision log](010_Decisions.md#decision-log)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). Settings-Reference's lines and the two code comments now say what a block without `Area` does, with [C4-12](130_Old-Version-Code.md#c4-12) and [T1b-21](140_Unused-Code.md#t1b-21) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Settings-Reference.md:203`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Settings-Reference.md?plain=1#L203), 204, 462-463; [`FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs:49`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs#L49); [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs:185-188`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs#L185-L188)
 

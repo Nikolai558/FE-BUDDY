@@ -98,9 +98,8 @@ public sealed class AppDataResetTests : IDisposable
 		Assert.True(result.SettingsKept);
 		Assert.Null(result.CredentialsRemoved);
 		Assert.Empty(result.NotDeleted);
-		// Every profile, Shared.json, an older FE-Buddy's file not yet moved in, and a dev launch's
-		// chosen steps; the old backups go.
-		Assert.Equal(["DevLaunch.json", "User Configurations", "UserConfig.json"], Names(_appData));
+		// Every profile, Shared.json and a dev launch's chosen steps; a UserConfig.json beside them goes too.
+		Assert.Equal(["DevLaunch.json", "User Configurations"], Names(_appData));
 		Assert.Equal(["Shared.json", "UserConfig.Default.json", "UserConfig.ZOB.json"], Names(Path.Combine(_appData, "User Configurations")));
 		Assert.Single(_credentials.List());
 	}

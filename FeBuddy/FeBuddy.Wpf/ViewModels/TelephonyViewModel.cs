@@ -330,8 +330,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		IsDownloadingVatsimRadarList ? "Downloading the latest list…"
 		: _vatsimRadarCopy switch
 		{
-			{ IsOlderCopy: true } older =>
-				$"FE-Buddy's older copy of the list is from {older.DownloadedUtc.ToLocalTime():d MMM yyyy}: {_vatsimRadarList.Count:N0} virtual airlines.",
 			{ } kept =>
 				$"FE-Buddy's copy is from {kept.DownloadedUtc.ToLocalTime():d MMM yyyy}: {_vatsimRadarList.Count:N0} virtual airlines.",
 			_ => "FE-Buddy has no copy yet, so a virtual airline you add can't be checked against it.",
@@ -364,7 +362,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				AddPartProblem(problems, refreshed.VatsimRadar, TelephonyFiles.VatsimRadarAirlinesDescription);
 			}
 
-			if (_vatsimRadarCopy is { IsOlderCopy: false } copy && problems.Count == 0)
+			if (_vatsimRadarCopy is { } copy && problems.Count == 0)
 			{
 				string? missing = copy.GngDownloadedUtc is null ? TelephonyFiles.GngAirlinesDescription
 					: copy.VatsimRadarDownloadedUtc is null ? TelephonyFiles.VatsimRadarAirlinesDescription
@@ -374,11 +372,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				{
 					problems.Add($"FE-Buddy has no copy of the {missing} yet, so the list is missing its airlines.");
 				}
-			}
-
-			if (_vatsimRadarCopy is { IsOlderCopy: true })
-			{
-				problems.Add("Using FE-Buddy's older copy of the list until its two parts can be downloaded.");
 			}
 
 			return string.Join(" ", problems);
@@ -886,7 +879,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			_lastRefresh = result;
 			_downloadError = null;
 			// Read off the UI thread: merging thousands of rows is no work for it.
-			UseVatsimRadarCopy(await Task.Run(() => WithLookup(VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath, result.OlderCopyPath))));
+			UseVatsimRadarCopy(await Task.Run(() => WithLookup(VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath))));
 		}
 		catch (Exception ex)
 		{

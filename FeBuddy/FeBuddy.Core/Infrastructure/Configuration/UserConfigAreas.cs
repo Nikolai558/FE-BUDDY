@@ -2,16 +2,12 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 
 /// <summary>
 /// Each AIRAC sub-service tab's saved <c>Area</c> - which one of its area filters a run uses - and
-/// the area a tab starts on when it has none saved: what its older settings meant. Layout 2's step
-/// (<see cref="UserConfigMigrations"/>) saves that area for every tab that has settings, and a tab
-/// that never saved any works it out the same way when it loads.
+/// the area a tab starts on when it has none saved, worked out from its other settings.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Before layout 2 a tab could use its ARTCCs and a Region of Interest at once. Where it did, it
-/// starts on its ARTCCs (Procedures: its facilities), the ROI kept but unused. Where it used one or
-/// neither, it gets exactly what it got before. A tab's ARTCC list falls back to the facility in
-/// Settings ▸ Facility while it has never saved one, as the tabs do.
+/// A tab's ARTCC list falls back to the facility in Settings ▸ Facility while it has never saved
+/// one, as the tabs do.
 /// </para>
 /// <para>
 /// The values are the names of <c>FeBuddy.Core.Application.Settings.SubServiceArea</c>, which the
@@ -37,12 +33,6 @@ public static class UserConfigAreas
 
 	/// <summary>Where every AIRAC sub-service tab's settings are.</summary>
 	public const string AiracNode = "Services.AiracService";
-
-	/// <summary>The facility from Settings ▸ Facility.</summary>
-	public const string FacilityKey = UserConfigKeys.Facility;
-
-	/// <summary>Whether the default ROI is on.</summary>
-	public const string DefaultRoiKey = UserConfigKeys.DefaultRoiFilter;
 
 	/// <summary>The key under a GeoJSON tab's node that says it uses its own ROI rather than the default one: <c>Y</c> or <c>N</c>.</summary>
 	public const string OverrideRoiKey = "Roi.OverrideDefaultRoi";
@@ -72,9 +62,8 @@ public static class UserConfigAreas
 	/// <param name="get">Reads a saved setting by dotted path; <see langword="null"/> when it isn't set.</param>
 	/// <returns>
 	/// <see cref="Artccs"/> when its ARTCC list (or, never saved, the facility) names any; otherwise for
-	/// Procedures <see cref="Roi"/> when it brought in the ROI's airports, else <see cref="None"/>; for
-	/// any other tab <see cref="Roi"/> when it has its own ROI or the default ROI is on, else
-	/// <see cref="Everything"/>.
+	/// Procedures <see cref="None"/>; for any other tab <see cref="Roi"/> when it has its own ROI or the
+	/// default ROI is on, else <see cref="Everything"/>.
 	/// </returns>
 	/// <exception cref="ArgumentException"><paramref name="tab"/> is not one of <see cref="Tabs"/>.</exception>
 	public static string DefaultFor(string tab, Func<string, string?> get)
@@ -88,38 +77,17 @@ public static class UserConfigAreas
 
 		string node = $"{AiracNode}.{tab}";
 
-		if (artccListKey is not null && HasEntries(get($"{node}.{artccListKey}") ?? get(FacilityKey)))
+		if (artccListKey is not null && HasEntries(get($"{node}.{artccListKey}") ?? get(UserConfigKeys.Facility)))
 		{
 			return Artccs;
 		}
 
 		if (tab == ProceduresTab)
 		{
-			return IsYes(get($"{node}.IncludeRoiAirports")) ? Roi : None;
+			return None;
 		}
 
-		return IsYes(get($"{node}.{OverrideRoiKey}")) || IsYes(get(DefaultRoiKey)) ? Roi : Everything;
-	}
-
-	/// <summary>
-	/// Layout 2's step: saves the area for every tab that has settings, drops Procedures'
-	/// <c>IncludeRoiAirports</c> (its area says it now), and drops Telephony's ROI, which never limited it.
-	/// </summary>
-	/// <param name="settings">The settings being brought forward.</param>
-	internal static void SaveForEveryTab(UserConfigMigrationContext settings)
-	{
-		foreach (string tab in Tabs.Keys)
-		{
-			string node = $"{AiracNode}.{tab}";
-
-			if (settings.KeysAtOrBelow(node).Count > 0 && settings.Get($"{node}.{AreaKey}") is null)
-			{
-				settings.Set($"{node}.{AreaKey}", DefaultFor(tab, settings.Get));
-			}
-		}
-
-		settings.Remove($"{AiracNode}.{ProceduresTab}.IncludeRoiAirports");
-		settings.Remove($"{AiracNode}.Telephony.Roi");
+		return IsYes(get($"{node}.{OverrideRoiKey}")) || IsYes(get(UserConfigKeys.DefaultRoiFilter)) ? Roi : Everything;
 	}
 
 	private static bool HasEntries(string? list) =>

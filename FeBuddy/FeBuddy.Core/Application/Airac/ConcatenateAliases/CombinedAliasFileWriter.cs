@@ -38,8 +38,7 @@ namespace FeBuddy.Core.Application.Airac.ConcatenateAliases;
 /// And a custom file that is itself an old combined file - a facility that keeps the file it
 /// last uploaded as its custom file - loses its FE-Buddy section, from <see cref="FeBuddySectionMarker"/>
 /// to <see cref="FeBuddySectionEndMarker"/>, so last cycle's FE-Buddy aliases are not merged in a
-/// second time. A file from before the end line existed (FE-Buddy's section was last) loses
-/// everything from its start line down.
+/// second time. A start line with no end line after it loses everything from that line down.
 /// </para>
 /// <para>
 /// A command from a custom file that another merged file has too is reported, naming the files in

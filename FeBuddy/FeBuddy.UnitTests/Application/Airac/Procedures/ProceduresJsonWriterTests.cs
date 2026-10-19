@@ -551,6 +551,7 @@ public sealed class ProceduresJsonWriterTests : IDisposable
 		ProcedureSettingsParseResult parsed = ProcedureSettingsParser.Parse(new Dictionary<string, string>
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Artccs",
 			["Facilities"] = "ZOB",
 		});
 

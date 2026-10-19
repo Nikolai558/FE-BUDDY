@@ -20,6 +20,7 @@ public sealed class ArrivalGeojsonPropertiesTests
 		Dictionary<string, string> raw = new()
 		{
 			["OutputDirectory"] = @"C:\unused",
+			["Area"] = "Everything",
 			["IncludeFebCustomProperties"] = "Y",
 			["FebProperties"] = string.Join(',', febProperties),
 		};

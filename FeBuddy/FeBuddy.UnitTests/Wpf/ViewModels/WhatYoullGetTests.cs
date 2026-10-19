@@ -771,8 +771,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	public void procedures_counts_a_long_airport_list_and_flags_no_chart_type()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW,CAK,PIT,ORD,MDW,BUF");
-		// Saved by an earlier FE-Buddy as full names: they read as their root names.
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE,CLVLD TWO (RNAV)");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ,CLVLD");
 		ProceduresViewModel tab = ProceduresTab(Json);
 
 		foreach (ProcedureOptionToggle type in tab.ChartTypeToggles)
@@ -823,7 +822,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Area", "Everything");
 		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Airports", "CLE,DTW");
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ FIVE");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.Procedures", "BRWNZ");
 		SummaryBlock block = Assert.Single(ProceduresTab(Json).WhatYoullGet);
 
 		Assert.Equal(["Charts for every airport in the d-TPP metafile"], Lines(block));
@@ -834,7 +833,7 @@ public sealed class WhatYoullGetTests : IDisposable
 	[Fact]
 	public void procedures_picked_one_by_one_need_no_chart_types()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.Procedures.AirportProcedures", "CLE|CLVLD TWO (RNAV)");
+		UserConfigFile.TrySetValue("Services.AiracService.Procedures.AirportProcedures", "CLE|CLVLD");
 		ProceduresViewModel tab = ProceduresTab(Changes | Json);
 
 		SummaryBlock block = Assert.Single(tab.WhatYoullGet);

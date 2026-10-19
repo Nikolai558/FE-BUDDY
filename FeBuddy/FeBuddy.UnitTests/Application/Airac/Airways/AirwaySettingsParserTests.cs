@@ -13,7 +13,8 @@ public sealed class AirwaySettingsParserTests
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
 		{ "OutputDirectory", @"C:\Output" },
-		{ "OutputBy", "HighLow" }
+		{ "OutputBy", "HighLow" },
+		{ "Area", "Everything" }
 	};
 
 	/// <summary>Adds a complete, valid set of CRC defaults for one class and kind.</summary>
@@ -80,7 +81,7 @@ public sealed class AirwaySettingsParserTests
 	[Fact]
 	public void output_by_is_not_needed_with_geojson_off()
 	{
-		Dictionary<string, string> settings = new() { { "OutputDirectory", @"C:\Output" }, { "GenerateGeojson", "N" } };
+		Dictionary<string, string> settings = new() { { "OutputDirectory", @"C:\Output" }, { "Area", "Everything" }, { "GenerateGeojson", "N" } };
 
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
 
@@ -240,6 +241,7 @@ public sealed class AirwaySettingsParserTests
 	public void roi_filtering_requires_all_four_coordinates()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
 		settings["FilterByRoi"] = "Y";
 		settings["RoiSwLat"] = "38.0";
 		// RoiSwLon, RoiNeLat, RoiNeLon intentionally omitted.
@@ -251,6 +253,7 @@ public sealed class AirwaySettingsParserTests
 	public void roi_filtering_rejects_an_invalid_relative_position()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
 		settings["FilterByRoi"] = "Y";
 		settings["RoiSwLat"] = "43.0"; // north of NE - invalid box
 		settings["RoiSwLon"] = "-85.0";
@@ -264,6 +267,7 @@ public sealed class AirwaySettingsParserTests
 	public void roi_filtering_builds_a_valid_region_of_interest()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
 		settings["FilterByRoi"] = "Y";
 		settings["RoiSwLat"] = "38.0";
 		settings["RoiSwLon"] = "-85.0";

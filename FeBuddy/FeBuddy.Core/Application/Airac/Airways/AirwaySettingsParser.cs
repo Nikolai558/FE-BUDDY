@@ -148,7 +148,7 @@ public static class AirwaySettingsParser
 			CrcDefaultsFiles = crcFiles,
 			// Only the area chosen applies: the ROI, or everything.
 			Roi = SubServiceSettingsReader.ReadAreaRoi(
-				airwaySettings, SubServiceSettingsReader.ReadArea(airwaySettings, SubServiceSettingsReader.RoiAreas, artccListKey: null)),
+				airwaySettings, SubServiceSettingsReader.ReadArea(airwaySettings, SubServiceSettingsReader.RoiAreas)),
 			ExcludedDesignations = SettingsValueReader.StringList(airwaySettings, "ExcludedDesignations")
 				.Select(designation => designation.ToUpperInvariant())
 				.ToHashSet(StringComparer.OrdinalIgnoreCase),

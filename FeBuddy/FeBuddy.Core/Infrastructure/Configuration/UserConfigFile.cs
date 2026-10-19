@@ -45,22 +45,14 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// one (<see cref="UserConfigMigrations"/>) and written back at once, the file as it was kept beside
 /// it as <c>UserConfig-v&lt;old version&gt;.&lt;Profile&gt;.json</c>.
 /// </para>
-/// <para>
-/// FE-Buddy 3.0.0-beta.3 and earlier kept one file, <c>%APPDATA%\FE-Buddy\UserConfig.json</c>. The
-/// first read moves it in as the <see cref="DefaultProfile"/> profile, its shared settings into
-/// <c>Shared.json</c> (see <c>UserConfigFile.Profiles.cs</c> for the profiles themselves).
-/// </para>
 /// </remarks>
 public static partial class UserConfigFile
 {
 	/// <summary>The folder in <c>%APPDATA%\FE-Buddy</c> that holds every profile and <c>Shared.json</c>.</summary>
 	public const string ProfilesFolderName = "User Configurations";
 
-	/// <summary>The profile FE-Buddy starts with, and the one an older FE-Buddy's settings are moved into.</summary>
+	/// <summary>The profile FE-Buddy starts with.</summary>
 	public const string DefaultProfile = "Default";
-
-	/// <summary>FE-Buddy 3.0.0-beta.3's one settings file, in <c>%APPDATA%\FE-Buddy</c>, which the first read moves in.</summary>
-	public const string LegacyConfigFileName = "UserConfig.json";
 
 	private const string LogSource = "UserConfig";
 	private const string SharedFileName = "Shared.json";
@@ -170,7 +162,7 @@ public static partial class UserConfigFile
 	/// Reads the active profile and <c>Shared.json</c> from disk into the in-memory dictionary,
 	/// replacing whatever was there. A missing or unreadable profile leaves only the shared settings
 	/// and logs a warning rather than throwing - this is the launch read path. A file in an older
-	/// layout is brought forward, and an older FE-Buddy's one file moved in (see the class remarks).
+	/// layout is brought forward (see the class remarks).
 	/// </summary>
 	/// <remarks>
 	/// A profile already read that can't be read again for a moment (locked by antivirus or a sync tool)
@@ -189,8 +181,6 @@ public static partial class UserConfigFile
 			_stampVersion = UserConfigMigrations.CurrentVersion;
 			_profileUnreadable = false;
 			_profileInMemory = null;
-
-			MoveLegacyFileIn();
 
 			SharedRead sharedRead = ReadShared();
 			_profile = PickProfile(sharedRead.ActiveProfile);
@@ -220,9 +210,6 @@ public static partial class UserConfigFile
 					FlattenInto(obj, prefix: string.Empty, Values);
 					_profileInMemory = _profile;
 
-					// A profile from before Shared.json (or copied in by hand) still holds them: Shared.json
-					// takes any it lacks, and its own win over the profile's from then on.
-					AdoptSharedSettings(shared);
 					AddAll(shared);
 
 					if (version < UserConfigMigrations.CurrentVersion)
@@ -1063,36 +1050,6 @@ public static partial class UserConfigFile
 		WriteConfig(SharedFilePath, root, _sharedStampVersion);
 	}
 
-	/// <summary>
-	/// Moves the shared settings a profile holds and <c>Shared.json</c> lacks into <c>Shared.json</c>: a
-	/// profile written before it existed - the file an older FE-Buddy kept - or copied in by hand. The
-	/// profile keeps its copies until its next save; <c>Shared.json</c>'s win from now on. Never throws.
-	/// </summary>
-	private static void AdoptSharedSettings(Dictionary<string, string> shared)
-	{
-		string[] adopt = [.. Values.Keys.Where(key => UserConfigPortability.SharedByProfiles.Contains(key) && !shared.ContainsKey(key))];
-
-		if (adopt.Length == 0)
-		{
-			return;
-		}
-
-		foreach (string key in adopt)
-		{
-			shared[key] = Values[key];
-		}
-
-		try
-		{
-			UpdateSharedFile(adopt);
-			AppLog.Info(LogSource, $"Moved {adopt.Length} setting(s) every profile shares into '{SharedFileName}'.");
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			AppLog.Warning(LogSource, $"Could not write '{SharedFileName}': {ex.Message} FE-Buddy tries again at the next launch.");
-		}
-	}
-
 	/// <summary>Takes the shared settings out of a profile's tree, so they are only ever in <c>Shared.json</c>.</summary>
 	private static void RemoveSharedSettings(JsonObject profile)
 	{
@@ -1325,8 +1282,8 @@ public static partial class UserConfigFile
 
 	/// <summary>
 	/// Takes a settings file's layout stamp out of its top level, leaving only settings: the version,
-	/// or <see cref="UserConfigVersion.Oldest"/> when the file has none (beta.2 and beta.3 wrote none)
-	/// or one that can't be read.
+	/// or <see cref="UserConfigVersion.Oldest"/> when the file has none, one older than that, or one
+	/// that can't be read (only that last is logged).
 	/// </summary>
 	/// <param name="root">The file's top level; the stamp is removed from it.</param>
 	/// <param name="fileName">The file, for the log.</param>
@@ -1340,9 +1297,9 @@ public static partial class UserConfigFile
 
 		root.Remove(UserConfigVersion.FileKey);
 
-		if (stamp is JsonValue value && value.TryGetValue(out int version) && version >= UserConfigVersion.Oldest)
+		if (stamp is JsonValue value && value.TryGetValue(out int version) && version > 0)
 		{
-			return version;
+			return Math.Max(version, UserConfigVersion.Oldest);
 		}
 
 		AppLog.Warning(LogSource, $"'{fileName}' has a settings layout stamp FE-Buddy can't read ({stamp?.ToJsonString() ?? "null"}). " +

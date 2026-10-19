@@ -266,8 +266,6 @@ public sealed class TelephonyDownloaderTests : IDisposable
 
 	private string VatsimRadarPath => Path.Combine(_testRoot, "vatsim_radar_custom_airlines.json");
 
-	private string OlderPath => Path.Combine(_testRoot, "vatsim_radar_airlines.json");
-
 	private string Keep(string path, string content, DateTime writtenUtc)
 	{
 		Directory.CreateDirectory(_testRoot);
@@ -288,7 +286,7 @@ public sealed class TelephonyDownloaderTests : IDisposable
 		try
 		{
 			VirtualAirlineListRefreshResult result = await TelephonyDownloader.RefreshVirtualAirlineListFromUrlsAsync(
-				gngUrl, GngPath, vatsimRadarUrl, VatsimRadarPath, OlderPath, downloadNow, CancellationToken.None);
+				gngUrl, GngPath, vatsimRadarUrl, VatsimRadarPath, downloadNow, CancellationToken.None);
 
 			return (result, gngRequests(), vatsimRadarRequests());
 		}
@@ -301,40 +299,17 @@ public sealed class TelephonyDownloaderTests : IDisposable
 		}
 	}
 
-	/// <summary>Both parts download into copies of their own; with both in place, the older single copy goes.</summary>
+	/// <summary>Both parts download into copies of their own.</summary>
 	[Fact]
-	public async Task both_parts_download_into_their_own_copies_and_the_older_copy_goes()
+	public async Task both_parts_download_into_their_own_copies()
 	{
-		Keep(OlderPath, "{}", DateTime.UtcNow.AddDays(-9));
-
 		(VirtualAirlineListRefreshResult result, _, _) = await RefreshListAsync((GngJson(), HttpStatusCode.OK), (VatsimRadarJson, HttpStatusCode.OK));
 
 		Assert.True(result.Gng.IsFresh);
 		Assert.True(result.VatsimRadar.IsFresh);
 		Assert.Equal(GngJson(), File.ReadAllText(GngPath));
 		Assert.Equal(VatsimRadarJson, File.ReadAllText(VatsimRadarPath));
-		Assert.Null(result.OlderCopyPath);
-		Assert.False(File.Exists(OlderPath));
 		Assert.True(result.HasCopy);
-	}
-
-	/// <summary>An older copy that can't be deleted (open elsewhere) is left for next time, with a warning; the refresh still succeeds.</summary>
-	[Fact]
-	public async Task an_older_copy_that_cannot_be_deleted_is_left_for_next_time()
-	{
-		Keep(OlderPath, "{}", DateTime.UtcNow.AddDays(-9));
-		VirtualAirlineListRefreshResult result;
-
-		using (new FileStream(OlderPath, FileMode.Open, FileAccess.Read, FileShare.None))
-		{
-			(result, _, _) = await RefreshListAsync((GngJson(), HttpStatusCode.OK), (VatsimRadarJson, HttpStatusCode.OK));
-		}
-
-		Assert.True(result.Gng.IsFresh);
-		Assert.True(result.VatsimRadar.IsFresh);
-		Assert.Null(result.OlderCopyPath);
-		Assert.True(File.Exists(OlderPath));
-		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Could not delete FE-Buddy's older copy of the virtual airline list", StringComparison.Ordinal));
 	}
 
 	/// <summary>A GNG reply that isn't the whole list - its rows don't number its records, or too few - fails and keeps the last good copy.</summary>
@@ -370,33 +345,27 @@ public sealed class TelephonyDownloaderTests : IDisposable
 		Assert.True(result.Gng.IsFresh);
 	}
 
-	/// <summary>Each part falls back on its own: one that fails with no copy leaves the other's fresh one, and no older copy is offered.</summary>
+	/// <summary>Each part falls back on its own: one that fails with no copy leaves the other's fresh one.</summary>
 	[Fact]
 	public async Task each_part_succeeds_or_fails_on_its_own()
 	{
-		Keep(OlderPath, "{}", DateTime.UtcNow.AddDays(-9));
-
 		(VirtualAirlineListRefreshResult result, _, _) = await RefreshListAsync((string.Empty, HttpStatusCode.InternalServerError), (VatsimRadarJson, HttpStatusCode.OK));
 
 		Assert.False(result.Gng.HasCopy);
 		Assert.NotNull(result.Gng.FailureReason);
 		Assert.True(result.VatsimRadar.IsFresh);
-		Assert.Null(result.OlderCopyPath);
-		Assert.True(File.Exists(OlderPath));
+		Assert.True(result.HasCopy);
 	}
 
-	/// <summary>The older single copy is offered only while neither part has a copy.</summary>
+	/// <summary>With no copy of either part, downloaded or kept, there is nothing to read the list from.</summary>
 	[Fact]
-	public async Task the_older_copy_is_offered_only_while_neither_part_has_a_copy()
+	public async Task with_no_copy_of_either_part_there_is_no_list()
 	{
-		DateTime olderUtc = DateTime.UtcNow.AddDays(-9);
-		Keep(OlderPath, "{}", olderUtc);
-
 		(VirtualAirlineListRefreshResult result, _, _) = await RefreshListAsync((string.Empty, HttpStatusCode.InternalServerError), (string.Empty, HttpStatusCode.InternalServerError));
 
-		Assert.Equal(OlderPath, result.OlderCopyPath);
-		Assert.Equal(File.GetLastWriteTimeUtc(OlderPath), result.OlderCopyDownloadedUtc);
-		Assert.True(result.HasCopy);
+		Assert.False(result.Gng.HasCopy);
+		Assert.False(result.VatsimRadar.HasCopy);
+		Assert.False(result.HasCopy);
 	}
 
 	/// <summary>During a run a copy under a day old is used as it is; one a day old or more is downloaded again.</summary>

@@ -61,6 +61,7 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		Dictionary<string, string> settings = new()
 		{
 			{ "OutputDirectory", _output },
+			{ "Area", "Everything" },
 			{ "OutputBy", "HighLow" },
 			{ "TotallyMadeUpKey", "x" },
 		};
@@ -85,6 +86,7 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		AirwayServiceResult result = AirwayService.Run(data, new Dictionary<string, string>
 		{
 			{ "OutputDirectory", _output },
+			{ "Area", "Everything" },
 			{ "GenerateGeojson", "N" },
 		});
 

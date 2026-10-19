@@ -11,9 +11,9 @@ namespace FeBuddy.UnitTests.Infrastructure.Configuration;
 /// </summary>
 public sealed class UserConfigMigrationsTests
 {
-	private static readonly UserConfigMigration ToTwo = new(2, "Renamed A to B", settings => settings.Move("General.A", "General.B"));
+	private static readonly UserConfigMigration ToThree = new(3, "Renamed A to B", settings => settings.Move("General.A", "General.B"));
 
-	private static readonly UserConfigMigration ToThree = new(3, "Y/N for C", settings => settings.ChangeValue("General.C", value => value == "true" ? "Y" : "N"));
+	private static readonly UserConfigMigration ToFour = new(4, "Y/N for C", settings => settings.ChangeValue("General.C", value => value == "true" ? "Y" : "N"));
 
 	private static Dictionary<string, string> Settings(params (string Key, string Value)[] values) =>
 		values.ToDictionary(v => v.Key, v => v.Value, StringComparer.Ordinal);
@@ -27,18 +27,18 @@ public sealed class UserConfigMigrationsTests
 	{
 		Dictionary<string, string> values = Settings(("General.A", "1"), ("General.C", "true"));
 
-		UserConfigMigrationResult result = UserConfigMigrations.Migrate(values, 1, 3, [ToThree, ToTwo]);
+		UserConfigMigrationResult result = UserConfigMigrations.Migrate(values, 2, 4, [ToFour, ToThree]);
 
 		Assert.Equal(Settings(("General.B", "1"), ("General.C", "Y")), result.Values);
 		Assert.Equal(["Renamed A to B", "Y/N for C"], result.Applied);
-		Assert.Equal((1, 3), (result.FromVersion, result.ToVersion));
+		Assert.Equal((2, 4), (result.FromVersion, result.ToVersion));
 		Assert.True(result.Migrated);
 	}
 
 	[Fact]
 	public void a_file_already_in_a_later_layout_skips_the_steps_before_it()
 	{
-		UserConfigMigrationResult result = UserConfigMigrations.Migrate(Settings(("General.A", "1"), ("General.C", "true")), 2, 3, [ToTwo, ToThree]);
+		UserConfigMigrationResult result = UserConfigMigrations.Migrate(Settings(("General.A", "1"), ("General.C", "true")), 3, 4, [ToThree, ToFour]);
 
 		Assert.Equal(Settings(("General.A", "1"), ("General.C", "Y")), result.Values);
 		Assert.Equal(["Y/N for C"], result.Applied);
@@ -49,8 +49,8 @@ public sealed class UserConfigMigrationsTests
 	{
 		Dictionary<string, string> values = Settings(("General.A", "1"));
 
-		UserConfigMigrationResult same = UserConfigMigrations.Migrate(values, 3, 3, [ToTwo, ToThree]);
-		UserConfigMigrationResult moved = UserConfigMigrations.Migrate(values, 1, 2, [ToTwo]);
+		UserConfigMigrationResult same = UserConfigMigrations.Migrate(values, 4, 4, [ToThree, ToFour]);
+		UserConfigMigrationResult moved = UserConfigMigrations.Migrate(values, 2, 3, [ToThree]);
 
 		Assert.Equal(values, same.Values);
 		Assert.False(same.Migrated);
@@ -61,35 +61,35 @@ public sealed class UserConfigMigrationsTests
 	[Fact]
 	public void a_missing_step_stops_it()
 	{
-		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => UserConfigMigrations.Migrate(Settings(), 1, 3, [ToTwo]));
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => UserConfigMigrations.Migrate(Settings(), 2, 4, [ToThree]));
 
-		Assert.Equal("No step brings settings to layout 3.", ex.Message);
+		Assert.Equal("No step brings settings to layout 4.", ex.Message);
 	}
 
 	[Fact]
 	public void a_failing_step_stops_it_naming_the_layout_and_what_it_does()
 	{
-		UserConfigMigration failing = new(2, "Splits the facility list", _ => throw new FormatException("bad list"));
+		UserConfigMigration failing = new(3, "Splits the facility list", _ => throw new FormatException("bad list"));
 
-		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => UserConfigMigrations.Migrate(Settings(), 1, 2, [failing]));
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => UserConfigMigrations.Migrate(Settings(), 2, 3, [failing]));
 
-		Assert.Equal("Bringing settings to layout 2 failed (Splits the facility list): bad list", ex.Message);
+		Assert.Equal("Bringing settings to layout 3 failed (Splits the facility list): bad list", ex.Message);
 		Assert.IsType<FormatException>(ex.InnerException);
 	}
 
 	[Theory]
-	[InlineData(0, 2)]
-	[InlineData(3, 2)]
+	[InlineData(1, 3)]
+	[InlineData(4, 3)]
 	public void a_layout_older_than_the_oldest_or_newer_than_the_target_is_refused(int from, int to)
 	{
-		Assert.Throws<ArgumentOutOfRangeException>(() => UserConfigMigrations.Migrate(Settings(), from, to, [ToTwo]));
+		Assert.Throws<ArgumentOutOfRangeException>(() => UserConfigMigrations.Migrate(Settings(), from, to, [ToThree]));
 	}
 
 	[Fact]
 	public void null_arguments_are_refused()
 	{
-		Assert.Throws<ArgumentNullException>(() => UserConfigMigrations.Migrate(null!, 1, 1, []));
-		Assert.Throws<ArgumentNullException>(() => UserConfigMigrations.Migrate(Settings(), 1, 1, null!));
+		Assert.Throws<ArgumentNullException>(() => UserConfigMigrations.Migrate(null!, 2, 2, []));
+		Assert.Throws<ArgumentNullException>(() => UserConfigMigrations.Migrate(Settings(), 2, 2, null!));
 	}
 
 	/// <summary>Bumping <see cref="UserConfigVersion.Current"/> without its step - or adding a step for no layout - fails here.</summary>

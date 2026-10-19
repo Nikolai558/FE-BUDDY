@@ -20,7 +20,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | Done | [110](110_GUI-Lag.md) |
 | [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | Done | [120](120_Logic-In-GUI.md) |
 | [S14](#s14) | Fixes to the code S2 to S5 added | Done | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
-| [S6](#s6) | **Next:** old-version code (D1), unused code and the H4 renames, plus two S12 fixes for the public beta | 103 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
+| [S6](#s6) | **Next:** old-version code (D1), unused code and the H4 renames, plus two S12 fixes for the public beta | 82 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
 | [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
 | [S8](#s8) | Comments and XML docs: GUI | 93 | [220](220_Comments-GUI.md) |
 | [S9](#s9) | Unit tests | 101 | [300](300_Unit-Tests.md) |
@@ -134,7 +134,7 @@ Every finding in [130_Old-Version-Code.md](130_Old-Version-Code.md) (as [D1](010
 
 **Before the public beta**, pulled forward from [S12](#s12) (Kyle, 2026-10-19): [W5-2](610_On-Screen-Text.md#w5-2), the CRC ERAM Defaults note on every AIRAC tab that names `UserConfig.json`, and [D2-51](600_User-Docs-Proposal.md#d2-51), the FAQ's "Does FE-Buddy send my data anywhere?".
 
-**Fixed (not yet merged):** [D1b-1](500_Developer-Docs.md#d1b-1), [W5-2](610_On-Screen-Text.md#w5-2), [D2-51](600_User-Docs-Proposal.md#d2-51).
+**Fixed (not yet merged):** [D1b-1](500_Developer-Docs.md#d1b-1), [W5-2](610_On-Screen-Text.md#w5-2), [D2-51](600_User-Docs-Proposal.md#d2-51), [C6-1](130_Old-Version-Code.md#c6-1), [N1-34](130_Old-Version-Code.md#n1-34), [T1a-20](130_Old-Version-Code.md#t1a-20), [T3-30](130_Old-Version-Code.md#t3-30), [T1b-21](140_Unused-Code.md#t1b-21), [C4-12](130_Old-Version-Code.md#c4-12), [D1a-11](500_Developer-Docs.md#d1a-11), [C6-2](130_Old-Version-Code.md#c6-2), [C6-3](130_Old-Version-Code.md#c6-3), [C6-4](140_Unused-Code.md#c6-4), [C3-1](130_Old-Version-Code.md#c3-1), [W1-18](130_Old-Version-Code.md#w1-18), [C6-5](130_Old-Version-Code.md#c6-5), [O1-24](130_Old-Version-Code.md#o1-24), [T1b-6](130_Old-Version-Code.md#t1b-6), [T2-7](130_Old-Version-Code.md#t2-7), [W1-20](130_Old-Version-Code.md#w1-20), [T3-31](130_Old-Version-Code.md#t3-31). **Kept (not yet merged):** [C1-16](130_Old-Version-Code.md#c1-16), [C1-17](130_Old-Version-Code.md#c1-17) and [C6-27](140_Unused-Code.md#c6-27).
 
 <a id="s7"></a>
 

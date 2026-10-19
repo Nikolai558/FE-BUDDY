@@ -78,7 +78,7 @@ public sealed class AiracServicePreviousNasrTests : IDisposable
 		{
 			SelectedCycle = Current,
 			OutputDirectory = Path.Combine(_root, "out"),
-			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB", ["PrimaryFacility"] = "ZOB" },
+			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB", ["PrimaryFacility"] = "ZOB" },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(settings).WaitAsync(TimeSpan.FromSeconds(10));

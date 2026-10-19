@@ -79,7 +79,7 @@ public sealed class SubServiceSettingsReaderTests
 	[InlineData(" EVERYTHING ", SubServiceArea.Everything)]
 	public void the_area_is_read_by_name_ignoring_case(string text, SubServiceArea expected)
 	{
-		Assert.Equal(expected, SubServiceSettingsReader.ReadArea(Settings(("Area", text)), SubServiceSettingsReader.ArtccOrRoiAreas, "ArtccFilter"));
+		Assert.Equal(expected, SubServiceSettingsReader.ReadArea(Settings(("Area", text)), SubServiceSettingsReader.ArtccOrRoiAreas));
 	}
 
 	/// <summary>Only an area the sub-service offers is accepted, by name: not a number, not another tab's.</summary>
@@ -90,23 +90,21 @@ public sealed class SubServiceSettingsReaderTests
 	public void an_area_the_sub_service_doesnt_offer_is_rejected_naming_those_it_does(string text)
 	{
 		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-			SubServiceSettingsReader.ReadArea(Settings(("Area", text)), SubServiceSettingsReader.ArtccOrRoiAreas, "ArtccFilter"));
+			SubServiceSettingsReader.ReadArea(Settings(("Area", text)), SubServiceSettingsReader.ArtccOrRoiAreas));
 
 		Assert.Contains($"\"{text}\"", ex.Message, StringComparison.Ordinal);
 		Assert.Contains("\"Artccs\", \"Roi\", \"Everything\"", ex.Message, StringComparison.Ordinal);
 	}
 
-	/// <summary>A block without <c>Area</c> gets what its filters meant: its ARTCCs first, then the ROI, then no filter.</summary>
+	/// <summary>A block without <c>Area</c> is refused, whatever its filters say.</summary>
 	[Fact]
-	public void a_block_without_an_area_gets_the_area_its_filters_meant()
+	public void a_block_without_an_area_is_refused()
 	{
-		IReadOnlyList<SubServiceArea> offered = SubServiceSettingsReader.ArtccOrRoiAreas;
+		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
+			SubServiceSettingsReader.ReadArea(Settings([("ArtccFilter", "ZOB"), .. Roi]), SubServiceSettingsReader.ArtccOrRoiAreas));
 
-		Assert.Equal(SubServiceArea.Artccs, SubServiceSettingsReader.ReadArea(Settings([("ArtccFilter", "ZOB"), .. Roi]), offered, "ArtccFilter"));
-		Assert.Equal(SubServiceArea.Roi, SubServiceSettingsReader.ReadArea(Settings([("ArtccFilter", " "), .. Roi]), offered, "ArtccFilter"));
-		Assert.Equal(SubServiceArea.Everything, SubServiceSettingsReader.ReadArea(Settings(("ArtccFilter", "")), offered, "ArtccFilter"));
-		Assert.Equal(SubServiceArea.Roi, SubServiceSettingsReader.ReadArea(Settings(Roi), SubServiceSettingsReader.RoiAreas, artccListKey: null));
-		Assert.Equal(SubServiceArea.None, SubServiceSettingsReader.ReadArea(Settings(), offered, "ArtccFilter", withNoFilter: SubServiceArea.None));
+		Assert.Contains("'Area'", ex.Message, StringComparison.Ordinal);
+		Assert.Throws<ArgumentException>(() => SubServiceSettingsReader.ReadArea(Settings(("Area", " ")), SubServiceSettingsReader.RoiAreas));
 	}
 
 	[Fact]

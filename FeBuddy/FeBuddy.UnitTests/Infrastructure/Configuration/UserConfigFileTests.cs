@@ -608,9 +608,9 @@ public sealed class UserConfigFileTests : IDisposable
 
 	// ============================ the layout version ============================
 
-	/// <summary>A stand-in second layout: Settings ▸ Facility's ARTCC moved under General.</summary>
+	/// <summary>A stand-in next layout: Settings ▸ Facility's ARTCC moved under General.</summary>
 	private static readonly UserConfigMigration MoveArtcc =
-		new(2, "Moved the facility's ARTCC under General", settings => settings.Move("Services.AiracService.UserArtccId", "General.Facility.ArtccId"));
+		new(3, "Moved the facility's ARTCC under General", settings => settings.Move("Services.AiracService.UserArtccId", "General.Facility.ArtccId"));
 
 	private static int? Stamp(string path) =>
 		JsonNode.Parse(File.ReadAllText(path))![UserConfigVersion.FileKey]?.GetValue<int>();
@@ -644,33 +644,35 @@ public sealed class UserConfigFileTests : IDisposable
 	}
 
 	/// <summary>
-	/// beta.2 and beta.3 wrote no stamp: their file is the oldest layout, brought forward at launch and
+	/// A file with no stamp is the oldest layout: with a newer one, it is brought forward at launch and
 	/// written back stamped, the file as it was kept beside it.
 	/// </summary>
 	[Fact]
 	public void a_file_with_no_stamp_is_the_oldest_layout_and_is_brought_forward()
 	{
-		const string Beta3File = """{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""";
-		WriteFile(Beta3File);
+		UserConfigMigrations.ConfigureForTesting(3, [MoveArtcc]);
+		UserConfigFile.ConfigureForTesting(_directory);
+		const string OlderFile = """{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""";
+		WriteFile(OlderFile);
 
 		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
 
-		Assert.Equal("ZOB", UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
-		Assert.Equal(UserConfigVersion.Current, Stamp(UserConfigFile.ConfigFilePath));
-		Assert.Equal(Beta3File, File.ReadAllText(UserConfigFile.BroughtForwardFilePath(UserConfigVersion.Oldest)));
+		Assert.Equal("ZOB", UserConfigFile.GetValue("General.Facility.ArtccId"));
+		Assert.Equal(3, Stamp(UserConfigFile.ConfigFilePath));
+		Assert.Equal(OlderFile, File.ReadAllText(UserConfigFile.BroughtForwardFilePath(UserConfigVersion.Oldest)));
 	}
 
 	/// <summary>
-	/// With a second layout, a layout 1 file is brought forward at launch and written back stamped,
+	/// With a newer layout, an older file is brought forward at launch and written back stamped,
 	/// the file as it was kept beside it, and the per-node undo snapshots (of the old layout) dropped.
 	/// </summary>
 	[Fact]
 	public void an_older_file_is_brought_forward_written_back_and_kept_as_it_was()
 	{
-		UserConfigMigrations.ConfigureForTesting(2, [MoveArtcc]);
+		UserConfigMigrations.ConfigureForTesting(3, [MoveArtcc]);
 		UserConfigFile.ConfigureForTesting(_directory);
-		const string Beta3File = """{ "Services": { "AiracService": { "UserArtccId": "ZOB", "Airways": { "OutputBy": "HighLow" } } } }""";
-		WriteFile(Beta3File);
+		const string OlderFile = """{ "ConfigVersion": 2, "Services": { "AiracService": { "UserArtccId": "ZOB", "Airways": { "OutputBy": "HighLow" } } } }""";
+		WriteFile(OlderFile);
 		File.WriteAllText(UserConfigFile.PreviousFilePath, """{ "Services": { "AiracService": { "Airways": { "OutputBy": "Designation" } } } }""");
 
 		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
@@ -679,49 +681,49 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Null(UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
 		Assert.Equal("HighLow", UserConfigFile.GetValue(AirwaysNode + ".OutputBy"));
 
-		Assert.Equal(2, Stamp(UserConfigFile.ConfigFilePath));
-		Assert.Equal(Beta3File, File.ReadAllText(UserConfigFile.BroughtForwardFilePath(1)));
+		Assert.Equal(3, Stamp(UserConfigFile.ConfigFilePath));
+		Assert.Equal(OlderFile, File.ReadAllText(UserConfigFile.BroughtForwardFilePath(2)));
 		Assert.False(File.Exists(UserConfigFile.PreviousFilePath));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Info && e.Message.Contains(
-			"Brought the settings up from layout 1 to layout 2: Moved the facility's ARTCC under General. The file as it was is kept as 'UserConfig-v1.Default.json'.",
+			"Brought the settings up from layout 2 to layout 3: Moved the facility's ARTCC under General. The file as it was is kept as 'UserConfig-v2.Default.json'.",
 			StringComparison.Ordinal));
 
 		// Read again: already in the current layout, so nothing more happens.
-		File.Delete(UserConfigFile.BroughtForwardFilePath(1));
+		File.Delete(UserConfigFile.BroughtForwardFilePath(2));
 		UserConfigFile.ReadAll();
-		Assert.False(File.Exists(UserConfigFile.BroughtForwardFilePath(1)));
+		Assert.False(File.Exists(UserConfigFile.BroughtForwardFilePath(2)));
 	}
 
 	/// <summary>A step that fails leaves the file alone; the settings are used as they are, and saves keep the old stamp so the next launch tries again.</summary>
 	[Fact]
 	public void a_step_that_fails_leaves_the_file_alone_and_keeps_its_old_stamp()
 	{
-		UserConfigMigrations.ConfigureForTesting(2, [new UserConfigMigration(2, "Breaks", _ => throw new FormatException("no"))]);
+		UserConfigMigrations.ConfigureForTesting(3, [new UserConfigMigration(3, "Breaks", _ => throw new FormatException("no"))]);
 		UserConfigFile.ConfigureForTesting(_directory);
-		const string Beta3File = """{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""";
-		WriteFile(Beta3File);
+		const string OlderFile = """{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""";
+		WriteFile(OlderFile);
 
 		UserConfigFile.ReadAll();
 
 		Assert.Equal("ZOB", UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
-		Assert.Equal(Beta3File, File.ReadAllText(UserConfigFile.ConfigFilePath));
-		Assert.False(File.Exists(UserConfigFile.BroughtForwardFilePath(1)));
-		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not bring the settings in 'UserConfig.Default.json' up from layout 1 to layout 2", StringComparison.Ordinal));
+		Assert.Equal(OlderFile, File.ReadAllText(UserConfigFile.ConfigFilePath));
+		Assert.False(File.Exists(UserConfigFile.BroughtForwardFilePath(2)));
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not bring the settings in 'UserConfig.Default.json' up from layout 2 to layout 3", StringComparison.Ordinal));
 
 		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
 		UserConfigFile.Save(AirwaysNode);
-		Assert.Equal(1, Stamp(UserConfigFile.ConfigFilePath));
+		Assert.Equal(2, Stamp(UserConfigFile.ConfigFilePath));
 	}
 
 	/// <summary>When the brought-forward file can't be written, the settings are still brought forward in memory and the file keeps its old stamp.</summary>
 	[Fact]
 	public void an_update_that_cannot_be_written_is_tried_again_next_launch()
 	{
-		UserConfigMigrations.ConfigureForTesting(2, [MoveArtcc]);
+		UserConfigMigrations.ConfigureForTesting(3, [MoveArtcc]);
 		UserConfigFile.ConfigureForTesting(_directory);
 		WriteFile("""{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""");
 
-		using (new FileStream(UserConfigFile.BroughtForwardFilePath(1), FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+		using (new FileStream(UserConfigFile.BroughtForwardFilePath(2), FileMode.Create, FileAccess.ReadWrite, FileShare.None))
 		{
 			UserConfigFile.ReadAll();
 		}
@@ -732,7 +734,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 		// The next launch can write it.
 		UserConfigFile.ReadAll();
-		Assert.Equal(2, Stamp(UserConfigFile.ConfigFilePath));
+		Assert.Equal(3, Stamp(UserConfigFile.ConfigFilePath));
 		Assert.Equal("ZOB", UserConfigFile.GetValue("General.Facility.ArtccId"));
 	}
 
@@ -743,20 +745,20 @@ public sealed class UserConfigFileTests : IDisposable
 	[Fact]
 	public void an_older_shared_file_is_brought_forward_and_written_back()
 	{
-		UserConfigMigrations.ConfigureForTesting(2,
-			[new UserConfigMigration(2, "Renamed the update channel", settings => settings.Move("General.Channel", UserConfigKeys.UpdateChannel))]);
+		UserConfigMigrations.ConfigureForTesting(3,
+			[new UserConfigMigration(3, "Renamed the update channel", settings => settings.Move("General.Channel", UserConfigKeys.UpdateChannel))]);
 		UserConfigFile.ConfigureForTesting(_directory);
-		File.WriteAllText(UserConfigFile.SharedFilePath, """{ "ConfigVersion": 1, "ActiveProfile": "Default", "General": { "Channel": "Beta" } }""");
+		File.WriteAllText(UserConfigFile.SharedFilePath, """{ "ConfigVersion": 2, "ActiveProfile": "Default", "General": { "Channel": "Beta" } }""");
 
 		UserConfigFile.ReadAll();
 
 		Assert.Equal("Beta", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
-		Assert.Equal(2, Stamp(UserConfigFile.SharedFilePath));
+		Assert.Equal(3, Stamp(UserConfigFile.SharedFilePath));
 		JsonNode general = JsonNode.Parse(File.ReadAllText(UserConfigFile.SharedFilePath))!["General"]!;
 		Assert.Equal("Beta", general["UpdateChannel"]!.GetValue<string>());
 		Assert.Null(general["Channel"]);
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Info && e.Message.Contains(
-			"Brought the settings in 'Shared.json' up from layout 1 to layout 2: Renamed the update channel.", StringComparison.Ordinal));
+			"Brought the settings in 'Shared.json' up from layout 2 to layout 3: Renamed the update channel.", StringComparison.Ordinal));
 
 		// A restart: the file is in the current layout, and the setting is still there.
 		UserConfigFile.ConfigureForTesting(_directory);
@@ -785,7 +787,7 @@ public sealed class UserConfigFileTests : IDisposable
 	[Fact]
 	public void an_undo_snapshot_that_cannot_be_deleted_is_only_a_warning()
 	{
-		UserConfigMigrations.ConfigureForTesting(2, [MoveArtcc]);
+		UserConfigMigrations.ConfigureForTesting(3, [MoveArtcc]);
 		UserConfigFile.ConfigureForTesting(_directory);
 		WriteFile("""{ "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""");
 		File.WriteAllText(UserConfigFile.PreviousFilePath, "{}");
@@ -795,7 +797,7 @@ public sealed class UserConfigFileTests : IDisposable
 			UserConfigFile.ReadAll();
 		}
 
-		Assert.Equal(2, Stamp(UserConfigFile.ConfigFilePath));
+		Assert.Equal(3, Stamp(UserConfigFile.ConfigFilePath));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not delete 'UserConfig-previous.Default.json'", StringComparison.Ordinal));
 	}
 
@@ -803,13 +805,13 @@ public sealed class UserConfigFileTests : IDisposable
 	[Fact]
 	public void a_file_from_a_newer_fe_buddy_keeps_its_stamp()
 	{
-		WriteFile("""{ "ConfigVersion": 7, "General": { "UpdateChannel": "Beta" } }""");
+		WriteFile("""{ "ConfigVersion": 7, "General": { "PrettyPrintGeojson": "Y" } }""");
 
 		UserConfigFile.ReadAll();
 		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
 		UserConfigFile.Save(AirwaysNode);
 
-		Assert.Equal("Beta", UserConfigFile.GetValue("General.UpdateChannel"));
+		Assert.Equal("Y", UserConfigFile.GetValue("General.PrettyPrintGeojson"));
 		Assert.Equal(7, Stamp(UserConfigFile.ConfigFilePath));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("was saved by a newer FE-Buddy (settings layout 7", StringComparison.Ordinal));
 	}
@@ -827,6 +829,28 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Equal("Beta", UserConfigFile.GetValue("General.UpdateChannel"));
 		Assert.Null(UserConfigFile.GetValue(UserConfigVersion.FileKey));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("has a settings layout stamp FE-Buddy can't read", StringComparison.Ordinal));
+	}
+
+	/// <summary>
+	/// A file stamped with a layout older than the oldest is read as the oldest, without a warning: its
+	/// settings are used as they are, and the next save stamps it.
+	/// </summary>
+	[Fact]
+	public void a_file_stamped_older_than_the_oldest_layout_is_read_as_it()
+	{
+		const string OlderFile = """{ "ConfigVersion": 1, "Services": { "AiracService": { "Airways": { "OutputBy": "HighLow" } } } }""";
+		WriteFile(OlderFile);
+
+		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
+
+		Assert.Equal("HighLow", UserConfigFile.GetValue(AirwaysNode + ".OutputBy"));
+		Assert.Null(UserConfigFile.GetValue(UserConfigVersion.FileKey));
+		Assert.DoesNotContain(AppLog.Entries, e => e.Level == LogLevel.Warning);
+		Assert.Equal(OlderFile, File.ReadAllText(UserConfigFile.ConfigFilePath));
+
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "Designation");
+		UserConfigFile.Save(AirwaysNode);
+		Assert.Equal(UserConfigVersion.Oldest, Stamp(UserConfigFile.ConfigFilePath));
 	}
 
 	// ---- writes cut short, damaged files and the undo snapshot ----

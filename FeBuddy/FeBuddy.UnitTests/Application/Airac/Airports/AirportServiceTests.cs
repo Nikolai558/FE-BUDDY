@@ -47,6 +47,7 @@ public sealed class AirportServiceTests : IDisposable
 		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["OutputDirectory"] = _outputDirectory,
+			["Area"] = "Everything",
 		};
 
 		foreach ((string key, string value) in overrides)
@@ -128,7 +129,7 @@ public sealed class AirportServiceTests : IDisposable
 	public void run_with_no_airports_in_the_roi_says_why_and_still_writes_every_alias()
 	{
 		AirportServiceResult result = AirportService.Run(SeattleData(), Settings(
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", "38.0"), ("RoiSwLon", "-85.0"),
 			("RoiNeLat", "43.0"), ("RoiNeLon", "-78.0")));
 
@@ -189,7 +190,7 @@ public sealed class AirportServiceTests : IDisposable
 	public void an_invalid_region_of_interest_is_rejected(string swLat, string swLon, string neLat, string neLon)
 	{
 		Dictionary<string, string> settings = Settings(
-			("FilterByRoi", "Y"),
+			("Area", "Roi"), ("FilterByRoi", "Y"),
 			("RoiSwLat", swLat), ("RoiSwLon", swLon),
 			("RoiNeLat", neLat), ("RoiNeLon", neLon));
 

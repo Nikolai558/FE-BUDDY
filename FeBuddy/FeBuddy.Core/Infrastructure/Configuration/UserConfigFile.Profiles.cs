@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 using FeBuddy.Core.Infrastructure.FileSystem;
@@ -32,18 +31,11 @@ public static partial class UserConfigFile
 		["CON", "PRN", "AUX", "NUL", .. Enumerable.Range(1, 9).SelectMany(n => new[] { $"COM{n}", $"LPT{n}" })],
 		StringComparer.OrdinalIgnoreCase);
 
-	/// <summary>The backups an older FE-Buddy kept beside <c>UserConfig.json</c>, and their kind now.</summary>
-	private static readonly Regex LegacyBackupName = new(@"^UserConfig\.(previous|before-import|v\d+)\.json$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
 	/// <summary>The kinds of backup a profile has.</summary>
 	private static readonly Regex BackupKind = new(@"^(previous|before-import|damaged|v\d+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-	/// <summary>Whether any settings are saved: a profile, or an older FE-Buddy's file not yet moved in.</summary>
-	public static bool HasSettings =>
-		ProfileNames().Count > 0 || File.Exists(Path.Combine(RootDirectory, LegacyConfigFileName));
-
-	/// <summary>The folder that stands for <c>%APPDATA%\FE-Buddy</c>.</summary>
-	private static string RootDirectory => _root;
+	/// <summary>Whether any settings are saved: any profile has a file.</summary>
+	public static bool HasSettings => ProfileNames().Count > 0;
 
 	/// <summary>Every profile, in name order: each one with a file, and the one in use even before it has one.</summary>
 	/// <returns>The names.</returns>
@@ -401,47 +393,6 @@ public static partial class UserConfigFile
 
 		AppLog.Warning(LogSource, $"The settings profile '{wanted}' has no file. Using '{fallback}' instead.");
 		return fallback;
-	}
-
-	/// <summary>
-	/// Moves an older FE-Buddy's one settings file, <c>%APPDATA%\FE-Buddy\UserConfig.json</c>, in as the
-	/// <see cref="DefaultProfile"/> profile, with its backups - once, while there is no profile yet - so
-	/// the old file is gone once its settings are in. Its shared settings move into <c>Shared.json</c>
-	/// as it is read. Never throws: when it can't be moved, it is left where it is, and the next launch
-	/// tries again.
-	/// </summary>
-	private static void MoveLegacyFileIn()
-	{
-		string legacy = Path.Combine(_root, LegacyConfigFileName);
-
-		if (!File.Exists(legacy) || ProfileNames().Count > 0)
-		{
-			return;
-		}
-
-		try
-		{
-			System.IO.Directory.CreateDirectory(Directory);
-			File.Move(legacy, ProfileFilePath(DefaultProfile));
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			AppLog.Warning(LogSource, $"Could not move '{legacy}' into '{ProfilesFolderName}': {ex.Message} FE-Buddy tries again at the next launch.");
-			return;
-		}
-
-		foreach (string path in System.IO.Directory.EnumerateFiles(_root, "UserConfig.*.json"))
-		{
-			if (LegacyBackupName.Match(Path.GetFileName(path)) is { Success: true } match)
-			{
-				MoveQuietly(path, BackupFilePath(DefaultProfile, match.Groups[1].Value.ToLowerInvariant()));
-			}
-		}
-
-		ForgetUndoSnapshot();
-
-		AppLog.Info(LogSource, string.Create(CultureInfo.InvariantCulture,
-			$"Moved '{LegacyConfigFileName}' into '{ProfilesFolderName}' as the settings profile '{DefaultProfile}'."));
 	}
 
 	/// <summary>Moves a file, logging rather than throwing when it can't: a backup is never worth failing for.</summary>

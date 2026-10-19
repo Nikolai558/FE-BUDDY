@@ -608,7 +608,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			{
 				SelectedCycle = current,
 				OutputDirectory = Path.Combine(_root, "output"),
-				Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+				Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 			},
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
@@ -696,7 +696,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		{
 			SelectedCycle = current,
 			OutputDirectory = Path.Combine(_root, "output"),
-			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		});
 
 		await Task.Delay(50);
@@ -743,7 +743,7 @@ public sealed class LaunchSequenceTests : IDisposable
 				{
 					SelectedCycle = current,
 					OutputDirectory = Path.Combine(_root, "output"),
-					WxStations = new Dictionary<string, string>(),
+					WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 					Telephony = new Dictionary<string, string>(),
 				},
 				new SynchronousProgress<AiracServiceProgress>(reports.Add));

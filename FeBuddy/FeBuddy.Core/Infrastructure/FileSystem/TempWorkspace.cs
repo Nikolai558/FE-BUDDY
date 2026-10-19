@@ -9,9 +9,8 @@ namespace FeBuddy.Core.Infrastructure.FileSystem;
 /// </summary>
 /// <remarks>
 /// Everything under <c>%TEMP%\FE-Buddy</c> is disposable - including legacy content left by
-/// FE-Buddy v2.x - so <see cref="ClearOnLaunch"/> deletes the entire tree, along with the crash
-/// report 3.0.0 alphas left beside it (<see cref="LegacyCrashReportPath"/>). It is best-effort
-/// and never throws: a file locked by another process simply survives to the next launch.
+/// FE-Buddy v2.x - so <see cref="ClearOnLaunch"/> deletes the entire tree. It is best-effort and
+/// never throws: a file locked by another process simply survives to the next launch.
 /// </remarks>
 public static class TempWorkspace
 {
@@ -28,14 +27,6 @@ public static class TempWorkspace
 		Path.Combine(RootDirectory, "Downloads");
 
 	/// <summary>
-	/// Where 3.0.0 alphas wrote their crash report: <c>%TEMP%\febuddy-wpf-crash.txt</c>, beside
-	/// <see cref="RootDirectory"/> where neither this class nor the uninstaller cleaned it up. The
-	/// report now goes to the log folder.
-	/// </summary>
-	internal static string LegacyCrashReportPath =>
-		Path.Combine(Path.GetDirectoryName(RootDirectory)!, "febuddy-wpf-crash.txt");
-
-	/// <summary>
 	/// Ensures <see cref="DownloadsDirectory"/> exists and returns it.
 	/// </summary>
 	/// <returns>The absolute path of the downloads directory.</returns>
@@ -46,34 +37,20 @@ public static class TempWorkspace
 	}
 
 	/// <summary>
-	/// Recursively empties <see cref="RootDirectory"/> and deletes <see cref="LegacyCrashReportPath"/>.
-	/// Best-effort - individual files or folders that cannot be removed are logged and skipped; the
-	/// method never throws.
+	/// Recursively empties <see cref="RootDirectory"/>. Best-effort - individual files or folders that
+	/// cannot be removed are logged and skipped; the method never throws.
 	/// </summary>
 	/// <returns>The number of top-level entries that could not be removed.</returns>
 	public static int ClearOnLaunch()
 	{
 		string root = RootDirectory;
-		int failures = 0;
-
-		string legacyCrashReport = LegacyCrashReportPath;
-		if (File.Exists(legacyCrashReport))
-		{
-			try
-			{
-				File.Delete(legacyCrashReport);
-			}
-			catch (Exception ex)
-			{
-				failures++;
-				AppLog.Warning(LogSource, $"Could not delete the old crash report '{legacyCrashReport}': {ex.Message}");
-			}
-		}
 
 		if (!Directory.Exists(root))
 		{
-			return failures;
+			return 0;
 		}
+
+		int failures = 0;
 
 		foreach (string directory in SafeEnumerate(() => Directory.EnumerateDirectories(root)))
 		{

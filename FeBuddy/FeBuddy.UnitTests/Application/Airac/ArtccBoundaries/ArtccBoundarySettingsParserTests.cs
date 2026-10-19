@@ -14,7 +14,8 @@ public sealed class ArtccBoundarySettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
-		{ "OutputDirectory", @"C:\Output" }
+		{ "OutputDirectory", @"C:\Output" },
+		{ "Area", "Everything" }
 	};
 
 	private static void AddLineDefaults(Dictionary<string, string> settings, string prefix)
@@ -74,6 +75,7 @@ public sealed class ArtccBoundarySettingsParserTests
 	public void location_filter_parses_as_a_trimmed_upper_cased_set()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Artccs";
 		settings["LocationFilter"] = " zob , zak";
 
 		ArtccBoundarySettings parsed = ArtccBoundarySettingsParser.Parse(settings).Settings;

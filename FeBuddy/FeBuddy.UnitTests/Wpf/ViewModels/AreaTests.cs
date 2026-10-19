@@ -168,7 +168,7 @@ public sealed class AreaTests : IDisposable
 	[Fact]
 	public void a_tab_never_given_an_area_starts_on_the_one_its_settings_mean()
 	{
-		UserConfigFile.TrySetValue(UserConfigAreas.FacilityKey, "ZOB");
+		UserConfigFile.TrySetValue(UserConfigKeys.Facility, "ZOB");
 
 		Assert.Equal(SubServiceArea.Artccs, new DeparturesViewModel().Area);
 		Assert.Equal(SubServiceArea.Everything, new AirportsViewModel().Area);
@@ -442,7 +442,7 @@ public sealed class AreaTests : IDisposable
 	[Fact]
 	public void procedures_count_the_facilities_the_list_will_tick_before_it_loads()
 	{
-		UserConfigFile.TrySetValue(UserConfigAreas.FacilityKey, "ZOB");
+		UserConfigFile.TrySetValue(UserConfigKeys.Facility, "ZOB");
 		ProceduresViewModel tab = new() { Area = SubServiceArea.Artccs };
 
 		Assert.False(tab.HasFacilities);

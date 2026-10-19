@@ -62,9 +62,8 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	private const string LogSource = "ConcatenateAliases";
 
 	/// <summary>
-	/// Where <see cref="AddCustomAliasFiles"/> is saved: under its first name, from when it switched the
-	/// whole combined file on and off, so the choice carries over. Off then kept the custom files out,
-	/// as it does now.
+	/// Where <see cref="AddCustomAliasFiles"/> is saved: as <c>CombineAliasFiles</c> (see Settings-Reference),
+	/// though the settings block calls it <c>AddCustomAliasFiles</c>.
 	/// </summary>
 	private const string AddCustomAliasFilesConfigKey = "CombineAliasFiles";
 

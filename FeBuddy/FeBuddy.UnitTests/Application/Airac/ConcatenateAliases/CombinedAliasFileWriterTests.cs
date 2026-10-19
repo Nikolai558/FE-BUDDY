@@ -10,8 +10,8 @@ namespace FeBuddy.UnitTests.Application.Airac.ConcatenateAliases;
 /// <summary>
 /// Covers <see cref="CombinedAliasFileWriter"/>: <c>Combined_Alias.txt</c> is FE-Buddy's alias files
 /// between a start and an end line, then the custom alias files, so CRC (last copy wins) uses the
-/// user's commands; a <c>.FeUseOnly</c> line stays first; an old combined file used as a
-/// custom file loses its FE-Buddy section, in either layout; commands in more than one file are
+/// user's commands; a <c>.FeUseOnly</c> line stays first; an earlier combined file used as a custom
+/// file loses its FE-Buddy section; a command a custom file shares with another merged file is
 /// reported; and a custom file that could not be read is left out with a warning.
 /// </summary>
 public sealed class CombinedAliasFileWriterTests : IDisposable
@@ -102,34 +102,7 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 			File.ReadAllText(CombinedAliasPath));
 	}
 
-	/// <summary>A file uploaded before the end line existed: FE-Buddy's section was last, so it runs to the end.</summary>
-	[Fact]
-	public void an_old_combined_alias_file_with_the_fe_buddy_section_last_loses_it()
-	{
-		string oldUpload = Lines(
-			".mine .ECHO mine",
-			"",
-			"; ===== FE-Buddy aliases (AIRAC 2609) start here. FE-Buddy replaces everything below this line every cycle. =====",
-			"; ----- Airways.txt -----",
-			".J60F .FF OLD");
-
-		CombinedAliasResult result = CombinedAliasFileWriter.Write(
-			[Read(1, "ZOB-Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
-
-		Assert.Equal(
-			Lines(Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End, "", ".mine .ECHO mine"),
-			File.ReadAllText(CombinedAliasPath));
-		Assert.Equal(1, result.CustomCommandCount);
-		Assert.Equal(0, result.DuplicateCommandCount);
-
-		ServiceMessage notice = Assert.Single(result.Messages);
-		Assert.Equal(LogLevel.Info, notice.Level);
-		Assert.Equal(
-			"custom alias file 1 (ZOB-Alias.txt) holds FE-Buddy aliases from an earlier Combined_Alias.txt; they were left out, so they are not added twice.",
-			notice.Text);
-	}
-
-	/// <summary>A file in today's layout: only the lines outside FE-Buddy's section are the user's.</summary>
+	/// <summary>Only the lines outside FE-Buddy's section are the user's.</summary>
 	[Fact]
 	public void an_old_combined_alias_file_with_the_fe_buddy_section_first_keeps_what_is_around_it()
 	{

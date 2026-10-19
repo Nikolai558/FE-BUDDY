@@ -938,7 +938,6 @@ public sealed class TelephonyViewModelTests : IDisposable
 	{
 		(TelephonyViewModel withCopy, _) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual"), ("OCN", "Ocean", "vOCN")));
 		(TelephonyViewModel withoutCopy, _) = TabUsing(null);
-		(TelephonyViewModel withOlderCopy, _) = TabUsing(ListOf(("OCN", "Ocean", "vOCN")) with { IsOlderCopy = true, GngDownloadedUtc = null, VatsimRadarDownloadedUtc = null });
 
 		Assert.Equal(
 			$"FE-Buddy's copy is from {ListDownloadedUtc.ToLocalTime():d MMM yyyy}: 2 virtual airlines.",
@@ -947,8 +946,6 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.Equal(
 			"FE-Buddy has no copy yet, so a virtual airline you add can't be checked against it.",
 			withoutCopy.VatsimRadarListStatus);
-		Assert.StartsWith("FE-Buddy's older copy of the list is from ", withOlderCopy.VatsimRadarListStatus, StringComparison.Ordinal);
-		Assert.Equal("Using FE-Buddy's older copy of the list until its two parts can be downloaded.", withOlderCopy.VatsimRadarListWarning);
 	}
 
 	/// <summary>A part FE-Buddy has no copy of is a warning, in amber, even before anything is downloaded.</summary>

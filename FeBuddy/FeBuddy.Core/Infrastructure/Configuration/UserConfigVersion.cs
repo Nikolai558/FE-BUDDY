@@ -13,9 +13,8 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// has a default needs neither: a file without it gets the default.
 /// </para>
 /// <para>
-/// Layout 1 is the one 3.0.0-beta.2 and beta.3 saved, before files were stamped. A file with no
-/// stamp is taken to be in it; older layouts (beta.1 and the alphas) are not brought forward.
-/// Layout 2 (3.0.0-beta.6) gave each AIRAC sub-service tab its <c>Area</c> (see <see cref="UserConfigAreas"/>).
+/// A file with no stamp, or one stamped with a layout older than <see cref="Oldest"/>, is read as
+/// <see cref="Oldest"/>: a setting it no longer uses is ignored, and one it lacks gets its default.
 /// </para>
 /// </remarks>
 public static class UserConfigVersion
@@ -27,8 +26,8 @@ public static class UserConfigVersion
 	/// </summary>
 	public const string FileKey = "ConfigVersion";
 
-	/// <summary>The oldest layout FE-Buddy brings forward, and the one a file with no stamp is taken to be in.</summary>
-	public const int Oldest = 1;
+	/// <summary>The oldest layout FE-Buddy brings forward, and the one a file with no stamp, or an older one, is read as.</summary>
+	public const int Oldest = 2;
 
 	/// <summary>The layout this version of FE-Buddy reads and writes.</summary>
 	public const int Current = 2;

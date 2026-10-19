@@ -198,7 +198,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		UserConfigFile.TrySetValue(airwaysKey, "2");
 		UserConfigFile.Save("Services.AiracService.Airways");
-		UserConfigFile.TrySetValue(UserConfigAreas.DefaultRoiKey, "Y");
+		UserConfigFile.TrySetValue(UserConfigKeys.DefaultRoiFilter, "Y");
 		UserConfigFile.Save("General.DefaultRoi");
 
 		Assert.False(general.CanUndo);
@@ -211,7 +211,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		Assert.False(general.IsIncluded(AiracSubServices.FixesKey));
 		Assert.Equal("2", UserConfigFile.GetValue(airwaysKey));
-		Assert.Equal("Y", UserConfigFile.GetValue(UserConfigAreas.DefaultRoiKey));
+		Assert.Equal("Y", UserConfigFile.GetValue(UserConfigKeys.DefaultRoiFilter));
 	}
 
 	/// <summary>Settings edited by hand with every output off would make nothing: they load with every output on.</summary>

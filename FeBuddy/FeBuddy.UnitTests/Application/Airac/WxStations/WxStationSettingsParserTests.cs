@@ -13,7 +13,8 @@ public sealed class WxStationSettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
-		{ "OutputDirectory", @"C:\Output" }
+		{ "OutputDirectory", @"C:\Output" },
+		{ "Area", "Everything" }
 	};
 
 	private static void AddSymbolDefaults(Dictionary<string, string> settings, string prefix, bool withStyle = true)
@@ -259,6 +260,7 @@ public sealed class WxStationSettingsParserTests
 	public void roi_is_parsed_when_filter_by_roi_is_set()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["Area"] = "Roi";
 		settings["FilterByRoi"] = "Y";
 		settings["RoiSwLat"] = "40.0";
 		settings["RoiSwLon"] = "-89.0";

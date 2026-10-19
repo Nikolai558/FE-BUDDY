@@ -32,13 +32,13 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 | [C5-21](#c5-21) | Test-only | Low | Small result fields, an out parameter and two defaults that only tests use | Open | S6 |
 | [C1-13](#c1-13) | Test-only | Low | ServiceResult.Warnings is used only by the Harness and tests | Open | S6 |
 | [C1-12](#c1-12) | Test-only | Low | NewsCheckResult.FromNetwork is read only by tests | Open | S6 |
-| [T1b-21](#t1b-21) | Test-only | Low | ReadArea's no-`Area` fallback is reached only by tests | Agreed, changed | S6 |
+| [T1b-21](#t1b-21) | Test-only | Low | ReadArea's no-`Area` fallback is reached only by tests | Fixed | S6 |
 | [C1-11](#c1-11) | Test-only | Low | VersionCheckResult.ParseChannel(string?) (one-argument overload) is used only by a test | Open | S6 |
 | [C5-6](#c5-6) | Unused | Low | Airway.Segments and AirwayPoint.FoundIn are written but never read; Airway.AwyLocation and Airway.MaxAuthAlt are read only by a test | Open | S6 |
 | [C6-28](#c6-28) | Test-only | Low | UserConfigPackage.ConfigVersion (and its default) and UserConfigMigrationResult.FromVersion are read only by tests | Open | S6 |
 | [C6-25](#c6-25) | Test-only | Low | UserConfigFile.ProfileExists | Open | S6 |
-| [C6-4](#c6-4) | Unused | Low | `v\d+` in LegacyBackupName matches a file no release ever wrote | Open | S6 |
-| [C6-27](#c6-27) | Test-only | Low | UserConfigMigrationContext.Move, ChangeValue and Values are used only by tests | Agreed | S6 |
+| [C6-4](#c6-4) | Unused | Low | `v\d+` in LegacyBackupName matches a file no release ever wrote | Fixed | S6 |
+| [C6-27](#c6-27) | Test-only | Low | UserConfigMigrationContext.Move, ChangeValue and Values are used only by tests | Kept | S6 |
 | [C5-5](#c5-5) | Test-only | Low | EramProperties' custom equality serves only tests; its remark claims a grouping that doesn't happen | Open | S6 |
 | [C6-26](#c6-26) | Test-only | Low | AppLog.GetLogFilePath is used only by tests and duplicates the writer's own path logic | Open | S6 |
 | [C7-18](#c7-18) | Test-only | Low | `MarkdownParser.ParseInlines`'s `issueUrlBase` and `linkBase` parameters are used only by tests | Open | S6 |
@@ -419,7 +419,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### T1b-21 · Test-only · Low · ReadArea's no-`Area` fallback is reached only by tests
 
-**Status:** Agreed, changed: remove the fallback and give the tests that rely on it an `Area` ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `SubServiceSettingsReader.ReadArea` requires `Area` (a block without it is refused) and has lost its `artccListKey` and `withNoFilter` parameters; the tests that relied on the fallback give an `Area` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs:47-73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs#L47-L73); tests relying on it include [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Airports/AirportSettingsParserTests.cs:97-102`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Airports/AirportSettingsParserTests.cs#L97-L102), [`Airports/AirportServiceTests.cs:128-143`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Airports/AirportServiceTests.cs#L128-L143), 186-198, [`Navaids/NavaidServiceTests.cs:61-99`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Navaids/NavaidServiceTests.cs#L61-L99), [`Fixes/FixServiceTests.cs:59-71`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Fixes/FixServiceTests.cs#L59-L71), [`Fixes/FixSettingsParserTests.cs:563-577`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Fixes/FixSettingsParserTests.cs#L563-L577), [`WxStations/WxStationServiceTests.cs:66-96`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/WxStations/WxStationServiceTests.cs#L66-L96), [`WxStations/WxStationSettingsParserTests.cs:258-272`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/WxStations/WxStationSettingsParserTests.cs#L258-L272), [`ArtccBoundaries/ArtccBoundarySettingsParserTests.cs:73-82`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/ArtccBoundaries/ArtccBoundarySettingsParserTests.cs#L73-L82), [`ArtccBoundaries/ArtccBoundaryServiceTests.cs:62-84`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/ArtccBoundaries/ArtccBoundaryServiceTests.cs#L62-L84)
 
@@ -493,7 +493,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C6-4 · Unused · Low · `v\d+` in LegacyBackupName matches a file no release ever wrote
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `LegacyBackupName` is deleted with [C6-2](130_Old-Version-Code.md#c6-2) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:34-35`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L34-L35)
 
@@ -509,7 +509,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C6-27 · Test-only · Low · UserConfigMigrationContext.Move, ChangeValue and Values are used only by tests
 
-**Status:** Agreed: keep ([D1](010_Decisions.md#d1)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Kept (not yet merged): the layout framework stays for the layouts after 3.0 ([D1](010_Decisions.md#d1)), and these are the edits a step is made of · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigMigrationContext.cs:24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigMigrationContext.cs#L24), 43-72, 74-85
 

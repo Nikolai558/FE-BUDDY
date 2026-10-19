@@ -1074,12 +1074,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				Airports.Add(id);
 			}
 
-			// By root name: an earlier FE-Buddy saved the full name (BRWNZ FOUR (RNAV)), which reads
-			// as BRWNZ. The page saves the root from then on, and isn't marked changed for it.
 			ProcedureNames.Clear();
-			foreach (string root in SplitOrdered(Get("Procedures")).Select(ProcedureNaming.RootName).Distinct(StringComparer.OrdinalIgnoreCase))
+			foreach (string name in SplitOrdered(Get("Procedures")).Distinct(StringComparer.OrdinalIgnoreCase))
 			{
-				ProcedureNames.Add(root);
+				ProcedureNames.Add(name);
 			}
 
 			AirportProcedures.Clear();
@@ -1739,10 +1737,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private static IEnumerable<string> SplitOrdered(string? saved) =>
 		(saved ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-	/// <summary>
-	/// The saved airport-specific picks, each by its root name - an earlier FE-Buddy saved the full name
-	/// (<c>LAS|BRWNZ FOUR (RNAV)</c>), which reads as <c>LAS|BRWNZ</c> - and each pair once.
-	/// </summary>
+	/// <summary>The saved airport-specific picks (<c>LAS|BRWNZ</c>), each pair once.</summary>
 	private static IEnumerable<ProcedureAirportPickItem> ParseAirportProcedurePicks(string? saved)
 	{
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
@@ -1764,11 +1759,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				continue;
 			}
 
-			string root = ProcedureNaming.RootName(procedure);
-
-			if (seen.Add($"{airport}|{root}"))
+			if (seen.Add($"{airport}|{procedure}"))
 			{
-				yield return new ProcedureAirportPickItem(airport, root, PairLabel(airport, root));
+				yield return new ProcedureAirportPickItem(airport, procedure, PairLabel(airport, procedure));
 			}
 		}
 	}

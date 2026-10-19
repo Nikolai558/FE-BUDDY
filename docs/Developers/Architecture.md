@@ -119,9 +119,6 @@ Procedure Charts waits for the previous cycle's d-TPP Metafile, which its change
   other short. A run uses a copy under 24 hours old without downloading (`SharedDataRefreshResult.Reused`);
   the Telephony tab's button always downloads. VATSIM-Radar's own merged list
   (`data.vatsim-radar.com`) isn't used because it only takes TLS 1.3, which Windows 10 can't do.
-  The single `vatsim_radar_airlines.json` that
-  3.0.0-beta.4 and earlier kept (beta.4's from `data.vatsim-radar.com`, which only takes TLS 1.3 -
-  Windows 10 can't) is read only while neither part has a copy, and deleted once both have one.
 - **`Telephony.txt` writes only the first operator for each 3LD and telephony** (`TelephonyBuilder`):
   the FAA's, then the user's virtual airlines, then the list's. The rest are named in Info messages.
 - **The d-TPP Metafile** is keyed by cycle, so each cycle folder gets its own

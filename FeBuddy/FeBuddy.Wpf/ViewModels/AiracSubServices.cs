@@ -53,19 +53,13 @@ public static class AiracSubServices
 	/// <summary>The Wx Stations sub-service key.</summary>
 	public const string WxStationsKey = AiracTabs.WxStations;
 
-	/// <summary>
-	/// The Procedure Charts sub-service key: its first name, Procedures, kept so its saved settings
-	/// carry over.
-	/// </summary>
+	/// <summary>The Procedure Charts sub-service key, and the name of its saved settings' node: <c>Procedures</c>.</summary>
 	public const string ProceduresKey = AiracTabs.Procedures;
 
 	/// <summary>The Telephony sub-service key.</summary>
 	public const string TelephonyKey = AiracTabs.Telephony;
 
-	/// <summary>
-	/// The Add Custom Aliases sub-service key: its first name, Concatenate Aliases, kept so its saved
-	/// settings carry over.
-	/// </summary>
+	/// <summary>The Add Custom Aliases sub-service key, and the name of its saved settings' node: <c>ConcatenateAliases</c>.</summary>
 	public const string ConcatenateAliasesKey = AiracTabs.ConcatenateAliases;
 
 	private const SubServiceOutputKinds AliasAndGeojson = SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson;

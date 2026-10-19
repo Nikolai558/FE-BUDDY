@@ -43,34 +43,26 @@ public sealed class InstalledFeBuddy
 		? null
 		: System.IO.Path.Combine(InstallLocation, "FE-BUDDY.exe");
 
-	/// <summary>
-	/// Reads the key. The MSI is 64-bit, so its values are in the 64-bit view; the 32-bit view is
-	/// the fallback for anything written there by an older build.
-	/// </summary>
+	/// <summary>Reads the key from the 64-bit view, where the 64-bit MSI writes it.</summary>
 	/// <returns>What is recorded; every value is <see langword="null"/> when nothing is.</returns>
 	public static InstalledFeBuddy Read()
 	{
-		foreach (RegistryView view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
+		try
 		{
-			try
+			using RegistryKey hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+			using RegistryKey? key = hklm.OpenSubKey(KeyPath);
+			if (key is not null)
 			{
-				using RegistryKey hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view);
-				using RegistryKey? key = hklm.OpenSubKey(KeyPath);
-				if (key is null)
-				{
-					continue;
-				}
-
 				return new InstalledFeBuddy(
 					Text(key, "InstallLocation"),
 					Text(key, "ProductSemVer"),
 					Flag(key, "StartMenuShortcut"),
 					Flag(key, "DesktopShortcut"));
 			}
-			catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException)
-			{
-				// Unreadable is treated as not recorded: the window falls back to its defaults.
-			}
+		}
+		catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException)
+		{
+			// Unreadable is treated as not recorded: the window falls back to its defaults.
 		}
 
 		return new InstalledFeBuddy(null, null, null, null);

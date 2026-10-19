@@ -77,7 +77,7 @@ public static class ArrivalSettingsParser
 		}
 
 		// Only the area chosen applies: the ARTCCs listed, or the ROI, or neither.
-		SubServiceArea area = SubServiceSettingsReader.ReadArea(arrivalSettings, SubServiceSettingsReader.ArtccOrRoiAreas, artccListKey: "ArtccFilter");
+		SubServiceArea area = SubServiceSettingsReader.ReadArea(arrivalSettings, SubServiceSettingsReader.ArtccOrRoiAreas);
 		IReadOnlyCollection<string> artccFilter = SubServiceSettingsReader.ReadAreaArtccs(arrivalSettings, area, "ArtccFilter");
 
 		// Only the value the chosen mode uses is read (and required); the others are ignored.

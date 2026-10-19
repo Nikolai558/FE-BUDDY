@@ -113,7 +113,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 | [T3-35](#t3-35) | Minor | Low | Tests that pin GUI wording word for word (list below) | Open | S9 |
 | [N1-38](#n1-38) | History wording | Low | Tests and comments added since the review cite finding IDs and narrate history | Open | S14 |
 | [N1-39](#n1-39) | Wrong doc | Low | AiracGeneralTabViewModelTests: the "older build" case uses a key no release saved | Fixed | S14 |
-| [N1-40](#n1-40) | Minor | Low | New tests: misplaced summaries, wall-clock limits, an untested Telephony guard | Open | S14 |
+| [N1-40](#n1-40) | Minor | Low | New tests: misplaced summaries, wall-clock limits, an untested Telephony guard | Fixed | S14 |
 | [N1-41](#n1-41) | Minor | Low | DeferredSave's timer, close and retry untested; a save-failure test fails only at its first write | Open | S14 |
 | [N1-42](#n1-42) | Minor | Low | New tests that can't catch what they guard (update watcher, FieldState, Telephony name) | Open | S14 |
 
@@ -1605,7 +1605,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 
 ### N1-40 · Minor · Low · New tests: summaries on the wrong helper, wall-clock limits that can fail on a busy runner, and an untested Telephony guard
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The two summaries are moved. The timing asserts are work counts: headings worked out (at most 2 × 50,000), each command's choices read (at most twice) and a counting `taken` set; VATSIM-Radar compares 3,000 and 30,000 rows, timed in turns, fastest of five each. Telephony's read is `LoadVatsimRadarCopyAsync(read)`. Test: `TelephonyViewModelTests.a_download_finishing_during_the_kept_copy_read_keeps_its_copy` (fails with the guard taken out) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/TelephonyViewModelTests.cs:794-806`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/TelephonyViewModelTests.cs#L794-L806); [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Telephony/VatsimRadarVirtualAirlinesTests.cs:115-118`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Airac/Telephony/VatsimRadarVirtualAirlinesTests.cs#L115-L118), 137-149; [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/ServiceRunReviewTabViewModelTests.cs:154-165`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/ServiceRunReviewTabViewModelTests.cs#L154-L165); [`FeBuddy/FeBuddy.UnitTests/Application/Airac/DuplicateAliasChoicesTests.cs:145-163`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Airac/DuplicateAliasChoicesTests.cs#L145-L163); [`FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs:101-105`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L101-L105), 113-123
 

@@ -2,6 +2,8 @@ using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac.Arrivals;
+using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 
@@ -10,7 +12,8 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 /// <summary>
 /// Covers <see cref="FileNamesViewModel"/>: the files listed by folder, which new names are flagged,
 /// a file the other tabs add after a save, and what is saved and sent to a run - against a stand-in
-/// list of files and a throwaway config.
+/// list of files and a throwaway config. Also the folder Departures and Arrivals list their GeoJSON
+/// files in.
 /// </summary>
 [Collection("AppLog")]
 public sealed class FileNamesViewModelTests : IDisposable
@@ -147,6 +150,34 @@ public sealed class FileNamesViewModelTests : IDisposable
 
 		Assert.Equal("Combined_Alias.txt is being renamed ZOB.txt too. Give each file its own name.", Row(tab, "Airways.txt").Error);
 		Assert.Equal("Airways.txt is being renamed zob.txt too. Give each file its own name.", Row(tab, "Combined_Alias.txt").Error);
+	}
+
+	/// <summary>
+	/// A new name may not be another alias file's even when this run doesn't write it, as the run refuses it:
+	/// every run of a cycle writes into the same folder.
+	/// </summary>
+	[Fact]
+	public void a_name_another_file_keeps_is_refused_even_when_this_run_doesnt_write_it()
+	{
+		_files.Clear();
+		_files.Add(OutputFileEntry.Renamable("Airways.txt", "Aliases", "Airways"));
+		FileNamesViewModel tab = RenamingTab();
+
+		Row(tab, "Airways.txt").NewName = "Airports";
+
+		Assert.Equal("Airports.txt is already the name of another file. Give this file a name of its own.", Row(tab, "Airways.txt").Error);
+	}
+
+	/// <summary>Departures and Arrivals list each procedure's GeoJSON files in the folder the run writes them to, Core's pattern.</summary>
+	[Fact]
+	public void departures_and_arrivals_list_their_geojson_files_in_cores_folder()
+	{
+		Assert.Equal(
+			DepartureOutputFiles.GeojsonFolderPattern,
+			new DeparturesViewModel().OutputFileEntries().Single(file => file.Key == "Departures_Lines").Folder);
+		Assert.Equal(
+			ArrivalOutputFiles.GeojsonFolderPattern,
+			new ArrivalsViewModel().OutputFileEntries().Single(file => file.Key == "Arrivals_Lines").Folder);
 	}
 
 	[Fact]

@@ -8,6 +8,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 
@@ -265,10 +266,11 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 			return;
 		}
 
-		// Two files in one folder ending up with one name, by the run's rule (OutputFileNames.Clashes).
+		// Two files in one folder ending up with one name, by the run's rule (OutputFileNames.Clashes): against
+		// the files listed, and every file the run checks a new name against, even one this run doesn't write.
 		IReadOnlyDictionary<string, string> clashes = OutputFileNames.Clashes(
 			rows.Where(IsRenamed).ToDictionary(row => row.Key, row => row.NewName.Trim(), StringComparer.OrdinalIgnoreCase),
-			rows.Select(row => row.Key));
+			rows.Select(row => row.Key).Concat(OutputFileNamesParser.KeptFileKeys));
 
 		foreach (FileNameRow row in rows.Where(row => row.Error is null))
 		{

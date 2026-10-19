@@ -112,10 +112,6 @@ public sealed class VatsimRadarVirtualAirlinesTests : IDisposable
 
 	// ---- Merge ----
 
-	/// <summary>
-	/// As VATSIM-Radar merges them: GNG's rows, duplicates kept; a VATSIM-Radar entry takes over the name
-	/// and telephony of the first GNG row with its 3LD; one GNG doesn't have is added at the end.
-	/// </summary>
 	/// <summary>Spaces around a value don't make another virtual airline: each is written once.</summary>
 	[Fact]
 	public void the_same_virtual_airline_with_spaces_around_its_values_is_written_once()
@@ -131,23 +127,49 @@ public sealed class VatsimRadarVirtualAirlinesTests : IDisposable
 
 	/// <summary>
 	/// GNG lists thousands of rows: merging and selecting look each one up once, rather than against every
-	/// row so far, so the Telephony tab's list is ready at once.
+	/// row so far, so the Telephony tab's list is ready at once. Ten times the rows takes about ten times as
+	/// long, not a hundred. The two sizes are timed in turns and each by its fastest of five, so a busy
+	/// machine slows both alike.
 	/// </summary>
 	[Fact]
 	public void a_list_of_tens_of_thousands_merges_and_selects_at_once()
 	{
-		VatsimRadarAirline[] gng = [.. Enumerable.Range(0, 20_000).Select(i => new VatsimRadarAirline($"A{i:00000}", $"Org {i}", $"CALL{i}"))];
-		VatsimRadarAirline[] vatsimRadar = [.. Enumerable.Range(10_000, 20_000).Select(i => new VatsimRadarAirline($"A{i:00000}", $"Virtual {i}", $"CALL{i}"))];
-		System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+		(VatsimRadarAirline[] Gng, VatsimRadarAirline[] VatsimRadar) small = Lists(3_000), large = Lists(30_000);
+		TimeSpan fastestSmall = TimeSpan.MaxValue, fastestLarge = TimeSpan.MaxValue;
 
-		List<VatsimRadarAirline> merged = VatsimRadarVirtualAirlines.Merge(gng, vatsimRadar);
-		VatsimRadarSelection selection = VatsimRadarVirtualAirlines.Select(merged);
+		for (int round = 0; round < 5; round++)
+		{
+			fastestSmall = TimeSpan.FromTicks(Math.Min(fastestSmall.Ticks, MergeAndSelect(small).Ticks));
+			fastestLarge = TimeSpan.FromTicks(Math.Min(fastestLarge.Ticks, MergeAndSelect(large).Ticks));
+		}
 
-		Assert.Equal(30_000, merged.Count);
-		Assert.Equal(30_000, selection.VirtualAirlines.Count + selection.LeftOut.Count);
-		Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"Took {stopwatch.Elapsed}.");
+		Assert.True(fastestLarge < fastestSmall * 40, $"{fastestSmall} for 3,000 GNG rows, {fastestLarge} for 30,000.");
 	}
 
+	/// <summary>
+	/// <paramref name="count"/> GNG rows, and as many VATSIM-Radar entries, half of them with a GNG row's 3LD.
+	/// </summary>
+	private static (VatsimRadarAirline[] Gng, VatsimRadarAirline[] VatsimRadar) Lists(int count) =>
+		([.. Enumerable.Range(0, count).Select(i => new VatsimRadarAirline($"A{i:00000}", $"Org {i}", $"CALL{i}"))],
+		[.. Enumerable.Range(count / 2, count).Select(i => new VatsimRadarAirline($"A{i:00000}", $"Virtual {i}", $"CALL{i}"))]);
+
+	/// <summary>Merges and selects the lists, and returns how long it took.</summary>
+	private static TimeSpan MergeAndSelect((VatsimRadarAirline[] Gng, VatsimRadarAirline[] VatsimRadar) lists)
+	{
+		System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+		List<VatsimRadarAirline> merged = VatsimRadarVirtualAirlines.Merge(lists.Gng, lists.VatsimRadar);
+		VatsimRadarSelection selection = VatsimRadarVirtualAirlines.Select(merged);
+		stopwatch.Stop();
+
+		Assert.Equal(lists.Gng.Length * 3 / 2, merged.Count);
+		Assert.Equal(merged.Count, selection.VirtualAirlines.Count + selection.LeftOut.Count);
+		return stopwatch.Elapsed;
+	}
+
+	/// <summary>
+	/// As VATSIM-Radar merges them: GNG's rows, duplicates kept; a VATSIM-Radar entry takes over the name
+	/// and telephony of the first GNG row with its 3LD; one GNG doesn't have is added at the end.
+	/// </summary>
 	[Fact]
 	public void merge_replaces_the_first_gng_row_with_the_3ld_and_appends_the_rest()
 	{

@@ -3,7 +3,6 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.ViewModels.Models;
@@ -16,6 +15,7 @@ using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Telephony;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.SharedData.Models;
 using FeBuddy.Core.Infrastructure.Telephony;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
@@ -58,10 +58,15 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
 	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Telephony}";
+	private const string LogSource = "Telephony";
 
-
-	private readonly Dispatcher _dispatcher;
 	private string _telephonyDataStatus = string.Empty;
+
+	// The reads of the FAA pages' kept copies, numbered so only the latest is used: one started after a
+	// run may finish before the one started when the tab was built.
+	private int _telephonyDataRefresh;
+	private int _realOperatorsLoad;
+
 	private bool _isEditingVirtualAirline;
 	private int _editingIndex = -1;
 	private string _editDesignator = string.Empty;
@@ -83,7 +88,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// <summary>Builds the tab, restores its saved settings and reads FE-Buddy's kept copies of the virtual airline list.</summary>
 	public TelephonyViewModel()
 	{
-		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 		VirtualAirlines.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasVirtualAirlines));
 
 		AddVirtualAirlineCommand = new RelayCommand(BeginAddVirtualAirline);
@@ -110,20 +114,34 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			return;
 		}
 
-		int version = _vatsimRadarCopyVersion;
+		_ = LoadVatsimRadarCopyAsync(ReadKeptCopyWithLookup);
+	}
 
-		_ = Task.Run(ReadKeptCopyWithLookup)
-			.ContinueWith(
-				read => _dispatcher.BeginInvoke(() =>
-				{
-					if (_vatsimRadarCopyVersion == version)
-					{
-						UseVatsimRadarCopy(read.Result);
-					}
-				}),
-				CancellationToken.None,
-				TaskContinuationOptions.OnlyOnRanToCompletion,
-				TaskScheduler.Default);
+	/// <summary>
+	/// Reads a copy of the virtual airline list off the UI thread and uses it, unless a download got there
+	/// first: the download's copy is newer. A read that fails is logged, and the tab keeps what it has.
+	/// </summary>
+	/// <param name="read">Reads the copy and builds its lookup: FE-Buddy's kept copies in the app, a stand-in in the tests.</param>
+	/// <returns>A task that completes when the copy is used, or dropped.</returns>
+	internal async Task LoadVatsimRadarCopyAsync(Func<VatsimRadarCopy?> read)
+	{
+		int version = _vatsimRadarCopyVersion;
+		VatsimRadarCopy? copy;
+
+		try
+		{
+			copy = await Task.Run(read);
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning(LogSource, $"Reading FE-Buddy's copies of the virtual airline list failed: {ex.Message}");
+			return;
+		}
+
+		if (_vatsimRadarCopyVersion == version)
+		{
+			UseVatsimRadarCopy(copy);
+		}
 	}
 
 	/// <summary>Reads the kept copy and builds its 3LD and telephony lookup, both off the UI thread.</summary>
@@ -172,19 +190,45 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// </remarks>
 	public void RefreshTelephonyData()
 	{
-		// The copy is looked at off the UI thread: the folder can be slow to answer (OneDrive, a network profile).
-		_ = Task.Run(() => DescribeTelephonyData(TelephonyFiles.RegisterFilePath))
-			.ContinueWith(
-				read => _dispatcher.BeginInvoke(() =>
-				{
-					_telephonyDataStatus = read.Result;
-					OnPropertyChanged(nameof(TelephonyDataStatus));
-				}),
-				CancellationToken.None,
-				TaskContinuationOptions.OnlyOnRanToCompletion,
-				TaskScheduler.Default);
+		_ = RefreshTelephonyDataAsync();
+		_ = LoadRealOperatorsAsync();
+	}
 
-		LoadRealOperators();
+	/// <summary>
+	/// Says what FE-Buddy's kept copy of the FAA pages is, unit tests only: stands in for
+	/// <see cref="DescribeTelephonyData"/> so they can hold a look back, or make it fail.
+	/// </summary>
+	internal Func<string, string> DescribeTelephonyCopy { get; set; } = DescribeTelephonyData;
+
+	/// <summary>
+	/// Looks at the register's kept copy off the UI thread - the folder can be slow to answer (OneDrive, a
+	/// network profile) - then shows what it found, or that it couldn't look. A look that a newer one has
+	/// overtaken shows nothing.
+	/// </summary>
+	/// <returns>A task that completes when <see cref="TelephonyDataStatus"/> says it.</returns>
+	internal async Task RefreshTelephonyDataAsync()
+	{
+		int refresh = ++_telephonyDataRefresh;
+		Func<string, string> describe = DescribeTelephonyCopy;
+		string status;
+
+		try
+		{
+			status = await Task.Run(() => describe(TelephonyFiles.RegisterFilePath));
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning(LogSource, $"Looking at FE-Buddy's copy of the FAA telephony pages failed: {ex.Message}");
+			status = $"FE-Buddy couldn't read its copy: {ex.Message}";
+		}
+
+		if (refresh != _telephonyDataRefresh)
+		{
+			return;
+		}
+
+		_telephonyDataStatus = status;
+		OnPropertyChanged(nameof(TelephonyDataStatus));
 	}
 
 	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the FAA pages.</summary>
@@ -198,22 +242,35 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// <summary>
 	/// Reads the real operators a run writes from FE-Buddy's copies of the FAA's pages, off the UI thread,
 	/// to say which of the user's virtual airlines share one's 3LD and telephony (Core's rules, expired
-	/// U.S. special call signs left out). A tab built outside the app
-	/// (a unit test) reads nothing: the tests hand the operators in (<see cref="UseRealOperators"/>).
+	/// U.S. special call signs left out). A read that fails is logged; one that a newer read has overtaken is
+	/// dropped. A tab built outside the app (a unit test) reads nothing: the tests hand the operators in
+	/// (<see cref="UseRealOperators"/>).
 	/// </summary>
-	private void LoadRealOperators()
+	/// <returns>A task that completes when the operators are used, or dropped.</returns>
+	private async Task LoadRealOperatorsAsync()
 	{
 		if (Application.Current is null)
 		{
 			return;
 		}
 
-		_ = Task.Run(() => TelephonyBuilder.RealOperators(TelephonyFiles.RegisterFilePath, TelephonyFiles.SpecialCallSignsFilePath))
-			.ContinueWith(
-				read => _dispatcher.BeginInvoke(() => UseRealOperators(read.Result)),
-				CancellationToken.None,
-				TaskContinuationOptions.OnlyOnRanToCompletion,
-				TaskScheduler.Default);
+		int load = ++_realOperatorsLoad;
+		IReadOnlyDictionary<(string Designator, string Telephony), string> operators;
+
+		try
+		{
+			operators = await Task.Run(() => TelephonyBuilder.RealOperators(TelephonyFiles.RegisterFilePath, TelephonyFiles.SpecialCallSignsFilePath));
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning(LogSource, $"Reading the real operators from FE-Buddy's copies of the FAA pages failed: {ex.Message}");
+			return;
+		}
+
+		if (load == _realOperatorsLoad)
+		{
+			UseRealOperators(operators);
+		}
 	}
 
 	/// <summary>Uses these real operators - read from FE-Buddy's copies, or handed in by a test - and refreshes what the card says.</summary>

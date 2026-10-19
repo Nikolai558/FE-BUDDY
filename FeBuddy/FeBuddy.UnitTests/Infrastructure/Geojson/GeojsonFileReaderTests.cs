@@ -173,6 +173,52 @@ public sealed class GeojsonFileReaderTests
 		}
 	}
 
+	/// <summary>
+	/// GeoJSON is UTF-8 only, so a file saved as ANSI (Latin-1) or as Notepad's "Unicode" (UTF-16) is refused
+	/// with a reason that says to save it as UTF-8, rather than that it isn't JSON or GeoJSON.
+	/// </summary>
+	[Fact]
+	public void a_file_not_saved_as_utf8_says_to_save_it_as_utf8()
+	{
+		DirectoryInfo folder = Directory.CreateTempSubdirectory("febuddy-geojson-");
+
+		try
+		{
+			const string json = "{\"type\":\"Feature\",\"properties\":{\"text\":[\"Café\"]},\"geometry\":{\"type\":\"Point\",\"coordinates\":[-100,40]}}";
+			string ansi = Path.Combine(folder.FullName, "ansi.geojson");
+			string unicode = Path.Combine(folder.FullName, "unicode.geojson");
+			File.WriteAllText(ansi, json, System.Text.Encoding.Latin1);
+			File.WriteAllText(unicode, json, System.Text.Encoding.Unicode);
+
+			Assert.Equal("Not UTF-8 text - save it as UTF-8", Assert.Throws<FormatException>(() => GeojsonFileReader.ReadFile(ansi)).Message);
+			Assert.Equal("Not UTF-8 text (saved as UTF-16) - save it as UTF-8", Assert.Throws<FormatException>(() => GeojsonFileReader.ReadFile(unicode)).Message);
+		}
+		finally
+		{
+			folder.Delete(recursive: true);
+		}
+	}
+
+	/// <summary>UTF-16 and UTF-32 are named whichever byte order they're in, and UTF-16 with no byte-order mark too.</summary>
+	[Theory]
+	[InlineData("UTF-16", false, true)]
+	[InlineData("UTF-16", true, true)]
+	[InlineData("UTF-16", false, false)]
+	[InlineData("UTF-16", true, false)]
+	[InlineData("UTF-32", false, true)]
+	[InlineData("UTF-32", true, true)]
+	public void text_saved_as_utf16_or_utf32_is_named(string encoding, bool bigEndian, bool byteOrderMark)
+	{
+		System.Text.Encoding savedAs = encoding == "UTF-16"
+			? new System.Text.UnicodeEncoding(bigEndian, byteOrderMark)
+			: new System.Text.UTF32Encoding(bigEndian, byteOrderMark);
+		using MemoryStream stream = new([.. savedAs.GetPreamble(), .. savedAs.GetBytes("""{"type":"Point","coordinates":[-100,40]}""")]);
+
+		FormatException ex = Assert.Throws<FormatException>(() => GeojsonFileReader.Read(stream));
+
+		Assert.Equal($"Not UTF-8 text (saved as {encoding}) - save it as UTF-8", ex.Message);
+	}
+
 	/// <summary>A file that isn't there is the caller's to report, as an I/O error; one that isn't GeoJSON says why.</summary>
 	[Fact]
 	public void a_missing_or_unusable_file_throws_what_the_map_catches()

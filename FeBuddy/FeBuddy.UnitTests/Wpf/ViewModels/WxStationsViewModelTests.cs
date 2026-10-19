@@ -1,19 +1,40 @@
 using FeBuddy.Wpf.ViewModels;
 
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging;
+
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
-/// <summary>Covers what the Wx Stations tab says about FE-Buddy's kept copy of the station list (<see cref="WxStationsViewModel"/>).</summary>
+/// <summary>
+/// Covers what the Wx Stations tab says about FE-Buddy's kept copy of the station list (<see cref="WxStationsViewModel"/>):
+/// its date or its absence, a look at it that fails, and an older look finishing last - against a throwaway config and log.
+/// </summary>
+[Collection("AppLog")]
 public sealed class WxStationsViewModelTests : IDisposable
 {
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_WxTab_" + Guid.NewGuid().ToString("N"));
 
-	public WxStationsViewModelTests() => Directory.CreateDirectory(_root);
+	/// <summary>Points the config and the log at a throwaway folder.</summary>
+	public WxStationsViewModelTests()
+	{
+		Directory.CreateDirectory(_root);
+		AppLog.ConfigureForTesting(Path.Combine(_root, "logs"));
+		UserConfigFile.ConfigureForTesting(Path.Combine(_root, "config"));
+	}
 
+	/// <summary>Restores the real config and log, and deletes the folder.</summary>
 	public void Dispose()
 	{
-		if (Directory.Exists(_root))
+		UserConfigFile.ConfigureForTesting(null);
+		AppLog.ConfigureForTesting(null);
+
+		try
 		{
 			Directory.Delete(_root, recursive: true);
+		}
+		catch (IOException)
+		{
+			// Best-effort cleanup.
 		}
 	}
 
@@ -31,5 +52,29 @@ public sealed class WxStationsViewModelTests : IDisposable
 		string described = WxStationsViewModel.DescribeStationData(copy);
 		Assert.StartsWith("FE-Buddy's copy is from 4 ", described, StringComparison.Ordinal);
 		Assert.Contains(" 2026. Every run downloads the latest list first", described, StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// A look at the copy that fails says so, and why, rather than leaving the status empty or stale; an older look
+	/// that finishes after it doesn't overwrite it.
+	/// </summary>
+	[Fact]
+	public async Task a_look_that_fails_says_so_and_an_older_one_finishing_last_doesnt_win()
+	{
+		WxStationsViewModel tab = new();
+		using ManualResetEventSlim release = new();
+		tab.DescribeStationCopy = _ =>
+		{
+			release.Wait();
+			return "The older look.";
+		};
+		Task older = tab.RefreshStationDataAsync();
+
+		tab.DescribeStationCopy = _ => throw new IOException("boom");
+		await tab.RefreshStationDataAsync();
+		release.Set();
+		await older;
+
+		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.StationDataStatus);
 	}
 }

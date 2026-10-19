@@ -8,6 +8,7 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.WxStations;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -30,8 +31,13 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
 	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.WxStations}";
+	private const string LogSource = "WxStations";
 
 	private string _stationDataStatus = string.Empty;
+
+	// Numbers the looks at the kept copy, so only the latest is shown: one started after a run may finish
+	// before the one started when the tab was built.
+	private int _stationDataRefresh;
 
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public WxStationsViewModel()
@@ -79,13 +85,39 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	public void RefreshStationData() => _ = RefreshStationDataAsync();
 
 	/// <summary>
+	/// Says what FE-Buddy's kept copy of the station list is, unit tests only: stands in for
+	/// <see cref="DescribeStationData"/> so they can hold a look back, or make it fail.
+	/// </summary>
+	internal Func<string, string> DescribeStationCopy { get; set; } = DescribeStationData;
+
+	/// <summary>
 	/// Looks at the kept copy off the UI thread - the folder can be slow to answer (OneDrive, a network
-	/// profile) - then shows what it found.
+	/// profile) - then shows what it found, or that it couldn't look. A look that a newer one has
+	/// overtaken shows nothing.
 	/// </summary>
 	/// <returns>A task that completes when <see cref="StationDataStatus"/> says it.</returns>
 	internal async Task RefreshStationDataAsync()
 	{
-		_stationDataStatus = await Task.Run(() => DescribeStationData(WxStationFiles.SharedFilePath));
+		int refresh = ++_stationDataRefresh;
+		Func<string, string> describe = DescribeStationCopy;
+		string status;
+
+		try
+		{
+			status = await Task.Run(() => describe(WxStationFiles.SharedFilePath));
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning(LogSource, $"Looking at FE-Buddy's copy of the station list failed: {ex.Message}");
+			status = $"FE-Buddy couldn't read its copy: {ex.Message}";
+		}
+
+		if (refresh != _stationDataRefresh)
+		{
+			return;
+		}
+
+		_stationDataStatus = status;
 		OnPropertyChanged(nameof(StationDataStatus));
 	}
 

@@ -12,6 +12,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Core.Application.Conversions;
 using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Infrastructure.Logging;
 
 using Microsoft.Win32;
 
@@ -40,6 +41,8 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// </remarks>
 public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISourceFileSettings, ICrcDefaultsSettings
 {
+	private const string LogSource = "FileConversions";
+
 	private const string CrcDefaultsIncompleteMessage =
 		"Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or untick Include on that panel.";
 
@@ -516,6 +519,13 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		catch (OperationCanceledException)
 		{
 			return;
+		}
+		catch (Exception ex)
+		{
+			// The count catches the usual folder errors itself; anything else must not leave the page
+			// counting for good, with the run held back.
+			AppLog.Warning(LogSource, $"Counting the files in '{folder}' failed: {ex.Message}");
+			count = new SourceFolderCount(Exists: true, Files: 0, ex.Message);
 		}
 
 		if (!ReferenceEquals(_folderCountStop, stop))

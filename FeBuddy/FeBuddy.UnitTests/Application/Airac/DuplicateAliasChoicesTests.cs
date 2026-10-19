@@ -140,7 +140,11 @@ public sealed class DuplicateAliasChoicesTests : IDisposable
 		Assert.Null(problems[2]);
 	}
 
-	/// <summary>Hundreds of duplicated commands are checked in one pass, so the review keeps up with the typing.</summary>
+	/// <summary>
+	/// Hundreds of duplicated commands are checked in one pass - each command's choices read twice, and each new
+	/// command looked for once among those taken - rather than each command against every other, so the review
+	/// keeps up with the typing.
+	/// </summary>
 	[Fact]
 	public void hundreds_of_commands_are_checked_at_once()
 	{
@@ -154,12 +158,14 @@ public sealed class DuplicateAliasChoicesTests : IDisposable
 			Choice("Departures.txt", Keep, command: $".c{i}"),
 			Choice("Arrivals.txt", Rename, $".n{i}", $".c{i}"),
 		])];
-		System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+		CountingList<IReadOnlyList<DuplicateAliasRule?>> counted = new(choices);
+		CountingSet taken = new();
 
-		IReadOnlyList<string?> problems = DuplicateAliasChoices.Problems(duplicates, choices, Nothing);
+		IReadOnlyList<string?> problems = DuplicateAliasChoices.Problems(duplicates, counted, taken);
 
 		Assert.All(problems, Assert.Null);
-		Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1), $"Took {stopwatch.Elapsed}.");
+		Assert.True(counted.Reads <= 2 * choices.Length, $"Read {counted.Reads:N0} commands' choices for {choices.Length:N0} commands.");
+		Assert.True(taken.Lookups <= choices.Length, $"Looked {taken.Lookups:N0} new commands up among those taken, for {choices.Length:N0} new commands.");
 		Assert.Throws<ArgumentException>(() => DuplicateAliasChoices.Problems(duplicates, [], Nothing));
 		Assert.Throws<ArgumentNullException>(() => DuplicateAliasChoices.Problems(null!, choices, Nothing));
 		Assert.Throws<ArgumentNullException>(() => DuplicateAliasChoices.Problems(duplicates, null!, Nothing));
@@ -312,5 +318,42 @@ public sealed class DuplicateAliasChoicesTests : IDisposable
 	{
 		Assert.Equal("Departures.txt|.orfNUTIYf|1|Keep|", DuplicateAliasChoices.ToConfig([Choice("Departures.txt", Keep, ".stale")]));
 		Assert.Null(Assert.Single(DuplicateAliasChoices.FromConfig("Departures.txt|.orfNUTIYf|1|ignore|.stale")).NewCommand);
+	}
+
+	/// <summary>A list that counts how often an item is read from it.</summary>
+	private sealed class CountingList<T>(IReadOnlyList<T> items) : IReadOnlyList<T>
+	{
+		public int Reads { get; private set; }
+
+		public int Count => items.Count;
+
+		public T this[int index]
+		{
+			get
+			{
+				Reads++;
+				return items[index];
+			}
+		}
+
+		public IEnumerator<T> GetEnumerator()
+		{
+			Reads += items.Count;
+			return items.GetEnumerator();
+		}
+
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+	}
+
+	/// <summary>An empty set of commands taken that counts how often a command is looked up in it.</summary>
+	private sealed class CountingSet() : HashSet<string>(StringComparer.OrdinalIgnoreCase), IReadOnlySet<string>
+	{
+		public int Lookups { get; private set; }
+
+		bool IReadOnlySet<string>.Contains(string item)
+		{
+			Lookups++;
+			return Contains(item);
+		}
 	}
 }

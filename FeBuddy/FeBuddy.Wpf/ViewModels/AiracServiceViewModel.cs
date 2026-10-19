@@ -656,6 +656,15 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			// The File Names tab's validity depends on which files the other tabs write.
 			_fileNames.RefreshFiles();
 
+			// The custom alias files on this PC are looked at again, off the UI thread, so one the user
+			// has fixed since doesn't stop the run. Running meanwhile, so the Run button can't start a second run.
+			if (ConcatenateAliasesTab is { } customAliases)
+			{
+				IsRunning = true;
+				await customAliases.CheckLocalFilesAsync();
+				IsRunning = false;
+			}
+
 			if (!InstalledUpdate.AllowsRun() || !TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
 			{
 				return;

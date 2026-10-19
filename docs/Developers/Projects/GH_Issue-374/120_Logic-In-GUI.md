@@ -34,7 +34,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 | [W3-10](#w3-10) | Logic in GUI | Low | Facility key duplicated as a literal; doc names only one reader | Fixed | S5 |
 | [W3-13](#w3-13) | Logic in GUI | Low | Settings backup before reset/uninstall is file logic in the view-model | Fixed | S5 |
 | [W3-14](#w3-14) | Logic in GUI | Low | Version-check status is worded by three separate ladders (and a failed check is called "offline") | Fixed | S5 |
-| [N1-33](#n1-33) | Logic in GUI | Low | Departures and Arrivals build their GeoJSON folder instead of using Core's pattern | Open | S14 |
+| [N1-33](#n1-33) | Logic in GUI | Low | Departures and Arrivals build their GeoJSON folder instead of using Core's pattern | Fixed | S14 |
 
 ## Med
 
@@ -344,7 +344,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### N1-33 · Logic in GUI · Low · Departures and Arrivals build their GeoJSON folder themselves instead of using Core's pattern
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `OutputFileEntries` uses `DepartureOutputFiles.GeojsonFolderPattern` and `ArrivalOutputFiles.GeojsonFolderPattern`. Test: `FileNamesViewModelTests.departures_and_arrivals_list_their_geojson_files_in_cores_folder`; it can't fail on the old code, which gives the same folder today · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs:124-128`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs#L124-L128); [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:122-126`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L122-L126); Core: [`FeBuddy/FeBuddy.Core/Application/Airac/Departures/DepartureOutputFiles.cs:55`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/Departures/DepartureOutputFiles.cs#L55), [`FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalOutputFiles.cs:56`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalOutputFiles.cs#L56)
 

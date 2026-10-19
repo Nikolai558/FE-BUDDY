@@ -232,6 +232,52 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 	}
 
 	/// <summary>
+	/// Once the user has fixed the file, <b>Check</b> looks at the files on this PC again: the row's error
+	/// goes, and the tab can be saved.
+	/// </summary>
+	[Fact]
+	public async Task checking_a_fixed_file_clears_its_no_alias_commands_error()
+	{
+		Directory.CreateDirectory(_root);
+		string notes = Path.Combine(_root, "Notes.txt");
+		File.WriteAllText(notes, "Remember to upload the aliases.\r\n");
+		UserConfigFile.TrySetValue("Services.AiracService.ConcatenateAliases.Sources.1.FilePath", notes);
+		ConcatenateAliasesViewModel tab = NewTab();
+		await tab.CheckLocalFilesAsync();
+		Assert.False(tab.Save());
+
+		File.WriteAllText(notes, ".zob .msg ZOB\r\n");
+		await tab.CheckAsync(tab.Sources[0]);
+
+		Assert.Equal("Read 1 alias command(s).", tab.Sources[0].CheckMessage);
+		Assert.Null(tab.Sources[0].Error);
+		Assert.True(tab.Save());
+	}
+
+	/// <summary>Two checks of the files can run at once; an older one that finishes last doesn't undo the newer one.</summary>
+	[Fact]
+	public async Task an_older_check_of_the_files_that_finishes_last_is_not_shown()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.ConcatenateAliases.Sources.1.FilePath", Path.Combine(_root, "ZOB-Alias.txt"));
+		ConcatenateAliasesViewModel tab = NewTab();
+		using ManualResetEventSlim release = new();
+		tab.InspectLocalFile = _ =>
+		{
+			release.Wait();
+			return LocalAliasFileState.NoAliasCommands;
+		};
+		Task older = tab.CheckLocalFilesAsync();
+
+		tab.InspectLocalFile = _ => LocalAliasFileState.HasAliasCommands;
+		await tab.CheckLocalFilesAsync();
+		release.Set();
+		await older;
+
+		Assert.Null(tab.Sources[0].Error);
+		Assert.True(tab.Save());
+	}
+
+	/// <summary>
 	/// Typing a path looks at no file on the UI thread: until the check runs, the tab says nothing about
 	/// a file it hasn't looked at, rather than stat or read it on every keystroke.
 	/// </summary>

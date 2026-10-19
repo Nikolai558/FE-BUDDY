@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2), and N1-5 onward, found in the review of the S2 to S5 code, are [S14](020_Work-Plan.md#s14). Each fix should come with a regression test.
 
-**71 findings** (2 High, 16 Med, 53 Low), 49 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**71 findings** (2 High, 16 Med, 53 Low), 53 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -24,7 +24,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Fixed | S1 |
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
 | [N1-5](#n1-5) | Bug | Med | Going back to an already-loaded cycle leaves Procedure Charts with no chart data | Fixed | S14 |
-| [N1-6](#n1-6) | Bug | Med | Add Custom Aliases keeps a "no alias commands" error after the file is fixed | Open | S14 |
+| [N1-6](#n1-6) | Bug | Med | Add Custom Aliases keeps a "no alias commands" error after the file is fixed | Fixed | S14 |
 | [N1-7](#n1-7) | Bug | Med | A save, map change or import made during a profile switch or import can land in the wrong profile | Open | S14 |
 | [N1-8](#n1-8) | Bug | Med | A settings write cut short can lose a whole profile | Open | S14 |
 | [N1-9](#n1-9) | Bug | Med | The restart is offered while the update is still installing; a rolled-back update blocks runs | Open | S14 |
@@ -66,7 +66,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [N1-11](#n1-11) | Bug | Low | A reload reopens the General tab on an unpublished saved Next | Fixed | S14 |
 | [N1-12](#n1-12) | Bug | Low | An overtaken cycle load clears the newer load's "loading" mark | Fixed | S14 |
 | [N1-13](#n1-13) | Bug | Low | "Pick it again to try again" can't work: clicking the selected cycle does nothing | Fixed | S14 |
-| [N1-14](#n1-14) | Bug | Low | Background reads on File Conversions, Wx Stations and Telephony fail silently; an older read can win | Open | S14 |
+| [N1-14](#n1-14) | Bug | Low | Background reads on File Conversions, Wx Stations and Telephony fail silently; an older read can win | Fixed | S14 |
 | [N1-15](#n1-15) | Bug | Low | A map change whose save failed is lost unless the same setting is changed again | Open | S14 |
 | [N1-16](#n1-16) | Bug | Low | An unexpected failure during a profile change or an import is never reported | Open | S14 |
 | [N1-17](#n1-17) | Bug | Low | "Home view saved" is shown even when nothing was saved | Open | S14 |
@@ -74,8 +74,8 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [N1-19](#n1-19) | Bug | Low | The cached undo snapshot can disagree with the file; Undo stays on and does nothing | Open | S14 |
 | [N1-20](#n1-20) | Bug | Low | Marking the News read saves the whole General node | Open | S14 |
 | [N1-21](#n1-21) | Bug | Low | Copying the profiles shows every argument error as "Choose another folder" | Open | S14 |
-| [N1-22](#n1-22) | Bug | Low | The File Names tab and the run check name clashes against different lists | Open | S14 |
-| [N1-23](#n1-23) | Bug | Low | The Map rejects a UTF-16 or ANSI GeoJSON file with a misleading reason | Open | S14 |
+| [N1-22](#n1-22) | Bug | Low | The File Names tab and the run check name clashes against different lists | Fixed | S14 |
+| [N1-23](#n1-23) | Bug | Low | The Map rejects a UTF-16 or ANSI GeoJSON file with a misleading reason | Fixed | S14 |
 | [N1-24](#n1-24) | Bug | Low | If the setup window crashes mid-install, msiexec can wait forever | Open | S14 |
 | [N1-25](#n1-25) | Bug | Low | The update watcher can crash FE-Buddy if the folder disappears mid-check | Open | S14 |
 | [N1-26](#n1-26) | Bug | Low | The update watcher stops looking after 5 minutes without the dll | Open | S14 |
@@ -264,7 +264,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-6 · Bug · Med · Add Custom Aliases keeps a "no alias commands" error after the file is fixed, blocking Save and Run
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). **Check** on a file row, and a run, look at the files on this PC again, and a look a newer one has overtaken shows nothing, so a fixed file stops blocking Save and Run. Tests: `ConcatenateAliasesViewModelTests.checking_a_fixed_file_clears_its_no_alias_commands_error` and `an_older_check_of_the_files_that_finishes_last_is_not_shown` (both fail on the old code); the run's look has no test, as no unit test drives a run · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:77-79`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L77-L79) (the cache), [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:336-348`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L336-L348) (`Validate`), [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:372-404`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L372-L404) (no sequence guard), [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:424-467`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L424-L467) (`CheckAsync`), [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:591-606`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L591-L606); refreshed only at 315, 107-111, 360-363 and 541-548; blocking at [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:79-87`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L79-L87) and [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:589`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L589), 767-814
 
@@ -788,7 +788,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-14 · Bug · Low · Background reads on File Conversions, Wx Stations and Telephony aren't reported when they fail, and an older read can win
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). A folder count that throws shows "This folder can't be read: …" and logs a warning; Wx Stations' and Telephony's looks at their kept copies log a failure and show "FE-Buddy couldn't read its copy: …", and an overtaken look shows nothing; Telephony's real-operator and virtual airline list reads log a failure too. Tests: `FileConversionTabViewModelTests.a_count_that_fails_says_the_folder_cant_be_read`, `WxStationsViewModelTests.a_look_that_fails_says_so_and_an_older_one_finishing_last_doesnt_win` and `TelephonyViewModelTests.an_older_look_at_the_faa_pages_copy_finishing_last_doesnt_win_and_a_failed_one_says_why` (each fails on the old code); the real-operator read has no test, as it reads nothing outside the app · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs:499-529`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs#L499-L529) (516; 155, 260); [`FeBuddy/FeBuddy.Wpf/ViewModels/WxStationsViewModel.cs:79`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/WxStationsViewModel.cs#L79), 86-90; [`FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs:106-127`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L106-L127), 173-188, 204-217; [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:164-165`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L164-L165)
 
@@ -886,7 +886,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-22 · Bug · Low · The File Names tab and the run check name clashes against different lists
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `OutputFileNamesParser.KeptFileKeys` is public, and the File Names tab checks a new name against it as the run does; the run's comment is reworded, and `a_run_refuses_a_name_another_file_keeps` is kept. Test: `FileNamesViewModelTests.a_name_another_file_keeps_is_refused_even_when_this_run_doesnt_write_it` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/OutputFileNamesParser.cs:32-40`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/OutputFileNamesParser.cs#L32-L40) (`OtherFileKeys`), 73-80; [`FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs:252`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs#L252), 268-271; [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:338-352`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L338-L352); [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Models/OutputFileNamesTests.cs:156-164`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Airac/Models/OutputFileNamesTests.cs#L156-L164)
 
@@ -898,7 +898,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-23 · Bug · Low · The Map rejects a UTF-16 or ANSI GeoJSON file with a misleading reason
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The Map still reads UTF-8 only, and says so: a UTF-16 or UTF-32 file (its byte-order mark, or a zero in its first two bytes) fails with "Not UTF-8 text (saved as UTF-16) - save it as UTF-8", an ANSI one with "Not UTF-8 text - save it as UTF-8"; `ReadFile`'s doc is reworded as proposed. Tests: `GeojsonFileReaderTests.a_file_not_saved_as_utf8_says_to_save_it_as_utf8` and `text_saved_as_utf16_or_utf32_is_named` (fail on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs:43-45`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs#L43-L45) (the doc), 56-57, 65-69, [`FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs:78-81`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs#L78-L81) ("Not valid JSON"), [`FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs:92-95`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs#L92-L95) ("Not laid out as GeoJSON"), 125, 153, 155, 172, 197-200; shown at [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:1014`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L1014), 1027
 

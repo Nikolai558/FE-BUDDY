@@ -149,17 +149,24 @@ public sealed class ServiceRunReviewTabViewModelTests
 		Assert.Equal(3, result.InfoMessageCount);
 	}
 
-	/// <summary>Tens of thousands of messages are grouped and listed at once, so finishing a run never stalls the window.</summary>
+	/// <summary>
+	/// Tens of thousands of messages are grouped and listed in one pass, each one's heading worked out once
+	/// rather than against every other, so finishing a run never stalls the window.
+	/// </summary>
 	[Fact]
 	public void tens_of_thousands_of_messages_are_listed_at_once()
 	{
 		ServiceMessage[] messages = [.. Enumerable.Range(0, 50_000).Select(i => new ServiceMessage(
 			i % 10 == 0 ? LogLevel.Warning : LogLevel.Info, "Departures", $"Procedure 'DP{i % 500}': message {i}."))];
-		System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+		int headings = 0;
 
-		SubServiceRunResult result = new("Departures", "lots", messages, m => m.Text[11..m.Text.IndexOf('\'', 11)]);
+		SubServiceRunResult result = new("Departures", "lots", messages, m =>
+		{
+			headings++;
+			return m.Text[11..m.Text.IndexOf('\'', 11)];
+		});
 
-		Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1), $"Took {stopwatch.Elapsed}.");
+		Assert.True(headings <= 2 * messages.Length, $"Worked out {headings:N0} headings for {messages.Length:N0} messages.");
 		Assert.Equal(50_000, result.AttentionRows.OfType<SubServiceMessageRow>().Count() + result.InfoRows.OfType<SubServiceMessageRow>().Count());
 		Assert.Equal(5_000, result.AttentionMessageCount);
 	}

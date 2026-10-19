@@ -45,6 +45,10 @@ public sealed class MapViewModel : ObservableObject
 	private string? _roiError;
 	private bool _syncing;
 
+	// The target's ROI as last read: the ROI card's state reads it on every keystroke in a corner box, and
+	// reading the target's (the default ROI's settings) each time is four reads and parses.
+	private RegionOfInterest? _savedRoi;
+
 	/// <summary>Creates the Map page's workspace, editing the saved default ROI.</summary>
 	public MapViewModel()
 		: this(new DefaultRoiTarget())
@@ -176,18 +180,18 @@ public sealed class MapViewModel : ObservableObject
 	}
 
 	/// <summary>Whether the box differs from the saved one.</summary>
-	public bool IsRoiDirty => !Nullable.Equals(DraftRoi, ToBounds(Target.Current));
+	public bool IsRoiDirty => !Nullable.Equals(DraftRoi, ToBounds(_savedRoi));
 
 	/// <summary>A one-word state for the ROI card's chip: Editing, Unsaved, Saved or Not set.</summary>
 	public string RoiState => IsEditingRoi
 		? IsRoiDirty ? "Unsaved" : "Editing"
-		: Target.Current is null ? "Not set" : "Saved";
+		: _savedRoi is null ? "Not set" : "Saved";
 
 	/// <summary>
 	/// That no ROI is set and how to set one, shown on the ROI card until one is saved; empty while
 	/// editing or once there is one.
 	/// </summary>
-	public string RoiNotSetHint => !IsEditingRoi && Target.Current is null
+	public string RoiNotSetHint => !IsEditingRoi && _savedRoi is null
 		? $"ROI has not been set, yet.\nPlease press Edit ROI, drag a box on the map, then press {Target.SaveLabel}."
 		: string.Empty;
 
@@ -393,6 +397,8 @@ public sealed class MapViewModel : ObservableObject
 
 	private void OnTargetChanged()
 	{
+		_savedRoi = Target.Current;
+
 		if (!IsEditingRoi)
 		{
 			ResetDraft();
@@ -405,7 +411,8 @@ public sealed class MapViewModel : ObservableObject
 	private void ResetDraft()
 	{
 		_syncing = true;
-		DraftRoi = ToBounds(Target.Current);
+		_savedRoi = Target.Current;
+		DraftRoi = ToBounds(_savedRoi);
 		WriteFields(DraftRoi);
 		_syncing = false;
 		RaiseRoiState();

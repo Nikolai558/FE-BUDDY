@@ -14,7 +14,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [U1-2](#u1-2) | GUI lag | High | Telephony reads and merges the virtual-airline list on the UI thread with O(N²) Core code | Fixed | S3 |
 | [C6-30](#c6-30) | GUI lag | Med | UserConfigFile.CanUndo reads and parses a file on every command requery | Fixed | S3 |
 | [C7-4](#c7-4) | GUI lag | Med | NasrCycleDownloader has no `ConfigureAwait(false)`, so unzipping a cycle can run on the UI thread | Fixed | S4 |
-| [U1-9](#u1-9) | GUI lag | Med | Map panning rebuilds all visible geometry on every mouse move | Open | S4 |
+| [U1-9](#u1-9) | GUI lag | Med | Map panning rebuilds all visible geometry on every mouse move | Fixed | S4 |
 | [W7-1](#w7-1) | GUI lag | Med | Base map GeoJSON (1.5 MB) is parsed on the UI thread the first time any map opens | Fixed | S4 |
 | [W1-3](#w1-3) | GUI lag | Med | Add Custom Aliases reads and stats custom alias files on every keystroke and validation pass | Fixed | S3 |
 | [W3-3](#w3-3) | GUI lag | Med | Dashboard activity log is O(n) per entry and never trimmed | Fixed | S4 |
@@ -29,8 +29,8 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W2-6](#w2-6) | GUI lag | Low | One `File.Exists` per written file on the UI thread after a stopped run | Fixed | S3 |
 | [W3-4](#w3-4) | GUI lag | Low | News posts are cleared and re-rendered (Markdown re-parsed) on every environment change | Fixed | S4 |
 | [U1-14](#u1-14) | GUI lag | Low | Duplicate alias review re-checks all groups against all groups on every keystroke | Fixed | S3 |
-| [W3-5](#w3-5) | GUI lag | Low | Output picker filter and listing do per-item work on the UI thread | Open | S4 |
-| [W3-8](#w3-8) | GUI lag | Low | ROI state properties reload the saved ROI 4-5 times per change | Open | S4 |
+| [W3-5](#w3-5) | GUI lag | Low | Output picker filter and listing do per-item work on the UI thread | Fixed | S4 |
+| [W3-8](#w3-8) | GUI lag | Low | ROI state properties reload the saved ROI 4-5 times per change | Fixed | S4 |
 | [W1-5](#w1-5) | GUI lag | Low | Getters and CanExecute recompute the same lookups several times per keystroke | Fixed | S3 |
 | [W4-5](#w4-5) | GUI lag | Low | Review tab adds every written file to an ObservableCollection one by one, but only shows the count | Fixed | S3 |
 | [W4-4](#w4-4) | GUI lag | Low | What You'll Get is built twice and its card rebuilt on every edit, even when nothing in it changed | Fixed | S3 |
@@ -102,7 +102,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### U1-9 · GUI lag · Med · Map panning rebuilds all visible geometry on every mouse move
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed, first part: while a drag pans the map, the drawing (and the highlight and the ROI box with it) is moved with one `TranslateTransform` rather than drawn again; it is drawn in full once the drag ends, pauses for 100 ms, or has gone a third of the way across, and at once if the map is zoomed mid-drag. The background is drawn a map's size past every edge, so a moved drawing shows no gap. Not measured: that needs the running app. Caching each layer's geometry per zoom, the longer-term idea, isn't done. Tests: `MapCanvasTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Controls/MapCanvas.cs:606-613`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Controls/MapCanvas.cs#L606-L613),878-879,882-941,989-1029
 
@@ -304,7 +304,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W3-5 · GUI lag · Low · Output picker filter and listing do per-item work on the UI thread
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: Core's `OutputFileFilter` splits the filter into its words once, when it is typed, and the picker's view filters with it; the picked and matching counts are worked out once per change, not on every read of the line that shows them. Listing the folder was already off the UI thread; making the choices and the grouped view for a new listing is left on it, as one pass. Tests: `OutputFileFilterTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:274-285`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L274-L285), 288-304, 673-684, 692-702
 
@@ -316,7 +316,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W3-8 · GUI lag · Low · ROI state properties reload the saved ROI 4-5 times per change
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: `MapViewModel` keeps the target's ROI as last read - when the draft is reset (after a save or cancel) and when the target says it changed - and the ROI card's state is worked out from that. Tests: `MapViewModelTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/MapViewModel.cs:179-192`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapViewModel.cs#L179-L192), 454-463; [`FeBuddy/FeBuddy.Wpf/ViewModels/DefaultRoiTarget.cs:36`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DefaultRoiTarget.cs#L36)
 

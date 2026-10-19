@@ -293,6 +293,40 @@ public sealed class MapCanvasTests
 			Assert.Same(layer.Geometries[0], Assert.Single(map.HitTest(Middle + new Vector(20, 0))).Geometry);
 		});
 
+	/// <summary>
+	/// A drag that pans the map moves what is drawn rather than drawing it all again on every mouse move;
+	/// it is drawn again where the pan ends, and once the pan has gone a third of the way across.
+	/// </summary>
+	[Fact]
+	public void a_pan_moves_the_drawing_and_draws_it_again_where_it_ends() =>
+		StaThread.Run(() =>
+		{
+			MapCanvas map = Looking(Layer(new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]])));
+			DrawingVisual world = (DrawingVisual)VisualTreeHelper.GetChild(map, 0);
+			TranslateTransform shift = Assert.IsType<TranslateTransform>(world.Transform);
+			int drawn = map.Redraws;
+
+			map.PanBy(50, -20);
+			map.PanBy(10, 0);
+			Redrawn();
+
+			Assert.Equal(drawn, map.Redraws);
+			Assert.Equal(60, shift.X, 6);
+			Assert.Equal(-20, shift.Y, 6);
+
+			map.SettlePan();
+
+			Assert.Equal(drawn + 1, map.Redraws);
+			Assert.Equal(0, shift.X);
+			Assert.Equal(0, shift.Y);
+
+			map.PanBy(400, 0);
+			Redrawn();
+
+			Assert.Equal(drawn + 2, map.Redraws);
+			Assert.Equal(0, shift.X);
+		});
+
 	/// <summary>Dots held back for being too many in view aren't drawn, so they aren't there to click.</summary>
 	[Fact]
 	public void dots_held_back_are_not_hit() =>

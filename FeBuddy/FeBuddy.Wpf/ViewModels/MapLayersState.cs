@@ -77,6 +77,12 @@ public sealed class MapLayersState : ObservableObject
 	private bool _isOutputPickerOpen;
 	private string _outputDirectory = string.Empty;
 	private string _outputFilter = string.Empty;
+
+	// The filter as typed, split into its words once; and the picker's counts, worked out once per change
+	// (RaiseOutputSummary) rather than on every read of the line that shows them.
+	private OutputFileFilter _filter = OutputFileFilter.None;
+	private int _selectedOutputCount;
+	private int _matchingOutputCount;
 	private bool _isPanelOpen = true;
 	private MapHome? _home;
 	private bool _reloadingFromConfig;
@@ -282,8 +288,9 @@ public sealed class MapLayersState : ObservableObject
 		{
 			if (SetProperty(ref _outputFilter, value ?? string.Empty))
 			{
+				_filter = new OutputFileFilter(_outputFilter);
 				OutputChoicesView.Refresh();
-				OnPropertyChanged(nameof(OutputSummary));
+				RaiseOutputSummary();
 			}
 		}
 	}
@@ -300,10 +307,10 @@ public sealed class MapLayersState : ObservableObject
 					: "No AIRAC cycle to show output for.";
 			}
 
-			string shown = $"{OutputChoices.Count(c => c.IsSelected):N0} of {OutputChoices.Count:N0} files on the map";
-			return string.IsNullOrWhiteSpace(OutputFilter)
+			string shown = $"{_selectedOutputCount:N0} of {OutputChoices.Count:N0} files on the map";
+			return _filter.IsEmpty
 				? shown
-				: $"{shown}  ·  {OutputChoicesView.Cast<object>().Count():N0} match the filter";
+				: $"{shown}  ·  {_matchingOutputCount:N0} match the filter";
 		}
 	}
 
@@ -697,21 +704,28 @@ public sealed class MapLayersState : ObservableObject
 		}
 
 		SyncOutputItems(files);
-		OnPropertyChanged(nameof(OutputSummary));
+		RaiseOutputSummary();
 		OnPropertyChanged(nameof(OutputHeader));
 		CommandManager.InvalidateRequerySuggested();
 	}
 
-	private bool MatchesOutputFilter(object item)
+	private bool MatchesOutputFilter(object item) => item is not OutputFileChoice choice || _filter.Matches(choice.Name, choice.Group);
+
+	/// <summary>Counts the picked files and those the filter shows, once, then says so on the picker's line.</summary>
+	private void RaiseOutputSummary()
 	{
-		if (string.IsNullOrWhiteSpace(OutputFilter) || item is not OutputFileChoice choice)
+		int selected = 0;
+		int matching = 0;
+
+		foreach (OutputFileChoice choice in OutputChoices)
 		{
-			return true;
+			selected += choice.IsSelected ? 1 : 0;
+			matching += _filter.Matches(choice.Name, choice.Group) ? 1 : 0;
 		}
 
-		return OutputFilter.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(word =>
-			choice.Name.Contains(word, StringComparison.OrdinalIgnoreCase)
-			|| choice.Group.Contains(word, StringComparison.OrdinalIgnoreCase));
+		_selectedOutputCount = selected;
+		_matchingOutputCount = matching;
+		OnPropertyChanged(nameof(OutputSummary));
 	}
 
 	private void OnOutputChoiceChanged(OutputFileChoice choice)
@@ -727,7 +741,7 @@ public sealed class MapLayersState : ObservableObject
 
 		SaveOutputChoices();
 		SyncOutputItems(_listedFiles);
-		OnPropertyChanged(nameof(OutputSummary));
+		RaiseOutputSummary();
 	}
 
 	/// <summary>
@@ -768,7 +782,7 @@ public sealed class MapLayersState : ObservableObject
 
 		SaveOutputChoices();
 		SyncOutputItems(_listedFiles);
-		OnPropertyChanged(nameof(OutputSummary));
+		RaiseOutputSummary();
 	}
 
 	private void SaveOutputChoices() =>
@@ -873,7 +887,7 @@ public sealed class MapLayersState : ObservableObject
 		_selectedOutputs.Remove(relative);
 		SaveOutputChoices();
 		SyncOutputItems(_listedFiles);
-		OnPropertyChanged(nameof(OutputSummary));
+		RaiseOutputSummary();
 	}
 
 	private void OpenOutputFolder()

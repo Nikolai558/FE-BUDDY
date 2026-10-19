@@ -90,7 +90,7 @@ The Map (base map, layers, panning), the Dashboard log, settings saves on every 
 
 **Findings:** [C7-4](110_GUI-Lag.md#c7-4), [U1-9](110_GUI-Lag.md#u1-9), [W3-1](110_GUI-Lag.md#w3-1), [W3-3](110_GUI-Lag.md#w3-3), [W7-1](110_GUI-Lag.md#w7-1), [C6-31](110_GUI-Lag.md#c6-31), [T3-6](110_GUI-Lag.md#t3-6), [U1-13](110_GUI-Lag.md#u1-13), [W3-4](110_GUI-Lag.md#w3-4), [W3-5](110_GUI-Lag.md#w3-5), [W3-7](110_GUI-Lag.md#w3-7), [W3-8](110_GUI-Lag.md#w3-8), [W7-2](110_GUI-Lag.md#w7-2), [W7-7](110_GUI-Lag.md#w7-7)
 
-**Done** (not yet merged): [W3-7](110_GUI-Lag.md#w3-7), with [W2-27](110_GUI-Lag.md#w2-27) in S3; [C7-4](110_GUI-Lag.md#c7-4), [W7-1](110_GUI-Lag.md#w7-1), [U1-13](110_GUI-Lag.md#u1-13), [W3-1](110_GUI-Lag.md#w3-1), [W3-3](110_GUI-Lag.md#w3-3), [W3-4](110_GUI-Lag.md#w3-4), [C6-31](110_GUI-Lag.md#c6-31), [T3-6](110_GUI-Lag.md#t3-6), [W7-2](110_GUI-Lag.md#w7-2), [W7-7](110_GUI-Lag.md#w7-7).
+**Done** (not yet merged): [W3-7](110_GUI-Lag.md#w3-7), with [W2-27](110_GUI-Lag.md#w2-27) in S3; [C7-4](110_GUI-Lag.md#c7-4), [W7-1](110_GUI-Lag.md#w7-1), [U1-13](110_GUI-Lag.md#u1-13), [W3-1](110_GUI-Lag.md#w3-1), [W3-3](110_GUI-Lag.md#w3-3), [W3-4](110_GUI-Lag.md#w3-4), [C6-31](110_GUI-Lag.md#c6-31), [T3-6](110_GUI-Lag.md#t3-6), [W7-2](110_GUI-Lag.md#w7-2), [W7-7](110_GUI-Lag.md#w7-7), [U1-9](110_GUI-Lag.md#u1-9), [W3-5](110_GUI-Lag.md#w3-5), [W3-8](110_GUI-Lag.md#w3-8) - every S4 finding.
 
 <a id="s5"></a>
 

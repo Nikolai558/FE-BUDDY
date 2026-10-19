@@ -13,12 +13,12 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [U1-1](#u1-1) | GUI lag | High | Every tab's cycle-dependent lists are built on the UI thread on each cycle load/switch | Fixed | S3 |
 | [U1-2](#u1-2) | GUI lag | High | Telephony reads and merges the virtual-airline list on the UI thread with O(N²) Core code | Fixed | S3 |
 | [C6-30](#c6-30) | GUI lag | Med | UserConfigFile.CanUndo reads and parses a file on every command requery | Fixed | S3 |
-| [C7-4](#c7-4) | GUI lag | Med | NasrCycleDownloader has no `ConfigureAwait(false)`, so unzipping a cycle can run on the UI thread | Open | S4 |
+| [C7-4](#c7-4) | GUI lag | Med | NasrCycleDownloader has no `ConfigureAwait(false)`, so unzipping a cycle can run on the UI thread | Fixed | S4 |
 | [U1-9](#u1-9) | GUI lag | Med | Map panning rebuilds all visible geometry on every mouse move | Open | S4 |
-| [W7-1](#w7-1) | GUI lag | Med | Base map GeoJSON (1.5 MB) is parsed on the UI thread the first time any map opens | Open | S4 |
+| [W7-1](#w7-1) | GUI lag | Med | Base map GeoJSON (1.5 MB) is parsed on the UI thread the first time any map opens | Fixed | S4 |
 | [W1-3](#w1-3) | GUI lag | Med | Add Custom Aliases reads and stats custom alias files on every keystroke and validation pass | Fixed | S3 |
-| [W3-3](#w3-3) | GUI lag | Med | Dashboard activity log is O(n) per entry and never trimmed | Open | S4 |
-| [W3-1](#w3-1) | GUI lag | Med | Every map click does a full, synchronous settings-file round trip (and logs a line) | Open | S4 |
+| [W3-3](#w3-3) | GUI lag | Med | Dashboard activity log is O(n) per entry and never trimmed | Fixed | S4 |
+| [W3-1](#w3-1) | GUI lag | Med | Every map click does a full, synchronous settings-file round trip (and logs a line) | Fixed | S4 |
 | [W1-1](#w1-1) | GUI lag | Med | Procedure Charts indexes the whole d-TPP Metafile on the UI thread, again on every General-tab click | Fixed | S3 |
 | [U1-6](#u1-6) | GUI lag | Med | File Conversions counts (and opens) source files on the UI thread per keystroke and at startup | Fixed | S3 |
 | [U1-7](#u1-7) | GUI lag | Med | Run review message lists are not virtualized and format every message on the UI thread | Fixed | S3 |
@@ -27,7 +27,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W7-7](#w7-7) | GUI lag | Low | Opening any file or folder picker checks folder existence on the UI thread; an offline network folder stalls it | Open | S4 |
 | [W2-27](#w2-27) | GUI lag | Low | Small synchronous disk touches on the UI thread | Fixed | S3 |
 | [W2-6](#w2-6) | GUI lag | Low | One `File.Exists` per written file on the UI thread after a stopped run | Fixed | S3 |
-| [W3-4](#w3-4) | GUI lag | Low | News posts are cleared and re-rendered (Markdown re-parsed) on every environment change | Open | S4 |
+| [W3-4](#w3-4) | GUI lag | Low | News posts are cleared and re-rendered (Markdown re-parsed) on every environment change | Fixed | S4 |
 | [U1-14](#u1-14) | GUI lag | Low | Duplicate alias review re-checks all groups against all groups on every keystroke | Fixed | S3 |
 | [W3-5](#w3-5) | GUI lag | Low | Output picker filter and listing do per-item work on the UI thread | Open | S4 |
 | [W3-8](#w3-8) | GUI lag | Low | ROI state properties reload the saved ROI 4-5 times per change | Open | S4 |
@@ -36,7 +36,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W4-4](#w4-4) | GUI lag | Low | What You'll Get is built twice and its card rebuilt on every edit, even when nothing in it changed | Fixed | S3 |
 | [T3-6](#t3-6) | GUI lag | Low | Switching, creating, renaming or deleting a settings profile does file I/O and reloads every page on the UI thread | Open | S4 |
 | [C6-31](#c6-31) | GUI lag | Low | Settings import reads and plans on the UI thread (Core work, Wpf call site) | Open | S4 |
-| [U1-13](#u1-13) | GUI lag | Low | Settings facility list runs its 20k-row LINQ on the UI thread when the cycle is already cached | Open | S4 |
+| [U1-13](#u1-13) | GUI lag | Low | Settings facility list runs its 20k-row LINQ on the UI thread when the cycle is already cached | Fixed | S4 |
 | [W3-7](#w3-7) | GUI lag | Low | System health refresh hits the disk on every cycle state change | Fixed | S4 |
 | [U1-15](#u1-15) | GUI lag | Low | Switching AIRAC Service tabs rebuilds the whole tab view | Fixed | S3 |
 
@@ -90,7 +90,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### C7-4 · GUI lag · Med · NasrCycleDownloader has no `ConfigureAwait(false)`, so unzipping a cycle can run on the UI thread
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: both awaits in `NasrCycleDownloader` have `ConfigureAwait(false)`, and the cache's download and parse yield to the thread pool (`ConfigureAwaitOptions.ForceYielding`) rather than to the caller's context. Tests: `AiracCycleDataCacheTests` (a cycle loaded on demand from a context standing for the UI thread's downloads and parses on the pool; it fails with the old `Task.Yield`) · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Nasr/NasrCycleDownloader.cs:136-148`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Nasr/NasrCycleDownloader.cs#L136-L148), 157-165; [`FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs:701`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs#L701), 798; [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:598`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L598)
 
@@ -116,7 +116,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W7-1 · GUI lag · Med · Base map GeoJSON (1.5 MB) is parsed on the UI thread the first time any map opens
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: `BaseMap` reads and parses each layer's file on its own (`Read`, any thread) and makes the layer with the theme's brush on the UI thread (`Make`). `BaseMap.Preload` runs with `Task.Run` once FE-Buddy is idle after opening, so the first map finds the shapes parsed; a map that asks meanwhile waits for the same parse. A file that can't be read is logged as a warning. `GeoJsonReader` stays in the Wpf: it reads GeoJSON into the map's own drawing model. Not unit tested: it needs FE-Buddy's resources, which the tests don't load · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Map/BaseMap.cs:38-65`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/BaseMap.cs#L38-L65); [`FeBuddy/FeBuddy.Wpf/ViewModels/BaseMapSettings.cs:40-51`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/BaseMapSettings.cs#L40-L51),126-141; [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:131`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L131)
 
@@ -144,7 +144,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W3-3 · GUI lag · Med · Dashboard activity log is O(n) per entry and never trimmed
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: entries are queued as they're logged and shown in one dispatcher pass at Background priority; each level's count is kept as entries come and go; the log shows the newest 2,000 (`MaxShownEntries`) - the file and `AppLog.Entries` keep every one. Tests: `DashboardViewModelTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:37`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L37), 186-199, 201-206, 305-312
 
@@ -158,7 +158,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W3-1 · GUI lag · Med · Every map click does a full, synchronous settings-file round trip (and logs a line)
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: the map's settings (`MapLayersState` and `BaseMapSettings`, the opacity included) go through one `DeferredSave`: 400 ms after the last change, the keys that changed are read from the page on the UI thread and saved together with `Task.Run`, one save after another, and a change still waiting when FE-Buddy closes is saved then. Core's new `UserConfigFile.SaveValues` sets the values and saves the node under one lock, logs it at Debug level when asked, and doesn't read the files again afterwards, so a setting another page has set but not saved yet is never dropped; a save chosen in one profile isn't made once another is in use. Set Home saves at once and says so when it's saved. Tests: `UserConfigFileTests`, `DeferredSaveTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:185-186`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L185-L186), 433-434, 535-536, 761-765; [`FeBuddy/FeBuddy.Wpf/ViewModels/BaseMapSettings.cs:93-94`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/BaseMapSettings.cs#L93-L94), 126-130, 133-138
 
@@ -278,7 +278,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W3-4 · GUI lag · Low · News posts are cleared and re-rendered (Markdown re-parsed) on every environment change
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged): the posts are put in again only when they differ from those shown (the posts compared, not the result object, so a re-check that finds the same News changes nothing); the News button's highlight and the notices still follow every check. With [W6-6](#w6-6), a post shown again isn't parsed again either. Tests: `DashboardViewModelTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:208-217`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L208-L217), 222-238
 
@@ -388,7 +388,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### U1-13 · GUI lag · Low · Settings facility list runs its 20k-row LINQ on the UI thread when the cycle is already cached
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: the facility list is Core's (`AiracCycleOptionLists.FacilityNames`, with [U1-17](120_Logic-In-GUI.md#u1-17)), worked out once per cycle and read with `Task.Run`. Tests: `AiracCycleOptionListBuilderTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:1124-1137`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L1124-L1137)
 

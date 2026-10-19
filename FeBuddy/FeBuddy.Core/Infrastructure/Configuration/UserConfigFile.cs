@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Infrastructure.Configuration;
 
@@ -474,34 +475,117 @@ public static partial class UserConfigFile
 
 		lock (Gate)
 		{
-			JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
-
-			// Snapshot the CURRENT on-disk subtree into the previous file, at the same path.
-			JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
-			JsonNode? currentSubtree = GetNodeAtPath(onDisk, nodePath);
-			SetNodeAtPath(previous, nodePath, currentSubtree?.DeepClone());
-			WriteObject(PreviousFilePath, previous);
-			KeepUndoSnapshot(previous);
-
-			// Replace the subtree on disk with the in-memory version built from the flat dict.
-			JsonNode? newSubtree = BuildSubtree(ProfileValues(Values), nodePath);
-			SetNodeAtPath(onDisk, nodePath, newSubtree);
-			RemoveSharedSettings(onDisk);
-
-			string below = nodePath + ".";
-			string[] sharedHere = [.. UserConfigPortability.SharedByProfiles.Where(key => key == nodePath || key.StartsWith(below, StringComparison.Ordinal))];
-
-			if (sharedHere.Length > 0)
-			{
-				UpdateSharedFile(sharedHere);
-			}
-
-			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
+			WriteNode(nodePath);
 		}
 
 		ReadAll();
 
 		AppLog.Info(LogSource, $"Saved '{nodePath}'.");
+	}
+
+	/// <summary>
+	/// Sets <paramref name="values"/> in memory and saves <paramref name="nodePath"/> with them, as one step -
+	/// for a save made off the UI thread, such as the map's after a click. Unlike <see cref="Save(string)"/>,
+	/// it doesn't read the files again afterwards: that would drop a setting another page has set but not
+	/// yet saved, while this ran.
+	/// </summary>
+	/// <param name="nodePath">The dotted path of the node to save, e.g. <c>Services.MapService</c>.</param>
+	/// <param name="values">The settings to set first, by dotted path, each under <paramref name="nodePath"/>.</param>
+	/// <param name="forProfile">
+	/// The profile they were chosen in: when another is in use by the time this runs, nothing is set or saved.
+	/// </param>
+	/// <param name="quietly"><see langword="true"/> to log the save at Debug level, for settings saved on every click.</param>
+	/// <returns><see langword="false"/> when another profile is in use, so nothing was saved.</returns>
+	/// <exception cref="ArgumentException">A key is not one <see cref="TrySetValue"/> takes, or not under the node.</exception>
+	/// <exception cref="IOException">
+	/// A file could not be written, or is there but could not be read. Nothing is set in memory.
+	/// </exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	public static bool SaveValues(string nodePath, IReadOnlyDictionary<string, string> values, string forProfile, bool quietly = false)
+	{
+		if (string.IsNullOrWhiteSpace(nodePath))
+		{
+			throw new ArgumentException("A node path is required.", nameof(nodePath));
+		}
+
+		ArgumentNullException.ThrowIfNull(values);
+		ArgumentNullException.ThrowIfNull(forProfile);
+
+		if (values.Keys.FirstOrDefault(key => !IsValidKey(key) || !key.StartsWith(nodePath + ".", StringComparison.Ordinal)) is { } wrong)
+		{
+			throw new ArgumentException($"'{wrong}' isn't a setting under '{nodePath}'.", nameof(values));
+		}
+
+		lock (Gate)
+		{
+			if (!string.Equals(_profile, forProfile, StringComparison.OrdinalIgnoreCase))
+			{
+				return false;
+			}
+
+			Dictionary<string, string?> before = values.Keys.ToDictionary(key => key, key => Values.GetValueOrDefault(key), StringComparer.Ordinal);
+
+			foreach (KeyValuePair<string, string> value in values)
+			{
+				Values[value.Key] = value.Value ?? string.Empty;
+			}
+
+			try
+			{
+				WriteNode(nodePath);
+			}
+			catch
+			{
+				// Nothing is taken for saved: memory goes back to what the file still holds.
+				foreach (KeyValuePair<string, string?> value in before)
+				{
+					if (value.Value is null)
+					{
+						Values.Remove(value.Key);
+					}
+					else
+					{
+						Values[value.Key] = value.Value;
+					}
+				}
+
+				throw;
+			}
+		}
+
+		AppLog.Write(quietly ? LogLevel.Debug : LogLevel.Info, LogSource, $"Saved '{nodePath}'.");
+		return true;
+	}
+
+	/// <summary>
+	/// Writes the node's subtree from memory to the profile's file (and any shared setting under it to
+	/// <c>Shared.json</c>), after keeping the file's own as the node's undo snapshot. Call under <see cref="Gate"/>.
+	/// </summary>
+	private static void WriteNode(string nodePath)
+	{
+		JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
+
+		// Snapshot the CURRENT on-disk subtree into the previous file, at the same path.
+		JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
+		JsonNode? currentSubtree = GetNodeAtPath(onDisk, nodePath);
+		SetNodeAtPath(previous, nodePath, currentSubtree?.DeepClone());
+		WriteObject(PreviousFilePath, previous);
+		KeepUndoSnapshot(previous);
+
+		// Replace the subtree on disk with the in-memory version built from the flat dict.
+		JsonNode? newSubtree = BuildSubtree(ProfileValues(Values), nodePath);
+		SetNodeAtPath(onDisk, nodePath, newSubtree);
+		RemoveSharedSettings(onDisk);
+
+		string below = nodePath + ".";
+		string[] sharedHere = [.. UserConfigPortability.SharedByProfiles.Where(key => key == nodePath || key.StartsWith(below, StringComparison.Ordinal))];
+
+		if (sharedHere.Length > 0)
+		{
+			UpdateSharedFile(sharedHere);
+		}
+
+		WriteConfig(ConfigFilePath, onDisk, _stampVersion);
 	}
 
 	/// <summary>

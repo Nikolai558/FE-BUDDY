@@ -35,6 +35,7 @@ public sealed class AiracCycleOptionListBuilderTests
 		Assert.Empty(lists.FixCharts);
 		Assert.False(lists.HasFixOnNoChart);
 		Assert.Empty(lists.AirportFacilities);
+		Assert.Empty(lists.FacilityNames);
 		Assert.Empty(lists.AirportFaaIdsByIdent);
 		Assert.Empty(lists.AirportsByFaaId);
 	}
@@ -140,6 +141,26 @@ public sealed class AiracCycleOptionListBuilderTests
 		Assert.Equal("ORD", lists.AirportFaaIdsByIdent["ORD"]);
 		Assert.False(lists.AirportFaaIdsByIdent.ContainsKey("XXXX"));
 		Assert.Same(cle, lists.AirportsByFaaId["cle"]);
+	}
+
+	/// <summary>
+	/// The Settings page's facility list: each responsible ARTCC once, as the first airport spells it, with
+	/// its name or, without one, its ID; sorted by "name (ID)".
+	/// </summary>
+	[Fact]
+	public void the_facilities_are_named_once_each_and_sorted_by_name()
+	{
+		AiracCycleOptionLists lists = Lists(data =>
+		{
+			data.Apt = new AptCsvDataCollection();
+			data.Apt.AptBase.Add(new AptCsvDataModel.AptBase { ArptId = "CLE", RespArtccId = " ZOB ", ArtccName = " Cleveland " });
+			data.Apt.AptBase.Add(new AptCsvDataModel.AptBase { ArptId = "CAK", RespArtccId = "zob", ArtccName = "Other" });
+			data.Apt.AptBase.Add(new AptCsvDataModel.AptBase { ArptId = "ORD", RespArtccId = "ZAU", ArtccName = "Chicago" });
+			data.Apt.AptBase.Add(new AptCsvDataModel.AptBase { ArptId = "XYZ", RespArtccId = "ZZZ", ArtccName = " " });
+			data.Apt.AptBase.Add(new AptCsvDataModel.AptBase { ArptId = "NNN", RespArtccId = " " });
+		});
+
+		Assert.Equal([("ZAU", "Chicago"), ("ZOB", "Cleveland"), ("ZZZ", "ZZZ")], lists.FacilityNames);
 	}
 
 	/// <summary>A cycle's data never changes, so its lists are built once and kept with it.</summary>

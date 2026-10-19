@@ -1103,6 +1103,68 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
 	}
 
+	/// <summary>
+	/// A cycle loaded on demand from the UI thread downloads and parses on the thread pool, never on the
+	/// caller's context: the download unzips a cycle, which would freeze the window for seconds.
+	/// </summary>
+	[Fact]
+	public async Task a_cycle_loaded_on_demand_never_downloads_or_parses_on_the_callers_context()
+	{
+		SynchronizationContext? downloadedOn = null;
+		SynchronizationContext? parsedOn = null;
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) =>
+			{
+				downloadedOn = SynchronizationContext.Current;
+				return Task.FromResult($@"C:\cache\{cycle.AiracCycleId}");
+			},
+			parse: (_, _) =>
+			{
+				parsedOn = SynchronizationContext.Current;
+				return Task.FromResult(new NasrCsvDataCollection());
+			});
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+
+		CallersContext callers = new();
+		SynchronizationContext? before = SynchronizationContext.Current;
+		SynchronizationContext.SetSynchronizationContext(callers);
+		Task load;
+
+		try
+		{
+			load = cache.GetAsync("2610");
+		}
+		finally
+		{
+			SynchronizationContext.SetSynchronizationContext(before);
+		}
+
+		await load;
+
+		Assert.Null(downloadedOn);
+		Assert.Null(parsedOn);
+		Assert.Equal(0, callers.Posts);
+	}
+
+	/// <summary>A context that stands for the UI thread's: it counts what is posted to it, and runs it on the pool as itself.</summary>
+	private sealed class CallersContext : SynchronizationContext
+	{
+		private int _posts;
+
+		public int Posts => _posts;
+
+		public override void Post(SendOrPostCallback d, object? state)
+		{
+			Interlocked.Increment(ref _posts);
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				SetSynchronizationContext(this);
+				d(state);
+			});
+		}
+	}
+
 	[Fact]
 	public async Task a_cycle_left_unloaded_is_waiting_while_it_loads_on_demand()
 	{

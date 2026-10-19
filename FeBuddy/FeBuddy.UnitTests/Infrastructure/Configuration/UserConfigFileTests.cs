@@ -289,6 +289,71 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.True(UserConfigFile.CanUndo(AirwaysNode));
 	}
 
+	// ---- SaveValues: a save made off the UI thread ----
+
+	private const string MapNode = "Services.MapService";
+
+	/// <summary>
+	/// The values are set and the node saved as one step, and the files aren't read again: a setting another
+	/// page has set but not saved yet is still there, and still unsaved. A quiet save isn't in the activity log.
+	/// </summary>
+	[Fact]
+	public void save_values_sets_and_saves_the_node_and_leaves_other_unsaved_settings_alone()
+	{
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+
+		Assert.True(UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "N" }, UserConfigFile.DefaultProfile, quietly: true));
+
+		JsonNode file = JsonNode.Parse(File.ReadAllText(UserConfigFile.ConfigFilePath))!;
+		Assert.Equal("N", file["Services"]!["MapService"]!["Gridlines"]!.GetValue<string>());
+		Assert.Null(file["Services"]!["AiracService"]);
+		Assert.Equal("N", UserConfigFile.GetValue(MapNode + ".Gridlines"));
+		Assert.Equal("HighLow", UserConfigFile.GetValue(AirwaysNode + ".OutputBy"));
+		Assert.DoesNotContain(AppLog.Entries, e => e.Level >= LogLevel.Info && e.Message == $"Saved '{MapNode}'.");
+
+		UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "Y" }, UserConfigFile.DefaultProfile);
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Info && e.Message == $"Saved '{MapNode}'.");
+	}
+
+	/// <summary>Chosen in one profile, the values aren't saved into another that came into use meanwhile.</summary>
+	[Fact]
+	public void save_values_saves_nothing_once_another_profile_is_in_use()
+	{
+		Assert.False(UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "N" }, "Other"));
+
+		Assert.Null(UserConfigFile.GetValue(MapNode + ".Gridlines"));
+		Assert.False(File.Exists(UserConfigFile.ConfigFilePath));
+	}
+
+	/// <summary>When the file can't be written, nothing is taken for saved: memory keeps what the file holds.</summary>
+	[Fact]
+	public void save_values_that_cannot_be_written_change_nothing_in_memory()
+	{
+		UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "Y" }, UserConfigFile.DefaultProfile);
+		File.Delete(UserConfigFile.PreviousFilePath);
+		Directory.CreateDirectory(UserConfigFile.PreviousFilePath);
+
+		Assert.ThrowsAny<Exception>(() => UserConfigFile.SaveValues(MapNode, new Dictionary<string, string>
+		{
+			[MapNode + ".Gridlines"] = "N",
+			[MapNode + ".BaseMapOpacity"] = "40",
+		}, UserConfigFile.DefaultProfile));
+
+		Assert.Equal("Y", UserConfigFile.GetValue(MapNode + ".Gridlines"));
+		Assert.Null(UserConfigFile.GetValue(MapNode + ".BaseMapOpacity"));
+	}
+
+	/// <summary>Only keys under the node are taken.</summary>
+	[Fact]
+	public void save_values_takes_only_keys_under_the_node()
+	{
+		Assert.Throws<ArgumentException>(() => UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [AirwaysNode + ".OutputBy"] = "x" }, UserConfigFile.DefaultProfile));
+		Assert.Throws<ArgumentException>(() => UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + "..x"] = "x" }, UserConfigFile.DefaultProfile));
+		Assert.Throws<ArgumentException>(() => UserConfigFile.SaveValues(" ", new Dictionary<string, string>(), UserConfigFile.DefaultProfile));
+		Assert.Throws<ArgumentNullException>(() => UserConfigFile.SaveValues(MapNode, null!, UserConfigFile.DefaultProfile));
+		Assert.Throws<ArgumentNullException>(() => UserConfigFile.SaveValues(MapNode, new Dictionary<string, string>(), null!));
+	}
+
 	/// <summary>Undo with no snapshot for the node is a no-op returning <see langword="false"/>.</summary>
 	[Fact]
 	public void undo_with_no_snapshot_returns_false()

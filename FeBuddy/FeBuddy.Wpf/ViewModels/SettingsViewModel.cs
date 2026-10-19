@@ -1136,13 +1136,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		{
 			AiracCycleInfo current = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current);
 			var data = await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).ConfigureAwait(false);
+			data.RequireApt();
 
-			var options = data.RequireApt().AptBase
-				.Where(a => !string.IsNullOrWhiteSpace(a.RespArtccId))
-				.Select(a => new FacilityOption(a.RespArtccId.Trim(), string.IsNullOrWhiteSpace(a.ArtccName) ? a.RespArtccId.Trim() : a.ArtccName.Trim()))
-				.DistinctBy(o => o.ArtccId, StringComparer.OrdinalIgnoreCase)
-				.OrderBy(o => o.Display, StringComparer.OrdinalIgnoreCase)
-				.ToList();
+			// Off the UI thread: a cycle already parsed hands its data back at once, on the UI thread.
+			// Core keeps the list with the cycle's data, so it is worked out once per cycle.
+			FacilityOption[] options = await Task.Run(() => AiracCycleOptionListBuilder.For(data).FacilityNames
+				.Select(facility => new FacilityOption(facility.ArtccId, facility.Name))
+				.ToArray()).ConfigureAwait(false);
 
 			await _dispatcher.BeginInvoke(() =>
 			{

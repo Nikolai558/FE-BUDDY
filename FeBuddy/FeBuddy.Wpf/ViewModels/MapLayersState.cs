@@ -80,6 +80,7 @@ public sealed class MapLayersState : ObservableObject
 	private bool _isPanelOpen = true;
 	private MapHome? _home;
 	private bool _reloadingFromConfig;
+	private readonly DeferredSave _save;
 	private bool _settingUserFiles;
 	private ICollectionView _outputChoicesView = CollectionViewSource.GetDefaultView(Array.Empty<OutputFileChoice>());
 	private IReadOnlyList<AiracOutputGeojsonFile> _listedFiles = [];
@@ -88,10 +89,13 @@ public sealed class MapLayersState : ObservableObject
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
+		// Every map click changes a setting: saved a moment after the last, off the UI thread, and quietly.
+		_save = new DeferredSave(Node, "map settings", _dispatcher);
+
 		_selectedOutputs = new(Split(UserConfigFile.GetValue(OutputKey), '|'), StringComparer.OrdinalIgnoreCase);
 		HashSet<string> airacOn = new(Split(UserConfigFile.GetValue(AiracKey), ','), StringComparer.OrdinalIgnoreCase);
 		_home = MapHome.Parse(UserConfigFile.GetValue(HomeKey));
-		BaseMapSettings = new BaseMapSettings(_dispatcher);
+		BaseMapSettings = new BaseMapSettings(_save);
 
 		AiracToggles =
 		[
@@ -183,12 +187,8 @@ public sealed class MapLayersState : ObservableObject
 	public void SetHome(MapHome home)
 	{
 		Home = home;
-		UserConfigFile.TrySetValue(HomeKey, home.ToConfig());
-
-		if (SettingsWrites.TrySave(Node, "map settings"))
-		{
-			Toast.Success("Home view saved", "The home button (and every map that opens fresh) now starts here.");
-		}
+		_save.Set(HomeKey, () => Home?.ToConfig() ?? string.Empty);
+		_ = SaveHomeAsync();
 	}
 
 	/// <summary>Whether the side panel (ROI and layers) is shown; hiding it gives the map the room.</summary>
@@ -392,6 +392,8 @@ public sealed class MapLayersState : ObservableObject
 
 	private void ReloadFromConfig()
 	{
+		// The file holds another profile's or an import's choices now: nothing of the old ones is saved over them.
+		_save.Forget();
 		Home = MapHome.Parse(UserConfigFile.GetValue(HomeKey));
 		BaseMapSettings.ReloadFromConfig();
 		HashSet<string> airacOn = new(Split(UserConfigFile.GetValue(AiracKey), ','), StringComparer.OrdinalIgnoreCase);
@@ -434,8 +436,16 @@ public sealed class MapLayersState : ObservableObject
 	private void ResetHome()
 	{
 		Home = null;
-		UserConfigFile.TrySetValue(HomeKey, string.Empty);
-		SettingsWrites.TrySave(Node, "map settings");
+		_save.Set(HomeKey, () => Home?.ToConfig() ?? string.Empty);
+	}
+
+	/// <summary>Saves the new home view now, and says so once it is saved.</summary>
+	private async Task SaveHomeAsync()
+	{
+		if (await _save.SaveNowAsync())
+		{
+			Toast.Success("Home view saved", "The home button (and every map that opens fresh) now starts here.");
+		}
 	}
 
 	// ============================ cycles ================================
@@ -536,8 +546,7 @@ public sealed class MapLayersState : ObservableObject
 			return;
 		}
 
-		UserConfigFile.TrySetValue(AiracKey, string.Join(',', AiracToggles.Where(t => t.IsVisible).Select(t => t.Kind)));
-		SettingsWrites.TrySave(Node, "map settings");
+		_save.Set(AiracKey, () => string.Join(',', AiracToggles.Where(t => t.IsVisible).Select(t => t.Kind)));
 
 		if (toggle.IsVisible && toggle.Layers is null)
 		{
@@ -762,11 +771,8 @@ public sealed class MapLayersState : ObservableObject
 		OnPropertyChanged(nameof(OutputSummary));
 	}
 
-	private void SaveOutputChoices()
-	{
-		UserConfigFile.TrySetValue(OutputKey, string.Join('|', _selectedOutputs.Order(StringComparer.OrdinalIgnoreCase)));
-		SettingsWrites.TrySave(Node, "map settings");
-	}
+	private void SaveOutputChoices() =>
+		_save.Set(OutputKey, () => string.Join('|', _selectedOutputs.Order(StringComparer.OrdinalIgnoreCase)));
 
 	/// <summary>
 	/// Brings <see cref="OutputFiles"/> in line with the picked paths: adds and loads new picks,

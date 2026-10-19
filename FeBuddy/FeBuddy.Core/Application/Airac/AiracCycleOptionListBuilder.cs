@@ -58,10 +58,20 @@ public static class AiracCycleOptionListBuilder
 			FixCharts = charts,
 			HasFixOnNoChart = hasFixOnNoChart,
 			AirportFacilities = Sorted((data.Apt?.AptBase ?? []).Select(airport => airport.RespArtccId)),
+			FacilityNames = FacilityNames(data),
 			AirportFaaIdsByIdent = faaIds,
 			AirportsByFaaId = airports,
 		};
 	}
+
+	/// <summary>Each responsible ARTCC once, the first airport's spelling, with its name; by "name (ID)", ignoring case.</summary>
+	private static (string ArtccId, string Name)[] FacilityNames(NasrCsvDataCollection data) =>
+		[.. (data.Apt?.AptBase ?? [])
+			.Where(airport => !string.IsNullOrWhiteSpace(airport.RespArtccId))
+			.Select(airport => (ArtccId: airport.RespArtccId.Trim(),
+				Name: string.IsNullOrWhiteSpace(airport.ArtccName) ? airport.RespArtccId.Trim() : airport.ArtccName.Trim()))
+			.DistinctBy(facility => facility.ArtccId, StringComparer.OrdinalIgnoreCase)
+			.OrderBy(facility => $"{facility.Name} ({facility.ArtccId})", StringComparer.OrdinalIgnoreCase)];
 
 	/// <summary>Trimmed, upper-cased, blanks dropped, each once, sorted ignoring case.</summary>
 	private static string[] Sorted(IEnumerable<string?> values) =>

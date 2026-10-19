@@ -39,6 +39,12 @@ public sealed class AiracCycleOptionLists
 	/// <summary>The ARTCCs responsible for an airport (<c>APT_BASE.RESP_ARTCC_ID</c>), sorted.</summary>
 	public required IReadOnlyList<string> AirportFacilities { get; init; }
 
+	/// <summary>
+	/// The same ARTCCs with their names (<c>APT_BASE.ARTCC_NAME</c>, or the ID when it has none), each
+	/// once, sorted as the Settings page lists them: <c>Cleveland ARTCC (ZOB)</c>.
+	/// </summary>
+	public required IReadOnlyList<(string ArtccId, string Name)> FacilityNames { get; init; }
+
 	/// <summary>Each airport's FAA ID, by its FAA ID and by its ICAO ID, ignoring case.</summary>
 	public required IReadOnlyDictionary<string, string> AirportFaaIdsByIdent { get; init; }
 

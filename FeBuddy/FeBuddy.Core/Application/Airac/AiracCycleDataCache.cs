@@ -723,8 +723,9 @@ public sealed class AiracCycleDataCache(
 		async Task DownloadWhenUnlockedAsync()
 		{
 			// Yield first so the DownloadTask assignment above completes (and the lock is released)
-			// before any download work or state notification runs.
-			await Task.Yield();
+			// before any download work or state notification runs - to the thread pool, never back to
+			// the caller's context: the caller can be the UI thread, and the download unzips a cycle.
+			await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
 			await DownloadStageAsync(entry, cancellationToken).ConfigureAwait(false);
 		}
 	}
@@ -821,8 +822,8 @@ public sealed class AiracCycleDataCache(
 		async Task<NasrCsvDataCollection> ParseWhenTurnAsync(string cycleDirectory, Task startAfter)
 		{
 			// Yield first so the ParseTask assignment above completes (and the lock is released)
-			// before any parse work or state notification runs.
-			await Task.Yield();
+			// before any parse work or state notification runs - to the thread pool, as the download does.
+			await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
 			await startAfter.ConfigureAwait(false);
 			cancellationToken.ThrowIfCancellationRequested();
 

@@ -4,6 +4,8 @@ using System.Windows.Media;
 
 using FeBuddy.Wpf.Map.Models;
 
+using FeBuddy.Core.Infrastructure.Logging;
+
 namespace FeBuddy.Wpf.Map;
 
 /// <summary>
@@ -13,10 +15,32 @@ namespace FeBuddy.Wpf.Map;
 /// default ROI and each sub-service's ROI override). <c>FeBuddy/Tools/BuildBaseMap.cs</c> builds the
 /// resources.
 /// </summary>
+/// <remarks>
+/// The files are 1.5 MB of GeoJSON, read and parsed off the UI thread once FE-Buddy is idle after
+/// opening (<see cref="Preload"/>), so the first map opens without parsing them. Only the layer itself,
+/// with the theme's brush, is made on the UI thread.
+/// </remarks>
 public static class BaseMap
 {
+	// Each layer's shapes: parsed once, on whichever thread asks first - normally Preload's.
+	private static readonly Dictionary<BaseMapLayer, Lazy<IReadOnlyList<MapGeometry>?>> Shapes = Enum.GetValues<BaseMapLayer>()
+		.ToDictionary(layer => layer, layer => new Lazy<IReadOnlyList<MapGeometry>?>(() => Read(layer)));
+
+	// Each layer, made on the UI thread from its shapes and the theme's brush.
 	private static readonly Dictionary<BaseMapLayer, Lazy<MapLayer?>> Layers = Enum.GetValues<BaseMapLayer>()
-		.ToDictionary(layer => layer, layer => new Lazy<MapLayer?>(() => Load(layer)));
+		.ToDictionary(layer => layer, layer => new Lazy<MapLayer?>(() => Make(layer)));
+
+	/// <summary>
+	/// Reads and parses every layer's file, so the first map that opens doesn't. Call it off the UI
+	/// thread; a layer a map asks for meanwhile waits for it rather than parsing it again.
+	/// </summary>
+	public static void Preload()
+	{
+		foreach (Lazy<IReadOnlyList<MapGeometry>?> shapes in Shapes.Values)
+		{
+			_ = shapes.Value;
+		}
+	}
 
 	/// <summary>
 	/// The shared layer for <paramref name="layer"/>, or <see langword="null"/> when its resource
@@ -35,7 +59,21 @@ public static class BaseMap
 		_ => "Coastlines & lakes",
 	};
 
-	private static MapLayer? Load(BaseMapLayer layer)
+	/// <summary>The layer, from its shapes and the theme's brush; on the UI thread, where the brush is.</summary>
+	private static MapLayer? Make(BaseMapLayer layer)
+	{
+		if (Shapes[layer].Value is not { } geometries)
+		{
+			return null;
+		}
+
+		Brush stroke = ThemeBrush("Brush.Stroke.Strong", Color.FromRgb(0x2A, 0x3D, 0x52));
+		return new MapLayer(Name(layer), geometries, stroke, thickness: 1.0, pointRadius: 3.5);
+	}
+
+	/// <summary>Reads and parses the layer's bundled file; on any thread.</summary>
+	/// <returns>The shapes, or <see langword="null"/> when the file is missing or can't be read.</returns>
+	private static IReadOnlyList<MapGeometry>? Read(BaseMapLayer layer)
 	{
 		string file = layer switch
 		{
@@ -49,17 +87,16 @@ public static class BaseMap
 				Application.GetResourceStream(new Uri($"Assets/BaseMap/{file}.json", UriKind.Relative));
 			if (info is null)
 			{
+				AppLog.Warning("Map", $"The base map's {Name(layer)} layer isn't in FE-Buddy ({file}.json), so it can't be drawn.");
 				return null;
 			}
 
 			using StreamReader reader = new(info.Stream);
-			IReadOnlyList<MapGeometry> geometries = GeoJsonReader.Read(reader.ReadToEnd());
-
-			Brush stroke = ThemeBrush("Brush.Stroke.Strong", Color.FromRgb(0x2A, 0x3D, 0x52));
-			return new MapLayer(Name(layer), geometries, stroke, thickness: 1.0, pointRadius: 3.5);
+			return GeoJsonReader.Read(reader.ReadToEnd());
 		}
-		catch
+		catch (Exception ex)
 		{
+			AppLog.Warning("Map", $"The base map's {Name(layer)} layer ({file}.json) couldn't be read, so it isn't drawn: {ex.Message}");
 			return null;
 		}
 	}

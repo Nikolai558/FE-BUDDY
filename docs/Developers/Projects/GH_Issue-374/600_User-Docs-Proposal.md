@@ -279,7 +279,7 @@ its tests, README and the issue templates link to them).
 
 ### D2-51 · Does FE-Buddy send my data anywhere?
 
-**Status:** Open
+**Status:** Open; pulled forward to [S6](020_Work-Plan.md#s6), to be fixed before the public beta (Kyle, 2026-10-19). A wording fix: the FAQ already names GNG, but reads as if GNG's list came from GitHub.
 
 **Doc:** [`docs/Users/FAQ-and-Troubleshooting.md:21-28`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Users/FAQ-and-Troubleshooting.md?plain=1#L21-L28)
 

@@ -20,13 +20,13 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | Done | [110](110_GUI-Lag.md) |
 | [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | Done | [120](120_Logic-In-GUI.md) |
 | [S14](#s14) | **Next:** fixes to the code S2 to S5 added | 29 | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
-| [S6](#s6) | Old-version code (D1), unused code and the H4 renames | 104 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
+| [S6](#s6) | Old-version code (D1), unused code and the H4 renames, plus two S12 fixes for the public beta | 106 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
 | [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
 | [S8](#s8) | Comments and XML docs: GUI | 94 | [220](220_Comments-GUI.md) |
 | [S9](#s9) | Unit tests | 101 | [300](300_Unit-Tests.md) |
 | [S10](#s10) | Installer, Versioning, CI and build scripts | 41 | [400](400_Installer-Harness-CI.md) |
 | [S11](#s11) | Developer docs and house rules | 1 | [500](500_Developer-Docs.md) |
-| [S12](#s12) | User docs and on-screen text | 85 | [600](600_User-Docs-Proposal.md), [610](610_On-Screen-Text.md) |
+| [S12](#s12) | User docs and on-screen text | 83 | [600](600_User-Docs-Proposal.md), [610](610_On-Screen-Text.md) |
 | [S13](#s13) | Final pass, and the [3.0.0 release day](#release-day) | 2 | [500](500_Developer-Docs.md) |
 | [After 3.0](#after-30) | Deferred by the decisions | 22 | - |
 
@@ -132,6 +132,8 @@ Every finding in [130_Old-Version-Code.md](130_Old-Version-Code.md) (as [D1](010
 - With [C3-1](130_Old-Version-Code.md#c3-1), delete `Architecture.md`'s sentence about the older single `vatsim_radar_airlines.json` ([D1b-4](500_Developer-Docs.md#d1b-4)).
 - With [C4-12](130_Old-Version-Code.md#c4-12), delete or reword `Settings-Reference.md`'s `IncludeRoiAirports` lines ([D1a-11](500_Developer-Docs.md#d1a-11)).
 
+**Before the public beta**, pulled forward from [S12](#s12) (Kyle, 2026-10-19): [W5-2](610_On-Screen-Text.md#w5-2), the CRC ERAM Defaults note on every AIRAC tab that names `UserConfig.json`, and [D2-51](600_User-Docs-Proposal.md#d2-51), the FAQ's "Does FE-Buddy send my data anywhere?".
+
 <a id="s7"></a>
 
 ### S7 · Comments and XML docs: Core and NASR
@@ -172,7 +174,7 @@ Every finding in [500_Developer-Docs.md](500_Developer-Docs.md) apart from [D1b-
 
 ### S12 · User docs and on-screen text
 
-Shrink the user manuals as [600_User-Docs-Proposal.md](600_User-Docs-Proposal.md) proposes, add the GUI text it lists, and fix [610_On-Screen-Text.md](610_On-Screen-Text.md). The token guide's `## If something goes wrong` heading and the three file names the app links to must survive (a test checks them).
+Shrink the user manuals as [600_User-Docs-Proposal.md](600_User-Docs-Proposal.md) proposes, add the GUI text it lists, and fix [610_On-Screen-Text.md](610_On-Screen-Text.md). The token guide's `## If something goes wrong` heading and the three file names the app links to must survive (a test checks them). [W5-2](610_On-Screen-Text.md#w5-2) and [D2-51](600_User-Docs-Proposal.md#d2-51) are done in [S6](#s6), before the public beta.
 
 <a id="release-day"></a>
 

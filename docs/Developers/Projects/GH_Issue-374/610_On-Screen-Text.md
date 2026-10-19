@@ -23,7 +23,7 @@ Text the user sees in the app, and the user-doc findings that aren't part of the
 | [W5-9](#w5-9) | Minor | Low | GUI-TEXT: Settings says everything goes to the profile, and the shared-settings list leaves out Main Window | Open | S12 |
 | [W5-5](#w5-5) | Minor | Low | GUI-TEXT: the status bar always says "Ready" | Open | S12 |
 | [W5-10](#w5-10) | Minor | Low | GUI-TEXT: Telephony's Outputs card doesn't say where outputs are turned on and off | Open | S12 |
-| [W5-2](#w5-2) | Minor | Med | GUI-TEXT: the CRC ERAM Defaults note names a settings file that no longer exists | Agreed | S6 |
+| [W5-2](#w5-2) | Minor | Med | GUI-TEXT: the CRC ERAM Defaults note names a settings file that no longer exists | Fixed | S6 |
 | [C6-35](#c6-35) | Wrong doc | Low | User docs call a log file "that day"/"today's", but files are named by the UTC date | Open | S12 |
 | [C4-26](#c4-26) | Wrong doc | Low | User-Guide: External Procedures in Our Airspace is described as covering only airports outside your facility | Open | S12 |
 
@@ -230,7 +230,7 @@ Text the user sees in the app, and the user-doc findings that aren't part of the
 
 ### W5-2 · Minor · Med · GUI-TEXT: the CRC ERAM Defaults note names a settings file that no longer exists
 
-**Status:** Agreed ([H1](010_Decisions.md#h1)); pulled forward from S12, to be fixed before the public beta (Kyle, 2026-10-19) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The note now ends "Note: this should be a one-time setup: these values are saved in your settings profile."; no test pins its wording. It is also [D1b-24](220_Comments-GUI.md#d1b-24)'s on-screen line · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/Cards/CrcDefaultsCard.xaml.cs:21-25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/Cards/CrcDefaultsCard.xaml.cs#L21-L25)
 

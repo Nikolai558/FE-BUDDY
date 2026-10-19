@@ -45,7 +45,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1a-8](#d1a-8) | Wrong doc | Low | "Adding a setting" step 3 doesn't fit Add Custom Aliases, SCT2, the numbered lists, or the harness | Fixed | S11 |
 | [D1b-16](#d1b-16) | Stale doc | Low | TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests | Fixed | S11 |
 | [O1-36](#o1-36) | Wrong doc | Low | VERSIONING.md: the version check keeps only "the user's channel" | Fixed | S11 |
-| [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Agreed, changed | S6 |
+| [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Fixed | S6 |
 | [N1-43](#n1-43) | Wrong doc | Low | Settings-Reference: CyclePosition can be Previous; General section narrates history | Fixed | S14 |
 
 ## docs
@@ -598,7 +598,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-1 · Unused · High · Remove CRC's AliasParser.cs from the repository before the public release
 
-**Status:** Agreed, changed: delete it because nothing needs it any more. The CRC developer gave permission to host it, so it is not a licensing problem, and git history is left alone ([D2](010_Decisions.md#d2), [Q10](010_Decisions.md#q10)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `docs/Developers/Reference/` (`AliasParser.cs` and its `README.md`) is deleted, with the Reference row in `docs/README.md`: nothing needs it any more. The CRC developer gave permission, so it isn't a licensing matter, and git history is left alone ([D2](010_Decisions.md#d2), [Q10](010_Decisions.md#q10)) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Reference/AliasParser.cs:1-554`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Reference/AliasParser.cs#L1-L554); [`docs/Developers/Reference/README.md:1-15`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Reference/README.md?plain=1#L1-L15); [`docs/README.md:25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/README.md?plain=1#L25)
 

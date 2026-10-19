@@ -20,7 +20,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | Done | [110](110_GUI-Lag.md) |
 | [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | Done | [120](120_Logic-In-GUI.md) |
 | [S14](#s14) | Fixes to the code S2 to S5 added | Done | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
-| [S6](#s6) | **Next:** old-version code (D1), unused code and the H4 renames, plus two S12 fixes for the public beta | 106 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
+| [S6](#s6) | **Next:** old-version code (D1), unused code and the H4 renames, plus two S12 fixes for the public beta | 103 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
 | [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
 | [S8](#s8) | Comments and XML docs: GUI | 93 | [220](220_Comments-GUI.md) |
 | [S9](#s9) | Unit tests | 101 | [300](300_Unit-Tests.md) |
@@ -133,6 +133,8 @@ Every finding in [130_Old-Version-Code.md](130_Old-Version-Code.md) (as [D1](010
 - With [C4-12](130_Old-Version-Code.md#c4-12), delete or reword `Settings-Reference.md`'s `IncludeRoiAirports` lines ([D1a-11](500_Developer-Docs.md#d1a-11)).
 
 **Before the public beta**, pulled forward from [S12](#s12) (Kyle, 2026-10-19): [W5-2](610_On-Screen-Text.md#w5-2), the CRC ERAM Defaults note on every AIRAC tab that names `UserConfig.json`, and [D2-51](600_User-Docs-Proposal.md#d2-51), the FAQ's "Does FE-Buddy send my data anywhere?".
+
+**Fixed (not yet merged):** [D1b-1](500_Developer-Docs.md#d1b-1), [W5-2](610_On-Screen-Text.md#w5-2), [D2-51](600_User-Docs-Proposal.md#d2-51).
 
 <a id="s7"></a>
 

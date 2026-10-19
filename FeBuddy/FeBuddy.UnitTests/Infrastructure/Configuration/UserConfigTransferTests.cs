@@ -147,6 +147,26 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.Equal("ZOB", package.Values[ArtccKey]);
 	}
 
+	/// <summary>
+	/// What the Import button asks, off the UI thread, before its window opens: the file read, and both
+	/// imports worked out - replacing the profile's settings, or merging into them.
+	/// </summary>
+	[Fact]
+	public void read_and_plan_works_out_both_imports()
+	{
+		const string OutputBy = "Services.AiracService.Airways.OutputBy";
+		UserConfigFile.TrySetValue(OutputBy, "HighLow");
+		UserConfigTransfer.Export(ExportPath, new Dictionary<string, string> { [ArtccKey] = "ZOB" }, "3.1.0", ExportedAt, Alice);
+
+		(UserConfigImportPlan replace, UserConfigImportPlan merge) = UserConfigTransfer.ReadAndPlan(ExportPath);
+
+		Assert.Equal("ZOB", replace.Settings[ArtccKey]);
+		Assert.Equal("ZOB", merge.Settings[ArtccKey]);
+		Assert.False(replace.Settings.ContainsKey(OutputBy));
+		Assert.Equal("HighLow", merge.Settings[OutputBy]);
+		Assert.Throws<UserConfigTransferException>(() => UserConfigTransfer.ReadAndPlan(Path.Combine(_directory, "nope.json")));
+	}
+
 	/// <summary>A missing file is refused with a message naming it.</summary>
 	[Fact]
 	public void read_a_missing_file_throws()

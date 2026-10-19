@@ -282,6 +282,21 @@ public static class UserConfigTransfer
 		return new UserConfigPackage(fileName, formatVersion, appVersion, exportedUtc, migrated.Values, configVersion);
 	}
 
+	/// <summary>
+	/// Reads a settings file and works out both imports it offers - replacing the profile's settings, and
+	/// merging into them - without writing anything: what the Import button asks before its window opens.
+	/// Parses up to <see cref="MaxFileBytes"/> and looks for every folder and file the settings name, so
+	/// the GUI calls it off the UI thread.
+	/// </summary>
+	/// <param name="path">The file to read.</param>
+	/// <returns>The two imports.</returns>
+	/// <exception cref="UserConfigTransferException">The file is missing, unreadable, or not a settings file this version can import.</exception>
+	public static (UserConfigImportPlan Replace, UserConfigImportPlan Merge) ReadAndPlan(string path)
+	{
+		UserConfigPackage package = Read(path);
+		return (Plan(package, UserConfigImportMode.Replace), Plan(package, UserConfigImportMode.Merge));
+	}
+
 	/// <summary>Works out what importing <paramref name="package"/> would do to this PC's settings, without writing anything.</summary>
 	/// <param name="package">A file read by <see cref="Read(string)"/>.</param>
 	/// <param name="mode">Whether the file's settings replace the profile's or merge into them.</param>

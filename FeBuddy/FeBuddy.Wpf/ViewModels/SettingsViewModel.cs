@@ -98,6 +98,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	private ReleaseChannel _channel;
 	private ReleaseChannel _savedChannel;
 	private string? _selectedFacility;
+	private bool _importing;
 	private string _outputDir = string.Empty;
 	private bool _addFeBuddyFolder = true;
 	private int _coordinatePrecision = 6;
@@ -139,7 +140,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		EditRoiCommand = new RelayCommand(EditRoi);
 		ClearRoiCommand = new RelayCommand(ClearRoi, () => DefaultRoi is not null);
 		ExportCommand = new RelayCommand(Export);
-		ImportCommand = new RelayCommand(Import);
+		ImportCommand = new RelayCommand(() => _ = ImportAsync(), () => !_importing);
 		NewGitHubTokenCommand = new RelayCommand(NewGitHubToken);
 		ResetCommand = new RelayCommand(Reset);
 		UninstallCommand = new RelayCommand(Uninstall, () => CanUninstall);
@@ -824,7 +825,33 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 	}
 
-	private void Import()
+	/// <summary>
+	/// Imports a settings file the user picks. The file is read, planned and applied off the UI thread - it
+	/// can be 2 MB, and the plan looks for every folder it names, which on a disconnected drive takes
+	/// seconds; the windows and the pages reading the import stay on it.
+	/// </summary>
+	private async Task ImportAsync()
+	{
+		if (_importing)
+		{
+			return;
+		}
+
+		_importing = true;
+		CommandManager.InvalidateRequerySuggested();
+
+		try
+		{
+			await ImportPickedAsync();
+		}
+		finally
+		{
+			_importing = false;
+			CommandManager.InvalidateRequerySuggested();
+		}
+	}
+
+	private async Task ImportPickedAsync()
 	{
 		Window? owner = Application.Current?.MainWindow;
 
@@ -844,10 +871,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		ImportSettingsViewModel choice;
 		try
 		{
-			UserConfigPackage package = UserConfigTransfer.Read(dialog.FileName);
+			string path = dialog.FileName;
+			(UserConfigImportPlan replace, UserConfigImportPlan merge) = await Task.Run(() => UserConfigTransfer.ReadAndPlan(path));
 			choice = new ImportSettingsViewModel(
-				UserConfigTransfer.Plan(package, UserConfigImportMode.Replace),
-				UserConfigTransfer.Plan(package, UserConfigImportMode.Merge),
+				replace,
+				merge,
 				UserConfigFile.ActiveProfile,
 				UserConfigFile.Profiles(),
 				ConfigPages.WithUnsavedChanges(),
@@ -869,14 +897,19 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		string profile = UserConfigFile.ActiveProfile;
 		try
 		{
-			if (choice.IsNewProfile)
+			string newProfile = choice.IsNewProfile ? choice.NewProfileName.Trim() : string.Empty;
+
+			await Task.Run(() =>
 			{
-				UserConfigTransfer.ApplyAsNewProfile(plan, choice.NewProfileName.Trim());
-			}
-			else
-			{
-				UserConfigTransfer.Apply(plan);
-			}
+				if (newProfile.Length > 0)
+				{
+					UserConfigTransfer.ApplyAsNewProfile(plan, newProfile);
+				}
+				else
+				{
+					UserConfigTransfer.Apply(plan);
+				}
+			});
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
 		{

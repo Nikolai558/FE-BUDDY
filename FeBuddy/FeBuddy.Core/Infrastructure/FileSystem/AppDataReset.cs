@@ -46,6 +46,9 @@ public static class AppDataReset
 	/// <summary>Where <see cref="Request"/> records a reset for the next launch.</summary>
 	public static string RequestFilePath => Path.Combine(RootDirectory, RequestFileName);
 
+	/// <summary>Whether a reset is waiting for this launch to carry it out (<see cref="RunPending"/>).</summary>
+	public static bool IsPending => File.Exists(RequestFilePath);
+
 	/// <summary>Records a reset for the next launch to carry out. Nothing is deleted yet.</summary>
 	/// <param name="request">What the reset keeps and deletes.</param>
 	/// <exception cref="IOException">Thrown when the request cannot be written.</exception>

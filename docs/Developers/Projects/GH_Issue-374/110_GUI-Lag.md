@@ -22,9 +22,9 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W1-1](#w1-1) | GUI lag | Med | Procedure Charts indexes the whole d-TPP Metafile on the UI thread, again on every General-tab click | Fixed | S3 |
 | [U1-6](#u1-6) | GUI lag | Med | File Conversions counts (and opens) source files on the UI thread per keystroke and at startup | Fixed | S3 |
 | [U1-7](#u1-7) | GUI lag | Med | Run review message lists are not virtualized and format every message on the UI thread | Fixed | S3 |
-| [W7-2](#w7-2) | GUI lag | Low | A pending reset runs on the UI thread before any window: up to 15 s wait plus deleting all app data, with nothing on screen | Open | S4 |
+| [W7-2](#w7-2) | GUI lag | Low | A pending reset runs on the UI thread before any window: up to 15 s wait plus deleting all app data, with nothing on screen | Fixed | S4 |
 | [W6-6](#w6-6) | GUI lag | Low | The Alias Command Guide and News visual trees are rebuilt and re-parsed every time their page opens | Fixed | S3 |
-| [W7-7](#w7-7) | GUI lag | Low | Opening any file or folder picker checks folder existence on the UI thread; an offline network folder stalls it | Open | S4 |
+| [W7-7](#w7-7) | GUI lag | Low | Opening any file or folder picker checks folder existence on the UI thread; an offline network folder stalls it | Fixed | S4 |
 | [W2-27](#w2-27) | GUI lag | Low | Small synchronous disk touches on the UI thread | Fixed | S3 |
 | [W2-6](#w2-6) | GUI lag | Low | One `File.Exists` per written file on the UI thread after a stopped run | Fixed | S3 |
 | [W3-4](#w3-4) | GUI lag | Low | News posts are cleared and re-rendered (Markdown re-parsed) on every environment change | Fixed | S4 |
@@ -34,8 +34,8 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [W1-5](#w1-5) | GUI lag | Low | Getters and CanExecute recompute the same lookups several times per keystroke | Fixed | S3 |
 | [W4-5](#w4-5) | GUI lag | Low | Review tab adds every written file to an ObservableCollection one by one, but only shows the count | Fixed | S3 |
 | [W4-4](#w4-4) | GUI lag | Low | What You'll Get is built twice and its card rebuilt on every edit, even when nothing in it changed | Fixed | S3 |
-| [T3-6](#t3-6) | GUI lag | Low | Switching, creating, renaming or deleting a settings profile does file I/O and reloads every page on the UI thread | Open | S4 |
-| [C6-31](#c6-31) | GUI lag | Low | Settings import reads and plans on the UI thread (Core work, Wpf call site) | Open | S4 |
+| [T3-6](#t3-6) | GUI lag | Low | Switching, creating, renaming or deleting a settings profile does file I/O and reloads every page on the UI thread | Fixed | S4 |
+| [C6-31](#c6-31) | GUI lag | Low | Settings import reads and plans on the UI thread (Core work, Wpf call site) | Fixed | S4 |
 | [U1-13](#u1-13) | GUI lag | Low | Settings facility list runs its 20k-row LINQ on the UI thread when the cycle is already cached | Fixed | S4 |
 | [W3-7](#w3-7) | GUI lag | Low | System health refresh hits the disk on every cycle state change | Fixed | S4 |
 | [U1-15](#u1-15) | GUI lag | Low | Switching AIRAC Service tabs rebuilds the whole tab view | Fixed | S3 |
@@ -216,7 +216,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W7-2 · GUI lag · Low · A pending reset runs on the UI thread before any window: up to 15 s wait plus deleting all app data, with nothing on screen
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: when a reset is waiting (`AppDataReset.IsPending`), FE-Buddy's mark is shown with WPF's own `SplashScreen` - drawn without the dispatcher - while the reset runs, then closed. The order is kept: the reset still runs before the log, the settings and the cycles are opened. Tests: `AppDataResetTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:36-37`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L36-L37),56-57; [`FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/AppDataReset.cs:72-113`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/AppDataReset.cs#L72-L113)
 
@@ -242,7 +242,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### W7-7 · GUI lag · Low · Opening any file or folder picker checks folder existence on the UI thread; an offline network folder stalls it
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged): `OutputPreferences.BrowseDirectory` asks Core's `FolderProbe.Exists`, which gives each folder 300 ms to answer, off the UI thread; one that doesn't answer counts as not there, so the picker opens on the next choice (the Desktop last), and doesn't stall on the offline folder itself either. The callers are unchanged: an offline folder now costs at most 0.3 s each, not the network's timeout. Tests: `FolderProbeTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs:39-42`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs#L39-L42)
 
@@ -364,7 +364,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### T3-6 · GUI lag · Low · Switching, creating, renaming or deleting a settings profile does file I/O and reloads every page on the UI thread
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: each profile change's file work - switching, creating, renaming, deleting - runs with `Task.Run`, step by step until one fails; then, on the UI thread, the pages read the profile and the user is told. New, Rename and Delete can't be clicked meanwhile, and choosing another profile waits too. Reading the pages again stays on the UI thread: it is the pages' own work. Tests: `SettingsProfilesViewModelTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:153-180`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L153-L180)
 
@@ -376,7 +376,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### C6-31 · GUI lag · Low · Settings import reads and plans on the UI thread (Core work, Wpf call site)
 
-**Status:** Open · **Session:** [S4](020_Work-Plan.md#s4)
+**Status:** Fixed (not yet merged), as proposed: Core's `UserConfigTransfer.ReadAndPlan` reads the file and works out both imports; the Settings page runs it with `Task.Run`, and applies the import the user picks with `Task.Run` too. The windows and the pages reading the import stay on the UI thread, and Import can't be clicked again meanwhile. Tests: `UserConfigTransferTests` · **Session:** [S4](020_Work-Plan.md#s4)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:838-841`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L838-L841); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs:142`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs#L142), 289-290, 515-521
 

@@ -2,6 +2,7 @@ using System.Globalization;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.FileSystem;
 
 namespace FeBuddy.Wpf.Shell;
 
@@ -34,11 +35,16 @@ public static class OutputPreferences
 	/// Where a file or folder picker opens: <paramref name="preferred"/> - the folder the picker's
 	/// field already names - while it exists, else the output directory while it exists, else the Desktop.
 	/// </summary>
+	/// <remarks>
+	/// Asked on the UI thread as the picker opens, so each folder has <see cref="FolderProbe.DefaultTimeout"/>
+	/// to answer: one on a share that is offline counts as not there, rather than freezing the window for the
+	/// network's timeout - and the picker then doesn't stall on it either.
+	/// </remarks>
 	/// <param name="preferred">A more specific folder to open in, or <see langword="null"/>.</param>
 	/// <returns>The folder's full path.</returns>
 	public static string BrowseDirectory(string? preferred = null) =>
-		!string.IsNullOrWhiteSpace(preferred) && System.IO.Directory.Exists(preferred) ? preferred
-		: System.IO.Directory.Exists(Directory) ? Directory
+		FolderProbe.Exists(preferred, FolderProbe.DefaultTimeout) ? preferred!
+		: FolderProbe.Exists(Directory, FolderProbe.DefaultTimeout) ? Directory
 		: DefaultDirectory;
 
 	/// <summary>Whether to wrap output in a <c>FE-Buddy_Output</c> folder. On unless saved as <c>N</c>.</summary>

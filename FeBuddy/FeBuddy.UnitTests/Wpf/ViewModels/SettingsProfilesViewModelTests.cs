@@ -69,6 +69,15 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 
 	private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
 
+	/// <summary>Lets the card's profile change finish: its file work off the UI thread, then the pages on it.</summary>
+	private static void Finish(SettingsProfilesViewModel card)
+	{
+		DispatcherFrame frame = new();
+		card.Working.ContinueWith(_ => frame.Continue = false, TaskScheduler.Default);
+		Dispatcher.PushFrame(frame);
+		card.Working.GetAwaiter().GetResult();
+	}
+
 	[Fact]
 	public void the_card_lists_the_profiles_and_shows_the_one_in_use() => StaThread.Run(() =>
 	{
@@ -91,6 +100,7 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		Assert.Equal("Default", UserConfigFile.ActiveProfile);
 
 		Pump();
+		Finish(card);
 
 		Assert.Equal("ZNY", UserConfigFile.ActiveProfile);
 		Assert.Equal("ZNY", UserConfigFile.GetValue(Artcc));
@@ -133,6 +143,7 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 
 		_answer = true;
 		card.SwitchTo("ZNY");
+		Finish(card);
 		Assert.Equal("ZNY", UserConfigFile.ActiveProfile);
 	});
 
@@ -143,6 +154,7 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		File.Delete(UserConfigFile.ProfileFilePath("ZNY"));
 
 		card.SwitchTo("ZNY");
+		Finish(card);
 
 		Assert.Equal("Default", UserConfigFile.ActiveProfile);
 		Assert.Equal(["Default"], card.Profiles);
@@ -168,6 +180,8 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		SettingsProfilesViewModel card = Card();
 
 		card.NewCommand.Execute(null);
+		Assert.False(card.NewCommand.CanExecute(null));
+		Finish(card);
 
 		Assert.Equal("New Settings Profile", asked!.Heading);
 		Assert.Equal("Default", asked.CopyFrom);
@@ -206,6 +220,7 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		SettingsProfilesViewModel card = Card();
 
 		card.RenameCommand.Execute(null);
+		Finish(card);
 
 		Assert.Equal("ZOB", UserConfigFile.ActiveProfile);
 		Assert.Equal(["ZNY", "ZOB"], card.Profiles);
@@ -222,12 +237,14 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		SettingsProfilesViewModel card = Card();
 
 		card.DeleteCommand.Execute(null);
+		Finish(card);
 
 		Assert.Equal("Default", UserConfigFile.ActiveProfile);
 		Assert.Equal(["AAA", "Default"], card.Profiles);
 		Assert.StartsWith("Delete settings profile|Delete the ZNY profile? FE-Buddy switches to Default", Assert.Single(_asked), StringComparison.Ordinal);
 
 		card.DeleteCommand.Execute(null);
+		Finish(card);
 
 		Assert.Equal("AAA", UserConfigFile.ActiveProfile);
 		Assert.Equal(["AAA"], card.Profiles);

@@ -14,7 +14,7 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers what the Review tab says about each sub-service's run (W2-37): the alias file by the name the run wrote
+/// Covers what the Review tab says about each sub-service's run: the alias file by the name the run wrote
 /// it under, a name from the File Names tab included, and Airports' ROI count only when the tab used an ROI -
 /// against a throwaway config.
 /// </summary>

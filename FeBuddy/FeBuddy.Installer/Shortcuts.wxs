@@ -8,7 +8,7 @@
       C:\Windows\Installer\{ProductCode}\ and points the shortcut there. The ProductCode is new
       every release, so Windows can't reuse the icon it cached for an earlier version. Taking the
       icon from FE-BUDDY.exe, whose path never changes, could leave 2.x's icon on the Desktop after
-      an upgrade (#375).
+      an upgrade.
     -->
     <StandardDirectory Id="ProgramMenuFolder">
       <Component Id="StartMenuShortcutComponent"

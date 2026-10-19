@@ -243,7 +243,7 @@ public sealed class CrcDefaultsReaderTests
 	}
 
 	/// <summary>
-	/// Each property's value is checked as the readers check it (W4-8): parsed the same way, then held to the
+	/// Each property's value is checked as the readers check it: parsed the same way, then held to the
 	/// validator's ranges and styles - so a screen marks what a run would refuse.
 	/// </summary>
 	[Theory]

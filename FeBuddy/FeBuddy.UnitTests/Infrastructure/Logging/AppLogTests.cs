@@ -256,7 +256,7 @@ public sealed class AppLogTests : IDisposable
 
 	/// <summary>
 	/// An entry logged on another thread while the display is followed is in the snapshot or the callbacks,
-	/// exactly once (W3-16): none missed between the two, none in both.
+	/// exactly once: none missed between the two, none in both.
 	/// </summary>
 	[Fact]
 	public async Task an_entry_logged_while_following_starts_is_seen_exactly_once()

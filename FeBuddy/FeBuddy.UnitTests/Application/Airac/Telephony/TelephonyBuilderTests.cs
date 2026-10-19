@@ -466,7 +466,7 @@ public sealed class TelephonyBuilderTests
 			note.Text);
 	}
 
-	// ---- the real operators the Telephony tab warns about (W1-7) ----
+	// ---- the real operators the Telephony tab warns about ----
 
 	/// <summary>
 	/// The real operators are the rows a run writes: the first of each 3LD (or identifier) and telephony, with no

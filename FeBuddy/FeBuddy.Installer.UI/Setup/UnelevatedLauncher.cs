@@ -14,8 +14,8 @@ namespace FeBuddy.Installer.UI.Setup;
 /// <para>
 /// The setup window runs in msiexec, with msiexec's account. That is the signed-in user when msiexec
 /// is started unelevated (a double-click, FE-Buddy's update and uninstall), but an administrator when
-/// it is started elevated - an elevated command prompt, or an update from a FE-Buddy that ran msiexec
-/// elevated (3.0.0-beta.12 and earlier). There, a standard user who typed an administrator's
+/// it is started elevated - from an elevated command prompt, or by an update from a FE-Buddy version
+/// that starts msiexec elevated. There, a standard user who typed an administrator's
 /// password would get FE-Buddy running as that administrator, with the administrator's settings and
 /// credentials.
 /// </para>

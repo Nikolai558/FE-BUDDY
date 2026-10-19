@@ -4,7 +4,7 @@ using FeBuddy.Versioning.Models;
 namespace FeBuddy.UnitTests.Application.Updates;
 
 /// <summary>
-/// Covers <see cref="VersionCheckResult.Status"/> and <see cref="VersionCheckResult.DisplayVersion"/> (W3-14): the one
+/// Covers <see cref="VersionCheckResult.Status"/> and <see cref="VersionCheckResult.DisplayVersion"/>: the one
 /// decision the title bar, System health and Settings' "Check now" each word, in its order, and the one "dev" rule.
 /// </summary>
 public sealed class VersionCheckResultTests

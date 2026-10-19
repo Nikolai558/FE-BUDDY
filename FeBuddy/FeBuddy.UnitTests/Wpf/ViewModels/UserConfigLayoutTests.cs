@@ -140,12 +140,11 @@ public sealed class UserConfigLayoutTests : IDisposable
 	];
 
 	/// <summary>
-	/// Settings left behind with no layout step, on purpose (Q1, H5): the General tab's, which moved from
-	/// <c>Services.AiracService</c> into its own <c>Services.AiracService.General</c> node - a file that still
-	/// has them opens the General tab on its defaults, every sub-service included, every output on - and the
-	/// Settings page's Facility, coordinate precision and default ROI, which moved from
-	/// <c>Services.AiracService</c> into <c>General</c>: a file that still has them opens Settings with no
-	/// facility, 6 decimal places and no default ROI.
+	/// Settings no layout step brings forward, on purpose: the General tab's, which sit in their own
+	/// <c>Services.AiracService.General</c> node (a file that has them directly under <c>Services.AiracService</c>
+	/// opens the General tab on its defaults), and the Settings page's Facility, coordinate precision and default
+	/// ROI, which sit under <c>General</c> (a file that has them under <c>Services.AiracService</c> opens Settings
+	/// with no facility, 6 decimal places and no default ROI).
 	/// </summary>
 	private static bool LeftBehindOnPurpose(string key) =>
 		key is "Services.AiracService.AiracCycleId" or "Services.AiracService.SelectedSubServices"

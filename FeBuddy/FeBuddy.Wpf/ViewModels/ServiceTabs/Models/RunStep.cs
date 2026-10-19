@@ -1,7 +1,6 @@
 using FeBuddy.Wpf.Mvvm;
-using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
-namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
+namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 /// <summary>
 /// One sub-service's line in the run feed: what it is, where it has got to, and the last thing

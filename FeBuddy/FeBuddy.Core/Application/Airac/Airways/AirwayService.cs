@@ -12,7 +12,7 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Core.Application.Airac.Airways;
 
 /// <summary>
-/// Public entry point for the Airways services: parses settings, builds every airway, and
+/// Public entry point for the Airways sub-service: parses settings, builds every airway, and
 /// generates the requested GeoJSON and alias output.
 /// </summary>
 /// <remarks>

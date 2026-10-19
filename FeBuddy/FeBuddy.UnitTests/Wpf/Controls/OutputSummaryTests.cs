@@ -1,4 +1,5 @@
 using FeBuddy.Wpf.Controls;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 namespace FeBuddy.UnitTests.Wpf.Controls;

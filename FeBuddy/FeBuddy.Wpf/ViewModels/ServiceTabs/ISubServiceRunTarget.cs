@@ -1,3 +1,5 @@
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
+
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 

@@ -20,7 +20,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1b-5](#d1b-5) | History wording | Low | "still parses all 24" | Fixed | S11 |
 | [D1b-6](#d1b-6) | Wrong doc | Low | Output layout bullet leaves out Publication_Docs and the duplicate report | Fixed | S11 |
 | [D1b-7](#d1b-7) | Minor | Low | Designation rule names no class in a list where "each rule lives in one class" | Fixed | S11 |
-| [D1b-10](#d1b-10) | Minor | Low | Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root | Agreed | S6 |
+| [D1b-10](#d1b-10) | Minor | Low | Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root | Fixed | S6 |
 | [D1b-9](#d1b-9) | Stale doc | Low | Code-Structure's folder maps miss some major types | Fixed | S11 |
 | [W5-22](#w5-22) | Stale doc | Low | Code-Structure's folder map leaves out Views/Models | Fixed | S11 |
 | [W7-26](#w7-26) | Stale doc | Low | Code-Structure's Shell/ list misses the window-placement files | Fixed | S11 |
@@ -211,7 +211,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### D1b-10 · Minor · Low · Naming table says `*Settings` is data in Models/; DevLaunchSettings is a static I/O class at the feature root
 
-**Status:** Agreed: done with the other renames in S6 ([H4](010_Decisions.md#h4)) · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The class is `DevLaunchFile`, with its tests, `Architecture.md` and `Code-Structure.md`; the naming table has a `*File` row for it and `UserConfigFile` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`docs/Developers/Code-Structure.md:111`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Developers/Code-Structure.md?plain=1#L111); [`FeBuddy/FeBuddy.Core/Application/Launch/DevLaunchSettings.cs:24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/DevLaunchSettings.cs#L24)
 

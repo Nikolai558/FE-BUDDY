@@ -54,7 +54,7 @@ the Systems box turns green, and the AIRAC Service screen unlocks once the curre
 
 **A dev launch** (a Debug build started with `--dev`; see [Dev launch](README.md#dev-launch)) runs
 only the optional steps chosen on Settings' Developer card. `App.OnStartup` reads the argument and
-`DevLaunchSettings`, and publishes a `LaunchOptions` (`LaunchSequence.UseOptions`) before the window
+`DevLaunchFile`, and publishes a `LaunchOptions` (`LaunchSequence.UseOptions`) before the window
 is built; Core never reads the command line. `LaunchSequence` skips what it leaves out and logs it,
 and hands the AIRAC cache an `AiracLaunchPlan` (download, parse, prune). The three cycles are always
 tracked. One left unloaded loads when something asks for it (`GetAsync`), probing first if launch

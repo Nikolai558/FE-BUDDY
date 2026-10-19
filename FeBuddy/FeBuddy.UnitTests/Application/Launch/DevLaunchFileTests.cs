@@ -8,24 +8,24 @@ namespace FeBuddy.UnitTests.Application.Launch;
 /// <summary>
 /// Covers the dev launch's choices: <see cref="LaunchOptions"/> (a normal launch runs every step
 /// whatever is saved), <see cref="OptionalLaunchSteps"/> (the card's list and the log line), and
-/// <see cref="DevLaunchSettings"/> (saved beside the profiles, never in one or in an export).
+/// <see cref="DevLaunchFile"/> (saved beside the profiles, never in one or in an export).
 /// </summary>
 [Collection("AppLog")]
-public sealed class DevLaunchSettingsTests : IDisposable
+public sealed class DevLaunchFileTests : IDisposable
 {
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_DevLaunch_" + Guid.NewGuid().ToString("N"));
 
-	public DevLaunchSettingsTests()
+	public DevLaunchFileTests()
 	{
 		AppLog.ConfigureForTesting(Path.Combine(_root, "logs"));
-		DevLaunchSettings.ConfigureForTesting(_root);
+		DevLaunchFile.ConfigureForTesting(_root);
 		UserConfigFile.ConfigureForTesting(_root);
 	}
 
 	public void Dispose()
 	{
 		UserConfigFile.ConfigureForTesting(null);
-		DevLaunchSettings.ConfigureForTesting(null);
+		DevLaunchFile.ConfigureForTesting(null);
 		AppLog.ConfigureForTesting(null);
 
 		try
@@ -104,13 +104,13 @@ public sealed class DevLaunchSettingsTests : IDisposable
 		Assert.EndsWith("Skipping: none.", OptionalLaunchSteps.DescribeDevLaunch(OptionalLaunchStep.All), StringComparison.Ordinal);
 	}
 
-	// ---- DevLaunchSettings ----
+	// ---- DevLaunchFile ----
 
 	[Fact]
 	public void with_nothing_saved_a_dev_launch_skips_every_step()
 	{
-		Assert.False(File.Exists(DevLaunchSettings.FilePath));
-		Assert.Equal(OptionalLaunchStep.None, DevLaunchSettings.Read());
+		Assert.False(File.Exists(DevLaunchFile.FilePath));
+		Assert.Equal(OptionalLaunchStep.None, DevLaunchFile.Read());
 	}
 
 	[Fact]
@@ -118,12 +118,12 @@ public sealed class DevLaunchSettingsTests : IDisposable
 	{
 		OptionalLaunchStep chosen = OptionalLaunchStep.CheckClockAndInternet | OptionalLaunchStep.ParseAiracData | OptionalLaunchStep.RemoveLegacyInstall;
 
-		DevLaunchSettings.Save(chosen);
+		DevLaunchFile.Save(chosen);
 
-		Assert.Equal(chosen, DevLaunchSettings.Read());
-		Assert.Equal(Path.Combine(_root, "DevLaunch.json"), DevLaunchSettings.FilePath);
+		Assert.Equal(chosen, DevLaunchFile.Read());
+		Assert.Equal(Path.Combine(_root, "DevLaunch.json"), DevLaunchFile.FilePath);
 
-		string json = File.ReadAllText(DevLaunchSettings.FilePath);
+		string json = File.ReadAllText(DevLaunchFile.FilePath);
 		Assert.Contains("\"ParseAiracData\": true", json, StringComparison.Ordinal);
 		Assert.Contains("\"DownloadAiracData\": false", json, StringComparison.Ordinal);
 	}
@@ -132,18 +132,18 @@ public sealed class DevLaunchSettingsTests : IDisposable
 	public void a_step_the_file_does_not_name_is_off_and_unknown_names_are_ignored()
 	{
 		Directory.CreateDirectory(_root);
-		File.WriteAllText(DevLaunchSettings.FilePath, """{ "DownloadNews": true, "SomethingNew": true }""");
+		File.WriteAllText(DevLaunchFile.FilePath, """{ "DownloadNews": true, "SomethingNew": true }""");
 
-		Assert.Equal(OptionalLaunchStep.DownloadNews, DevLaunchSettings.Read());
+		Assert.Equal(OptionalLaunchStep.DownloadNews, DevLaunchFile.Read());
 	}
 
 	[Fact]
 	public void a_file_that_cannot_be_read_skips_every_step_and_says_why()
 	{
 		Directory.CreateDirectory(_root);
-		File.WriteAllText(DevLaunchSettings.FilePath, "{ not json");
+		File.WriteAllText(DevLaunchFile.FilePath, "{ not json");
 
-		Assert.Equal(OptionalLaunchStep.None, DevLaunchSettings.Read());
+		Assert.Equal(OptionalLaunchStep.None, DevLaunchFile.Read());
 		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Could not read DevLaunch.json", StringComparison.Ordinal));
 	}
 
@@ -152,11 +152,11 @@ public sealed class DevLaunchSettingsTests : IDisposable
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.UserArtccId", "ZOB");
 		UserConfigFile.Write();
-		DevLaunchSettings.Save(OptionalLaunchStep.All);
+		DevLaunchFile.Save(OptionalLaunchStep.All);
 
 		// Beside the profiles' folder, not in it.
-		Assert.Equal(_root, Path.GetDirectoryName(DevLaunchSettings.FilePath));
-		Assert.NotEqual(Path.GetDirectoryName(UserConfigFile.ConfigFilePath), Path.GetDirectoryName(DevLaunchSettings.FilePath));
+		Assert.Equal(_root, Path.GetDirectoryName(DevLaunchFile.FilePath));
+		Assert.NotEqual(Path.GetDirectoryName(UserConfigFile.ConfigFilePath), Path.GetDirectoryName(DevLaunchFile.FilePath));
 
 		string profile = File.ReadAllText(UserConfigFile.ConfigFilePath);
 		Assert.DoesNotContain("DownloadAiracData", profile, StringComparison.Ordinal);

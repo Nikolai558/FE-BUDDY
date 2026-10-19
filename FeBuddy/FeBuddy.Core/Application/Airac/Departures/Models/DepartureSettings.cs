@@ -7,7 +7,7 @@ namespace FeBuddy.Core.Application.Airac.Departures.Models;
 /// <summary>
 /// Fully-parsed, typed settings for the Departures sub-service. Built once by
 /// <c>DepartureSettingsParser.Parse</c> from the raw <c>Dictionary&lt;string, string&gt;</c> the
-/// GUI (or <c>FeBuddy.Harness</c>) supplies; every other Departures service consumes this typed
+/// GUI (or <c>FeBuddy.Harness</c>) supplies; every other Departures type consumes this typed
 /// object, never the raw dictionary.
 /// </summary>
 /// <remarks>

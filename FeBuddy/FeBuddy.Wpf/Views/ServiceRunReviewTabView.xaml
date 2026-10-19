@@ -37,7 +37,7 @@
         </Style>
 
         <!-- one sub-service's line in the feed -->
-        <DataTemplate x:Key="RunStepRow" DataType="{x:Type tabs:RunStep}">
+        <DataTemplate x:Key="RunStepRow" DataType="{x:Type tabm:RunStep}">
             <StackPanel Margin="0,4">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}"
@@ -126,7 +126,7 @@
 
         <!-- one sub-service's results: what it produced, then its warnings and its routine
              notices, each behind a toggle, collapsed on every run -->
-        <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type tabs:SubServiceRunResult}">
+        <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type tabm:SubServiceRunResult}">
             <StackPanel Margin="0,4,0,8">
                 <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" />
                 <TextBlock bhv:InlineCode.Text="{Binding Summary, Converter={StaticResource FileNamesAsCode}}" Style="{StaticResource Text.Body}"

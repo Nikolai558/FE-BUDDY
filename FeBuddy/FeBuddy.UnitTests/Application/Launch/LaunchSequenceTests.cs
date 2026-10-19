@@ -84,12 +84,12 @@ public sealed class LaunchSequenceTests : IDisposable
 				return Task.FromResult(cycle.AiracCycleId);
 			},
 			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection())));
-		DevLaunchSettings.ConfigureForTesting(_root);
+		DevLaunchFile.ConfigureForTesting(_root);
 	}
 
 	public void Dispose()
 	{
-		DevLaunchSettings.ConfigureForTesting(null);
+		DevLaunchFile.ConfigureForTesting(null);
 		AppEnvironment.HttpClientForTesting?.Dispose();
 		AppEnvironment.ResetForTesting();
 		WelcomeNotice.ResetForTesting();
@@ -315,7 +315,7 @@ public sealed class LaunchSequenceTests : IDisposable
 	[Fact]
 	public async Task a_normal_launch_runs_every_step_whatever_the_saved_dev_choices_are()
 	{
-		DevLaunchSettings.Save(OptionalLaunchStep.None);
+		DevLaunchFile.Save(OptionalLaunchStep.None);
 		DevLaunchRun run = WireDevLaunch();
 
 		await LaunchSequence.RunAsync("3.0.0", LaunchOptions.Normal);

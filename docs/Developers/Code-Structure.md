@@ -107,7 +107,7 @@ FeBuddy.Core/
     ├── Conversions/      ConversionSettingsReader, ConversionFiles, then DatToGeojson/,
     │                     SctToGeojson/ and EramToGeojson/
     ├── Launch/           LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice, WelcomeNotice, and a
-    │                     dev launch's choices (OptionalLaunchSteps, DevLaunchSettings)
+    │                     dev launch's choices (OptionalLaunchSteps, DevLaunchFile)
     ├── Map/              AiracMapData: the Map screen's live AIRAC layers and the shapes each holds
     ├── News/             NewsService
     ├── Settings/         SubServiceSettingsReader, SubServiceArea, CrcDefaultsReader, SettingsValueReader
@@ -124,6 +124,7 @@ FeBuddy.Core/
 | `*Builder` | Builds domain objects from FAA rows | `DepartureBuilder` |
 | `*GeojsonWriter`, `*AliasWriter`, `*Writer` | Writes output files | `AirwayGeojsonWriter` |
 | `*Reader`, `*Parser` | Reads a file, a text format or a settings block | `NasrCsvReader`, `MarkdownParser` |
+| `*File` | Reads and writes one file of its own | `UserConfigFile`, `DevLaunchFile` |
 | `*Filter`, `*Check`, `*Validator` | Narrows, checks or validates; never writes | `RoiFilter`, `VersionCheck` |
 | `*OutputFiles` | A sub-service's file keys | `FixOutputFiles` |
 | `*Result`, `*Settings`, `*Progress` | Data, in `Models/` | `AiracServiceResult` |

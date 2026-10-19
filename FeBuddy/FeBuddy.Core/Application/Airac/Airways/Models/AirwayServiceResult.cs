@@ -3,7 +3,7 @@ using FeBuddy.Core.Application.Models;
 namespace FeBuddy.Core.Application.Airac.Airways.Models;
 
 /// <summary>
-/// The result of running the top-level Airways service (<c>AirwayService.Run</c>): what was
+/// The result of running the top-level Airways sub-service (<c>AirwayService.Run</c>): what was
 /// built and written, plus timing and warnings.
 /// </summary>
 public sealed record AirwayServiceResult : ServiceResult

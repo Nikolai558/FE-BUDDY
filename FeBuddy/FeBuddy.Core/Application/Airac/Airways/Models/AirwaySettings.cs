@@ -6,10 +6,10 @@ using FeBuddy.Core.Domain.Geo.Models;
 namespace FeBuddy.Core.Application.Airac.Airways.Models;
 
 /// <summary>
-/// Fully-parsed, typed settings for the Airways services (GeoJSON generation and alias file
+/// Fully-parsed, typed settings for the Airways sub-service (GeoJSON generation and alias file
 /// generation). Built once by <c>AirwaySettingsParser.Parse</c> from the raw
 /// <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>) supplies; every
-/// other Airways service consumes this typed object, never the raw dictionary.
+/// other Airways type consumes this typed object, never the raw dictionary.
 /// </summary>
 public sealed record AirwaySettings
 {

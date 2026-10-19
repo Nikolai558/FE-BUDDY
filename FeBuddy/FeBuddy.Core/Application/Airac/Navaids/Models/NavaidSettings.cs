@@ -8,7 +8,7 @@ namespace FeBuddy.Core.Application.Airac.Navaids.Models;
 /// Fully-parsed, typed settings for the NAVAIDs sub-service (GeoJSON generation and alias file
 /// generation). Built once by <c>NavaidSettingsParser.Parse</c> from the raw
 /// <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>) supplies; every
-/// other NAVAIDs service consumes this typed object, never the raw dictionary.
+/// other NAVAIDs type consumes this typed object, never the raw dictionary.
 /// </summary>
 public sealed record NavaidSettings
 {

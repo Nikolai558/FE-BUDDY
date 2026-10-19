@@ -7,7 +7,7 @@ namespace FeBuddy.Core.Application.Airac.Fixes.Models;
 /// <summary>
 /// Fully-parsed, typed settings for the Fixes sub-service. Built once by
 /// <c>FixSettingsParser.Parse</c> from the raw <c>Dictionary&lt;string, string&gt;</c> the GUI (or
-/// <c>FeBuddy.Harness</c>) supplies; every other Fixes service consumes this typed object, never
+/// <c>FeBuddy.Harness</c>) supplies; every other Fixes type consumes this typed object, never
 /// the raw dictionary.
 /// </summary>
 /// <remarks>

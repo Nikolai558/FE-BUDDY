@@ -20,12 +20,12 @@ public sealed class DevLaunchCardViewModelTests : IDisposable
 	public DevLaunchCardViewModelTests()
 	{
 		AppLog.ConfigureForTesting(Path.Combine(_root, "logs"));
-		DevLaunchSettings.ConfigureForTesting(_root);
+		DevLaunchFile.ConfigureForTesting(_root);
 	}
 
 	public void Dispose()
 	{
-		DevLaunchSettings.ConfigureForTesting(null);
+		DevLaunchFile.ConfigureForTesting(null);
 		AppLog.ConfigureForTesting(null);
 
 		try
@@ -49,7 +49,7 @@ public sealed class DevLaunchCardViewModelTests : IDisposable
 	[Fact]
 	public void a_dev_launch_shows_every_step_ticked_as_saved()
 	{
-		DevLaunchSettings.Save(OptionalLaunchStep.ParseAiracData | OptionalLaunchStep.DownloadNews);
+		DevLaunchFile.Save(OptionalLaunchStep.ParseAiracData | OptionalLaunchStep.DownloadNews);
 
 		DevLaunchCardViewModel card = DevLaunchCardViewModel.For(LaunchOptions.DevLaunch(OptionalLaunchStep.None), Restart)!;
 
@@ -73,11 +73,11 @@ public sealed class DevLaunchCardViewModelTests : IDisposable
 		DevLaunchCardViewModel card = new(OptionalLaunchStep.None, Restart);
 
 		card.Steps.Single(toggle => toggle.Step == OptionalLaunchStep.DownloadAiracData).IsChecked = true;
-		Assert.Equal(OptionalLaunchStep.DownloadAiracData, DevLaunchSettings.Read());
+		Assert.Equal(OptionalLaunchStep.DownloadAiracData, DevLaunchFile.Read());
 
 		card.Steps.Single(toggle => toggle.Step == OptionalLaunchStep.WelcomeWindow).IsChecked = true;
 		card.Steps.Single(toggle => toggle.Step == OptionalLaunchStep.DownloadAiracData).IsChecked = false;
-		Assert.Equal(OptionalLaunchStep.WelcomeWindow, DevLaunchSettings.Read());
+		Assert.Equal(OptionalLaunchStep.WelcomeWindow, DevLaunchFile.Read());
 
 		Assert.False(card.HasSaveError);
 		Assert.Equal(0, _restarts);
@@ -91,14 +91,14 @@ public sealed class DevLaunchCardViewModelTests : IDisposable
 		card.RestartCommand.Execute(null);
 
 		Assert.Equal(1, _restarts);
-		Assert.Equal(OptionalLaunchStep.CheckForNewerVersion, DevLaunchSettings.Read());
+		Assert.Equal(OptionalLaunchStep.CheckForNewerVersion, DevLaunchFile.Read());
 	}
 
 	[Fact]
 	public void choices_that_cannot_be_saved_say_why_and_do_not_restart()
 	{
 		// A folder where the file should be: it can't be written.
-		Directory.CreateDirectory(DevLaunchSettings.FilePath);
+		Directory.CreateDirectory(DevLaunchFile.FilePath);
 		DevLaunchCardViewModel card = new(OptionalLaunchStep.None, Restart);
 
 		card.Steps[0].IsChecked = true;

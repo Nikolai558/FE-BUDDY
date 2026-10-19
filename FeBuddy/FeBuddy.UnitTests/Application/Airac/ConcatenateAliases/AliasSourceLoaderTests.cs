@@ -96,7 +96,7 @@ public sealed class AliasSourceLoaderTests : IDisposable
 
 		AliasSourceLoad load = await AliasSourceLoader.LoadAsync(FileSource(path), _store);
 
-		Assert.Contains("does not look like an alias file", load.Problem, StringComparison.Ordinal);
+		Assert.Equal(AliasSourceRules.NoAliasCommands, load.Problem);
 	}
 
 	// ============================ downloads ============================

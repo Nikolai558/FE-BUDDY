@@ -7,8 +7,8 @@ using FeBuddy.Wpf.Views;
 
 using FeBuddy.Core.Application.Conversions.EramToGeojson;
 using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
+using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Models;
-using FeBuddy.Core.Infrastructure.Eram;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -73,7 +73,8 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 
 	/// <inheritdoc />
 	/// <remarks>Only a Geomaps file: the rest of an adaptation export is XML too.</remarks>
-	protected override bool IsSourceFile(string path) => EramGeoMapReader.IsGeoMapsFile(path);
+	protected override SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken) =>
+		EramToGeojsonService.CountSourceFiles(folder, cancellationToken);
 
 	// ================= output layout =================
 

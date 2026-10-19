@@ -41,7 +41,7 @@ public static class ConversionSourceFolder
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
-				if (extensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase) && isSourceFile(file))
+				if (ConversionFiles.HasExtension(file, extensions) && isSourceFile(file))
 				{
 					files++;
 				}

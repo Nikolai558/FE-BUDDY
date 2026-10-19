@@ -32,15 +32,6 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 {
 	private const string Node = "Services.AiracService.Arrivals";
 	private const string CrcClassName = "Arrivals";
-	private const string AmendmentDateFormat = "yyyy-MM-dd";
-	private const int MaxAmendedWithinCycles = 1000;
-	private const int MaxAmendedWithinDays = 36500;
-
-	/// <summary>How each arrival's GeoJSON files are named, before the kind of file: <c>DTW_TPGUN_STAR</c>.</summary>
-	private const string FileNamePattern = "<Airport ID>_<Arrival ID>_STAR";
-
-	/// <summary>The folder each airport's GeoJSON files go in, inside the cycle's folder.</summary>
-	private const string FolderPattern = @"Geojson\<ARTCC ID>\<Airport ID>\";
 
 	private ArrivalRoiMode _roiMode = ArrivalRoiMode.Airport;
 	private ArrivalAmendmentFilter _amendmentFilter = ArrivalAmendmentFilter.None;
@@ -130,7 +121,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	public override IEnumerable<OutputFileEntry> OutputFileEntries() =>
 		OutputFiles().Select(file => file.IsGeojson
 			? new OutputFileEntry(
-				file.Key, Path.Combine(FolderOf(file), "<ARTCC>", "<airport>"), $"<airport>_<procedure>_STAR_{file.Label}.geojson", Title, CanRename: false)
+				file.Key, Path.Combine(FolderOf(file), "<ARTCC ID>", "<Airport ID>"), $"{ArrivalOutputFiles.GeojsonFileNamePattern}_{file.Label}.geojson", Title, CanRename: false)
 			: OutputFileEntry.Renamable(file.Key, FolderOf(file), Title));
 
 	// ================= procedures =================
@@ -307,7 +298,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 				s["AmendedWithinDays"] = AmendedWithinDays.Trim();
 				break;
 			case ArrivalAmendmentFilter.Date when AmendedOnOrAfter is { } onOrAfter:
-				s["AmendedOnOrAfter"] = onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture);
+				s["AmendedOnOrAfter"] = onOrAfter.ToString(ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture);
 				break;
 		}
 
@@ -337,17 +328,17 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		{
 			if (EmitLines)
 			{
-				files.Add(new($"{FileNamePattern}_Lines.geojson", "Each arrival's routes, drawn as lines."));
+				files.Add(new($"{ArrivalOutputFiles.GeojsonFileNamePattern}_Lines.geojson", "Each arrival's routes, drawn as lines."));
 			}
 
 			if (EmitSymbols)
 			{
-				files.Add(new($"{FileNamePattern}_Symbols.geojson", "Each arrival's waypoint symbols."));
+				files.Add(new($"{ArrivalOutputFiles.GeojsonFileNamePattern}_Symbols.geojson", "Each arrival's waypoint symbols."));
 			}
 
 			if (EmitText)
 			{
-				files.Add(new($"{FileNamePattern}_Text.geojson", "Each arrival's waypoint IDs."));
+				files.Add(new($"{ArrivalOutputFiles.GeojsonFileNamePattern}_Text.geojson", "Each arrival's waypoint IDs."));
 			}
 		}
 
@@ -369,7 +360,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			.ToList())
 		{
 			Files = files,
-			Notes = !noArtccs && GenerateGeojson ? [$"Each airport's GeoJSON files go in `{FolderPattern}`."] : [],
+			Notes = !noArtccs && GenerateGeojson ? [$"Each airport's GeoJSON files go in `{ArrivalOutputFiles.GeojsonFolderPattern}\\`."] : [],
 		};
 	}
 
@@ -416,7 +407,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		_amendedWithinCycles = Get("Amendment.WithinCycles") ?? "1";
 		_amendedWithinDays = Get("Amendment.WithinDays") ?? "30";
 		_amendedOnOrAfter = DateTime.TryParseExact(
-			Get("Amendment.OnOrAfter")?.Trim(), AmendmentDateFormat, CultureInfo.InvariantCulture,
+			Get("Amendment.OnOrAfter")?.Trim(), ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture,
 			DateTimeStyles.None, out DateTime onOrAfter)
 			? onOrAfter
 			: null;
@@ -433,7 +424,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		Set("Amendment.Filter", _amendmentFilter.ToString());
 		Set("Amendment.WithinCycles", AmendedWithinCycles);
 		Set("Amendment.WithinDays", AmendedWithinDays);
-		Set("Amendment.OnOrAfter", AmendedOnOrAfter?.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture) ?? string.Empty);
+		Set("Amendment.OnOrAfter", AmendedOnOrAfter?.ToString(ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture) ?? string.Empty);
 		SaveSharedSettings();
 	}
 
@@ -461,19 +452,19 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		switch (_amendmentFilter)
 		{
 			case ArrivalAmendmentFilter.Cycles:
-				if (!TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out _))
+				if (!TryParseWholeNumber(AmendedWithinCycles, 1, ProcedureAmendmentFilter.MaxWithinCycles, out _))
 				{
 					validation.AddField(nameof(AmendedWithinCycles),
-						$"Enter a whole number of cycles from 1 to {MaxAmendedWithinCycles}.");
+						$"Enter a whole number of cycles from 1 to {ProcedureAmendmentFilter.MaxWithinCycles}.");
 				}
 
 				break;
 
 			case ArrivalAmendmentFilter.Days:
-				if (!TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out _))
+				if (!TryParseWholeNumber(AmendedWithinDays, 1, ProcedureAmendmentFilter.MaxWithinDays, out _))
 				{
 					validation.AddField(nameof(AmendedWithinDays),
-						$"Enter a whole number of days from 1 to {MaxAmendedWithinDays}.");
+						$"Enter a whole number of days from 1 to {ProcedureAmendmentFilter.MaxWithinDays}.");
 				}
 
 				break;
@@ -501,11 +492,11 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		return _amendmentFilter switch
 		{
 			ArrivalAmendmentFilter.Cycles => DescribeCyclesFilter(),
-			ArrivalAmendmentFilter.Days => TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out int days) && days == 1
+			ArrivalAmendmentFilter.Days => TryParseWholeNumber(AmendedWithinDays, 1, ProcedureAmendmentFilter.MaxWithinDays, out int days) && days == 1
 								? "those amended in the last day, counting back from today"
 								: $"those amended in the last {AmendedWithinDays.Trim()} days, counting back from today",
 			ArrivalAmendmentFilter.Date => AmendedOnOrAfter is { } onOrAfter
-								? $"those amended on or after {onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture)}"
+								? $"those amended on or after {onOrAfter.ToString(ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture)}"
 								: "those amended on or after a date not yet picked",
 			_ => null,
 		};
@@ -518,7 +509,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	/// <returns>e.g. <c>those amended in cycle 2610</c> or <c>those amended in the last 3 cycles (since cycle 2608)</c>.</returns>
 	private string DescribeCyclesFilter()
 	{
-		if (!TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out int cycles))
+		if (!TryParseWholeNumber(AmendedWithinCycles, 1, ProcedureAmendmentFilter.MaxWithinCycles, out int cycles))
 		{
 			return $"those amended in the last {AmendedWithinCycles.Trim()} cycles";
 		}

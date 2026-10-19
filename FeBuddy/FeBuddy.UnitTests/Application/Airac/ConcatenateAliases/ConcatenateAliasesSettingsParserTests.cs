@@ -130,10 +130,10 @@ public sealed class ConcatenateAliasesSettingsParserTests
 	[Theory]
 	[InlineData("Sources.1.FilePath", @"C:\a.txt", "Sources.1.Url", "https://example.com/a.txt", "both a file path and a web address")]
 	[InlineData("Sources.1.CredentialId", "0f8fad5bd9cb469fa16570867728950e", "Sources.9.FilePath", @"C:\b.txt", "has no file path or web address")]
-	[InlineData("Sources.1.FilePath", @"a.txt", "Sources.9.FilePath", @"C:\b.txt", "is not a full path")]
-	[InlineData("Sources.1.FilePath", @"\a.txt", "Sources.9.FilePath", @"C:\b.txt", "is not a full path")]
-	[InlineData("Sources.1.Url", "ftp://example.com/a.txt", "Sources.9.FilePath", @"C:\b.txt", "is not an http:// or https:// address")]
-	[InlineData("Sources.1.Url", "example.com/a.txt", "Sources.9.FilePath", @"C:\b.txt", "is not an http:// or https:// address")]
+	[InlineData("Sources.1.FilePath", @"a.txt", "Sources.9.FilePath", @"C:\b.txt", "Give the file's full path")]
+	[InlineData("Sources.1.FilePath", @"\a.txt", "Sources.9.FilePath", @"C:\b.txt", "Give the file's full path")]
+	[InlineData("Sources.1.Url", "ftp://example.com/a.txt", "Sources.9.FilePath", @"C:\b.txt", "Enter a web address starting with https://")]
+	[InlineData("Sources.1.Url", "example.com/a.txt", "Sources.9.FilePath", @"C:\b.txt", "Enter a web address starting with https://")]
 	[InlineData("Sources.1.Url", "https://example.com/a.txt", "Sources.1.CredentialId", "my token", "is not a credential id")]
 	public void a_bad_source_is_refused(string key1, string value1, string key2, string value2, string expected)
 	{
@@ -151,7 +151,7 @@ public sealed class ConcatenateAliasesSettingsParserTests
 	{
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => ConcatenateAliasesSettingsParser.Parse(Block(("Sources.1.Url", url))));
 
-		Assert.StartsWith($"Custom alias file 1's web address has {expected} in it.", ex.Message, StringComparison.Ordinal);
+		Assert.StartsWith($"Custom alias file 1: This address has {expected} in it.", ex.Message, StringComparison.Ordinal);
 		Assert.DoesNotContain("SECRET", ex.Message, StringComparison.Ordinal);
 	}
 
@@ -169,4 +169,23 @@ public sealed class ConcatenateAliasesSettingsParserTests
 
 	private static Dictionary<string, string> Block(params (string Key, string Value)[] entries) =>
 		entries.ToDictionary(e => e.Key, e => e.Value, StringComparer.OrdinalIgnoreCase);
+
+	/// <summary>
+	/// The run refuses what the tab refuses (<see cref="AliasSourceRules"/>): a GitHub page that isn't a file, and a
+	/// credential for a plain http address.
+	/// </summary>
+	[Theory]
+	[InlineData("https://github.com/Nikolai558/test-repo", null, "Custom alias file 1: This is a GitHub page, not a file.")]
+	[InlineData("http://example.com/a.txt", "0f8fad5b-d9cb-469f-a165-70867728950e", "Custom alias file 1: A credential is only ever sent to an https:// address.")]
+	public void a_run_refuses_what_the_tab_refuses(string url, string? credential, string message)
+	{
+		Dictionary<string, string> settings = Block(("Sources.1.Url", url));
+		if (credential is not null)
+		{
+			settings["Sources.1.CredentialId"] = credential;
+		}
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ConcatenateAliasesSettingsParser.Parse(settings));
+		Assert.StartsWith(message, ex.Message, StringComparison.Ordinal);
+	}
 }

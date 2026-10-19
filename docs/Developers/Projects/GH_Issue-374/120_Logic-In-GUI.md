@@ -12,25 +12,25 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 |---|---|---|---|---|---|
 | [U1-17](#u1-17) | Logic in GUI | Med | NASR-derived option lists and their rules live in the tab view models | Fixed | S5 |
 | [W3-9](#w3-9) | Logic in GUI | Med | GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI | Open | S5 |
-| [W1-6](#w1-6) | Logic in GUI | Med | Procedure Charts re-implements Core's selection and name-matching rules | Open | S5 |
+| [W1-6](#w1-6) | Logic in GUI | Med | Procedure Charts re-implements Core's selection and name-matching rules | Fixed | S5 |
 | [W6-8](#w6-8) | Logic in GUI | Low | The GUI guesses which words in Core's messages are file names | Open | S5 |
 | [C2-6](#c2-6) | Logic in GUI | Low | The Map's "towered" test copies AirportFieldMaps' display string | Open | S5 |
 | [W7-6](#w7-6) | Logic in GUI | Low | The coordinate-precision rule (0-15, default 6) is restated in the GUI twice | Fixed | S5 |
 | [W2-7](#w2-7) | Logic in GUI | Low | Per-sub-service result knowledge lives in the GUI three times | Open | S5 |
 | [W2-23](#w2-23) | Logic in GUI | Low | Sub-service keys, node paths and order are defined in the GUI and again in Core | Open | S5 |
 | [W1-11](#w1-11) | Logic in GUI | Low | Airways parses Core's message text and file keys, and spells Core's enum as string literals | Open | S5 |
-| [W2-18](#w2-18) | Logic in GUI | Low | Arrivals copies Core's parser limits, ARTCC splitting and file naming | Open | S5 |
+| [W2-18](#w2-18) | Logic in GUI | Low | Arrivals copies Core's parser limits, ARTCC splitting and file naming | Fixed | S5 |
 | [W2-20](#w2-20) | Logic in GUI | Low | ARTCC Boundaries repeats Core's altitude vocabulary and builds the per-ARTCC file list itself | Fixed | S5 |
-| [W1-8](#w1-8) | Logic in GUI | Low | Add Custom Aliases keeps its own copy of the parser's and loader's rules, and its doc says they're the same | Open | S5 |
-| [W1-9](#w1-9) | Logic in GUI | Low | Numbered-key lists are parsed by hand in two tabs, beside Core's parsers | Open | S5 |
+| [W1-8](#w1-8) | Logic in GUI | Low | Add Custom Aliases keeps its own copy of the parser's and loader's rules, and its doc says they're the same | Fixed | S5 |
+| [W1-9](#w1-9) | Logic in GUI | Low | Numbered-key lists are parsed by hand in two tabs, beside Core's parsers | Fixed | S5 |
 | [W2-21](#w2-21) | Logic in GUI | Low | DAT cropping-distance validation copies Core's parse rule | Fixed | S5 |
-| [W1-12](#w1-12) | Logic in GUI | Low | Departures repeats the parser's limits, date format and file layout | Open | S5 |
+| [W1-12](#w1-12) | Logic in GUI | Low | Departures repeats the parser's limits, date format and file layout | Fixed | S5 |
 | [W2-25](#w2-25) | Logic in GUI | Low | ERAM's "would this run delete anything" check parses the settings block in the GUI | Fixed | S5 |
 | [W2-22](#w2-22) | Logic in GUI | Low | The "no two files share a name" rule is only half in Core | Open | S5 |
 | [W1-10](#w1-10) | Logic in GUI | Low | Fixes re-implements combination parsing and file naming | Fixed | S5 |
 | [W2-19](#w2-19) | Logic in GUI | Low | NAVAIDs repeats NavaidBuilder's SHUTDOWN rule | Fixed | S5 |
 | [W3-12](#w3-12) | Logic in GUI | Low | Profile-name "already taken" rule duplicated from Core | Fixed | S5 |
-| [W4-6](#w4-6) | Logic in GUI | Low | Which folder files a conversion reads is decided twice, in the page and in Core | Open | S5 |
+| [W4-6](#w4-6) | Logic in GUI | Low | Which folder files a conversion reads is decided twice, in the page and in Core | Fixed | S5 |
 | [W3-10](#w3-10) | Logic in GUI | Low | Facility key duplicated as a literal; doc names only one reader | Open | S5 |
 | [W3-13](#w3-13) | Logic in GUI | Low | Settings backup before reset/uninstall is file logic in the view-model | Open | S5 |
 | [W3-14](#w3-14) | Logic in GUI | Low | Version-check status is worded by three separate ladders (and a failed check is called "offline") | Open | S5 |
@@ -67,7 +67,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-6 · Logic in GUI · Med · Procedure Charts re-implements Core's selection and name-matching rules
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `ProcedureSelection.AreaIncludes` is the run's rule for taking an airport whole, used by `Select` and by the tab's "Already included by…" hint; `ProcedureNameIndex.ResolveRoot` and `NamesFor` are the name lookups the tab calls. The airport ID lookup was already Core's, from [U1-1](110_GUI-Lag.md#u1-1). Tests: `ProcedureSelectionTests`, `ProcedureNameIndexTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:1437-1462`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L1437-L1462), 1327-1355, 1499-1535, 567-611
 
@@ -161,7 +161,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-18 · Logic in GUI · Low · Arrivals copies Core's parser limits, ARTCC splitting and file naming
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed, with [W1-12](#w1-12): the same `ProcedureAmendmentFilter`, and `ArrivalOutputFiles.GeojsonFileNamePattern`/`GeojsonFolderPattern`. The ARTCC split left the tab with [U1-1](110_GUI-Lag.md#u1-1); Core's option lists now split STAR_BASE.ARTCC with `ArrivalBuilder.SplitArtccs`, as the run does. Tests: `ProcedureAmendmentFilterTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:36-44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L36-L44), 131-135, 244-249, 497-500
 
@@ -185,7 +185,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-8 · Logic in GUI · Low · Add Custom Aliases keeps its own copy of the parser's and loader's rules, and its doc says they're the same
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `AliasSourceRules.Problem` is every row rule - the full path, http or https, not a GitHub page, no secret in the address, no credential sent to plain http - used by the parser and the tab, so a run now refuses the two the tab alone had. `AliasSourceRules.NoAliasCommands` is the loader's message and the tab's. Tests: `AliasSourceRulesTests`, `ConcatenateAliasesSettingsParserTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:557-597`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L557-L597), 599-636, 72-73
 
@@ -197,7 +197,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-9 · Logic in GUI · Low · Numbered-key lists are parsed by hand in two tabs, beside Core's parsers
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `NumberedSettings` (`TrySplit`, `Read`) reads `<Prefix><n>.<Field>` lists - numbers from 1 - for both parsers and both tabs, and the tabs' `SourcesKey`/`VirtualAirlinesKey` copies are gone. Tests: `NumberedSettingsTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:62`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L62), 274-313, 539-555; [`TelephonyViewModel.cs:64`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L64), 877-921
 
@@ -221,7 +221,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-12 · Logic in GUI · Low · Departures repeats the parser's limits, date format and file layout
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed, with [W2-18](#w2-18): `ProcedureAmendmentFilter` holds the limits (1,000 cycles, 36,500 days) and the date format for both parsers and both tabs; `DepartureOutputFiles.GeojsonFileNamePattern` and `GeojsonFolderPattern` spell the layout one way for What You'll Get and the File Names tab (`<Airport ID>_<Departure ID>`, `<ARTCC ID>\<Airport ID>`). Tests: `ProcedureAmendmentFilterTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs:37-45`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs#L37-L45), 133-137
 
@@ -293,7 +293,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W4-6 · Logic in GUI · Low · Which folder files a conversion reads is decided twice, in the page and in Core
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: each service counts its own folder (`DatToGeojsonService.CountSourceFiles` and the others), with the extension rule its run uses (`ConversionFiles.HasExtension`) and ERAM's closer look (`EramToGeojsonService.IsSourceFile`, which `Resolve` uses too); the pages call it, off the UI thread, and their `IsSourceFile` is gone. `Extensions` stays on the pages for the file picker. Tests: `ConversionSourceFolderTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs:83-96`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs#L83-L96), 474-477 (Core: [`Application/Conversions/ConversionFiles.cs:51-60`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/ConversionFiles.cs#L51-L60))
 

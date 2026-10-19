@@ -63,6 +63,46 @@ public sealed class ProcedureNameIndex
 	/// <summary>How many charts the metafile lists, a continuation page not counted.</summary>
 	public int ProcedureCount { get; }
 
+	/// <summary>
+	/// The root name a typed or picked departure or arrival is listed by: from its full name
+	/// (<c>BRWNZ FOUR (RNAV)</c>) or the root itself (<c>BRWNZ</c>), spelled as the FAA does - the way the
+	/// run matches a pick (<see cref="ProcedureNaming.RootName"/>).
+	/// </summary>
+	/// <param name="typed">The text typed or picked.</param>
+	/// <returns>The root name, or <see langword="null"/> when the metafile has no departure or arrival by it.</returns>
+	public string? ResolveRoot(string? typed)
+	{
+		string trimmed = typed?.Trim() ?? string.Empty;
+
+		if (trimmed.Length == 0)
+		{
+			return null;
+		}
+
+		string root = ProcedureNaming.RootName(NamesByCanonical.TryGetValue(trimmed, out string? canonical) ? canonical : trimmed);
+
+		return NamesByRoot.TryGetValue(root, out IReadOnlyList<string>? names) ? ProcedureNaming.RootName(names[0]) : null;
+	}
+
+	/// <summary>The departures and arrivals with this root name, at one airport or at any: what a pick by it brings in.</summary>
+	/// <param name="root">The root name.</param>
+	/// <param name="airport">The airport (FAA or ICAO identifier), or <see langword="null"/> for any.</param>
+	/// <returns>Their current names, in chart order at one airport or alphabetical at any.</returns>
+	public IReadOnlyList<string> NamesFor(string root, string? airport)
+	{
+		ArgumentNullException.ThrowIfNull(root);
+
+		if (airport is null)
+		{
+			return NamesByRoot.TryGetValue(root, out IReadOnlyList<string>? names) ? [.. names.Order(StringComparer.OrdinalIgnoreCase)] : [];
+		}
+
+		return AirportsByIdent.TryGetValue(airport, out DtppAirport? metafileAirport)
+			&& NamesByAirport.TryGetValue(metafileAirport.AptIdent, out IReadOnlyList<string>? atAirport)
+				? [.. atAirport.Where(name => ProcedureNaming.RootName(name).Equals(root, StringComparison.OrdinalIgnoreCase))]
+				: [];
+	}
+
 	/// <summary>A metafile's index: built the first time it is asked for, then kept with the metafile.</summary>
 	/// <param name="metafile">The parsed metafile.</param>
 	/// <returns>The index.</returns>

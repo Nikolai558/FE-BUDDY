@@ -62,4 +62,24 @@ public sealed class ProcedureNameIndexTests
 		Assert.Throws<ArgumentNullException>(() => ProcedureNameIndex.For(null!));
 		Assert.Throws<ArgumentNullException>(() => ProcedureNameIndex.Build(null!));
 	}
+
+	/// <summary>A typed name, full or root, resolves to the root a pick is listed by; a root's names are found at one airport or any.</summary>
+	[Fact]
+	public void a_typed_name_resolves_to_its_root_and_a_root_to_its_names()
+	{
+		ProcedureNameIndex index = ProcedureNameIndex.Build(Metafile());
+
+		Assert.Equal("BRWNZ", index.ResolveRoot(" brwnz five (rnav) "));
+		Assert.Equal("BRWNZ", index.ResolveRoot("BRWNZ"));
+		Assert.Null(index.ResolveRoot("NOPE"));
+		Assert.Null(index.ResolveRoot("  "));
+		Assert.Null(index.ResolveRoot(null));
+
+		Assert.Equal(["BRWNZ FIVE (RNAV)"], index.NamesFor("BRWNZ", airport: null));
+		Assert.Equal(["BRWNZ FIVE (RNAV)"], index.NamesFor("brwnz", "KLAS"));
+		Assert.Empty(index.NamesFor("BRWNZ", "PIT"));
+		Assert.Empty(index.NamesFor("BRWNZ", "XXX"));
+		Assert.Empty(index.NamesFor("NOPE", airport: null));
+		Assert.Throws<ArgumentNullException>(() => index.NamesFor(null!, null));
+	}
 }

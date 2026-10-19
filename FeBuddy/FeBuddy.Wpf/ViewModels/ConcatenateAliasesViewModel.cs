@@ -20,6 +20,7 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.ConcatenateAliases;
 using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
@@ -58,7 +59,6 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
 {
 	private const string Node = "Services.AiracService.ConcatenateAliases";
-	private const string SourcesKey = "Sources";
 	private const string LogSource = "ConcatenateAliases";
 
 	/// <summary>
@@ -68,8 +68,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// </summary>
 	private const string AddCustomAliasFilesConfigKey = "CombineAliasFiles";
 
-	private const string NoAliasCommandsMessage =
-		"It has no alias commands (lines starting with a dot), so it isn't an alias file. Choose your facility's alias file.";
+	private const string NoAliasCommandsMessage = AliasSourceRules.NoAliasCommands + " Choose your facility's alias file.";
 
 	private readonly CredentialStore _store;
 	private readonly HttpClient? _httpClient;
@@ -281,29 +280,9 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		{
 			Sources.Clear();
 
-			string prefix = $"{NodePath}.{SourcesKey}.";
-			SortedDictionary<int, Dictionary<string, string>> byNumber = [];
-
-			foreach ((string key, string value) in UserConfigFile.SnapshotValues())
-			{
-				if (!key.StartsWith(prefix, StringComparison.Ordinal))
-				{
-					continue;
-				}
-
-				string[] parts = key[prefix.Length..].Split('.');
-
-				if (parts.Length == 2 && int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int number))
-				{
-					if (!byNumber.TryGetValue(number, out Dictionary<string, string>? fields))
-					{
-						fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-						byNumber[number] = fields;
-					}
-
-					fields[parts[1]] = value.Trim();
-				}
-			}
+			// Read as the run reads it (NumberedSettings), so a row the run would skip isn't shown either.
+			SortedDictionary<int, Dictionary<string, string>> byNumber =
+				NumberedSettings.Read(UserConfigFile.SnapshotValues(), $"{NodePath}.{ConcatenateAliasesSettingsParser.SourcesPrefix}");
 
 			foreach (Dictionary<string, string> fields in byNumber.Values)
 			{
@@ -342,7 +321,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		Set(AddCustomAliasFilesConfigKey, YesNo(AddCustomAliasFiles));
 
 		// The list is written whole: a removed row must not leave its numbered keys behind.
-		RemoveSubtree(SourcesKey);
+		RemoveSubtree(ConcatenateAliasesSettingsParser.SourcesPrefix.TrimEnd('.'));
 
 		foreach (AliasSourceRow row in Sources)
 		{
@@ -593,7 +572,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// <summary>The keys a row is saved as, relative to the tab's node.</summary>
 	private static IEnumerable<(string Key, string Value)> KeysOf(AliasSourceRow row)
 	{
-		string prefix = $"{SourcesKey}.{row.Number.ToString(CultureInfo.InvariantCulture)}.";
+		string prefix = $"{ConcatenateAliasesSettingsParser.SourcesPrefix}{row.Number.ToString(CultureInfo.InvariantCulture)}.";
 
 		if (row.IsFile)
 		{
@@ -609,47 +588,9 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		}
 	}
 
-	/// <summary>Why a row cannot be saved - the same rules <see cref="ConcatenateAliasesSettingsParser"/> applies - or <see langword="null"/>.</summary>
-	private static string? ErrorOf(AliasSourceRow row)
-	{
-		string location = row.Location.Trim();
-
-		if (row.IsFile)
-		{
-			return location.Length == 0 ? "Choose the file."
-				: !Path.IsPathFullyQualified(location) ? @"Give the file's full path, such as C:\Users\me\Documents\ZOB-Alias.txt."
-				: null;
-		}
-
-		if (location.Length == 0)
-		{
-			return "Enter the file's web address.";
-		}
-
-		if (!Uri.TryCreate(location, UriKind.Absolute, out Uri? url) || (url.Scheme != Uri.UriSchemeHttps && url.Scheme != Uri.UriSchemeHttp))
-		{
-			return "Enter a web address starting with https://.";
-		}
-
-		if (GitHubFileUrl.IsPageButNotFile(url))
-		{
-			return "This is a GitHub page, not a file. Open the alias file itself on GitHub and copy its address, or its Raw link.";
-		}
-
-		if (UrlSecrets.Describe(url) is { } secret)
-		{
-			return $"This address has {secret} in it. Remove it and choose a credential instead: web addresses are saved " +
-				"in FE-Buddy's settings and in settings exports.";
-		}
-
-		// A file on GitHub is downloaded from GitHub's API over https whatever the address says.
-		if (row.CredentialId != Guid.Empty && url.Scheme != Uri.UriSchemeHttps && GitHubFileUrl.ToContentsApi(url) is null)
-		{
-			return "A credential is only ever sent to an https:// address.";
-		}
-
-		return null;
-	}
+	/// <summary>Why a row cannot be saved - the rules the run's parser refuses it by (<see cref="AliasSourceRules"/>) - or <see langword="null"/>.</summary>
+	private static string? ErrorOf(AliasSourceRow row) =>
+		AliasSourceRules.Problem(row.Kind, row.Location, hasCredential: row.CredentialId != Guid.Empty);
 
 	/// <summary>
 	/// Why a file on this PC can't be saved for what it holds: a file with no alias command in it is

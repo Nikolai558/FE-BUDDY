@@ -1,5 +1,8 @@
 using FeBuddy.Core.Application.Conversions;
 using FeBuddy.Core.Application.Conversions.Models;
+using FeBuddy.Core.Application.Conversions.DatToGeojson;
+using FeBuddy.Core.Application.Conversions.EramToGeojson;
+using FeBuddy.Core.Application.Conversions.SctToGeojson;
 
 namespace FeBuddy.UnitTests.Application.Conversions;
 
@@ -82,5 +85,22 @@ public sealed class ConversionSourceFolderTests : IDisposable
 		Assert.Throws<ArgumentNullException>(() => ConversionSourceFolder.Count(null!, Dat, _ => true));
 		Assert.Throws<ArgumentNullException>(() => ConversionSourceFolder.Count(_root, null!, _ => true));
 		Assert.Throws<ArgumentNullException>(() => ConversionSourceFolder.Count(_root, Dat, null!));
+	}
+
+	/// <summary>Each conversion counts its folder by the rule its run picks files by - ERAM only the Geomaps file.</summary>
+	[Fact]
+	public void each_conversion_counts_what_its_run_converts()
+	{
+		File.WriteAllText(Path.Combine(_root, "A.dat"), "a");
+		File.WriteAllText(Path.Combine(_root, "B.sct2"), "b");
+		File.WriteAllText(Path.Combine(_root, "C.SCT"), "c");
+		File.WriteAllText(Path.Combine(_root, "Geomaps.xml"), "<Geomaps_Records />");
+		File.WriteAllText(Path.Combine(_root, "Airport.xml"), "<Airport_Records />");
+
+		Assert.Equal(1, DatToGeojsonService.CountSourceFiles(_root).Files);
+		Assert.Equal(2, SctToGeojsonService.CountSourceFiles(_root).Files);
+		Assert.Equal(1, EramToGeojsonService.CountSourceFiles(_root).Files);
+		Assert.True(EramToGeojsonService.IsSourceFile(Path.Combine(_root, "Geomaps.xml")));
+		Assert.False(EramToGeojsonService.IsSourceFile(Path.Combine(_root, "Airport.xml")));
 	}
 }

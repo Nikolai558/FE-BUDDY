@@ -10,6 +10,13 @@ namespace FeBuddy.Core.Application.Conversions;
 /// </summary>
 internal static class ConversionFiles
 {
+	/// <summary>Whether a folder's file has one of the conversion's extensions, ignoring case: the first test a source file passes.</summary>
+	/// <param name="path">The file.</param>
+	/// <param name="extensions">The extensions, e.g. <c>.dat</c>.</param>
+	/// <returns><see langword="true"/> when it has one.</returns>
+	public static bool HasExtension(string path, IReadOnlyCollection<string> extensions) =>
+		extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+
 	/// <summary>
 	/// The files to convert: those named, or every file in the folder (not its sub-folders) with
 	/// one of <paramref name="extensions"/>, by name.
@@ -51,7 +58,7 @@ internal static class ConversionFiles
 		// Filtered here rather than by a search pattern, whose Windows wildcard rules differ
 		// from what a user expects of an extension.
 		string[] found = [.. Directory.EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly)
-			.Where(path => extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
+			.Where(path => HasExtension(path, extensions))
 			.Order(StringComparer.OrdinalIgnoreCase)];
 
 		if (isSource is not null && found.Length > 0)

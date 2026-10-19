@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
@@ -167,25 +165,7 @@ public static class TelephonySettingsParser
 		out HashSet<string> keys)
 	{
 		keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		SortedDictionary<int, Dictionary<string, string>> byNumber = [];
-
-		foreach (KeyValuePair<string, string> entry in settings)
-		{
-			if (!TrySplitVirtualAirlineKey(entry.Key, out int number, out string field))
-			{
-				continue;
-			}
-
-			keys.Add(entry.Key);
-
-			if (!byNumber.TryGetValue(number, out Dictionary<string, string>? fields))
-			{
-				fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-				byNumber[number] = fields;
-			}
-
-			fields[field] = entry.Value?.Trim() ?? string.Empty;
-		}
+		SortedDictionary<int, Dictionary<string, string>> byNumber = NumberedSettings.Read(settings, VirtualAirlinesPrefix, keys);
 
 		List<VirtualAirline> virtualAirlines = [];
 		Dictionary<VirtualAirline, int> firstNumber = [];
@@ -229,30 +209,5 @@ public static class TelephonySettingsParser
 		}
 
 		return virtualAirlines;
-	}
-
-	/// <summary>Splits <c>VirtualAirlines.2.Telephony</c> into <c>2</c> and <c>Telephony</c>.</summary>
-	private static bool TrySplitVirtualAirlineKey(string key, out int number, out string field)
-	{
-		number = 0;
-		field = string.Empty;
-
-		if (!key.StartsWith(VirtualAirlinesPrefix, StringComparison.OrdinalIgnoreCase))
-		{
-			return false;
-		}
-
-		string[] parts = key[VirtualAirlinesPrefix.Length..].Split('.');
-
-		if (parts.Length != 2
-			|| !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out number)
-			|| number < 1
-			|| parts[1].Length == 0)
-		{
-			return false;
-		}
-
-		field = parts[1];
-		return true;
 	}
 }

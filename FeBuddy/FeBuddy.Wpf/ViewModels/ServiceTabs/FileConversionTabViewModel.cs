@@ -98,13 +98,13 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	protected abstract string FileDescription { get; }
 
 	/// <summary>
-	/// Whether a folder file with the right extension is one this conversion reads; the folder
-	/// summary counts only those. Every one, unless a page looks closer - ERAM picks
-	/// <c>Geomaps.xml</c> out of a whole adaptation export, as its service does.
+	/// Counts the folder's files the conversion would read, by its service's own rule (ERAM picks
+	/// <c>Geomaps.xml</c> out of a whole adaptation export). Called off the UI thread.
 	/// </summary>
-	/// <param name="path">The file.</param>
-	/// <returns><see langword="true"/> to count it.</returns>
-	protected virtual bool IsSourceFile(string path) => true;
+	/// <param name="folder">The folder.</param>
+	/// <param name="cancellationToken">Stops the count; a newer one has started.</param>
+	/// <returns>What the count found.</returns>
+	protected abstract SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken);
 
 	/// <inheritdoc />
 	/// <remarks>Off unless a page turns it on: most conversions take any number of files.</remarks>
@@ -507,12 +507,11 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		RaiseFolderChanged();
 
 		string folder = SourceFolder;
-		IReadOnlyList<string> extensions = Extensions;
 		SourceFolderCount count;
 
 		try
 		{
-			count = await Task.Run(() => ConversionSourceFolder.Count(folder, extensions, IsSourceFile, stop.Token), stop.Token);
+			count = await Task.Run(() => CountSourceFiles(folder, stop.Token), stop.Token);
 		}
 		catch (OperationCanceledException)
 		{

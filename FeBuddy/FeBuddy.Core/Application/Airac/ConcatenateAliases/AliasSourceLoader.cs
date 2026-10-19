@@ -309,6 +309,6 @@ public static class AliasSourceLoader
 
 		return CombinedAliasFileWriter.CountCommands(text) > 0
 			? AliasSourceLoad.Read(source, text)
-			: AliasSourceLoad.Failed(source, "It has no alias commands (lines starting with a dot), so it does not look like an alias file.");
+			: AliasSourceLoad.Failed(source, AliasSourceRules.NoAliasCommands);
 	}
 }

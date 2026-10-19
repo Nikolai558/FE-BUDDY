@@ -46,6 +46,10 @@ public sealed class DatToGeojsonViewModel : FileConversionTabViewModel
 	protected override IReadOnlyList<string> Extensions => DatToGeojsonService.Extensions;
 
 	/// <inheritdoc />
+	protected override SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken) =>
+		DatToGeojsonService.CountSourceFiles(folder, cancellationToken);
+
+	/// <inheritdoc />
 	protected override string FileDescription => "FAA video maps";
 
 	/// <summary>

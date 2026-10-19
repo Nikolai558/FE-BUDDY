@@ -13,6 +13,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Telephony;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.SharedData.Models;
@@ -59,8 +60,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 {
 	private const string Node = "Services.AiracService.Telephony";
 
-	/// <summary>The numbered list's node under <see cref="Node"/>: <c>VirtualAirlines.1.Designator</c>, as the settings block names it.</summary>
-	private const string VirtualAirlinesKey = "VirtualAirlines";
 
 	private readonly Dispatcher _dispatcher;
 	private string _telephonyDataStatus = string.Empty;
@@ -645,7 +644,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		Set(TelephonySettingsParser.IncludeVatsimRadarKey, YesNo(IncludeVatsimRadarList));
 
 		// The list is written whole: a removed virtual airline must not leave its numbered keys behind.
-		RemoveSubtree(VirtualAirlinesKey);
+		RemoveSubtree(TelephonySettingsParser.VirtualAirlinesPrefix.TrimEnd('.'));
 
 		foreach ((string key, string value) in VirtualAirlineKeys())
 		{
@@ -941,29 +940,9 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		EndVirtualAirlineEdit();
 		VirtualAirlines.Clear();
 
-		string prefix = $"{NodePath}.{TelephonySettingsParser.VirtualAirlinesPrefix}";
-		SortedDictionary<int, Dictionary<string, string>> byNumber = [];
-
-		foreach ((string key, string value) in UserConfigFile.SnapshotValues())
-		{
-			if (!key.StartsWith(prefix, StringComparison.Ordinal))
-			{
-				continue;
-			}
-
-			string[] parts = key[prefix.Length..].Split('.');
-
-			if (parts.Length == 2 && int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int number))
-			{
-				if (!byNumber.TryGetValue(number, out Dictionary<string, string>? fields))
-				{
-					fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-					byNumber[number] = fields;
-				}
-
-				fields[parts[1]] = value.Trim();
-			}
-		}
+		// Read as the run reads it (NumberedSettings).
+		SortedDictionary<int, Dictionary<string, string>> byNumber =
+			NumberedSettings.Read(UserConfigFile.SnapshotValues(), $"{NodePath}.{TelephonySettingsParser.VirtualAirlinesPrefix}");
 
 		foreach (Dictionary<string, string> fields in byNumber.Values)
 		{

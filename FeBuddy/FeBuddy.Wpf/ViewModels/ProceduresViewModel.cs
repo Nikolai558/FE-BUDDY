@@ -11,7 +11,6 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Settings;
-using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Domain.Procedures;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -1388,30 +1387,26 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <summary>
-	/// How the area already includes the whole airport, the way the library decides it: its
-	/// responsible ARTCC is a facility ticked, or it is inside the ROI. <see langword="null"/> when
-	/// the area doesn't.
+	/// How the area already includes the whole airport, by the run's rule
+	/// (<see cref="ProcedureSelection.AreaIncludes"/>): its responsible ARTCC is a facility ticked, or it is
+	/// inside the ROI. <see langword="null"/> when the area doesn't, or is everything or nothing - the card
+	/// isn't used then.
 	/// </summary>
 	/// <param name="faaId">The airport's FAA ID.</param>
 	/// <param name="facilities">The facilities ticked, while the area is the facilities; otherwise none.</param>
 	/// <param name="region">The ROI, while the area is the ROI; otherwise <see langword="null"/>.</param>
 	private string? IncludedBy(string faaId, HashSet<string> facilities, RegionOfInterest? region)
 	{
-		if (!_nasrAirportsByFaaId.TryGetValue(faaId, out AptCsvDataModel.AptBase? row))
+		if (Area is not (SubServiceArea.Artccs or SubServiceArea.Roi)
+			|| !_nasrAirportsByFaaId.TryGetValue(faaId, out AptCsvDataModel.AptBase? row)
+			|| !ProcedureSelection.AreaIncludes(Area, facilities, region, row.RespArtccId, row.BaseLatDecimal, row.BaseLongDecimal))
 		{
 			return null;
 		}
 
-		string artcc = (row.RespArtccId ?? string.Empty).Trim();
-
-		if (artcc.Length > 0 && facilities.Contains(artcc))
-		{
-			return $"by {artcc.ToUpperInvariant()}, a facility ticked on the Area card";
-		}
-
-		return region is not null && RoiFilter.Contains(region, row.BaseLatDecimal, row.BaseLongDecimal)
-			? $"by {RoiName}"
-			: null;
+		return Area == SubServiceArea.Artccs
+			? $"by {row.RespArtccId.Trim().ToUpperInvariant()}, a facility ticked on the Area card"
+			: $"by {RoiName}";
 	}
 
 	private static void AddHintLine(List<string> lines, string reason, IEnumerable<AirportEntry> entries)
@@ -1466,43 +1461,11 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		MarkDirty();
 	}
 
-	/// <summary>
-	/// The root name a typed or picked departure or arrival is listed by: from its full name
-	/// (<c>BRWNZ FOUR (RNAV)</c>) or the root itself (<c>BRWNZ</c>), spelled as the FAA does.
-	/// <see langword="null"/> when the selected cycle has no departure or arrival by it.
-	/// </summary>
-	/// <param name="typed">The text typed or picked.</param>
-	/// <returns>The root name, or <see langword="null"/>.</returns>
-	private string? ResolveRoot(string typed)
-	{
-		string trimmed = typed.Trim();
+	/// <summary>The root name a typed or picked departure or arrival is listed by, in the selected cycle (<see cref="ProcedureNameIndex.ResolveRoot"/>).</summary>
+	private string? ResolveRoot(string typed) => _dtppIndex.ResolveRoot(typed);
 
-		if (trimmed.Length == 0)
-		{
-			return null;
-		}
-
-		string root = ProcedureNaming.RootName(_dtppIndex.NamesByCanonical.TryGetValue(trimmed, out string? canonical) ? canonical : trimmed);
-
-		return _dtppIndex.NamesByRoot.TryGetValue(root, out IReadOnlyList<string>? names) ? ProcedureNaming.RootName(names[0]) : null;
-	}
-
-	/// <summary>The selected cycle's departures and arrivals with this root name, at one airport or at any.</summary>
-	/// <param name="root">The root name.</param>
-	/// <param name="airport">The airport (FAA or ICAO identifier), or <see langword="null"/> for any.</param>
-	/// <returns>Their current names, in chartseq order at one airport or alphabetical at any.</returns>
-	private IReadOnlyList<string> CurrentNames(string root, string? airport)
-	{
-		if (airport is null)
-		{
-			return _dtppIndex.NamesByRoot.TryGetValue(root, out IReadOnlyList<string>? names) ? [.. names.Order(StringComparer.OrdinalIgnoreCase)] : [];
-		}
-
-		return _dtppIndex.AirportsByIdent.TryGetValue(airport, out DtppAirport? metafileAirport)
-			&& _dtppIndex.NamesByAirport.TryGetValue(metafileAirport.AptIdent, out IReadOnlyList<string>? atAirport)
-				? [.. atAirport.Where(name => ProcedureNaming.RootName(name).Equals(root, StringComparison.OrdinalIgnoreCase))]
-				: [];
-	}
+	/// <summary>The selected cycle's departures and arrivals with this root name, at one airport or at any (<see cref="ProcedureNameIndex.NamesFor"/>).</summary>
+	private IReadOnlyList<string> CurrentNames(string root, string? airport) => _dtppIndex.NamesFor(root, airport);
 
 	/// <summary>After the selected cycle's metafile changes: each listed name's current names, on both cards.</summary>
 	private void RefreshListedNames()

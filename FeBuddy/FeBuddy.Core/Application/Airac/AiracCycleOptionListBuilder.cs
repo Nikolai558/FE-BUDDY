@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 
+using FeBuddy.Core.Application.Airac.Arrivals;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Domain.Airways;
@@ -46,8 +47,8 @@ public static class AiracCycleOptionListBuilder
 		{
 			AirwayDesignations = Sorted((data.Awy?.AwyBase ?? []).Select(airway => AirwayClassifier.DeriveDesignation(airway.AwyId))),
 
-			// STAR_BASE.ARTCC can name several centres, space-separated, for a STAR they share.
-			StarArtccs = Sorted((data.Star?.StarBase ?? []).SelectMany(star => (star.Artcc ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))),
+			// STAR_BASE.ARTCC can name several centres, space-separated, for a STAR they share: split as the run splits it.
+			StarArtccs = Sorted((data.Star?.StarBase ?? []).SelectMany(star => ArrivalBuilder.SplitArtccs(star.Artcc ?? string.Empty))),
 			DepartureArtccs = Sorted((data.Dp?.DpBase ?? []).Select(departure => departure.Artcc)),
 			NavaidTypes = InKnownOrder(
 				(data.Nav?.NavBase ?? []).Where(navaid => !NavaidBuilder.IsShutDown(navaid)).Select(navaid => Normalize(navaid.NavType)),

@@ -89,11 +89,11 @@ public static class DepartureSettingsParser
 				"\"Days\" (with AmendedWithinDays) or \"Date\" (with AmendedOnOrAfter).");
 
 		int amendedWithinCycles = amendmentFilter == DepartureAmendmentFilter.Cycles
-			? SettingsValueReader.RequiredIntInRange(departureSettings, "AmendedWithinCycles", minimum: 1, maximum: 1000)
+			? SettingsValueReader.RequiredIntInRange(departureSettings, "AmendedWithinCycles", minimum: 1, maximum: ProcedureAmendmentFilter.MaxWithinCycles)
 			: 0;
 
 		int amendedWithinDays = amendmentFilter == DepartureAmendmentFilter.Days
-			? SettingsValueReader.RequiredIntInRange(departureSettings, "AmendedWithinDays", minimum: 1, maximum: 36500)
+			? SettingsValueReader.RequiredIntInRange(departureSettings, "AmendedWithinDays", minimum: 1, maximum: ProcedureAmendmentFilter.MaxWithinDays)
 			: 0;
 
 		DateOnly? amendedOnOrAfter = amendmentFilter == DepartureAmendmentFilter.Date
@@ -168,10 +168,10 @@ public static class DepartureSettingsParser
 	{
 		string raw = SettingsValueReader.RequiredString(settings, "AmendedOnOrAfter");
 
-		if (!DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
+		if (!DateOnly.TryParseExact(raw, ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
 		{
 			throw new ArgumentException(
-				$"'AmendedOnOrAfter' value '{raw}' is not a valid date. Use the format yyyy-MM-dd, e.g. \"2026-01-01\".");
+				$"'AmendedOnOrAfter' value '{raw}' is not a valid date. Use the format {ProcedureAmendmentFilter.DateFormat}, e.g. \"2026-01-01\".");
 		}
 
 		return date;

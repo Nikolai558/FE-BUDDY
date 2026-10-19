@@ -13,6 +13,26 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-19
+<!--
+PostId: 2026-10-19.1
+-->
+
+**Version 3.0.0-beta.13 Compiled!**
+
+Fewer pauses, and a big round of fixes
+
+- **Please set these again**: your **Facility**, coordinate precision and default ROI in Settings, and the AIRAC Service's **General** tab, start on their defaults after this update
+- **Faster**: FE-Buddy starts quicker and each page opens without a pause the first time. Switching cycles, tabs and profiles, panning the **Map** and the activity log no longer hold up the window
+- **General tab**: opens on the cycle in effect (Current or Next), and its **Save** and **Undo last save** only touch its own settings
+- **Updated from another Windows account?** An open FE-Buddy now notices and offers a restart
+- **Fixes**: switching cycles keeps your unsaved ticks, a cycle that won't load says why, DAT and SCT conversions no longer overwrite a file that shares a name, and a save can't wipe a briefly locked settings file
+- **Coming from beta.3 or earlier?** Your settings aren't carried over. Use **Import…** in Settings on `%APPDATA%\FE-Buddy\UserConfig.json`
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.13)!!!
+
+---
+
 ## 2026-10-14
 <!--
 PostId: 2026-10-14.2

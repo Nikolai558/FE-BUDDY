@@ -34,7 +34,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 {
-	private const string Node = "Services.AiracService.General";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.General}";
 	private const string SelectedSubServicesKey = "SelectedSubServices";
 	private const string OutputsNode = "Outputs";
 	private const string CyclePositionKey = "CyclePosition";

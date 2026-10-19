@@ -7,6 +7,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.WxStations;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -28,7 +29,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.WxStations";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.WxStations}";
 
 	private string _stationDataStatus = string.Empty;
 

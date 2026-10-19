@@ -6,8 +6,7 @@ using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
-
-using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo;
@@ -502,7 +501,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		ArgumentNullException.ThrowIfNull(file);
 
-		return file.IsGeojson ? AiracOutputPaths.GeojsonFolder : AiracOutputPaths.AliasFolder;
+		return OutputFileNames.FolderOf(file.Key);
 	}
 
 	/// <summary>Where a CRC defaults row is saved under this tab's config node.</summary>
@@ -956,7 +955,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	private SubServiceArea SavedArea()
 	{
-		string tab = NodePath[(NodePath.LastIndexOf('.') + 1)..];
+		string tab = AiracTabs.TabOf(NodePath) ?? string.Empty;
 
 		foreach (string? saved in new[] { Get(UserConfigAreas.AreaKey), UserConfigAreas.DefaultFor(tab, UserConfigFile.GetValue) })
 		{

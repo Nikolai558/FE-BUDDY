@@ -58,7 +58,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.ConcatenateAliases";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.ConcatenateAliases}";
 	private const string LogSource = "ConcatenateAliases";
 
 	/// <summary>

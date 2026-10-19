@@ -668,7 +668,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			// Saved before anything else can fail: the user made these choices to be kept.
 			_duplicateAliases.SaveChoices(result.DuplicateAliasChoicesMade);
 
-			string summary = SummarizeRun(cycle.AiracCycleId, result);
+			string summary = AiracRunSummary.Describe(cycle.AiracCycleId, result);
 			SubServiceRunResult[] subServiceResults = [.. targets
 				.Select(t => t.DescribeRunResult(result))
 				.OfType<SubServiceRunResult>()];
@@ -681,7 +681,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				result,
 				summary,
 				subServiceResults,
-				CollectFilesWritten(result),
+				result.FilesWritten,
 				outputFolder);
 
 			if (result.StoppedAtDuplicateReview)
@@ -761,193 +761,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <param name="directory">The run's cycle folder.</param>
 	/// <returns>The folder, or <see langword="null"/> when nothing was written.</returns>
 	private static string? ExistingFolder(string directory) => Directory.Exists(directory) ? directory : null;
-
-	/// <summary>Every file the run wrote, across sub-services.</summary>
-	/// <param name="result">The aggregated result.</param>
-	/// <returns>The paths, in sub-service order.</returns>
-	private static string[] CollectFilesWritten(AiracServiceResult result)
-	{
-		List<string> files = [];
-
-		if (result.Airways is { } airways)
-		{
-			files.AddRange(airways.GeojsonFilesWritten);
-
-			if (airways.AliasFilePath is { } airwayAlias)
-			{
-				files.Add(airwayAlias);
-			}
-		}
-
-		if (result.Airports is { } airports)
-		{
-			files.AddRange(airports.GeojsonFilesWritten);
-
-			if (airports.AliasFilePath is { } airportAlias)
-			{
-				files.Add(airportAlias);
-			}
-		}
-
-		if (result.Departures is { } departures)
-		{
-			files.AddRange(departures.GeojsonFilesWritten);
-
-			if (departures.AliasFilePath is { } departureAlias)
-			{
-				files.Add(departureAlias);
-			}
-		}
-
-		if (result.Arrivals is { } arrivals)
-		{
-			files.AddRange(arrivals.GeojsonFilesWritten);
-
-			if (arrivals.AliasFilePath is { } arrivalAlias)
-			{
-				files.Add(arrivalAlias);
-			}
-		}
-
-		if (result.Navaids is { } navaids)
-		{
-			files.AddRange(navaids.GeojsonFilesWritten);
-
-			if (navaids.AliasFilePath is { } navaidAlias)
-			{
-				files.Add(navaidAlias);
-			}
-		}
-
-		if (result.ArtccBoundaries is { } artccBoundaries)
-		{
-			files.AddRange(artccBoundaries.GeojsonFilesWritten);
-		}
-
-		if (result.Fixes is { } fixes)
-		{
-			files.AddRange(fixes.GeojsonFilesWritten);
-		}
-
-		if (result.WxStations is { } wxStations)
-		{
-			files.AddRange(wxStations.GeojsonFilesWritten);
-		}
-
-		if (result.Procedures is { } procedures)
-		{
-			files.AddRange(procedures.FilesWritten);
-
-			if (procedures.AliasFilePath is { } chartRecallAlias)
-			{
-				files.Add(chartRecallAlias);
-			}
-		}
-
-		if (result.Telephony?.AliasFilePath is { } telephonyAlias)
-		{
-			files.Add(telephonyAlias);
-		}
-
-		if (result.DuplicateAliasReport is { } duplicateAliasReport)
-		{
-			files.Add(duplicateAliasReport.FilePath);
-		}
-
-		if (result.CombinedAlias?.FilePath is { } combinedAlias)
-		{
-			files.Add(combinedAlias);
-		}
-
-		return [.. files];
-	}
-
-	/// <summary>Builds the one-line "what the run produced" summary for the completion toast.</summary>
-	/// <param name="cycleId">The cycle that was run.</param>
-	/// <param name="result">The aggregated result.</param>
-	/// <returns>The toast message.</returns>
-	private static string SummarizeRun(string cycleId, AiracServiceResult result)
-	{
-		List<string> parts = [];
-
-		if (result.Airways is { } airways)
-		{
-			parts.Add($"{airways.AirwayCount:N0} airway(s)"
-				+ (airways.ExcludedAirwayIds.Count > 0 ? $", {airways.ExcludedAirwayIds.Count} excluded" : string.Empty));
-		}
-
-		if (result.Airports is { } airports)
-		{
-			parts.Add($"{airports.AirportCount:N0} airport(s)");
-		}
-
-		if (result.Departures is { } departures)
-		{
-			parts.Add($"{departures.AirportProcedureCount:N0} airport departure(s)"
-				+ (departures.SkippedForMissingPointsCount > 0 ? $", {departures.SkippedForMissingPointsCount} skipped" : string.Empty));
-		}
-
-		if (result.Arrivals is { } arrivals)
-		{
-			parts.Add($"{arrivals.AirportProcedureCount:N0} airport arrival(s)"
-				+ (arrivals.SkippedForMissingPointsCount > 0 ? $", {arrivals.SkippedForMissingPointsCount} skipped" : string.Empty));
-		}
-
-		if (result.Navaids is { } navaids)
-		{
-			parts.Add($"{navaids.NavaidCount:N0} NAVAID(s)");
-		}
-
-		if (result.ArtccBoundaries is { } b)
-		{
-			parts.Add($"{b.RingCount:N0} ARTCC boundary line(s)");
-		}
-
-		if (result.Fixes is { } fixes)
-		{
-			parts.Add($"{fixes.FixCount:N0} fix(es)");
-		}
-
-		if (result.WxStations is { } wxStations)
-		{
-			parts.Add($"{wxStations.StationCount:N0} weather station(s)");
-		}
-
-		if (result.Procedures is { } procedures)
-		{
-			if (procedures.FilesWritten.Count > 0)
-			{
-				parts.Add($"{procedures.AirportCount:N0} airport(s) with procedure changes"
-					+ (procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount > 0
-						? $", {procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount} change(s)"
-						: string.Empty));
-			}
-
-			if (procedures.AliasFilePath is not null)
-			{
-				parts.Add($"{procedures.AliasCommandCount:N0} FAA Chart Recall command(s)");
-			}
-		}
-
-		if (result.Telephony is { AliasFilePath: not null } telephony)
-		{
-			parts.Add($"{telephony.AliasCommandCount:N0} telephony command(s)");
-		}
-
-		if (result.CombinedAlias is { FilePath: not null } combinedAlias)
-		{
-			parts.Add($"{Path.GetFileName(combinedAlias.FilePath)} ({combinedAlias.CustomCommandCount + combinedAlias.FeBuddyCommandCount:N0} command(s))");
-		}
-
-		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)
-		{
-			parts.Add($"{duplicateAliasReport.Duplicates.Count:N0} duplicate alias command(s)");
-		}
-
-		return parts.Count == 0
-			? $"Cycle {cycleId}: nothing to produce."
-			: $"Cycle {cycleId}: {string.Join(", ", parts)}.";
-	}
 
 	/// <summary>Offers to save every dirty tab that takes part in one prompt, as the settings-save contract requires.</summary>
 	/// <returns><see langword="true"/> when nothing is left unsaved.</returns>

@@ -10,6 +10,7 @@ using FeBuddy.Core.Application.Airac.ArtccBoundaries;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -28,7 +29,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.ArtccBoundaries";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.ArtccBoundaries}";
 
 	private ArtccBoundaryOutputBy _outputBy = ArtccBoundaryOutputBy.HighLow;
 	private bool _splitAtAntimeridian = true;

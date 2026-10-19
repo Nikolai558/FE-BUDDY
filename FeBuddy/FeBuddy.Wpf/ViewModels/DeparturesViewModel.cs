@@ -15,6 +15,7 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Crc.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -31,7 +32,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Departures";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Departures}";
 	private const string CrcClassName = "Departures";
 
 	private bool _includeObstacleDepartures = true;

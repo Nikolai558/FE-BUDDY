@@ -13,6 +13,7 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Fixes;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 using DomainFixUses = FeBuddy.Core.Domain.Fixes.FixUses;
 
@@ -33,7 +34,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Fixes";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Fixes}";
 
 	private FixOutputBy _outputBy = FixOutputBy.All;
 	private HashSet<string> _savedExcludedFixUses = new(StringComparer.OrdinalIgnoreCase);

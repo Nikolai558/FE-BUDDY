@@ -13,12 +13,12 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 | [U1-17](#u1-17) | Logic in GUI | Med | NASR-derived option lists and their rules live in the tab view models | Fixed | S5 |
 | [W3-9](#w3-9) | Logic in GUI | Med | GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI | Open | S5 |
 | [W1-6](#w1-6) | Logic in GUI | Med | Procedure Charts re-implements Core's selection and name-matching rules | Fixed | S5 |
-| [W6-8](#w6-8) | Logic in GUI | Low | The GUI guesses which words in Core's messages are file names | Open | S5 |
+| [W6-8](#w6-8) | Logic in GUI | Low | The GUI guesses which words in Core's messages are file names | Fixed | S5 |
 | [C2-6](#c2-6) | Logic in GUI | Low | The Map's "towered" test copies AirportFieldMaps' display string | Open | S5 |
 | [W7-6](#w7-6) | Logic in GUI | Low | The coordinate-precision rule (0-15, default 6) is restated in the GUI twice | Fixed | S5 |
-| [W2-7](#w2-7) | Logic in GUI | Low | Per-sub-service result knowledge lives in the GUI three times | Open | S5 |
-| [W2-23](#w2-23) | Logic in GUI | Low | Sub-service keys, node paths and order are defined in the GUI and again in Core | Open | S5 |
-| [W1-11](#w1-11) | Logic in GUI | Low | Airways parses Core's message text and file keys, and spells Core's enum as string literals | Open | S5 |
+| [W2-7](#w2-7) | Logic in GUI | Low | Per-sub-service result knowledge lives in the GUI three times | Fixed | S5 |
+| [W2-23](#w2-23) | Logic in GUI | Low | Sub-service keys, node paths and order are defined in the GUI and again in Core | Fixed | S5 |
+| [W1-11](#w1-11) | Logic in GUI | Low | Airways parses Core's message text and file keys, and spells Core's enum as string literals | Fixed | S5 |
 | [W2-18](#w2-18) | Logic in GUI | Low | Arrivals copies Core's parser limits, ARTCC splitting and file naming | Fixed | S5 |
 | [W2-20](#w2-20) | Logic in GUI | Low | ARTCC Boundaries repeats Core's altitude vocabulary and builds the per-ARTCC file list itself | Fixed | S5 |
 | [W1-8](#w1-8) | Logic in GUI | Low | Add Custom Aliases keeps its own copy of the parser's and loader's rules, and its doc says they're the same | Fixed | S5 |
@@ -26,7 +26,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 | [W2-21](#w2-21) | Logic in GUI | Low | DAT cropping-distance validation copies Core's parse rule | Fixed | S5 |
 | [W1-12](#w1-12) | Logic in GUI | Low | Departures repeats the parser's limits, date format and file layout | Fixed | S5 |
 | [W2-25](#w2-25) | Logic in GUI | Low | ERAM's "would this run delete anything" check parses the settings block in the GUI | Fixed | S5 |
-| [W2-22](#w2-22) | Logic in GUI | Low | The "no two files share a name" rule is only half in Core | Open | S5 |
+| [W2-22](#w2-22) | Logic in GUI | Low | The "no two files share a name" rule is only half in Core | Fixed | S5 |
 | [W1-10](#w1-10) | Logic in GUI | Low | Fixes re-implements combination parsing and file naming | Fixed | S5 |
 | [W2-19](#w2-19) | Logic in GUI | Low | NAVAIDs repeats NavaidBuilder's SHUTDOWN rule | Fixed | S5 |
 | [W3-12](#w3-12) | Logic in GUI | Low | Profile-name "already taken" rule duplicated from Core | Fixed | S5 |
@@ -83,7 +83,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W6-8 · Logic in GUI · Low · The GUI guesses which words in Core's messages are file names
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), the second way proposed: the converter stays, as Core's messages are plain text for the log and the Harness, but its extensions are Core's (`FileNameExtensions.All`, built from the services' own lists), so a new format is picked out as soon as a service reads or writes it. Tests: `FileNameExtensionsTests`, `FileNamesAsCodeConverterTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Converters/FileNamesAsCodeConverter.cs:10-18`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Converters/FileNamesAsCodeConverter.cs#L10-L18), 46-49
 
@@ -123,7 +123,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-7 · Logic in GUI · Low · Per-sub-service result knowledge lives in the GUI three times
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged): every file a run wrote is Core's `AiracServiceResult.FilesWritten` (a stopped run names no alias file, with [W2-5](100_Bugs.md#w2-5)), and the run's one line is `AiracRunSummary.Describe`; the AIRAC Service screen only shows them. Each tab's Review block (`DescribeRunResult`) and Core's progress lines still word their own counts: they say different things, at different times. Tests: `AiracRunSummaryTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:689-787`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L689-L787) (`CollectFilesWritten`), 793-874 (`SummarizeRun`)
 
@@ -135,7 +135,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-23 · Logic in GUI · Low · Sub-service keys, node paths and order are defined in the GUI and again in Core
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: Core's `AiracTabs` spells every AIRAC tab's key once, with `NodeFor` and `TabOf`; `UserConfigAreas.Tabs`, the GUI's `AiracSubServices` and each tab's `Node` are built from it, and the area lookup reads a tab's key with `TabOf` rather than slicing its node. The run order in `AiracService.RunAsync` is left as it is. Tests: `AiracTabsTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracSubServices.cs:31-68`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracSubServices.cs#L31-L68); [`ArrivalsViewModel.cs:34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L34); [`NavaidsViewModel.cs:33`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L33); [`ArtccBoundariesViewModel.cs:32`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L32); [`AirportsViewModel.cs:24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirportsViewModel.cs#L24); [`WxStationsViewModel.cs:32`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/WxStationsViewModel.cs#L32); [`FileNamesViewModel.cs:43`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs#L43); [`AiracGeneralTabViewModel.cs:36`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L36)
 
@@ -147,7 +147,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-11 · Logic in GUI · Low · Airways parses Core's message text and file keys, and spells Core's enum as string literals
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `ServiceMessage.Subject` says what a message is about; the four Airways messages that name an airway set it, and the Review tab groups by it. `AirwayOutputFiles.TryParseGeojsonKey` reads a key back; the tab spells the alias scope with `AliasRoiScope`. Tests: `AirwayOutputFilesTests`, `AirwayMessageLevelsTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs:34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs#L34), 264-270, 570-575, 284, 317, 350
 
@@ -245,7 +245,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-22 · Logic in GUI · Low · The "no two files share a name" rule is only half in Core
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `OutputFileNames.Clashes` checks each new name against every other file's in the same folder (`OutputFileNames.FolderOf`) - renamed too, or keeping FE-Buddy's name - for the File Names tab and for a run, whose parser checks against every file but the GeoJSON; so a settings-block run can no longer write Airways renamed "Airports" over `Airports.txt`, and `Aliases\X.txt` beside the cycle folder's `Duplicate_Alias_Commands.txt` is no clash. Tests: `OutputFileNamesTests`, `FileNamesViewModelTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs:268-280`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs#L268-L280), 300-301
 

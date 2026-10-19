@@ -45,7 +45,7 @@ public static class UserConfigAreas
 	public const string DefaultRoiKey = $"{AiracNode}.DefaultRoi.FilterByRoi";
 
 	/// <summary>The Procedures tab's node name.</summary>
-	public const string ProceduresTab = "Procedures";
+	public const string ProceduresTab = AiracTabs.Procedures;
 
 	/// <summary>
 	/// The tabs with an area, by node name, each with the key of its ARTCC list (Procedures: its
@@ -53,14 +53,14 @@ public static class UserConfigAreas
 	/// </summary>
 	public static IReadOnlyDictionary<string, string?> Tabs { get; } = new Dictionary<string, string?>(StringComparer.Ordinal)
 	{
-		["ArtccBoundaries"] = "LocationFilter",
-		["Arrivals"] = "ArtccFilter",
-		["Departures"] = "ArtccFilter",
-		["Airports"] = null,
-		["Airways"] = null,
-		["Navaids"] = null,
-		["Fixes"] = null,
-		["WxStations"] = null,
+		[AiracTabs.ArtccBoundaries] = "LocationFilter",
+		[AiracTabs.Arrivals] = "ArtccFilter",
+		[AiracTabs.Departures] = "ArtccFilter",
+		[AiracTabs.Airports] = null,
+		[AiracTabs.Airways] = null,
+		[AiracTabs.Navaids] = null,
+		[AiracTabs.Fixes] = null,
+		[AiracTabs.WxStations] = null,
 		[ProceduresTab] = "Facilities",
 	};
 

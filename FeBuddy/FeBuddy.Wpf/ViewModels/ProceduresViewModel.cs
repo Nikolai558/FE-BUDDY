@@ -65,7 +65,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// </summary>
 	public const int MaxAirports = 100;
 
-	private const string Node = "Services.AiracService.Procedures";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Procedures}";
 
 	private const string NotAnAirportHint = "Not an airport in this cycle.";
 	private const string AlreadyInListHint = "Already in the list.";

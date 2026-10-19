@@ -70,6 +70,15 @@ public static class OutputFileNamesParser
 					: $"The new name for '{key}' was ignored: it is not a file FE-Buddy writes."));
 		}
 
+		// A new name may not be another file's that keeps FE-Buddy's name, in the same folder - Airways.txt renamed
+		// "Airports" would write over Airports.txt. Checked against every file but the GeoJSON, which a run names
+		// from its data; those renamed are checked against each other below.
+		foreach ((string key, string problem) in OutputFileNames.Clashes(
+			newNames.ToDictionary(entry => entry.Key, entry => entry.Value.Trim(), StringComparer.OrdinalIgnoreCase), OtherFileKeys))
+		{
+			throw new ArgumentException($"The new name for {OutputFileNames.DefaultFileName(key)}, '{newNames[key].Trim()}', can't be used. {problem}", nameof(fileNames));
+		}
+
 		return new OutputFileNamesParseResult(new OutputFileNames(newNames), messages);
 	}
 

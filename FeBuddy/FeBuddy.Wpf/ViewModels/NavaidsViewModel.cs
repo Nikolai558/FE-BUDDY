@@ -13,6 +13,7 @@ using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Navaids;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -29,7 +30,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Navaids";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Navaids}";
 
 	private NavaidOutputBy _outputBy = NavaidOutputBy.All;
 	private NavaidSymbolStyleBy _symbolStyleBy = NavaidSymbolStyleBy.Type;

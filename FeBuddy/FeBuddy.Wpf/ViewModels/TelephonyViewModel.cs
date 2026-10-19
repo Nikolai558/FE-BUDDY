@@ -58,7 +58,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Telephony";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Telephony}";
 
 
 	private readonly Dispatcher _dispatcher;

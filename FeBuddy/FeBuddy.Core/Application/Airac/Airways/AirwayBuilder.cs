@@ -76,7 +76,7 @@ public static class AirwayBuilder
 			if (designation == AirwayClassifier.UnknownDesignation && !warnedUnknownDesignation)
 			{
 				warnedUnknownDesignation = true;
-				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder", $"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'."));
+				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder", $"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'.") { Subject = awyId });
 			}
 
 			// Drop excluded designations before any geometry work, so GeoJSON and the alias
@@ -107,7 +107,8 @@ public static class AirwayBuilder
 
 				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder",
 					$"Airway '{awyId}': excluded from all output - {distinctIds.Length} waypoint(s) " +
-					$"could not be resolved ({string.Join(", ", distinctIds)})."));
+					$"could not be resolved ({string.Join(", ", distinctIds)}).")
+				{ Subject = awyId });
 				excludedAirwayIds.Add(awyId);
 				continue;
 			}

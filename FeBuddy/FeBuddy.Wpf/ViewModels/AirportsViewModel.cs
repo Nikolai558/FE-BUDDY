@@ -5,6 +5,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -20,7 +21,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Airports";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Airports}";
 
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public AirportsViewModel()

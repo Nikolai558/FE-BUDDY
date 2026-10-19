@@ -7,6 +7,7 @@ using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Telephony;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -29,43 +30,43 @@ namespace FeBuddy.Wpf.ViewModels;
 public static class AiracSubServices
 {
 	/// <summary>The Airports sub-service key.</summary>
-	public const string AirportsKey = "Airports";
+	public const string AirportsKey = AiracTabs.Airports;
 
 	/// <summary>The Airways sub-service key.</summary>
-	public const string AirwaysKey = "Airways";
+	public const string AirwaysKey = AiracTabs.Airways;
 
 	/// <summary>The Departures sub-service key.</summary>
-	public const string DeparturesKey = "Departures";
+	public const string DeparturesKey = AiracTabs.Departures;
 
 	/// <summary>The Arrivals sub-service key.</summary>
-	public const string ArrivalsKey = "Arrivals";
+	public const string ArrivalsKey = AiracTabs.Arrivals;
 
 	/// <summary>The NAVAIDs sub-service key.</summary>
-	public const string NavaidsKey = "Navaids";
+	public const string NavaidsKey = AiracTabs.Navaids;
 
 	/// <summary>The ARTCC Boundaries sub-service key.</summary>
-	public const string ArtccBoundariesKey = "ArtccBoundaries";
+	public const string ArtccBoundariesKey = AiracTabs.ArtccBoundaries;
 
 	/// <summary>The Fixes sub-service key.</summary>
-	public const string FixesKey = "Fixes";
+	public const string FixesKey = AiracTabs.Fixes;
 
 	/// <summary>The Wx Stations sub-service key.</summary>
-	public const string WxStationsKey = "WxStations";
+	public const string WxStationsKey = AiracTabs.WxStations;
 
 	/// <summary>
 	/// The Procedure Charts sub-service key: its first name, Procedures, kept so its saved settings
 	/// carry over.
 	/// </summary>
-	public const string ProceduresKey = "Procedures";
+	public const string ProceduresKey = AiracTabs.Procedures;
 
 	/// <summary>The Telephony sub-service key.</summary>
-	public const string TelephonyKey = "Telephony";
+	public const string TelephonyKey = AiracTabs.Telephony;
 
 	/// <summary>
 	/// The Add Custom Aliases sub-service key: its first name, Concatenate Aliases, kept so its saved
 	/// settings carry over.
 	/// </summary>
-	public const string ConcatenateAliasesKey = "ConcatenateAliases";
+	public const string ConcatenateAliasesKey = AiracTabs.ConcatenateAliases;
 
 	private const SubServiceOutputKinds AliasAndGeojson = SubServiceOutputKinds.Alias | SubServiceOutputKinds.Geojson;
 

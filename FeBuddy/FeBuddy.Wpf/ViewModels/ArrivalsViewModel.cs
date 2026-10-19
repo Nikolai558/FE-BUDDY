@@ -15,6 +15,7 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Crc.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -30,7 +31,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Arrivals";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Arrivals}";
 	private const string CrcClassName = "Arrivals";
 
 	private ArrivalRoiMode _roiMode = ArrivalRoiMode.Airport;

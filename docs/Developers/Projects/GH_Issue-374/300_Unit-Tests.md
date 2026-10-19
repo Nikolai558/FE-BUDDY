@@ -112,7 +112,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 | [T3-18](#t3-18) | Stale doc | Low | WhatsNewViewModelTests section header names an Export that doesn't exist | Open | S9 |
 | [T3-35](#t3-35) | Minor | Low | Tests that pin GUI wording word for word (list below) | Open | S9 |
 | [N1-38](#n1-38) | History wording | Low | Tests and comments added since the review cite finding IDs and narrate history | Open | S14 |
-| [N1-39](#n1-39) | Wrong doc | Low | AiracGeneralTabViewModelTests: the "older build" case uses a key no release saved | Open | S14 |
+| [N1-39](#n1-39) | Wrong doc | Low | AiracGeneralTabViewModelTests: the "older build" case uses a key no release saved | Fixed | S14 |
 | [N1-40](#n1-40) | Minor | Low | New tests: misplaced summaries, wall-clock limits, an untested Telephony guard | Open | S14 |
 | [N1-41](#n1-41) | Minor | Low | DeferredSave's timer, close and retry untested; a save-failure test fails only at its first write | Open | S14 |
 | [N1-42](#n1-42) | Minor | Low | New tests that can't catch what they guard (update watcher, FieldState, Telephony name) | Open | S14 |
@@ -1591,7 +1591,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 
 ### N1-39 · Wrong doc · Low · AiracGeneralTabViewModelTests: the "older build" case uses a key no release saved, and the summaries say Current or Next only
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The theory takes full keys and uses the real old key, `Services.AiracService.AiracCycleId`; both summaries are reworded as proposed · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AiracGeneralTabViewModelTests.cs:279-281`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AiracGeneralTabViewModelTests.cs#L279-L281), [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AiracGeneralTabViewModelTests.cs:294-303`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/AiracGeneralTabViewModelTests.cs#L294-L303)
 

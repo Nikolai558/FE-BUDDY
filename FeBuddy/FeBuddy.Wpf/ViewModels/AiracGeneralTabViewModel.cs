@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
@@ -51,9 +52,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	{
 		CycleOptions =
 		[
-			new(AiracCyclePosition.Previous, p => SelectedCyclePosition = p),
-			new(AiracCyclePosition.Current, p => SelectedCyclePosition = p),
-			new(AiracCyclePosition.Next, p => SelectedCyclePosition = p),
+			new(AiracCyclePosition.Previous, p => SelectedCyclePosition = p, OnCyclePicked),
+			new(AiracCyclePosition.Current, p => SelectedCyclePosition = p, OnCyclePicked),
+			new(AiracCyclePosition.Next, p => SelectedCyclePosition = p, OnCyclePicked),
 		];
 
 		SubServices = new ObservableCollection<SubServiceRow>(
@@ -74,6 +75,12 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 	/// <summary>Raised when the user picks a different cycle, so the host can load that cycle's parsed data.</summary>
 	public event EventHandler? CycleChanged;
+
+	/// <summary>
+	/// Raised when the user picks the cycle that is already selected and failed, so the host can try
+	/// it again: a radio button already checked changes nothing, so <see cref="CycleChanged"/> doesn't fire.
+	/// </summary>
+	public event EventHandler? CycleRetryRequested;
 
 	/// <inheritdoc />
 	public override string NodePath => Node;
@@ -212,6 +219,19 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			$"You last used the next cycle, {next}, but the FAA hasn't published it yet.");
 	}
 
+	/// <summary>
+	/// A click on a cycle row, whether or not it changed the selection: picking the selected cycle again
+	/// while it has failed asks the host to try it again.
+	/// </summary>
+	private void OnCyclePicked(AiracCyclePosition position)
+	{
+		if (position == _selectedCyclePosition
+			&& AiracCycleDataCache.Instance.GetEntry(AppEnvironment.GetAiracCycle(position).AiracCycleId)?.State == CycleDataState.Failed)
+		{
+			CycleRetryRequested?.Invoke(this, EventArgs.Empty);
+		}
+	}
+
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
@@ -238,6 +258,10 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		{
 			SelectedCyclePosition = ResolveSavedCyclePosition();
 			_cycleFromSave = true;
+
+			// A reload (Discard, Undo, an import, a profile switch) opens an unpublished saved Next on
+			// Current too, as launch does; while loading, that raises no CycleChanged and no unsaved mark.
+			OpenOnCurrentWhileSavedNextIsUnpublished();
 
 			// Nothing saved yet: everything is in.
 			string? savedSelection = Get(SelectedSubServicesKey);
@@ -383,7 +407,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <summary>One cycle row in the cycle menu, with its live cache state.</summary>
 	/// <param name="position">Which cycle relative to today this row is.</param>
 	/// <param name="onSelected">Called when the user picks this row.</param>
-	public sealed class CycleOption(AiracCyclePosition position, Action<AiracCyclePosition> onSelected) : ObservableObject
+	/// <param name="onPicked">Called on every click on this row, even one that leaves the selection as it was.</param>
+	public sealed class CycleOption(AiracCyclePosition position, Action<AiracCyclePosition> onSelected, Action<AiracCyclePosition> onPicked)
+		: ObservableObject
 	{
 		private string _label = position.ToString();
 		private string _state = string.Empty;
@@ -407,6 +433,12 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 				}
 			}
 		}
+
+		/// <summary>
+		/// Bound to the cycle radio button's command, which runs on every click: a click on the row that is
+		/// already selected changes nothing in <see cref="IsSelected"/>, but can still ask for a retry.
+		/// </summary>
+		public ICommand PickCommand { get; } = new RelayCommand(() => onPicked(position));
 
 		/// <summary>Called by the parent when the selection changes elsewhere.</summary>
 		/// <param name="selected">The newly selected position.</param>

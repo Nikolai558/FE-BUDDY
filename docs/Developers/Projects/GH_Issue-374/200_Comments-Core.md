@@ -150,7 +150,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 | [C7-24](#c7-24) | Minor | Low | The virtual-airline type and property are named after VATSIM-Radar but also hold GNG's rows | Open | S7 |
 | [C7-25](#c7-25) | Minor | Low | Invisible literal characters in `TelephonyHtmlParser.CleanText` and its hyphen regex | Open | S7 |
 | [C7-14](#c7-14) | Wrong doc | Low | `WxStationXmlParser.ParseAsync` names the wrong caller | Open | S7 |
-| [N1-35](#n1-35) | Wrong doc | Low | ProcedureChartTypes: Default is for an absent ChartTypes, not a blank one | Open | S14 |
+| [N1-35](#n1-35) | Wrong doc | Low | ProcedureChartTypes: Default is for an absent ChartTypes, not a blank one | Fixed | S14 |
 | [N1-36](#n1-36) | Stale doc | Low | Docs still name the Settings page's keys under `Services.AiracService` | Open | S14 |
 
 ## FeBuddy.Core
@@ -1544,7 +1544,7 @@ Comments and XML docs in FeBuddy.Core that are wrong, stale, narrate history, or
 
 ### N1-35 · Wrong doc · Low · ProcedureChartTypes: `Default` is for an absent `ChartTypes`, not a blank one
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The summary now says `Default` is for an absent `ChartTypes` and a blank value means none · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Domain/Procedures/ProcedureChartTypes.cs:39-43`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Domain/Procedures/ProcedureChartTypes.cs#L39-L43); [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs:244-261`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureSettingsParser.cs#L244-L261)
 

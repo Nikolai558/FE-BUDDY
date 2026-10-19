@@ -46,7 +46,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1b-16](#d1b-16) | Stale doc | Low | TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests | Fixed | S11 |
 | [O1-36](#o1-36) | Wrong doc | Low | VERSIONING.md: the version check keeps only "the user's channel" | Fixed | S11 |
 | [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Agreed, changed | S6 |
-| [N1-43](#n1-43) | Wrong doc | Low | Settings-Reference: CyclePosition can be Previous; General section narrates history | Open | S14 |
+| [N1-43](#n1-43) | Wrong doc | Low | Settings-Reference: CyclePosition can be Previous; General section narrates history | Fixed | S14 |
 
 ## docs
 
@@ -582,7 +582,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 
 ### N1-43 · Wrong doc · Low · Settings-Reference: `CyclePosition` can also be Previous; the `General` section narrates history
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The `CyclePosition` row and the `General` section's note are reworded as proposed · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`docs/Developers/Settings-Reference.md:112-114`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/docs/Developers/Settings-Reference.md#L112-L114), 123; the save: [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:281`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L281)
 

@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2), and N1-5 onward, found in the review of the S2 to S5 code, are [S14](020_Work-Plan.md#s14). Each fix should come with a regression test.
 
-**71 findings** (2 High, 16 Med, 53 Low), 44 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**71 findings** (2 High, 16 Med, 53 Low), 49 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -23,7 +23,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W1-13](#w1-13) | Bug | Med | Unticking every Procedures.json field gives the 8 default fields | Fixed | S1 |
 | [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Fixed | S1 |
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
-| [N1-5](#n1-5) | Bug | Med | Going back to an already-loaded cycle leaves Procedure Charts with no chart data | Open | S14 |
+| [N1-5](#n1-5) | Bug | Med | Going back to an already-loaded cycle leaves Procedure Charts with no chart data | Fixed | S14 |
 | [N1-6](#n1-6) | Bug | Med | Add Custom Aliases keeps a "no alias commands" error after the file is fixed | Open | S14 |
 | [N1-7](#n1-7) | Bug | Med | A save, map change or import made during a profile switch or import can land in the wrong profile | Open | S14 |
 | [N1-8](#n1-8) | Bug | Med | A settings write cut short can lose a whole profile | Open | S14 |
@@ -62,10 +62,10 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [O1-2](#o1-2) | Bug | Low | Any CPU never builds FeBuddy.UnitTests | Fixed | S2 |
 | [T2-8](#t2-8) | Bug | Low | NasrCsvParserMappingTests computes expected numbers with the PC's culture | Fixed | S2 |
 | [T2-9](#t2-9) | Bug | Low | FileEncodingTests walks build.ps1's `publish\` and `releases\` output | Fixed | S2 |
-| [N1-10](#n1-10) | Bug | Low | Procedure Charts can still get the previous cycle's d-TPP data while a new cycle loads | Open | S14 |
-| [N1-11](#n1-11) | Bug | Low | A reload reopens the General tab on an unpublished saved Next | Open | S14 |
-| [N1-12](#n1-12) | Bug | Low | An overtaken cycle load clears the newer load's "loading" mark | Open | S14 |
-| [N1-13](#n1-13) | Bug | Low | "Pick it again to try again" can't work: clicking the selected cycle does nothing | Open | S14 |
+| [N1-10](#n1-10) | Bug | Low | Procedure Charts can still get the previous cycle's d-TPP data while a new cycle loads | Fixed | S14 |
+| [N1-11](#n1-11) | Bug | Low | A reload reopens the General tab on an unpublished saved Next | Fixed | S14 |
+| [N1-12](#n1-12) | Bug | Low | An overtaken cycle load clears the newer load's "loading" mark | Fixed | S14 |
+| [N1-13](#n1-13) | Bug | Low | "Pick it again to try again" can't work: clicking the selected cycle does nothing | Fixed | S14 |
 | [N1-14](#n1-14) | Bug | Low | Background reads on File Conversions, Wx Stations and Telephony fail silently; an older read can win | Open | S14 |
 | [N1-15](#n1-15) | Bug | Low | A map change whose save failed is lost unless the same setting is changed again | Open | S14 |
 | [N1-16](#n1-16) | Bug | Low | An unexpected failure during a profile change or an import is never reported | Open | S14 |
@@ -252,7 +252,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-5 · Bug · Med · Going back to a cycle that was already loaded leaves Procedure Charts with no chart data
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). Picking a cycle that isn't the one loaded clears the screen's loaded cycle, so picking a loaded cycle back hands its data over again; Procedure Charts also drops its NASR lookups when the cycle changes before the metafile arrives. Test: `CycleSwitchTests.going_back_to_a_loaded_cycle_brings_procedure_charts_data_back` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:74-80`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L74-L80), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:438-443`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L438-L443) (the early return at 440), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:463-483`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L463-L483); [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:1684-1703`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L1684-L1703)
 
@@ -740,7 +740,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-10 · Bug · Low · Procedure Charts can still get the previous cycle's d-TPP data while a new cycle loads
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The Procedures tab's metafile is handed over only while the selected cycle is loaded, and a result lands only if its cycle is still the one selected. Test: `CycleSwitchTests.a_cycle_that_hasnt_loaded_never_gets_the_last_cycles_metafile` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:517-530`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L517-L530) (519; 529 pairs it with `PreviousOfSelectedCycleId`), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:556-564`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L556-L564) (560)
 
@@ -752,7 +752,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-11 · Bug · Low · Discard, Undo, an import or a profile switch reopens the General tab on an unpublished saved Next
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `LoadFromConfig` opens an unpublished saved Next on Current, as launch does, with the same "Opened on the current AIRAC cycle" message, no `CycleChanged` and no unsaved mark. Test: `AiracGeneralTabViewModelTests.a_reload_keeps_an_unpublished_saved_next_on_current` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:232-259`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L232-L259) (239-240), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:268-276`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L268-L276), 176-213; [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:149-183`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L149-L183); [`FeBuddy/FeBuddy.Wpf/Shell/ConfigPages.cs:44-62`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/ConfigPages.cs#L44-L62)
 
@@ -764,7 +764,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-12 · Bug · Low · A cycle load that was overtaken clears the "loading" mark of the one that overtook it
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). A finished load clears the "loading" mark only when it is its own. Test: `CycleSwitchTests.an_overtaken_load_leaves_the_newer_pick_loading` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:465`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L465), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:489-490`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L489-L490) (the guard at 440)
 
@@ -776,7 +776,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-13 · Bug · Low · "Pick it again on the General tab to try again" can't work: clicking the selected cycle does nothing
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). Each cycle row has a `PickCommand` on its radio button, run on every click; picking the selected cycle again while it has failed raises `CycleRetryRequested`, which loads it again, so "Pick it again on the General tab to try again" now works. Test: `CycleSwitchTests.picking_a_failed_cycle_again_tries_it_again` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:413-419`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L413-L419) (416); [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:399-409`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L399-L409), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:108-116`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L108-L116); [`FeBuddy/FeBuddy.Wpf/Views/AiracGeneralTabView.xaml:100-102`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Views/AiracGeneralTabView.xaml#L100-L102)
 

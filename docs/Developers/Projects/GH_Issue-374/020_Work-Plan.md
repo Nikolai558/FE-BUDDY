@@ -19,7 +19,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S3](#s3) | GUI lag: AIRAC Service and File Conversions | Done | [110](110_GUI-Lag.md) |
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | Done | [110](110_GUI-Lag.md) |
 | [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | Done | [120](120_Logic-In-GUI.md) |
-| [S14](#s14) | **Next:** fixes to the code S2 to S5 added | 38 | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
+| [S14](#s14) | **Next:** fixes to the code S2 to S5 added | 29 | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
 | [S6](#s6) | Old-version code (D1), unused code and the H4 renames | 104 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
 | [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
 | [S8](#s8) | Comments and XML docs: GUI | 94 | [220](220_Comments-GUI.md) |
@@ -116,6 +116,8 @@ On 2026-10-19, after Nikolas's last push (`4893e32`), the code [S2](#s2) to [S5]
 | Settings files, profiles and saves, the Dashboard, folder pickers | [N1-7](100_Bugs.md#n1-7) (Med), [N1-8](100_Bugs.md#n1-8) (Med), [N1-15](100_Bugs.md#n1-15), [N1-16](100_Bugs.md#n1-16), [N1-17](100_Bugs.md#n1-17), [N1-18](100_Bugs.md#n1-18), [N1-19](100_Bugs.md#n1-19), [N1-20](100_Bugs.md#n1-20), [N1-21](100_Bugs.md#n1-21), [N1-30](110_GUI-Lag.md#n1-30), [N1-31](110_GUI-Lag.md#n1-31), [N1-32](110_GUI-Lag.md#n1-32), [N1-36](200_Comments-Core.md#n1-36), [N1-37](220_Comments-GUI.md#n1-37), [N1-41](300_Unit-Tests.md#n1-41) |
 | The update watcher ([#379](https://github.com/Nikolai558/FE-BUDDY/issues/379)), the setup window, the build counter | [N1-9](100_Bugs.md#n1-9) (Med), [N1-24](100_Bugs.md#n1-24), [N1-25](100_Bugs.md#n1-25), [N1-26](100_Bugs.md#n1-26), [N1-27](100_Bugs.md#n1-27), [N1-28](100_Bugs.md#n1-28), [N1-42](300_Unit-Tests.md#n1-42) |
 | House rules in the new code and tests | [N1-38](300_Unit-Tests.md#n1-38) |
+
+**Fixed (not yet merged):** [N1-5](100_Bugs.md#n1-5), [N1-10](100_Bugs.md#n1-10), [N1-11](100_Bugs.md#n1-11), [N1-12](100_Bugs.md#n1-12), [N1-13](100_Bugs.md#n1-13), [N1-29](110_GUI-Lag.md#n1-29), [N1-35](200_Comments-Core.md#n1-35), [N1-39](300_Unit-Tests.md#n1-39), [N1-43](500_Developer-Docs.md#n1-43)
 
 <a id="s6"></a>
 

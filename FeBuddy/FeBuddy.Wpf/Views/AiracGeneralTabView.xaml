@@ -99,7 +99,8 @@
                                 </TextBlock>
                                 <RadioButton DockPanel.Dock="Left" GroupName="AiracCycle" Content="{Binding Label}"
                                              Foreground="{StaticResource Brush.Text.Primary}"
-                                             IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                             IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                             Command="{Binding PickCommand}" />
                                 <TextBlock Text="{Binding DtppNote}" Style="{StaticResource Text.Caption}"
                                            Foreground="{StaticResource Brush.Danger}" VerticalAlignment="Center"
                                            Margin="12,0"

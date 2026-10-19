@@ -39,7 +39,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [U1-13](#u1-13) | GUI lag | Low | Settings facility list runs its 20k-row LINQ on the UI thread when the cycle is already cached | Fixed | S4 |
 | [W3-7](#w3-7) | GUI lag | Low | System health refresh hits the disk on every cycle state change | Fixed | S4 |
 | [U1-15](#u1-15) | GUI lag | Low | Switching AIRAC Service tabs rebuilds the whole tab view | Fixed | S3 |
-| [N1-29](#n1-29) | GUI lag | Low | The d-TPP metafile is parsed again on every refresh; the index cache never hits | Open | S14 |
+| [N1-29](#n1-29) | GUI lag | Low | The d-TPP metafile is parsed again on every refresh; the index cache never hits | Fixed | S14 |
 | [N1-30](#n1-30) | GUI lag | Low | The UI thread waits on the settings lock while a background save holds it | Open | S14 |
 | [N1-31](#n1-31) | GUI lag | Low | FolderProbe blocks a pool thread per check of an offline network folder | Open | S14 |
 | [N1-32](#n1-32) | GUI lag | Low | A burst of log entries updates the Dashboard one entry at a time | Open | S14 |
@@ -430,7 +430,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### N1-29 · GUI lag · Low · The d-TPP metafile is parsed again on every Procedure Charts refresh, so the index cache never hits
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `AiracServiceViewModel` keeps one task per cycle that reads and indexes the metafile (dropped if it faults or finds none), so refreshes and previous-cycle changes reuse it; the cache is unchanged. Test: `CycleSwitchTests.a_cycles_metafile_is_read_once` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs:437-468`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs#L437-L468); [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:517-530`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L517-L530), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:536-555`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L536-L555) (553); [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureNameIndex.cs:16-23`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureNameIndex.cs#L16-L23), 106-113
 

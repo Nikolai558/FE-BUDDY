@@ -109,9 +109,9 @@ The default ROI is saved by `DefaultRoiStore`, under its own `General.DefaultRoi
 soon as it is set or cleared, by Settings when **Save** is pressed. Clearing it only sets `FilterByRoi`
 to `N`; the corners stay in the file but aren't read until a new ROI replaces them.
 
-Before 3.0, the Facility, the coordinate precision and the default ROI were kept under
-`Services.AiracService` (`UserArtccId`, `CoordinatePrecision`, `DefaultRoi.*`). They moved here with no
-settings-layout step: a file from then opens Settings with no facility, 6 decimal places and no default ROI.
+No settings-layout step brings these keys in from `Services.AiracService` (`UserArtccId`,
+`CoordinatePrecision`, `DefaultRoi.*`): a file that has them there opens Settings with no facility,
+6 decimal places and no default ROI.
 
 ### Services.AiracService.General
 
@@ -120,7 +120,7 @@ The AIRAC Service's General tab. Its node sits beside the other tabs' nodes, so 
 
 | Key | Values | Default |
 |---|---|---|
-| `CyclePosition` | `Current` or `Next`: the cycle last saved, so the tab reopens on the same kind of cycle. Anything else (`Previous` too) opens on Current, and so does a saved `Next` the FAA hasn't published yet | `Current` |
+| `CyclePosition` | `Current`, `Next` or `Previous`: the cycle last saved. A saved `Next` reopens on Next unless the FAA hasn't published it; anything else opens on Current | `Current` |
 | `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
 

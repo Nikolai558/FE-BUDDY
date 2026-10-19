@@ -792,6 +792,17 @@ public sealed class TelephonyViewModelTests : IDisposable
 		new(new SharedDataRefreshResult(null, null, "offline"), new SharedDataRefreshResult(null, null, "offline"));
 
 	/// <summary>A tab using this copy of the list, whose downloads count how often they are asked for and never touch the network.</summary>
+	/// <summary>Waits for the download ticking the box started: the list is read off the UI thread, so it finishes later.</summary>
+	private static async Task DownloadFinished(TelephonyViewModel tab)
+	{
+		for (int waited = 0; tab.IsDownloadingVatsimRadarList && waited < 5000; waited += 10)
+		{
+			await Task.Delay(10);
+		}
+
+		Assert.False(tab.IsDownloadingVatsimRadarList);
+	}
+
 	private static (TelephonyViewModel Tab, Func<int> Downloads) TabUsing(VatsimRadarCopy? copy, VirtualAirlineListRefreshResult? downloadResult = null)
 	{
 		int downloads = 0;
@@ -922,32 +933,6 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.False(item.HasNote);
 	}
 
-	/// <summary>The real operators come from FE-Buddy's copies of the FAA's pages: the first of each 3LD (or identifier) and telephony.</summary>
-	[Fact]
-	public void the_real_operators_are_read_from_the_faa_pages()
-	{
-		Directory.CreateDirectory(_root);
-		string register = Path.Combine(_root, "register.html");
-		string special = Path.Combine(_root, "special.html");
-		File.WriteAllText(register,
-			"<table><thead><tr><th>Company</th><th>Country</th><th>Telephony</th><th>3-Ltr</th></tr></thead><tbody>" +
-			"<tr><td>AMERICAN AIRLINES INC.</td><td>UNITED STATES</td><td>AMERICAN</td><td>AAL</td></tr>" +
-			"<tr><td>ANOTHER AMERICAN</td><td>UNITED STATES</td><td>AMERICAN</td><td>aal</td></tr>" +
-			"<tr><td>NO DESIGNATOR</td><td>FRANCE</td><td>NOBODY</td><td>...</td></tr>" +
-			"</tbody></table>");
-		File.WriteAllText(special,
-			"<table><thead><tr><th>Telephony/Call Sign</th><th>Identifier</th><th>Company or Operating Agency</th><th>Expiration Date</th></tr></thead>" +
-			"<tbody><tr><td>AIR SIX</td><td>ARSIX</td><td>NYC Environmental Protection</td><td>N/A</td></tr></tbody></table>");
-
-		IReadOnlyDictionary<(string Designator, string Telephony), string> operators = TelephonyViewModel.ReadRealOperators(register, special);
-
-		Assert.Equal(2, operators.Count);
-		Assert.Equal("AMERICAN AIRLINES INC.", operators[("AAL", "AMERICAN")]);
-		Assert.Equal("NYC Environmental Protection", operators[("ARSIX", "AIR SIX")]);
-		Assert.Empty(TelephonyViewModel.ReadRealOperators(Path.Combine(_root, "none.html"), Path.Combine(_root, "none.html")));
-		Assert.Empty(TelephonyViewModel.ReadRealOperators(special, Path.Combine(_root, "none.html")));
-	}
-
 	[Fact]
 	public void the_lists_status_says_how_old_the_copies_are_and_how_many_they_have_or_that_there_is_none()
 	{
@@ -978,13 +963,14 @@ public sealed class TelephonyViewModelTests : IDisposable
 
 	/// <summary>Ticking the box with no copy fetches one, so the editor has something to check against; with a copy it doesn't.</summary>
 	[Fact]
-	public void ticking_the_box_downloads_the_list_only_when_there_is_no_copy()
+	public async Task ticking_the_box_downloads_the_list_only_when_there_is_no_copy()
 	{
 		(TelephonyViewModel withoutCopy, Func<int> downloadsWithout) = TabUsing(null);
 		(TelephonyViewModel withCopy, Func<int> downloadsWith) = TabUsing(ListOf(("DAL", "Delta", "Fly Delta Virtual")));
 
 		withoutCopy.IncludeVatsimRadarList = true;
 		withCopy.IncludeVatsimRadarList = true;
+		await DownloadFinished(withoutCopy);
 
 		Assert.Equal(1, downloadsWithout());
 		Assert.Equal(0, downloadsWith());
@@ -1009,6 +995,7 @@ public sealed class TelephonyViewModelTests : IDisposable
 			new SharedDataRefreshResult(vatsimRadar, keptUtc, "The SSL connection could not be established: TLS alert"));
 		(TelephonyViewModel tab, Func<int> downloads) = TabUsing(null, refreshed);
 		tab.IncludeVatsimRadarList = true;
+		await DownloadFinished(tab);
 
 		await tab.DownloadVatsimRadarListAsync();
 

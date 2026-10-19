@@ -77,8 +77,11 @@ public sealed class AppDataResetTests : IDisposable
 	[Fact]
 	public void asking_for_a_reset_deletes_nothing_yet()
 	{
+		Assert.False(AppDataReset.IsPending);
+
 		AppDataReset.Request(new AppDataResetRequest(KeepSettings: false, DeleteCredentials: true));
 
+		Assert.True(AppDataReset.IsPending);
 		Assert.True(File.Exists(AppDataReset.RequestFilePath));
 		Assert.True(Directory.Exists(Path.Combine(_appData, "AiracCycles")));
 		Assert.Single(_credentials.List());

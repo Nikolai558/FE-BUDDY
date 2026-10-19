@@ -4,6 +4,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Settings;
@@ -441,7 +442,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		}
 
 		AirwaysViewModel tab = new();
-		tab.LoadCycleDependentLists(new NasrCsvDataCollection { Awy = airways });
+		tab.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(new NasrCsvDataCollection { Awy = airways }));
 		return tab;
 	}
 
@@ -589,8 +590,8 @@ public sealed class WhatYoullGetTests : IDisposable
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.ArtccBoundaries.LocationFilter", "ZOB");
 		ArtccBoundariesViewModel tab = new() { OutputByArtccAltitude = true };
-		tab.LoadCycleDependentLists(ArtccBoundaryTestData.Build(
-			segRows: [.. ArtccBoundaryTestData.ZobHighRows(), .. ArtccBoundaryTestData.ZobLowRows(), .. ArtccBoundaryTestData.ZakCtaRows()]));
+		tab.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(ArtccBoundaryTestData.Build(
+			segRows: [.. ArtccBoundaryTestData.ZobHighRows(), .. ArtccBoundaryTestData.ZobLowRows(), .. ArtccBoundaryTestData.ZakCtaRows()])));
 
 		Assert.Equal(SubServiceArea.Artccs, tab.Area);
 		SummaryBlock block = Assert.Single(tab.WhatYoullGet);
@@ -612,7 +613,7 @@ public sealed class WhatYoullGetTests : IDisposable
 		fixes.FixBase.Add(new FixCsvDataModel.FixBase { FixId = "CCC", FixUseCode = "MW", Charts = null });
 
 		FixesViewModel tab = new();
-		tab.LoadCycleDependentLists(new NasrCsvDataCollection { Fix = fixes });
+		tab.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(new NasrCsvDataCollection { Fix = fixes }));
 		return tab;
 	}
 

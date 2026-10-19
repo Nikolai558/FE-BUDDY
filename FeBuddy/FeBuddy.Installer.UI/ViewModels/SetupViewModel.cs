@@ -419,7 +419,7 @@ public sealed class SetupViewModel : ObservableObject
 			$"Windows Installer stopped and undid its changes, so {Product} is as it was before. What it reported is below.",
 		SetupOutcome.NotStarted =>
 			$"Nothing was changed - {Product} is just as it was. Windows Installer stopped before it began, most often because " +
-			"its administrator prompt was declined. Run Setup again and choose Yes when Windows asks.",
+			"its administrator prompt was declined. Try again, and choose Yes when Windows asks for permission.",
 		_ => _operation switch
 		{
 			SetupOperation.Remove => $"{Product}, its settings and its saved credentials have been removed from this PC. Thanks for using {Product}.",

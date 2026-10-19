@@ -13,13 +13,12 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Telephony;
 using FeBuddy.Core.Infrastructure.Configuration;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.SharedData.Models;
 using FeBuddy.Core.Infrastructure.Telephony;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
-using FeBuddy.Core.Infrastructure.Telephony.Parsers;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -58,10 +57,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Telephony";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Telephony}";
 
-	/// <summary>The numbered list's node under <see cref="Node"/>: <c>VirtualAirlines.1.Designator</c>, as the settings block names it.</summary>
-	private const string VirtualAirlinesKey = "VirtualAirlines";
 
 	private readonly Dispatcher _dispatcher;
 	private string _telephonyDataStatus = string.Empty;
@@ -73,9 +70,13 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	private bool _includeVatsimRadarList;
 	private VatsimRadarCopy? _vatsimRadarCopy;
 	private IReadOnlyList<VirtualAirline> _vatsimRadarList = [];
+
+	// The list by 3LD and telephony: the editor asks on every keystroke and command re-query.
+	private VirtualAirlineCallSigns _vatsimRadarCallSigns = VirtualAirlineCallSigns.Empty;
 	private VirtualAirlineListRefreshResult? _lastRefresh;
 	private string? _downloadError;
 	private bool _isDownloadingVatsimRadarList;
+	private int _vatsimRadarCopyVersion;
 	private IReadOnlyDictionary<(string Designator, string Telephony), string> _realOperators =
 		new Dictionary<(string Designator, string Telephony), string>();
 
@@ -94,7 +95,49 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 
 		LoadFromConfig();
 		RefreshTelephonyData();
-		UseVatsimRadarCopy(VatsimRadarVirtualAirlines.ReadKeptCopy());
+		LoadVatsimRadarCopy();
+	}
+
+	/// <summary>
+	/// Reads FE-Buddy's kept copies of the virtual airline list off the UI thread - GNG's part alone has
+	/// thousands of rows - and then uses them, unless a download got there first. A tab built outside
+	/// the app (a unit test) reads nothing: the tests hand a copy in (<see cref="UseVatsimRadarCopy"/>).
+	/// </summary>
+	private void LoadVatsimRadarCopy()
+	{
+		if (Application.Current is null)
+		{
+			return;
+		}
+
+		int version = _vatsimRadarCopyVersion;
+
+		_ = Task.Run(ReadKeptCopyWithLookup)
+			.ContinueWith(
+				read => _dispatcher.BeginInvoke(() =>
+				{
+					if (_vatsimRadarCopyVersion == version)
+					{
+						UseVatsimRadarCopy(read.Result);
+					}
+				}),
+				CancellationToken.None,
+				TaskContinuationOptions.OnlyOnRanToCompletion,
+				TaskScheduler.Default);
+	}
+
+	/// <summary>Reads the kept copy and builds its 3LD and telephony lookup, both off the UI thread.</summary>
+	private static VatsimRadarCopy? ReadKeptCopyWithLookup() => WithLookup(VatsimRadarVirtualAirlines.ReadKeptCopy());
+
+	/// <summary>Builds a copy's lookup (kept with its list), so using the copy on the UI thread only finds it.</summary>
+	private static VatsimRadarCopy? WithLookup(VatsimRadarCopy? copy)
+	{
+		if (copy is not null)
+		{
+			VirtualAirlineCallSigns.For(copy.VirtualAirlines);
+		}
+
+		return copy;
 	}
 
 	/// <inheritdoc />
@@ -129,17 +172,33 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// </remarks>
 	public void RefreshTelephonyData()
 	{
-		_telephonyDataStatus = File.Exists(TelephonyFiles.RegisterFilePath)
-			? $"FE-Buddy's copy is from {File.GetLastWriteTime(TelephonyFiles.RegisterFilePath):d MMM yyyy}. Every run downloads the latest pages first, and uses this copy only if it can't."
-			: "FE-Buddy has no copy yet. Every run downloads the latest pages first, so the first run needs an internet connection.";
+		// The copy is looked at off the UI thread: the folder can be slow to answer (OneDrive, a network profile).
+		_ = Task.Run(() => DescribeTelephonyData(TelephonyFiles.RegisterFilePath))
+			.ContinueWith(
+				read => _dispatcher.BeginInvoke(() =>
+				{
+					_telephonyDataStatus = read.Result;
+					OnPropertyChanged(nameof(TelephonyDataStatus));
+				}),
+				CancellationToken.None,
+				TaskContinuationOptions.OnlyOnRanToCompletion,
+				TaskScheduler.Default);
 
-		OnPropertyChanged(nameof(TelephonyDataStatus));
 		LoadRealOperators();
 	}
 
+	/// <summary>What the Preview Settings tab says about FE-Buddy's kept copy of the FAA pages.</summary>
+	/// <param name="registerPath">The register's copy.</param>
+	/// <returns>The status line.</returns>
+	internal static string DescribeTelephonyData(string registerPath) =>
+		File.Exists(registerPath)
+			? $"FE-Buddy's copy is from {File.GetLastWriteTime(registerPath):d MMM yyyy}. Every run downloads the latest pages first, and uses this copy only if it can't."
+			: "FE-Buddy has no copy yet. Every run downloads the latest pages first, so the first run needs an internet connection.";
+
 	/// <summary>
-	/// Reads the real operators from FE-Buddy's copies of the FAA's pages, off the UI thread, to say
-	/// which of the user's virtual airlines share one's 3LD and telephony. A tab built outside the app
+	/// Reads the real operators a run writes from FE-Buddy's copies of the FAA's pages, off the UI thread,
+	/// to say which of the user's virtual airlines share one's 3LD and telephony (Core's rules, expired
+	/// U.S. special call signs left out). A tab built outside the app
 	/// (a unit test) reads nothing: the tests hand the operators in (<see cref="UseRealOperators"/>).
 	/// </summary>
 	private void LoadRealOperators()
@@ -149,61 +208,12 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			return;
 		}
 
-		_ = Task.Run(() => ReadRealOperators(TelephonyFiles.RegisterFilePath, TelephonyFiles.SpecialCallSignsFilePath))
+		_ = Task.Run(() => TelephonyBuilder.RealOperators(TelephonyFiles.RegisterFilePath, TelephonyFiles.SpecialCallSignsFilePath))
 			.ContinueWith(
 				read => _dispatcher.BeginInvoke(() => UseRealOperators(read.Result)),
 				CancellationToken.None,
 				TaskContinuationOptions.OnlyOnRanToCompletion,
 				TaskScheduler.Default);
-	}
-
-	/// <summary>
-	/// The real operators in FE-Buddy's copies of the FAA's pages, by 3LD (or identifier) and telephony,
-	/// upper case: the first one's company or agency for each. A copy that is missing or can't be read
-	/// gives none.
-	/// </summary>
-	/// <param name="registerPath">The register's copy.</param>
-	/// <param name="specialCallSignsPath">The U.S. special call signs' copy.</param>
-	/// <returns>The operators.</returns>
-	internal static IReadOnlyDictionary<(string Designator, string Telephony), string> ReadRealOperators(string registerPath, string specialCallSignsPath)
-	{
-		Dictionary<(string Designator, string Telephony), string> operators = [];
-
-		void Add(string identifier, string telephony, string company)
-		{
-			if (TelephonyNaming.CommandName(identifier) is not null && !string.IsNullOrWhiteSpace(telephony))
-			{
-				operators.TryAdd((identifier.Trim().ToUpperInvariant(), telephony.Trim().ToUpperInvariant()), company.Trim());
-			}
-		}
-
-		try
-		{
-			if (File.Exists(registerPath))
-			{
-				foreach (TelephonyHtmlDataModel.Assignment row in TelephonyHtmlParser.ParseRegister(registerPath))
-				{
-					if (TelephonyNaming.IsThreeLetterDesignator(row.ThreeLetterDesignator))
-					{
-						Add(row.ThreeLetterDesignator, row.Telephony, row.Company);
-					}
-				}
-			}
-
-			if (File.Exists(specialCallSignsPath))
-			{
-				foreach (TelephonyHtmlDataModel.SpecialCallSign row in TelephonyHtmlParser.ParseSpecialCallSigns(specialCallSignsPath))
-				{
-					Add(row.Identifier, row.Telephony, row.Agency);
-				}
-			}
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
-		{
-			// What could be read is kept; the run reports a copy that can't be read.
-		}
-
-		return operators;
 	}
 
 	/// <summary>Uses these real operators - read from FE-Buddy's copies, or handed in by a test - and refreshes what the card says.</summary>
@@ -459,9 +469,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				return string.Empty;
 			}
 
-			string[] organizations = [.. _vatsimRadarList
-				.Where(listed => listed.HasSameCallSign(designator, telephony))
-				.Select(listed => listed.Organization)];
+			string[] organizations = [.. _vatsimRadarCallSigns.WithCallSign(designator, telephony).Select(listed => listed.Organization)];
 
 			return organizations.Length == 0
 				? string.Empty
@@ -489,7 +497,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 
 	/// <inheritdoc />
 	/// <remarks>Does nothing: Telephony has no lists built from the selected cycle's NASR data.</remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
 	}
 
@@ -511,7 +519,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			: $"{telephony.IcaoAssignmentCount:N0} ICAO operator(s) and {telephony.SpecialCallSignCount:N0} U.S. special call sign(s)";
 
 		string summary = telephony.AliasFilePath is not null
-			? $"{TelephonyOutputFiles.Alias}: {telephony.AliasCommandCount:N0} command(s) for {operators}"
+			? $"{Path.GetFileName(telephony.AliasFilePath)}: {telephony.AliasCommandCount:N0} command(s) for {operators}"
 			: "Nothing written";
 
 		return new SubServiceRunResult(Title, summary, telephony.Messages);
@@ -587,7 +595,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		Set(TelephonySettingsParser.IncludeVatsimRadarKey, YesNo(IncludeVatsimRadarList));
 
 		// The list is written whole: a removed virtual airline must not leave its numbered keys behind.
-		RemoveSubtree(VirtualAirlinesKey);
+		RemoveSubtree(TelephonySettingsParser.VirtualAirlinesPrefix.TrimEnd('.'));
 
 		foreach ((string key, string value) in VirtualAirlineKeys())
 		{
@@ -762,7 +770,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// is included; <see langword="null"/> otherwise.
 	/// </summary>
 	private VirtualAirline? FindOnVatsimRadarList(string designator, string telephony, string organization) =>
-		IncludeVatsimRadarList ? VatsimRadarVirtualAirlines.FindSame(_vatsimRadarList, designator, telephony, organization) : null;
+		IncludeVatsimRadarList ? _vatsimRadarCallSigns.FindSame(designator, telephony, organization) : null;
 
 	/// <summary>A virtual airline as the list shows one: <c>DAL · DELTA · Fly Delta Virtual</c>.</summary>
 	private static string Describe(VirtualAirline virtualAirline) =>
@@ -780,7 +788,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				? company
 				: null;
 			item.IsOnVatsimRadarList = IncludeVatsimRadarList
-				&& VatsimRadarVirtualAirlines.FindSameCallSign(_vatsimRadarList, item.Designator, item.Telephony) is not null;
+				&& _vatsimRadarCallSigns.FindSameCallSign(item.Designator, item.Telephony) is not null;
 		}
 
 		RaiseEditorFeedback();
@@ -793,8 +801,10 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	/// <param name="copy">The copy, or <see langword="null"/> when there is none.</param>
 	internal void UseVatsimRadarCopy(VatsimRadarCopy? copy)
 	{
+		_vatsimRadarCopyVersion++;
 		_vatsimRadarCopy = copy;
 		_vatsimRadarList = copy?.VirtualAirlines ?? [];
+		_vatsimRadarCallSigns = copy is null ? VirtualAirlineCallSigns.Empty : VirtualAirlineCallSigns.For(copy.VirtualAirlines);
 
 		RaiseVatsimRadarListStatus();
 		RefreshVatsimRadarMatches();
@@ -818,7 +828,8 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			VirtualAirlineListRefreshResult result = await RefreshVatsimRadarList(CancellationToken.None);
 			_lastRefresh = result;
 			_downloadError = null;
-			UseVatsimRadarCopy(VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath, result.OlderCopyPath));
+			// Read off the UI thread: merging thousands of rows is no work for it.
+			UseVatsimRadarCopy(await Task.Run(() => WithLookup(VatsimRadarVirtualAirlines.ReadKeptCopy(result.Gng.FilePath, result.VatsimRadar.FilePath, result.OlderCopyPath))));
 		}
 		catch (Exception ex)
 		{
@@ -880,29 +891,9 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 		EndVirtualAirlineEdit();
 		VirtualAirlines.Clear();
 
-		string prefix = $"{NodePath}.{TelephonySettingsParser.VirtualAirlinesPrefix}";
-		SortedDictionary<int, Dictionary<string, string>> byNumber = [];
-
-		foreach ((string key, string value) in UserConfigFile.SnapshotValues())
-		{
-			if (!key.StartsWith(prefix, StringComparison.Ordinal))
-			{
-				continue;
-			}
-
-			string[] parts = key[prefix.Length..].Split('.');
-
-			if (parts.Length == 2 && int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int number))
-			{
-				if (!byNumber.TryGetValue(number, out Dictionary<string, string>? fields))
-				{
-					fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-					byNumber[number] = fields;
-				}
-
-				fields[parts[1]] = value.Trim();
-			}
-		}
+		// Read as the run reads it (NumberedSettings).
+		SortedDictionary<int, Dictionary<string, string>> byNumber =
+			NumberedSettings.Read(UserConfigFile.SnapshotValues(), $"{NodePath}.{TelephonySettingsParser.VirtualAirlinesPrefix}");
 
 		foreach (Dictionary<string, string> fields in byNumber.Values)
 		{

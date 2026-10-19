@@ -3,6 +3,8 @@ using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac.Procedures;
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
@@ -358,13 +360,13 @@ public sealed class AreaTests : IDisposable
 	private static ProceduresViewModel Procedures(SubServiceOutputKinds on = Changes | Json)
 	{
 		ProceduresViewModel tab = new();
-		tab.LoadCycleDependentLists(new NasrCsvDataCollection
+		tab.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(new NasrCsvDataCollection
 		{
 			Apt = new AptCsvDataCollection
 			{
 				AptBase = [new AptCsvDataModel.AptBase { ArptId = "CLE", IcaoId = "KCLE", RespArtccId = "ZOB", BaseLatDecimal = 41.41, BaseLongDecimal = -81.85 }],
 			},
-		});
+		}));
 		Attach(tab, AiracSubServices.ProceduresKey, on);
 		return tab;
 	}
@@ -419,7 +421,7 @@ public sealed class AreaTests : IDisposable
 
 		Assert.StartsWith("Cycle 2611's metafile isn't out yet", tab.DtppWarning, StringComparison.Ordinal);
 
-		tab.SetDtppData("2611", new DtppMetafileDataCollection(), "2610", previousAvailable: false, downloadedLocal: DateTime.Now);
+		tab.SetDtppData("2611", ProcedureNameIndex.Build(new DtppMetafileDataCollection()), "2610", previousAvailable: false, downloadedLocal: DateTime.Now);
 
 		Assert.Equal("Cycle 2610's metafile isn't available, so deleted procedures are listed without a link.", tab.DtppWarning);
 
@@ -427,7 +429,7 @@ public sealed class AreaTests : IDisposable
 
 		Assert.Null(tab.DtppWarning);
 
-		tab.SetDtppData("2611", new DtppMetafileDataCollection(), "2610", previousAvailable: true, downloadedLocal: DateTime.Now);
+		tab.SetDtppData("2611", ProcedureNameIndex.Build(new DtppMetafileDataCollection()), "2610", previousAvailable: true, downloadedLocal: DateTime.Now);
 
 		Assert.Null(tab.DtppWarning);
 	}
@@ -467,7 +469,7 @@ public sealed class AreaTests : IDisposable
 	{
 		ProceduresViewModel tab = Procedures();
 
-		tab.SetDtppData("2611", new DtppMetafileDataCollection(), "2610", previousAvailable: false, downloadedLocal: DateTime.Now, previousLoading: true);
+		tab.SetDtppData("2611", ProcedureNameIndex.Build(new DtppMetafileDataCollection()), "2610", previousAvailable: false, downloadedLocal: DateTime.Now, previousLoading: true);
 
 		Assert.Null(tab.DtppWarning);
 		Assert.Equal("Cycle 2610 is still loading. Once it has, deleted procedures link to its charts.", tab.DtppPreviousStatus);
@@ -553,5 +555,41 @@ public sealed class AreaTests : IDisposable
 		tab.Area = SubServiceArea.Artccs;
 
 		Assert.Empty(tab.ValidationErrors);
+	}
+
+	/// <summary>
+	/// What You'll Get is announced only when it says something new: typing an ROI corner while the area
+	/// is everything changes nothing in it, so the card isn't rebuilt; picking the ROI does, once, and the
+	/// card reads the one summary built for it.
+	/// </summary>
+	[Fact]
+	public void what_youll_get_is_announced_only_when_it_changes()
+	{
+		AirportsViewModel tab = new() { Area = SubServiceArea.Everything, OverrideRoi = true };
+		List<string?> changed = Changed(tab);
+
+		tab.SwLat = "40";
+		tab.NeLat = "42";
+
+		Assert.True(tab.IsDirty);
+		Assert.DoesNotContain(nameof(ServiceTabViewModel.WhatYoullGet), changed);
+
+		IReadOnlyList<SummaryBlock>? announced = null;
+		tab.PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName == nameof(ServiceTabViewModel.WhatYoullGet))
+			{
+				announced = tab.WhatYoullGet;
+				Assert.Same(announced, tab.WhatYoullGet);
+			}
+		};
+
+		tab.Area = SubServiceArea.Roi;
+
+		Assert.Single(changed, nameof(ServiceTabViewModel.WhatYoullGet));
+		Assert.Single(changed, nameof(ServiceTabViewModel.WhatYoullGetOutputs));
+		Assert.NotNull(announced);
+		Assert.NotSame(announced, tab.WhatYoullGet);
+		Assert.True(SummaryBlock.Same(announced!, tab.WhatYoullGet));
 	}
 }

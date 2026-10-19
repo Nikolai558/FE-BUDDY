@@ -26,6 +26,13 @@ public abstract class ServiceTabViewModel : ObservableObject
 	private bool _isAvailable = true;
 	private string? _unavailableToolTip;
 
+	// What the card was last told; a change that leaves the summary as it is announces nothing, so the
+	// card isn't rebuilt on every keystroke in a field it doesn't mention.
+	private IReadOnlyList<SummaryBlock>? _announced;
+
+	// The summary being announced, which both getters return while the card reads them.
+	private IReadOnlyList<SummaryBlock>? _announcing;
+
 	/// <summary>The tab's label in the rail, e.g. <c>General</c> or <c>Airways</c>.</summary>
 	public abstract string Title { get; }
 
@@ -48,7 +55,11 @@ public abstract class ServiceTabViewModel : ObservableObject
 	/// The tab's top card and its Preview Settings section both show it. Empty for a tab with nothing
 	/// to sum up.
 	/// </summary>
-	public IReadOnlyList<SummaryBlock> WhatYoullGet => SummaryBlock.ForOutputsOn(OutputsOn, [.. BuildWhatYoullGet()]);
+	/// <remarks>
+	/// Built fresh when read, except while <see cref="RaiseWhatYoullGetChanged"/> announces it: the card
+	/// then reads the one it just built.
+	/// </remarks>
+	public IReadOnlyList<SummaryBlock> WhatYoullGet => _announcing ?? BuildSummary();
 
 	/// <summary>The outputs <see cref="WhatYoullGet"/> is about, for its card's tags.</summary>
 	public SubServiceOutputKinds WhatYoullGetOutputs =>
@@ -204,12 +215,34 @@ public abstract class ServiceTabViewModel : ObservableObject
 	/// <returns>The blocks.</returns>
 	protected virtual IEnumerable<SummaryBlock> BuildWhatYoullGet() => [];
 
-	/// <summary>Announces <see cref="WhatYoullGet"/> again, after something it reads changed without a re-check (the default ROI).</summary>
+	/// <summary>
+	/// Announces <see cref="WhatYoullGet"/> again, after something it reads changed without a re-check
+	/// (the default ROI) - only when it now says something different. Built once for the card's two bindings.
+	/// </summary>
 	protected void RaiseWhatYoullGetChanged()
 	{
-		OnPropertyChanged(nameof(WhatYoullGet));
-		OnPropertyChanged(nameof(WhatYoullGetOutputs));
+		IReadOnlyList<SummaryBlock> built = BuildSummary();
+
+		if (_announced is not null && SummaryBlock.Same(_announced, built))
+		{
+			return;
+		}
+
+		_announced = built;
+		_announcing = built;
+
+		try
+		{
+			OnPropertyChanged(nameof(WhatYoullGet));
+			OnPropertyChanged(nameof(WhatYoullGetOutputs));
+		}
+		finally
+		{
+			_announcing = null;
+		}
 	}
+
+	private IReadOnlyList<SummaryBlock> BuildSummary() => SummaryBlock.ForOutputsOn(OutputsOn, [.. BuildWhatYoullGet()]);
 
 	/// <summary>
 	/// Collects this tab's validation failures. Add an area message for a problem with a whole card

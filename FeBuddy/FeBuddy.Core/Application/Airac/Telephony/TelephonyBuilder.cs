@@ -6,6 +6,7 @@ using FeBuddy.Core.Domain.Telephony;
 using FeBuddy.Core.Domain.Telephony.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
+using FeBuddy.Core.Infrastructure.Telephony.Parsers;
 
 namespace FeBuddy.Core.Application.Airac.Telephony;
 
@@ -142,6 +143,68 @@ public static class TelephonyBuilder
 		{
 			VatsimRadarVirtualAirlineCount = fromList,
 		};
+	}
+
+	/// <summary>
+	/// The real operators a run writes a card for, by 3LD (or U.S. special identifier) and telephony, each with its
+	/// company or agency as the card prints it: the rows <see cref="Read"/> keeps - one a command can be made for,
+	/// with a telephony, not expired - the first of each. For saying which of the user's virtual airlines a run
+	/// will leave out.
+	/// </summary>
+	/// <param name="data">The parsed pages.</param>
+	/// <param name="today">The date a U.S. special call sign's expiration is compared with.</param>
+	/// <returns>The operators, keyed by 3LD and telephony upper case.</returns>
+	public static IReadOnlyDictionary<(string Designator, string Telephony), string> RealOperators(TelephonyDataCollection data, DateOnly today)
+	{
+		ArgumentNullException.ThrowIfNull(data);
+
+		Dictionary<(string Designator, string Telephony), string> operators = [];
+
+		foreach (TelephonyEntry entry in Read(data, today).Entries)
+		{
+			operators.TryAdd((entry.Identifier, entry.Telephony), entry.Organization);
+		}
+
+		return operators;
+	}
+
+	/// <summary>
+	/// <see cref="RealOperators(TelephonyDataCollection, DateOnly)"/> from FE-Buddy's kept copies of the FAA's pages,
+	/// on today's UTC date as a run uses. A copy that is missing or can't be read gives none of its operators; the run
+	/// reports a copy it can't read.
+	/// </summary>
+	/// <param name="registerPath">The register's copy.</param>
+	/// <param name="specialCallSignsPath">The U.S. special call signs' copy.</param>
+	/// <returns>The operators, keyed by 3LD and telephony upper case.</returns>
+	public static IReadOnlyDictionary<(string Designator, string Telephony), string> RealOperators(string registerPath, string specialCallSignsPath) =>
+		RealOperators(registerPath, specialCallSignsPath, DateOnly.FromDateTime(DateTime.UtcNow));
+
+	/// <summary>The same, on a date the tests choose.</summary>
+	internal static IReadOnlyDictionary<(string Designator, string Telephony), string> RealOperators(string registerPath, string specialCallSignsPath, DateOnly today)
+	{
+		ArgumentNullException.ThrowIfNull(registerPath);
+		ArgumentNullException.ThrowIfNull(specialCallSignsPath);
+
+		TelephonyDataCollection data = new();
+
+		try
+		{
+			if (File.Exists(registerPath))
+			{
+				data.Assignments = TelephonyHtmlParser.ParseRegister(registerPath);
+			}
+
+			if (File.Exists(specialCallSignsPath))
+			{
+				data.SpecialCallSigns = TelephonyHtmlParser.ParseSpecialCallSigns(specialCallSignsPath);
+			}
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+		{
+			// What could be read is kept.
+		}
+
+		return RealOperators(data, today);
 	}
 
 	/// <summary>The virtual airline list's virtual airlines that can be written, saying which can't.</summary>

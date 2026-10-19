@@ -57,8 +57,13 @@ public partial class App : Application
 		AppDomain.CurrentDomain.UnhandledException += OnUnhandledElsewhere;
 		TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-		// Before the log, the settings or any cycle is opened: a reset deletes them all.
+		// Before the log, the settings or any cycle is opened: a reset deletes them all. It can take
+		// seconds (waiting for the FE-Buddy that asked for it to close, then deleting every cycle), and no
+		// window can open before it: FE-Buddy's mark is shown meanwhile, so the click on Reset isn't
+		// followed by nothing.
+		SplashScreen? splash = AppDataReset.IsPending ? ShowSplash() : null;
 		AppDataResetResult? reset = AppDataReset.RunPending(CredentialStore.Default, ResetWaitForExit);
+		splash?.Close(TimeSpan.Zero);
 
 		// One shared log stream for the whole app; the file sink also prunes stale log files.
 		AppLog.StartFileSink();
@@ -106,6 +111,24 @@ public partial class App : Application
 	}
 
 	/// <summary>Says the reset is done, and what it could not delete, if anything.</summary>
+	/// <summary>
+	/// FE-Buddy's mark on screen while a reset runs: WPF's own splash, drawn without the dispatcher, so it
+	/// shows before any window can. <see langword="null"/> when it can't be shown; the reset goes ahead.
+	/// </summary>
+	private static SplashScreen? ShowSplash()
+	{
+		try
+		{
+			SplashScreen splash = new(typeof(App).Assembly, "Assets/Brand/FEB_96.png");
+			splash.Show(autoClose: false, topMost: true);
+			return splash;
+		}
+		catch (Exception ex) when (ex is IOException or InvalidOperationException)
+		{
+			return null;
+		}
+	}
+
 	private static void ReportReset(AppDataResetResult reset)
 	{
 		string settings = reset.SettingsKept ? "Your settings were kept." : "FE-Buddy is back to its default settings.";

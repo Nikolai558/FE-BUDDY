@@ -39,7 +39,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 | [W7-20](#w7-20) | Wrong doc | Low | Controls.Window.xaml header: not implicit, stale dialog list, wrong titlebar colour claim | Open | S8 |
 | [W7-23](#w7-23) | Wrong doc | Low | Palette says no colour is hard-coded anywhere else; several are | Open | S8 |
 | [W7-24](#w7-24) | History wording | Low | Typography header narrates the fonts the theme was first drawn with | Open | S8 |
-| [W2-12](#w2-12) | Wrong doc | Med | Duplicate review claims CRC runs the first copy of a command | Agreed | S8 |
+| [W2-12](#w2-12) | Wrong doc | Med | Duplicate review claims CRC runs the first copy of a command | Fixed | S8 |
 | [W2-31](#w2-31) | History wording | Low | "every included sub-service that has a backend" | Open | S8 |
 | [W2-32](#w2-32) | Wrong doc | Low | "The only sub-service-specific lines in the run" / "the only place a sub-service is registered" | Open | S8 |
 | [W2-38](#w2-38) | Minor | Low | Naming and small tidy-ups | Open | S8 |
@@ -536,7 +536,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 
 ### W2-12 · Wrong doc · Med · Duplicate review claims CRC runs the first copy of a command
 
-**Status:** Agreed ([D3](010_Decisions.md#d3)) · **Session:** [S8](020_Work-Plan.md#s8)
+**Status:** Fixed (not yet merged), the second option, after Kyle confirmed [D3](010_Decisions.md#d3): with no line kept, the last line with no saved choice keeps the command (the copy CRC runs, since the lines are in the order they go into `Combined_Alias.txt`), and the remark says so. Tests: `DuplicateAliasReviewTests.each_command_starts_with_its_last_line_kept_and_the_rest_left_out` and `with_no_line_kept_the_last_unsaved_line_keeps_the_command`; three older tests now change the line that starts left out · **Session:** [S8](020_Work-Plan.md#s8)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DuplicateAliasReviewViewModel.cs:18-20`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DuplicateAliasReviewViewModel.cs#L18-L20)
 

@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 
 namespace FeBuddy.UnitTests.Application.Airac.Models;
@@ -113,7 +114,53 @@ public sealed class OutputFileNamesTests
 			["Airports_Symbols"] = "zob",
 		}));
 
-		Assert.StartsWith("Airways_High_Lines.geojson and Airports_Symbols.geojson would both be named", ex.Message, StringComparison.Ordinal);
+		Assert.StartsWith("The new name for ", ex.Message, StringComparison.Ordinal);
+		Assert.Contains(" too. Give each file its own name.", ex.Message, StringComparison.Ordinal);
+	}
+
+	/// <summary>Each file's folder inside the cycle folder: two files clash only in one.</summary>
+	[Theory]
+	[InlineData("Airways_High_Lines", "Geojson")]
+	[InlineData("Airways.txt", "Aliases")]
+	[InlineData("Combined_Alias.txt", "Aliases")]
+	[InlineData("Duplicate_Alias_Commands.txt", "")]
+	[InlineData("Procedure_Changes.md", "Publication_Docs")]
+	[InlineData("Procedures.json", "Publication_Docs")]
+	public void each_file_has_its_folder(string key, string folder) => Assert.Equal(folder, OutputFileNames.FolderOf(key));
+
+	/// <summary>
+	/// A new name clashes with another renamed file's, or with one that keeps FE-Buddy's name, in the same folder;
+	/// the same name in another folder, or with another extension, writes over nothing.
+	/// </summary>
+	[Fact]
+	public void a_new_name_clashes_only_in_its_own_folder()
+	{
+		Dictionary<string, string> newNames = new()
+		{
+			["Airways.txt"] = "Airports",
+			["Duplicate_Alias_Commands.txt"] = "Airways",
+			["Airways_High_Lines"] = "Airports",
+		};
+
+		IReadOnlyDictionary<string, string> clashes = OutputFileNames.Clashes(newNames, ["Airports.txt", "Airways.txt", "Airports"]);
+
+		Assert.Equal("Airports.txt is already the name of another file. Give this file a name of its own.", Assert.Single(clashes, c => c.Key == "Airways.txt").Value);
+		Assert.Equal(2, clashes.Count);
+		Assert.Contains("Airways_High_Lines", clashes.Keys);
+		Assert.Empty(OutputFileNames.Clashes(new Dictionary<string, string> { ["Airways.txt"] = "Airports" }, []));
+		Assert.Throws<ArgumentNullException>(() => OutputFileNames.Clashes(null!, []));
+		Assert.Throws<ArgumentNullException>(() => OutputFileNames.Clashes(newNames, null!));
+		Assert.Throws<ArgumentNullException>(() => OutputFileNames.FolderOf(null!));
+	}
+
+	/// <summary>A run refuses a new name that would write over a file keeping FE-Buddy's name.</summary>
+	[Fact]
+	public void a_run_refuses_a_name_another_file_keeps()
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => OutputFileNamesParser.Parse(new Dictionary<string, string> { ["Airways.txt"] = "Airports" }));
+
+		Assert.Equal("The new name for Airways.txt, 'Airports', can't be used. Airports.txt is already the name of another file. Give this file a name of its own. (Parameter 'fileNames')", ex.Message);
+		Assert.Empty(OutputFileNamesParser.Parse(new Dictionary<string, string> { ["Duplicate_Alias_Commands.txt"] = "Airways" }).Messages);
 	}
 
 	/// <summary>The extension is part of the name, so an alias file and a GeoJSON file can share a new name.</summary>

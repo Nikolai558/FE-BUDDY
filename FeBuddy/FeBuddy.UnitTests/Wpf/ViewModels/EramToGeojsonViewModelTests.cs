@@ -63,7 +63,7 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 
 	/// <summary>Two Geomaps files in the folder would land on each other's names, so the run waits for one to be picked.</summary>
 	[Fact]
-	public void a_folder_with_two_geomaps_files_blocks_the_run()
+	public async Task a_folder_with_two_geomaps_files_blocks_the_run()
 	{
 		string folder = Path.Combine(_root, "Export");
 		Directory.CreateDirectory(folder);
@@ -72,6 +72,7 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		File.WriteAllText(Path.Combine(folder, "ConsoleCommandControl.xml"), "<ConsoleCommandControl_Records />");
 
 		EramToGeojsonViewModel tab = new() { SourceFolder = folder };
+		await tab.CountFolderAsync();
 		Assert.True(tab.OneSourceFileOnly);
 		Assert.Equal("1 Geomaps file in this folder.", tab.FolderSummary);
 		Assert.Null(tab.RunBlocker);
@@ -79,8 +80,37 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		File.WriteAllText(Path.Combine(folder, "B.xml"), "<Geomaps_Records />");
 		tab.SourceFolder = string.Empty;
 		tab.SourceFolder = folder;
+		await tab.CountFolderAsync();
 
 		Assert.StartsWith("The source folder has 2 Geomaps files, and this conversion takes one per run.", tab.RunBlocker, StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// Typing a folder's path counts nothing on the UI thread: the page says it is counting, and the run
+	/// waits, until the count runs once the typing stops.
+	/// </summary>
+	[Fact]
+	public async Task typing_a_folder_counts_its_files_only_when_the_count_runs()
+	{
+		string folder = Path.Combine(_root, "Typed");
+		Directory.CreateDirectory(folder);
+		File.WriteAllText(Path.Combine(folder, "A.xml"), "<Geomaps_Records />");
+
+		EramToGeojsonViewModel tab = new() { SourceFolder = folder };
+
+		Assert.Equal("Counting files…", tab.FolderSummary);
+		Assert.Equal("Counting the source folder's files…", tab.RunBlocker);
+
+		await tab.CountFolderAsync();
+
+		Assert.Equal("1 Geomaps file in this folder.", tab.FolderSummary);
+		Assert.Null(tab.RunBlocker);
+
+		tab.SourceFolder = Path.Combine(_root, "Missing");
+		await tab.CountFolderAsync();
+
+		Assert.Equal("This folder does not exist.", tab.FolderSummary);
+		Assert.Equal("The source folder does not exist.", tab.RunBlocker);
 	}
 
 	[Fact]

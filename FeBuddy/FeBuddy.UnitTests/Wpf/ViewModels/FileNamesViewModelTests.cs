@@ -117,21 +117,27 @@ public sealed class FileNamesViewModelTests : IDisposable
 		Assert.Equal(expected, Row(tab, "Airways_High_Lines").Error);
 	}
 
-	/// <summary>Two files would be written over each other - whether the other is renamed too or keeps its name.</summary>
+	/// <summary>
+	/// Two files in one folder would be written over each other - whether the other is renamed too or keeps its
+	/// name. In different folders the same name writes over nothing.
+	/// </summary>
 	[Fact]
-	public void two_files_may_not_end_up_with_one_name()
+	public void two_files_in_one_folder_may_not_end_up_with_one_name()
 	{
+		_files.Add(OutputFileEntry.Renamable("Combined_Alias.txt", "Aliases", "AIRAC Service"));
 		FileNamesViewModel tab = RenamingTab();
-		Row(tab, "Airways.txt").NewName = "Duplicate_Alias_Commands";
-		Row(tab, "Duplicate_Alias_Commands.txt").Rename = false;
+		Row(tab, "Airways.txt").NewName = "Combined_Alias";
+		Row(tab, "Combined_Alias.txt").Rename = false;
+		Row(tab, "Duplicate_Alias_Commands.txt").NewName = "Airways";
 		Row(tab, "Airways_High_Lines").NewName = "ZOB";
 
-		Assert.Equal(
-			"Duplicate_Alias_Commands.txt is already the name of another file. Give this file a name of its own.",
-			Row(tab, "Airways.txt").Error);
+		Assert.Equal("Combined_Alias.txt is already the name of another file. Give this file a name of its own.", Row(tab, "Airways.txt").Error);
 
-		Row(tab, "Duplicate_Alias_Commands.txt").Rename = true;
-		Row(tab, "Duplicate_Alias_Commands.txt").NewName = "ZOB";
+		// The cycle folder's file named as an alias file is no clash: they are in different folders.
+		Assert.Null(Row(tab, "Duplicate_Alias_Commands.txt").Error);
+
+		Row(tab, "Combined_Alias.txt").Rename = true;
+		Row(tab, "Combined_Alias.txt").NewName = "ZOB";
 		Row(tab, "Airways.txt").NewName = "ZOB Aliases";
 
 		// ZOB.txt and ZOB.geojson differ by their extension.
@@ -139,8 +145,8 @@ public sealed class FileNamesViewModelTests : IDisposable
 
 		Row(tab, "Airways.txt").NewName = "zob";
 
-		Assert.Equal("Duplicate_Alias_Commands.txt is being renamed ZOB.txt too. Give each file its own name.", Row(tab, "Airways.txt").Error);
-		Assert.Equal("Airways.txt is being renamed zob.txt too. Give each file its own name.", Row(tab, "Duplicate_Alias_Commands.txt").Error);
+		Assert.Equal("Combined_Alias.txt is being renamed ZOB.txt too. Give each file its own name.", Row(tab, "Airways.txt").Error);
+		Assert.Equal("Airways.txt is being renamed zob.txt too. Give each file its own name.", Row(tab, "Combined_Alias.txt").Error);
 	}
 
 	[Fact]

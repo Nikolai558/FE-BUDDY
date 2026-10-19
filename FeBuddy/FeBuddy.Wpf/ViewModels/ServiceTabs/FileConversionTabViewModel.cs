@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
@@ -31,8 +32,10 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// and <see cref="DescribeDetail"/>.
 /// </para>
 /// <para>
-/// The folder's matching files are counted when the folder is chosen, not in a getter: WPF reads
-/// <see cref="RunBlocker"/> on every command re-query, and that must not touch the disk.
+/// The folder's matching files are counted in Core, off the UI thread (<see cref="ConversionSourceFolder"/>):
+/// when the page loads, when a folder is picked, and once the user stops typing one - never in a
+/// getter, which WPF reads on every command re-query. A folder on a share that doesn't answer can take
+/// seconds, and ERAM opens every XML file to look.
 /// </para>
 /// </remarks>
 public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISourceFileSettings, ICrcDefaultsSettings
@@ -45,7 +48,12 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	private bool _includeCrcLineDefaults = true;
 	private bool _includeCrcSymbolDefaults = true;
 	private bool _includeCrcTextDefaults = true;
-	private int? _folderFileCount;
+	private SourceFolderCount? _folderCount;
+	private bool _countingFolder;
+	private CancellationTokenSource? _folderCountStop;
+
+	// Counts the folder once the user stops typing its path, rather than on every keystroke.
+	private readonly DispatcherTimer _countAfterTyping;
 
 	/// <summary>Builds the CRC defaults rows and wires the source commands.</summary>
 	/// <param name="crcClassName">The CRC class the library reads this conversion's defaults under, e.g. <c>VideoMap</c>.</param>
@@ -62,6 +70,9 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 			OnPropertyChanged(nameof(HasSourceFiles));
 			RaiseRunBlockerChanged();
 		};
+
+		_countAfterTyping = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(400) };
+		_countAfterTyping.Tick += (_, _) => _ = CountFolderAsync();
 
 		BrowseFolderCommand = new RelayCommand(BrowseFolder);
 		BrowseFilesCommand = new RelayCommand(BrowseFiles);
@@ -87,13 +98,13 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	protected abstract string FileDescription { get; }
 
 	/// <summary>
-	/// Whether a folder file with the right extension is one this conversion reads; the folder
-	/// summary counts only those. Every one, unless a page looks closer - ERAM picks
-	/// <c>Geomaps.xml</c> out of a whole adaptation export, as its service does.
+	/// Counts the folder's files the conversion would read, by its service's own rule (ERAM picks
+	/// <c>Geomaps.xml</c> out of a whole adaptation export). Called off the UI thread.
 	/// </summary>
-	/// <param name="path">The file.</param>
-	/// <returns><see langword="true"/> to count it.</returns>
-	protected virtual bool IsSourceFile(string path) => true;
+	/// <param name="folder">The folder.</param>
+	/// <param name="cancellationToken">Stops the count; a newer one has started.</param>
+	/// <returns>What the count found.</returns>
+	protected abstract SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken);
 
 	/// <inheritdoc />
 	/// <remarks>Off unless a page turns it on: most conversions take any number of files.</remarks>
@@ -124,21 +135,32 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 			if (SetProperty(ref _sourceFolder, value))
 			{
 				MarkDirty();
-				RefreshFolder();
+
+				// Counted once the typing stops; until then the page says it is counting. A count still
+				// running, or finished but not yet shown, is for the old folder: it is stopped and never shown.
+				_folderCountStop?.Cancel();
+				_folderCountStop = null;
+				_countingFolder = true;
+				RaiseFolderChanged();
+				_countAfterTyping.Stop();
+				_countAfterTyping.Start();
 			}
 		}
 	}
 
 	/// <inheritdoc />
-	/// <remarks>Counted when the folder is chosen, not on every read; picking it again re-counts.</remarks>
-	public string FolderSummary => _folderFileCount switch
-	{
-		null when string.IsNullOrWhiteSpace(SourceFolder) => "No folder selected.",
-		null => "This folder does not exist.",
-		0 => $"There are no {FileTypeLabel} files in this folder.",
-		1 => $"1 {FileTypeLabel} file in this folder.",
-		{ } count => $"{count:N0} {FileTypeLabel} files in this folder.",
-	};
+	/// <remarks>Counted off the UI thread when the folder is chosen, not on every read; picking it again re-counts.</remarks>
+	public string FolderSummary =>
+		string.IsNullOrWhiteSpace(SourceFolder) ? "No folder selected."
+		: _countingFolder || _folderCount is null ? "Counting files…"
+		: !_folderCount.Exists ? "This folder does not exist."
+		: _folderCount.Problem is { } problem ? $"This folder can't be read: {problem}"
+		: _folderCount.Files switch
+		{
+			0 => $"There are no {FileTypeLabel} files in this folder.",
+			1 => $"1 {FileTypeLabel} file in this folder.",
+			int count => $"{count:N0} {FileTypeLabel} files in this folder.",
+		};
 
 	/// <inheritdoc />
 	public ObservableCollection<SourceFileItem> SourceFiles { get; } = [];
@@ -235,10 +257,12 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	public override string? RunBlocker => _sourceType switch
 	{
 		ConversionSourceType.Folder when string.IsNullOrWhiteSpace(SourceFolder) => "Pick the folder to convert.",
-		ConversionSourceType.Folder when _folderFileCount is null => "The source folder does not exist.",
-		ConversionSourceType.Folder when _folderFileCount == 0 => $"The source folder has no {FileTypeLabel} files in it.",
-		ConversionSourceType.Folder when OneSourceFileOnly && _folderFileCount > 1 =>
-			$"The source folder has {_folderFileCount} {FileTypeLabel} files, and this conversion takes one per run. Choose \"A file I pick\" and pick it.",
+		ConversionSourceType.Folder when _countingFolder || _folderCount is null => "Counting the source folder's files…",
+		ConversionSourceType.Folder when !_folderCount.Exists => "The source folder does not exist.",
+		ConversionSourceType.Folder when _folderCount.Problem is { } problem => $"The source folder can't be read: {problem}",
+		ConversionSourceType.Folder when _folderCount.Files == 0 => $"The source folder has no {FileTypeLabel} files in it.",
+		ConversionSourceType.Folder when OneSourceFileOnly && _folderCount.Files > 1 =>
+			$"The source folder has {_folderCount.Files} {FileTypeLabel} files, and this conversion takes one per run. Choose \"A file I pick\" and pick it.",
 		ConversionSourceType.Files when SourceFiles.Count == 0 => OneSourceFileOnly
 			? $"Pick the {FileTypeLabel} file to convert."
 			: $"Pick at least one {FileTypeLabel} file to convert.",
@@ -464,23 +488,48 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		RefreshFolder();
 	}
 
-	/// <summary>Counts the matching files in <see cref="SourceFolder"/> and refreshes what depends on the count.</summary>
-	private void RefreshFolder()
+	/// <summary>Counts the folder now, rather than once the typing stops.</summary>
+	private void RefreshFolder() => _ = CountFolderAsync();
+
+	/// <summary>
+	/// Counts the matching files in <see cref="SourceFolder"/> off the UI thread, stopping any count
+	/// still running, then refreshes what depends on the count. A count a newer one stopped shows nothing.
+	/// </summary>
+	/// <returns>A task that completes when the page shows the count.</returns>
+	internal async Task CountFolderAsync()
 	{
-		string folder = SourceFolder.Trim();
+		_countAfterTyping.Stop();
+		_folderCountStop?.Cancel();
+
+		CancellationTokenSource stop = new();
+		_folderCountStop = stop;
+		_countingFolder = true;
+		RaiseFolderChanged();
+
+		string folder = SourceFolder;
+		SourceFolderCount count;
 
 		try
 		{
-			_folderFileCount = folder.Length > 0 && Directory.Exists(folder)
-				? Directory.EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly)
-					.Count(path => Extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase) && IsSourceFile(path))
-				: null;
+			count = await Task.Run(() => CountSourceFiles(folder, stop.Token), stop.Token);
 		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		catch (OperationCanceledException)
 		{
-			_folderFileCount = null;
+			return;
 		}
 
+		if (!ReferenceEquals(_folderCountStop, stop))
+		{
+			return;
+		}
+
+		_folderCount = count;
+		_countingFolder = false;
+		RaiseFolderChanged();
+	}
+
+	private void RaiseFolderChanged()
+	{
 		OnPropertyChanged(nameof(FolderSummary));
 		RaiseRunBlockerChanged();
 	}

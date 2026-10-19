@@ -1,66 +1,20 @@
-using System.Globalization;
 using System.Windows.Media;
 
-using FeBuddy.Core.Application.Airac.Airports;
-using FeBuddy.Core.Application.Airac.ArtccBoundaries;
-using FeBuddy.Core.Application.Airac.Navaids;
-using FeBuddy.Core.Domain.Airports.Models;
-using FeBuddy.Core.Domain.ArtccBoundaries.Models;
-using FeBuddy.Core.Domain.Navaids;
-using FeBuddy.Core.Domain.Navaids.Models;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Wpf.Map.Models;
+
+using FeBuddy.Core.Application.Map;
+using FeBuddy.Core.Application.Map.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.Map;
 
-/// <summary>The live layers the Map screen can build from a parsed AIRAC cycle.</summary>
-public enum AiracLayerKind
-{
-	/// <summary>Every ARTCC boundary ring, High, Low and Unlimited together.</summary>
-	ArtccBoundaries,
-
-	/// <summary>Airports with a control tower, plus their runways once zoomed in.</summary>
-	ToweredAirports,
-
-	/// <summary>VOR, VOR/DME, VORTAC and TACAN stations.</summary>
-	Navaids,
-}
-
 /// <summary>
-/// Map layers built straight from a parsed AIRAC cycle, with no run and no files - the same
-/// Core builders the AIRAC sub-services use, so the map shows exactly what a run would work from.
-/// Deliberately few: the reference layers an FE steers by. Anything more specific (fixes,
-/// airways, procedures, one boundary stratum) comes from a run's output files instead.
+/// How the Map screen draws the live AIRAC layers: their colours, line weights, point shapes and the
+/// zooms each part shows at. What each layer holds is Core's (<see cref="AiracMapData"/>).
 /// Safe to call off the UI thread: every brush is frozen.
 /// </summary>
 internal static class AiracMapLayers
 {
-	/// <summary>The NAVAID types drawn: the VOR family and TACANs, the stations airways hang off.</summary>
-	private static readonly HashSet<string> VorTypes = new(StringComparer.OrdinalIgnoreCase)
-	{
-		NavaidTypes.Vor, NavaidTypes.VorDme, NavaidTypes.Vortac, NavaidTypes.Tacan,
-	};
-
-	/// <summary>The name shown next to a layer's switch.</summary>
-	/// <param name="kind">The layer.</param>
-	/// <returns>Its display name.</returns>
-	public static string Name(AiracLayerKind kind) => kind switch
-	{
-		AiracLayerKind.ArtccBoundaries => "ARTCC Boundaries",
-		AiracLayerKind.ToweredAirports => "Towered Airports",
-		_ => "VOR / VORTAC / TACAN",
-	};
-
-	/// <summary>A line explaining what the layer shows, for its tooltip.</summary>
-	/// <param name="kind">The layer.</param>
-	/// <returns>The explanation.</returns>
-	public static string Description(AiracLayerKind kind) => kind switch
-	{
-		AiracLayerKind.ArtccBoundaries => "High, Low and Unlimited boundaries together. For one stratum on its own, load its file from the run output instead.",
-		AiracLayerKind.ToweredAirports => "Airports with a control tower, labelled with their FAA ID. Runways appear as you zoom in.",
-		_ => "VOR, VOR/DME, VORTAC and TACAN stations, labelled with their ID as you zoom in.",
-	};
-
 	/// <summary>The colour a layer is drawn in; the legend swatch uses it too.</summary>
 	/// <param name="kind">The layer.</param>
 	/// <returns>Its colour.</returns>
@@ -82,50 +36,26 @@ internal static class AiracMapLayers
 		_ => BuildNavaids(data),
 	};
 
-	private static IReadOnlyList<MapLayer> BuildArtccBoundaries(NasrCsvDataCollection data)
-	{
-		IReadOnlyList<ArtccBoundaryRing> rings = ArtccBoundaryBuilder.Read(data).Rings;
-
-		// A centre's High and Low rings often share a label spot; the label placer keeps one.
-		return
-		[
-			new MapLayer(Name(AiracLayerKind.ArtccBoundaries), [.. rings.SelectMany(ToGeometries)], Frozen(AiracLayerKind.ArtccBoundaries), thickness: 1.3)
-			{
-				LabelMinZoom = 4.5,
-			},
-		];
-	}
+	private static IReadOnlyList<MapLayer> BuildArtccBoundaries(NasrCsvDataCollection data) =>
+	[
+		new MapLayer(AiracMapData.Name(AiracLayerKind.ArtccBoundaries), AiracMapData.ArtccBoundaries(data), Frozen(AiracLayerKind.ArtccBoundaries), thickness: 1.3)
+		{
+			LabelMinZoom = 4.5,
+		},
+	];
 
 	private static IReadOnlyList<MapLayer> BuildToweredAirports(NasrCsvDataCollection data)
 	{
-		List<Airport> towered = [.. AirportBuilder.BuildAll(data).Airports
-			.Where(a => !string.IsNullOrWhiteSpace(a.TowerType) && !string.Equals(a.TowerType, "No-TWR", StringComparison.OrdinalIgnoreCase))];
+		ToweredAirportShapes shapes = AiracMapData.ToweredAirports(data);
 		Brush brush = Frozen(AiracLayerKind.ToweredAirports);
 
-		MapLayer runways = new(
-			"Runways",
-			[.. towered.SelectMany(a => a.Runways
-				.Where(r => r.HasGeometry)
-				.Select(r => new MapGeometry(MapGeometryKind.Line,
-					[[new GeoPoint(r.FirstEnd!.Latitude, r.FirstEnd.Longitude), new GeoPoint(r.SecondEnd!.Latitude, r.SecondEnd.Longitude)]])
-				{
-					Feature = RunwayFeature(a, r),
-				}))],
-			brush,
-			thickness: 2.0)
+		MapLayer runways = new("Runways", shapes.Runways, brush, thickness: 2.0)
 		{
 			MinZoom = 9.0,
 			QuietBelowMinZoom = true,
 		};
 
-		MapLayer airports = new(
-			Name(AiracLayerKind.ToweredAirports),
-			[.. towered.Select(a => new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(a.Latitude, a.Longitude)]], a.FaaId)
-			{
-				Feature = AirportFeature(a),
-			})],
-			brush,
-			pointRadius: 2.5)
+		MapLayer airports = new(AiracMapData.Name(AiracLayerKind.ToweredAirports), shapes.Airports, brush, pointRadius: 2.5)
 		{
 			LabelMinZoom = 6.0,
 			LabelBesideSymbol = true,
@@ -134,105 +64,16 @@ internal static class AiracMapLayers
 		return [runways, airports];
 	}
 
-	private static IReadOnlyList<MapLayer> BuildNavaids(NasrCsvDataCollection data)
-	{
-		IEnumerable<Navaid> vors = NavaidBuilder.BuildAll(data).Navaids.Where(n => VorTypes.Contains(n.NavType));
-
-		return
-		[
-			new MapLayer(
-				Name(AiracLayerKind.Navaids),
-				[.. vors.Select(n => new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(n.Latitude, n.Longitude)]], n.NavId)
-				{
-					Feature = NavaidFeature(n),
-				})],
-				Frozen(AiracLayerKind.Navaids),
-				pointRadius: 4.5)
-			{
-				MinZoom = 4.5,
-				LabelMinZoom = 6.5,
-				PointShape = MapPointShape.Hexagon,
-				LabelBesideSymbol = true,
-			},
-		];
-	}
-
-	private static IEnumerable<MapGeometry> ToGeometries(ArtccBoundaryRing ring)
-	{
-		if (ring.Points.Count < 2)
-		{
-			yield break;
-		}
-
-		// The ring and its label are one thing to a Ctrl+click.
-		MapFeature feature = MapFeature.FromData("ARTCC boundary",
-		[
-			new("ID", ring.Location.LocationId),
-			new("Name", ring.Location.LocationName),
-			new("Stratum", ring.Altitude.ToString()),
-			new("Type", ring.Type),
-		]);
-
-		List<GeoPoint> points = [.. ring.Points.Select(p => new GeoPoint(p.Latitude, p.Longitude))];
-		yield return new MapGeometry(MapGeometryKind.Polygon, [points]) { Feature = feature };
-
-		if (LabelPoint(points) is { } anchor)
-		{
-			yield return new MapGeometry(MapGeometryKind.Point, [[anchor]], ring.Location.LocationId) { Feature = feature };
-		}
-	}
-
-	private static MapFeature AirportFeature(Airport airport) => MapFeature.FromData("Airport",
+	private static IReadOnlyList<MapLayer> BuildNavaids(NasrCsvDataCollection data) =>
 	[
-		new("FAA ID", airport.FaaId),
-		new("ICAO ID", airport.IcaoId ?? string.Empty),
-		new("Name", airport.Name),
-		new("Tower", airport.TowerType),
-		new("ARTCC", airport.RespArtccId),
-		new("Elevation", airport.Elevation is { } elevation ? $"{elevation.ToString("0.#", CultureInfo.InvariantCulture)} ft" : string.Empty),
-		new("Airspace", airport.ClassAirspace ?? string.Empty),
-		new("CTAF", airport.CtafFrequency ?? string.Empty),
-	]);
-
-	private static MapFeature RunwayFeature(Airport airport, AirportRunway runway) => MapFeature.FromData("Runway",
-	[
-		new("Airport", airport.FaaId),
-		new("Runway", runway.RunwayId),
-		new("Length", $"{runway.Length.ToString("N0", CultureInfo.InvariantCulture)} ft"),
-		new("Surface", runway.SurfaceType ?? string.Empty),
-	]);
-
-	private static MapFeature NavaidFeature(Navaid navaid) => MapFeature.FromData("NAVAID",
-	[
-		new("ID", navaid.NavId),
-		new("Name", navaid.Name),
-		new("Type", navaid.NavType),
-		new("Frequency", navaid.Freq is { } freq ? freq.ToString("0.0#", CultureInfo.InvariantCulture) : string.Empty),
-		new("Low ARTCC", navaid.LowAltArtccId),
-		new("High ARTCC", navaid.HighAltArtccId),
-	]);
-
-	/// <summary>
-	/// Where a ring's ID goes: the average of its vertices, worked out the short way round so a
-	/// ring over the 180th meridian (Anchorage, Oakland Oceanic) is labelled by itself, not on the
-	/// far side of the world. An average is only roughly the middle: a ring with a deep bend in it
-	/// can have its label just outside.
-	/// </summary>
-	private static GeoPoint? LabelPoint(IReadOnlyList<GeoPoint> points)
-	{
-		double previous = points[0].Lon;
-		double lonSum = 0, latSum = 0;
-
-		foreach (GeoPoint point in points)
+		new MapLayer(AiracMapData.Name(AiracLayerKind.Navaids), AiracMapData.Navaids(data), Frozen(AiracLayerKind.Navaids), pointRadius: 4.5)
 		{
-			double lon = WebMercator.UnwrapLon(point.Lon, previous);
-			lonSum += lon;
-			latSum += point.Lat;
-			previous = lon;
-		}
-
-		return new GeoPoint(latSum / points.Count, WebMercator.NormalizeLon(lonSum / points.Count));
-	}
+			MinZoom = 4.5,
+			LabelMinZoom = 6.5,
+			PointShape = MapPointShape.Hexagon,
+			LabelBesideSymbol = true,
+		},
+	];
 
 	private static SolidColorBrush Frozen(AiracLayerKind kind) => FrozenBrush.Of(Color(kind));
 }

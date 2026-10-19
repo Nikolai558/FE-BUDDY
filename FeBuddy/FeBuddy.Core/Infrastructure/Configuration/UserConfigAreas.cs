@@ -39,13 +39,16 @@ public static class UserConfigAreas
 	public const string AiracNode = "Services.AiracService";
 
 	/// <summary>The facility from Settings ▸ Facility.</summary>
-	public const string FacilityKey = $"{AiracNode}.UserArtccId";
+	public const string FacilityKey = UserConfigKeys.Facility;
 
 	/// <summary>Whether the default ROI is on.</summary>
-	public const string DefaultRoiKey = $"{AiracNode}.DefaultRoi.FilterByRoi";
+	public const string DefaultRoiKey = UserConfigKeys.DefaultRoiFilter;
+
+	/// <summary>The key under a GeoJSON tab's node that says it uses its own ROI rather than the default one: <c>Y</c> or <c>N</c>.</summary>
+	public const string OverrideRoiKey = "Roi.OverrideDefaultRoi";
 
 	/// <summary>The Procedures tab's node name.</summary>
-	public const string ProceduresTab = "Procedures";
+	public const string ProceduresTab = AiracTabs.Procedures;
 
 	/// <summary>
 	/// The tabs with an area, by node name, each with the key of its ARTCC list (Procedures: its
@@ -53,14 +56,14 @@ public static class UserConfigAreas
 	/// </summary>
 	public static IReadOnlyDictionary<string, string?> Tabs { get; } = new Dictionary<string, string?>(StringComparer.Ordinal)
 	{
-		["ArtccBoundaries"] = "LocationFilter",
-		["Arrivals"] = "ArtccFilter",
-		["Departures"] = "ArtccFilter",
-		["Airports"] = null,
-		["Airways"] = null,
-		["Navaids"] = null,
-		["Fixes"] = null,
-		["WxStations"] = null,
+		[AiracTabs.ArtccBoundaries] = "LocationFilter",
+		[AiracTabs.Arrivals] = "ArtccFilter",
+		[AiracTabs.Departures] = "ArtccFilter",
+		[AiracTabs.Airports] = null,
+		[AiracTabs.Airways] = null,
+		[AiracTabs.Navaids] = null,
+		[AiracTabs.Fixes] = null,
+		[AiracTabs.WxStations] = null,
 		[ProceduresTab] = "Facilities",
 	};
 
@@ -95,7 +98,7 @@ public static class UserConfigAreas
 			return IsYes(get($"{node}.IncludeRoiAirports")) ? Roi : None;
 		}
 
-		return IsYes(get($"{node}.Roi.OverrideDefaultRoi")) || IsYes(get(DefaultRoiKey)) ? Roi : Everything;
+		return IsYes(get($"{node}.{OverrideRoiKey}")) || IsYes(get(DefaultRoiKey)) ? Roi : Everything;
 	}
 
 	/// <summary>

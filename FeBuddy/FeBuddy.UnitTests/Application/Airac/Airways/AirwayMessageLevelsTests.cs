@@ -49,6 +49,9 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		ServiceMessage message = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, message.Level);
 		Assert.Equal("AirwayWaypointBuffer", message.Source);
+
+		// What the message is about, for the Review tab to group by: the airway.
+		Assert.Equal("TEST", message.Subject);
 		Assert.Empty(result.Messages.WarningTexts()); // the Info notice does not surface as a warning
 	}
 

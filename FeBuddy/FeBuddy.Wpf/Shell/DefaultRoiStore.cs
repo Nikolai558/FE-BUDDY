@@ -19,8 +19,8 @@ public static class DefaultRoiStore
 {
 	// Internal so the unit tests can check every settings layout's keys are still the ones read here,
 	// and that no other page's node sits inside this one.
-	internal const string Node = "Services.AiracService.DefaultRoi";
-	internal const string FilterKey = $"{Node}.FilterByRoi";
+	internal const string Node = "General.DefaultRoi";
+	internal const string FilterKey = UserConfigKeys.DefaultRoiFilter;
 	internal const string SwLatKey = $"{Node}.Corners.SwLat";
 	internal const string SwLonKey = $"{Node}.Corners.SwLon";
 	internal const string NeLatKey = $"{Node}.Corners.NeLat";

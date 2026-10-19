@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Text.RegularExpressions;
+using System.IO;
 
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
@@ -11,10 +11,9 @@ using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
-using FeBuddy.Core.Domain.Airways;
 using FeBuddy.Core.Domain.Airways.Models;
 using FeBuddy.Core.Domain.Crc.Models;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -26,12 +25,10 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Airways";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Airways}";
 
 	/// <summary>What You'll Get's first line while no airway type is ticked.</summary>
 	private const string NoAirways = "No airways: tick a type under Airway Types to Include";
-
-	private static readonly Regex AirwayIdPattern = new(@"^Airway '([^']+)':", RegexOptions.Compiled);
 
 	private static readonly AirwayAltitudeClass[] AltitudeClasses =
 		[AirwayAltitudeClass.High, AirwayAltitudeClass.Low, AirwayAltitudeClass.Other];
@@ -205,22 +202,23 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= parent hooks =================
 
 	/// <inheritdoc />
-	/// <remarks>Builds the designation toggle list from the cycle's airways.</remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	/// <remarks>
+	/// Builds the designation toggle list from the cycle's airways. A designation already listed keeps
+	/// what is ticked on screen; a new one starts as saved.
+	/// </remarks>
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
-		HashSet<string> excluded = ParseExcludedFromConfig();
+		ArgumentNullException.ThrowIfNull(lists);
 
-		string[] designations = [.. data.RequireAwy().AwyBase
-			.Select(a => AirwayClassifier.DeriveDesignation(a.AwyId))
-			.Where(d => !string.IsNullOrWhiteSpace(d))
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.OrderBy(d => d, StringComparer.OrdinalIgnoreCase)];
+		HashSet<string> excluded = ParseExcludedFromConfig();
+		Dictionary<string, bool> shown = Designations.ToDictionary(t => t.Designation, t => t.Included, StringComparer.OrdinalIgnoreCase);
 
 		Designations.Clear();
-		foreach (string d in designations)
+		foreach (string d in lists.AirwayDesignations)
 		{
+			bool included = shown.TryGetValue(d, out bool onScreen) ? onScreen : !excluded.Contains(d);
 			Designations.Add(new DesignationToggle(
-				d, included: !excluded.Contains(d), _strata.TryGetValue(d, out AirwayStratum stratum) ? stratum : null, OnDesignationChanged));
+				d, included, _strata.TryGetValue(d, out AirwayStratum stratum) ? stratum : null, OnDesignationChanged));
 		}
 
 		OnPropertyChanged(nameof(ShowsStrata));
@@ -253,7 +251,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		if (airways.AliasFilePath is not null)
 		{
-			summary += $", Airways.txt: {airways.AliasAirwayLineCount:N0} alias line(s)";
+			summary += $", {Path.GetFileName(airways.AliasFilePath)}: {airways.AliasAirwayLineCount:N0} alias line(s)";
 		}
 
 		if (airways.GeojsonFilesWritten.Count > 0)
@@ -261,13 +259,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			summary += $", {airways.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
 		}
 
-		// Grouped by the airway each message names ("Airway 'T312': ..."), so a run does not
-		// read as one flat wall of text; anything that names no airway goes under "General".
-		return new SubServiceRunResult(Title, summary, airways.Messages, m =>
-		{
-			Match match = AirwayIdPattern.Match(m.Text);
-			return match.Success ? match.Groups[1].Value : "General";
-		});
+		// Grouped by the airway each message is about (Core says, as its Subject), so a run does not
+		// read as one flat wall of text; anything about no one airway goes under "General".
+		return new SubServiceRunResult(Title, summary, airways.Messages, m => m.Subject ?? "General");
 	}
 
 	/// <inheritdoc />
@@ -281,7 +275,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
 			[AirwaySettingsParser.FixBufferKey] = FixBufferNm.Trim(),
 			[AirwaySettingsParser.NavaidBufferKey] = NavaidBufferNm.Trim(),
-			["AliasRoiScope"] = AliasRoiAirwaysOnly ? "RoiAirways" : "All",
+			["AliasRoiScope"] = (AliasRoiAirwaysOnly ? AliasRoiScope.RoiAirways : AliasRoiScope.All).ToString(),
 			["SplitAtAntimeridian"] = YesNo(SplitAtAntimeridian),
 			["ExcludedDesignations"] = ExcludedDesignationsValue(),
 		};
@@ -314,7 +308,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		_bufferAirwayWaypoints = GetBool("BufferAirwayWaypoints", false);
 		_fixBufferNm = Get(AirwaySettingsParser.FixBufferKey) ?? DefaultDistance(AirwayWaypointBuffer.DefaultFixRadiusNm);
 		_navaidBufferNm = Get(AirwaySettingsParser.NavaidBufferKey) ?? DefaultDistance(AirwayWaypointBuffer.DefaultNavaidRadiusNm);
-		_aliasRoiAirwaysOnly = string.Equals(Get("AliasRoiScope"), "RoiAirways", StringComparison.OrdinalIgnoreCase);
+		_aliasRoiAirwaysOnly = Enum.TryParse(Get("AliasRoiScope"), ignoreCase: true, out AliasRoiScope scope) && scope == AliasRoiScope.RoiAirways;
 		_splitAtAntimeridian = GetBool("SplitAtAntimeridian", true);
 		LoadSharedSettings();
 		LoadStrata();
@@ -347,7 +341,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		Set("BufferAirwayWaypoints", YesNo(BufferAirwayWaypoints));
 		Set(AirwaySettingsParser.FixBufferKey, FixBufferNm.Trim());
 		Set(AirwaySettingsParser.NavaidBufferKey, NavaidBufferNm.Trim());
-		Set("AliasRoiScope", AliasRoiAirwaysOnly ? "RoiAirways" : "All");
+		Set("AliasRoiScope", (AliasRoiAirwaysOnly ? AliasRoiScope.RoiAirways : AliasRoiScope.All).ToString());
 		Set("SplitAtAntimeridian", YesNo(SplitAtAntimeridian));
 		Set("ExcludedDesignations", ExcludedDesignationsValue());
 
@@ -568,8 +562,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		HashSet<string> excluded = ParseExcludedFromConfig();
 
 		return ChosenCrcFileKeys
-			.Where(AirwayOutputFiles.IsGeojsonKey)
-			.Select(key => key.Split('_')[1])
+			.Select(key => AirwayOutputFiles.TryParseGeojsonKey(key, out string group, out _) ? group : null)
+			.OfType<string>()
 			.Where(group => !excluded.Contains(group))
 			.Distinct(StringComparer.OrdinalIgnoreCase)
 			.Order(StringComparer.OrdinalIgnoreCase);

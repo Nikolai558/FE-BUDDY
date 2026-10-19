@@ -1,6 +1,9 @@
 using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
 
+using FeBuddy.Core.Application.Airac.Procedures;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -63,8 +66,28 @@ public sealed class ProcedureNameCardsTests : IDisposable
 	private static ProceduresViewModel Tab()
 	{
 		ProceduresViewModel tab = new();
-		tab.SetDtppData("2611", Metafile(), "2610", previousAvailable: true, downloadedLocal: DateTime.Now);
+		tab.SetDtppData("2611", ProcedureNameIndex.Build(Metafile()), "2610", previousAvailable: true, downloadedLocal: DateTime.Now);
 		return tab;
+	}
+
+	/// <summary>
+	/// Another cycle picked: the old cycle's chart data no longer describes it, so it goes until the new
+	/// cycle's arrives - the cards don't offer, or resolve against, last cycle's procedures meanwhile.
+	/// </summary>
+	[Fact]
+	public void picking_another_cycle_drops_the_old_cycles_chart_data()
+	{
+		ProceduresViewModel tab = Tab();
+		tab.SetSelectedCycle(AiracCycleResolver.GetCycle(AiracCyclePosition.Next, new DateOnly(2026, 10, 5)));
+
+		Assert.Equal("2611", tab.DtppCycleId);
+
+		tab.SetSelectedCycle(AiracCycleResolver.GetCycle(AiracCyclePosition.Next, new DateOnly(2026, 11, 2)));
+
+		Assert.False(tab.IsDtppKnown);
+		Assert.Null(tab.DtppCycleId);
+		Assert.Empty(tab.ProcedureNameOptions);
+		Assert.Null(tab.DtppWarning);
 	}
 
 	// ---- departures and arrivals only ----

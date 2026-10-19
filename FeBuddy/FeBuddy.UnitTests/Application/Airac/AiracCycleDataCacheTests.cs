@@ -1103,6 +1103,68 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
 	}
 
+	/// <summary>
+	/// A cycle loaded on demand from the UI thread downloads and parses on the thread pool, never on the
+	/// caller's context: the download unzips a cycle, which would freeze the window for seconds.
+	/// </summary>
+	[Fact]
+	public async Task a_cycle_loaded_on_demand_never_downloads_or_parses_on_the_callers_context()
+	{
+		SynchronizationContext? downloadedOn = null;
+		SynchronizationContext? parsedOn = null;
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) =>
+			{
+				downloadedOn = SynchronizationContext.Current;
+				return Task.FromResult($@"C:\cache\{cycle.AiracCycleId}");
+			},
+			parse: (_, _) =>
+			{
+				parsedOn = SynchronizationContext.Current;
+				return Task.FromResult(new NasrCsvDataCollection());
+			});
+		await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+
+		CallersContext callers = new();
+		SynchronizationContext? before = SynchronizationContext.Current;
+		SynchronizationContext.SetSynchronizationContext(callers);
+		Task load;
+
+		try
+		{
+			load = cache.GetAsync("2610");
+		}
+		finally
+		{
+			SynchronizationContext.SetSynchronizationContext(before);
+		}
+
+		await load;
+
+		Assert.Null(downloadedOn);
+		Assert.Null(parsedOn);
+		Assert.Equal(0, callers.Posts);
+	}
+
+	/// <summary>A context that stands for the UI thread's: it counts what is posted to it, and runs it on the pool as itself.</summary>
+	private sealed class CallersContext : SynchronizationContext
+	{
+		private int _posts;
+
+		public int Posts => _posts;
+
+		public override void Post(SendOrPostCallback d, object? state)
+		{
+			Interlocked.Increment(ref _posts);
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				SetSynchronizationContext(this);
+				d(state);
+			});
+		}
+	}
+
 	[Fact]
 	public async Task a_cycle_left_unloaded_is_waiting_while_it_loads_on_demand()
 	{
@@ -1182,6 +1244,70 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			await cache.PrepareCyclesAsync(Previous, Current, Next);
 
 			Assert.Null(cache.FindDtppFile("2610"));
+		}
+		finally
+		{
+			Directory.Delete(cycleDirectory, recursive: true);
+		}
+	}
+
+	/// <summary>
+	/// The GUI asks on the UI thread at every state change, so the answer is what the cache found, not
+	/// a fresh look at the disk: a file gone since still counts, and one that turned up since doesn't.
+	/// </summary>
+	[Fact]
+	public async Task find_dtpp_file_answers_from_what_the_cache_found()
+	{
+		string root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindDtpp_" + Guid.NewGuid().ToString("N"));
+		string withFile = Path.Combine(root, "2610");
+		string withoutFile = Path.Combine(root, "2611");
+		Directory.CreateDirectory(withFile);
+		Directory.CreateDirectory(withoutFile);
+		string dtppFile = Path.Combine(withFile, "d-tpp_Metafile.xml");
+		File.WriteAllText(dtppFile, "<digital_tpp></digital_tpp>");
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (cycle, _) => Task.FromResult(cycle.AiracCycleId == "2610" ? withFile : withoutFile),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+			File.Delete(dtppFile);
+			File.WriteAllText(Path.Combine(withoutFile, "d-tpp_Metafile.xml"), "<digital_tpp></digital_tpp>");
+
+			Assert.Equal(dtppFile, cache.FindDtppFile("2610"));
+			Assert.Null(cache.FindDtppFile("2611"));
+		}
+		finally
+		{
+			Directory.Delete(root, recursive: true);
+		}
+	}
+
+	/// <summary>A dev launch that finds a cycle on disk, without downloading it, finds its metafile there too.</summary>
+	[Fact]
+	public async Task find_dtpp_file_for_a_cycle_found_on_disk_without_downloading()
+	{
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindDtpp_" + Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(cycleDirectory);
+		string dtppFile = Path.Combine(cycleDirectory, "d-tpp_Metafile.xml");
+		File.WriteAllText(dtppFile, "<digital_tpp></digital_tpp>");
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (_, _) => Task.FromResult(cycleDirectory),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+				isLocallyAvailable: _ => true,
+				cycleDirectory: _ => cycleDirectory);
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next, new AiracLaunchPlan(Download: false, Parse: false, Prune: false));
+
+			Assert.Equal(dtppFile, cache.FindDtppFile("2610"));
 		}
 		finally
 		{

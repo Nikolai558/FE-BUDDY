@@ -1,5 +1,5 @@
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
@@ -28,13 +28,19 @@ public interface ISubServiceRunTarget
 	/// Whether the service is ready and the selected cycle's data has been handed over
 	/// (<see cref="LoadCycleDependentLists"/>): a cycle still loading in the background isn't yet.
 	/// </param>
-	void SetReadiness(bool ready);
+	/// <param name="unavailableReason">
+	/// Why the selected cycle won't load - not published, or failed - for the tab to say instead of
+	/// "Loading"; <see langword="null"/> while it is loading or loaded.
+	/// </param>
+	void SetReadiness(bool ready, string? unavailableReason = null);
 
 	/// <summary>
-	/// Hands the tab the selected cycle's parsed data, for any option list built from it.
+	/// Hands the tab the selected cycle's option lists, worked out in Core off the UI thread
+	/// (<see cref="AiracCycleOptionListBuilder"/>), for it to fill its toggles from. Called on the UI
+	/// thread whenever another cycle is picked: a list built before keeps what is ticked on screen.
 	/// </summary>
-	/// <param name="data">The parsed NASR data for the selected cycle.</param>
-	void LoadCycleDependentLists(NasrCsvDataCollection data);
+	/// <param name="lists">The selected cycle's option lists.</param>
+	void LoadCycleDependentLists(AiracCycleOptionLists lists);
 
 	/// <summary>
 	/// Describes this sub-service's part of a finished run for the Review tab: what it produced,

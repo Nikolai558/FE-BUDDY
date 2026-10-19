@@ -10,30 +10,30 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
-| [U1-17](#u1-17) | Logic in GUI | Med | NASR-derived option lists and their rules live in the tab view models | Open | S5 |
-| [W3-9](#w3-9) | Logic in GUI | Med | GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI | Open | S5 |
-| [W1-6](#w1-6) | Logic in GUI | Med | Procedure Charts re-implements Core's selection and name-matching rules | Open | S5 |
-| [W6-8](#w6-8) | Logic in GUI | Low | The GUI guesses which words in Core's messages are file names | Open | S5 |
-| [C2-6](#c2-6) | Logic in GUI | Low | The Map's "towered" test copies AirportFieldMaps' display string | Open | S5 |
-| [W7-6](#w7-6) | Logic in GUI | Low | The coordinate-precision rule (0-15, default 6) is restated in the GUI twice | Open | S5 |
-| [W2-7](#w2-7) | Logic in GUI | Low | Per-sub-service result knowledge lives in the GUI three times | Open | S5 |
-| [W2-23](#w2-23) | Logic in GUI | Low | Sub-service keys, node paths and order are defined in the GUI and again in Core | Open | S5 |
-| [W1-11](#w1-11) | Logic in GUI | Low | Airways parses Core's message text and file keys, and spells Core's enum as string literals | Open | S5 |
-| [W2-18](#w2-18) | Logic in GUI | Low | Arrivals copies Core's parser limits, ARTCC splitting and file naming | Open | S5 |
-| [W2-20](#w2-20) | Logic in GUI | Low | ARTCC Boundaries repeats Core's altitude vocabulary and builds the per-ARTCC file list itself | Open | S5 |
-| [W1-8](#w1-8) | Logic in GUI | Low | Add Custom Aliases keeps its own copy of the parser's and loader's rules, and its doc says they're the same | Open | S5 |
-| [W1-9](#w1-9) | Logic in GUI | Low | Numbered-key lists are parsed by hand in two tabs, beside Core's parsers | Open | S5 |
-| [W2-21](#w2-21) | Logic in GUI | Low | DAT cropping-distance validation copies Core's parse rule | Open | S5 |
-| [W1-12](#w1-12) | Logic in GUI | Low | Departures repeats the parser's limits, date format and file layout | Open | S5 |
-| [W2-25](#w2-25) | Logic in GUI | Low | ERAM's "would this run delete anything" check parses the settings block in the GUI | Open | S5 |
-| [W2-22](#w2-22) | Logic in GUI | Low | The "no two files share a name" rule is only half in Core | Open | S5 |
-| [W1-10](#w1-10) | Logic in GUI | Low | Fixes re-implements combination parsing and file naming | Open | S5 |
-| [W2-19](#w2-19) | Logic in GUI | Low | NAVAIDs repeats NavaidBuilder's SHUTDOWN rule | Open | S5 |
-| [W3-12](#w3-12) | Logic in GUI | Low | Profile-name "already taken" rule duplicated from Core | Open | S5 |
-| [W4-6](#w4-6) | Logic in GUI | Low | Which folder files a conversion reads is decided twice, in the page and in Core | Open | S5 |
-| [W3-10](#w3-10) | Logic in GUI | Low | Facility key duplicated as a literal; doc names only one reader | Open | S5 |
-| [W3-13](#w3-13) | Logic in GUI | Low | Settings backup before reset/uninstall is file logic in the view-model | Open | S5 |
-| [W3-14](#w3-14) | Logic in GUI | Low | Version-check status is worded by three separate ladders (and a failed check is called "offline") | Open | S5 |
+| [U1-17](#u1-17) | Logic in GUI | Med | NASR-derived option lists and their rules live in the tab view models | Fixed | S5 |
+| [W3-9](#w3-9) | Logic in GUI | Med | GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI | Fixed | S5 |
+| [W1-6](#w1-6) | Logic in GUI | Med | Procedure Charts re-implements Core's selection and name-matching rules | Fixed | S5 |
+| [W6-8](#w6-8) | Logic in GUI | Low | The GUI guesses which words in Core's messages are file names | Fixed | S5 |
+| [C2-6](#c2-6) | Logic in GUI | Low | The Map's "towered" test copies AirportFieldMaps' display string | Fixed | S5 |
+| [W7-6](#w7-6) | Logic in GUI | Low | The coordinate-precision rule (0-15, default 6) is restated in the GUI twice | Fixed | S5 |
+| [W2-7](#w2-7) | Logic in GUI | Low | Per-sub-service result knowledge lives in the GUI three times | Fixed | S5 |
+| [W2-23](#w2-23) | Logic in GUI | Low | Sub-service keys, node paths and order are defined in the GUI and again in Core | Fixed | S5 |
+| [W1-11](#w1-11) | Logic in GUI | Low | Airways parses Core's message text and file keys, and spells Core's enum as string literals | Fixed | S5 |
+| [W2-18](#w2-18) | Logic in GUI | Low | Arrivals copies Core's parser limits, ARTCC splitting and file naming | Fixed | S5 |
+| [W2-20](#w2-20) | Logic in GUI | Low | ARTCC Boundaries repeats Core's altitude vocabulary and builds the per-ARTCC file list itself | Fixed | S5 |
+| [W1-8](#w1-8) | Logic in GUI | Low | Add Custom Aliases keeps its own copy of the parser's and loader's rules, and its doc says they're the same | Fixed | S5 |
+| [W1-9](#w1-9) | Logic in GUI | Low | Numbered-key lists are parsed by hand in two tabs, beside Core's parsers | Fixed | S5 |
+| [W2-21](#w2-21) | Logic in GUI | Low | DAT cropping-distance validation copies Core's parse rule | Fixed | S5 |
+| [W1-12](#w1-12) | Logic in GUI | Low | Departures repeats the parser's limits, date format and file layout | Fixed | S5 |
+| [W2-25](#w2-25) | Logic in GUI | Low | ERAM's "would this run delete anything" check parses the settings block in the GUI | Fixed | S5 |
+| [W2-22](#w2-22) | Logic in GUI | Low | The "no two files share a name" rule is only half in Core | Fixed | S5 |
+| [W1-10](#w1-10) | Logic in GUI | Low | Fixes re-implements combination parsing and file naming | Fixed | S5 |
+| [W2-19](#w2-19) | Logic in GUI | Low | NAVAIDs repeats NavaidBuilder's SHUTDOWN rule | Fixed | S5 |
+| [W3-12](#w3-12) | Logic in GUI | Low | Profile-name "already taken" rule duplicated from Core | Fixed | S5 |
+| [W4-6](#w4-6) | Logic in GUI | Low | Which folder files a conversion reads is decided twice, in the page and in Core | Fixed | S5 |
+| [W3-10](#w3-10) | Logic in GUI | Low | Facility key duplicated as a literal; doc names only one reader | Fixed | S5 |
+| [W3-13](#w3-13) | Logic in GUI | Low | Settings backup before reset/uninstall is file logic in the view-model | Fixed | S5 |
+| [W3-14](#w3-14) | Logic in GUI | Low | Version-check status is worded by three separate ladders (and a failed check is called "offline") | Fixed | S5 |
 
 ## Med
 
@@ -41,7 +41,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### U1-17 · Logic in GUI · Med · NASR-derived option lists and their rules live in the tab view models
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), with [U1-1](110_GUI-Lag.md#u1-1): the tabs' lists and their rules - normalizing, STAR_BASE.ARTCC split, shut-down NAVAIDs (`NavaidBuilder.IsShutDown`), the known fix-use and NAVAID-type order, the boundary altitude order (`ArtccBoundaryAltitude`) - are in `AiracCycleOptionListBuilder`, and the GUI copies (`KnownFixUseOrder`, `KnownTypeOrder`, `ShutdownStatus`, `AltitudeOrder`) are gone. The Settings page's facility list followed with [U1-13](110_GUI-Lag.md#u1-13) in S4 (`FacilityNames`) · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs:244-282`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs#L244-L282),611; [`FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs:34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L34),153-159,438; [`FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs:150-157`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L150-L157),367; [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:244-249`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L244-L249); [`FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs:247-251`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs#L247-L251); [`FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs:213-217`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs#L213-L217); [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:895-899`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L895-L899); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:1131-1136`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L1131-L1136)
 
@@ -53,7 +53,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-9 · Logic in GUI · Med · GeoJSON-to-geometry reading and the live AIRAC layer catalog live in the GUI
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: the reader is Core's `GeojsonFileReader` (`Infrastructure/Geojson`), with `GeoPoint`, `MapGeometry`, `MapGeometryKind` and `MapFeature` in `Domain/Map/Models` and `WebMercator` in `Domain/Geo`. It reads a file as it streams in (`ReadFile`, `Read(Stream)`), so a big output file isn't held twice; the base map's resources use the same stream read. It parses synchronously, as it already runs off the UI thread. A file must now be UTF-8, as GeoJSON's own spec says; a UTF-16 file was read before. The layer catalog is `Application/Map/AiracMapData`: the kinds, names, descriptions and each layer's shapes. The map keeps colours, `MapLayer` and its styling, `ProjectedLayer` and `FrozenBrush`. Tests: `GeojsonFileReaderTests`, `AiracMapDataTests`, and `WebMercatorTests` and `MapFeatureTests`, moved to Core's test folders · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:601-610`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L601-L610), 980-991 (uses [`FeBuddy.Wpf/Map/GeoJsonReader.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/GeoJsonReader.cs), [`Map/AiracMapLayers.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs))
 
@@ -67,7 +67,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-6 · Logic in GUI · Med · Procedure Charts re-implements Core's selection and name-matching rules
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `ProcedureSelection.AreaIncludes` is the run's rule for taking an airport whole, used by `Select` and by the tab's "Already included by…" hint; `ProcedureNameIndex.ResolveRoot` and `NamesFor` are the name lookups the tab calls. The airport ID lookup was already Core's, from [U1-1](110_GUI-Lag.md#u1-1). Tests: `ProcedureSelectionTests`, `ProcedureNameIndexTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:1437-1462`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L1437-L1462), 1327-1355, 1499-1535, 567-611
 
@@ -83,7 +83,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W6-8 · Logic in GUI · Low · The GUI guesses which words in Core's messages are file names
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), the second way proposed: the converter stays, as Core's messages are plain text for the log and the Harness, but its extensions are Core's (`FileNameExtensions.All`, built from the services' own lists), so a new format is picked out as soon as a service reads or writes it. Tests: `FileNameExtensionsTests`, `FileNamesAsCodeConverterTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Converters/FileNamesAsCodeConverter.cs:10-18`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Converters/FileNamesAsCodeConverter.cs#L10-L18), 46-49
 
@@ -95,7 +95,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### C2-6 · Logic in GUI · Low · The Map's "towered" test copies AirportFieldMaps' display string
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), the first way proposed: `Airport.IsTowered`, set by `AirportBuilder` from `TWR_TYPE_CODE`, and `AiracMapData.ToweredAirports` filters on it. The rule is [W6-3](100_Bugs.md#w6-3)'s, fixed with it: the code is `ATCT` or starts with it, so a plain `TRACON` has no tower. The layer still builds the whole Airports model, which is the run's own builder, so the map shows what a run works from. Tests: `AirportBuilderTests`, `AiracMapDataTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs:101-102`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Map/AiracMapLayers.cs#L101-L102); [`FeBuddy/FeBuddy.Core/Application/Airac/Airports/AirportFieldMaps.cs:28`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airports/AirportFieldMaps.cs#L28)
 
@@ -109,7 +109,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W7-6 · Logic in GUI · Low · The coordinate-precision rule (0-15, default 6) is restated in the GUI twice
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `GeojsonFileWriter.DefaultPrecision` and `MaxPrecision` sit beside `NoRounding`, and `SubServiceSettingsReader.CoordinatePrecisionOrDefault` reads a saved value for `OutputPreferences` and the Settings page; `ReadCoordinatePrecision` uses the same constants. Tests: `SubServiceSettingsReaderTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs:20-21`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs#L20-L21),48-56; [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:758`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L758); [`FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs:135-136`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Settings/SubServiceSettingsReader.cs#L135-L136)
 
@@ -123,7 +123,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-7 · Logic in GUI · Low · Per-sub-service result knowledge lives in the GUI three times
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged): every file a run wrote is Core's `AiracServiceResult.FilesWritten` (a stopped run names no alias file, with [W2-5](100_Bugs.md#w2-5)), and the run's one line is `AiracRunSummary.Describe`; the AIRAC Service screen only shows them. Each tab's Review block (`DescribeRunResult`) and Core's progress lines still word their own counts: they say different things, at different times. Tests: `AiracRunSummaryTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:689-787`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L689-L787) (`CollectFilesWritten`), 793-874 (`SummarizeRun`)
 
@@ -135,7 +135,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-23 · Logic in GUI · Low · Sub-service keys, node paths and order are defined in the GUI and again in Core
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: Core's `AiracTabs` spells every AIRAC tab's key once, with `NodeFor` and `TabOf`; `UserConfigAreas.Tabs`, the GUI's `AiracSubServices` and each tab's `Node` are built from it, and the area lookup reads a tab's key with `TabOf` rather than slicing its node. The run order in `AiracService.RunAsync` is left as it is. Tests: `AiracTabsTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracSubServices.cs:31-68`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracSubServices.cs#L31-L68); [`ArrivalsViewModel.cs:34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L34); [`NavaidsViewModel.cs:33`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L33); [`ArtccBoundariesViewModel.cs:32`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L32); [`AirportsViewModel.cs:24`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirportsViewModel.cs#L24); [`WxStationsViewModel.cs:32`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/WxStationsViewModel.cs#L32); [`FileNamesViewModel.cs:43`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs#L43); [`AiracGeneralTabViewModel.cs:36`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L36)
 
@@ -147,7 +147,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-11 · Logic in GUI · Low · Airways parses Core's message text and file keys, and spells Core's enum as string literals
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `ServiceMessage.Subject` says what a message is about; the four Airways messages that name an airway set it, and the Review tab groups by it. `AirwayOutputFiles.TryParseGeojsonKey` reads a key back; the tab spells the alias scope with `AliasRoiScope`. Tests: `AirwayOutputFilesTests`, `AirwayMessageLevelsTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs:34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirwaysViewModel.cs#L34), 264-270, 570-575, 284, 317, 350
 
@@ -161,7 +161,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-18 · Logic in GUI · Low · Arrivals copies Core's parser limits, ARTCC splitting and file naming
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed, with [W1-12](#w1-12): the same `ProcedureAmendmentFilter`, and `ArrivalOutputFiles.GeojsonFileNamePattern`/`GeojsonFolderPattern`. The ARTCC split left the tab with [U1-1](110_GUI-Lag.md#u1-1); Core's option lists now split STAR_BASE.ARTCC with `ArrivalBuilder.SplitArtccs`, as the run does. Tests: `ProcedureAmendmentFilterTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:36-44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L36-L44), 131-135, 244-249, 497-500
 
@@ -173,7 +173,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-20 · Logic in GUI · Low · ARTCC Boundaries repeats Core's altitude vocabulary and builds the per-ARTCC file list itself
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), with [U1-1](110_GUI-Lag.md#u1-1) in S3: the ARTCCs and their altitudes come from Core's `AiracCycleOptionListBuilder`, which uses `ArtccBoundaryAltitudes`, off the UI thread; the tab no longer walks ARB_SEG · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs:130-157`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArtccBoundariesViewModel.cs#L130-L157), 367-372
 
@@ -185,7 +185,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-8 · Logic in GUI · Low · Add Custom Aliases keeps its own copy of the parser's and loader's rules, and its doc says they're the same
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `AliasSourceRules.Problem` is every row rule - the full path, http or https, not a GitHub page, no secret in the address, no credential sent to plain http - used by the parser and the tab, so a run now refuses the two the tab alone had. `AliasSourceRules.NoAliasCommands` is the loader's message and the tab's. Tests: `AliasSourceRulesTests`, `ConcatenateAliasesSettingsParserTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:557-597`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L557-L597), 599-636, 72-73
 
@@ -197,7 +197,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-9 · Logic in GUI · Low · Numbered-key lists are parsed by hand in two tabs, beside Core's parsers
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `NumberedSettings` (`TrySplit`, `Read`) reads `<Prefix><n>.<Field>` lists - numbers from 1 - for both parsers and both tabs, and the tabs' `SourcesKey`/`VirtualAirlinesKey` copies are gone. Tests: `NumberedSettingsTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:62`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L62), 274-313, 539-555; [`TelephonyViewModel.cs:64`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L64), 877-921
 
@@ -209,7 +209,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-21 · Logic in GUI · Low · DAT cropping-distance validation copies Core's parse rule
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `SettingsValueReader.TryParsePositiveDecimal`, used by `OptionalPositiveDecimal` and the DAT page. Tests: `SettingsValueReaderTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DatToGeojsonViewModel.cs:85-97`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DatToGeojsonViewModel.cs#L85-L97)
 
@@ -221,7 +221,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-12 · Logic in GUI · Low · Departures repeats the parser's limits, date format and file layout
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed, with [W2-18](#w2-18): `ProcedureAmendmentFilter` holds the limits (1,000 cycles, 36,500 days) and the date format for both parsers and both tabs; `DepartureOutputFiles.GeojsonFileNamePattern` and `GeojsonFolderPattern` spell the layout one way for What You'll Get and the File Names tab (`<Airport ID>_<Departure ID>`, `<ARTCC ID>\<Airport ID>`). Tests: `ProcedureAmendmentFilterTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs:37-45`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DeparturesViewModel.cs#L37-L45), 133-137
 
@@ -233,7 +233,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-25 · Logic in GUI · Low · ERAM's "would this run delete anything" check parses the settings block in the GUI
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `EramToGeojsonService.ExistingOutput(settings)` names the folder a run would empty when it has anything in it, reading the block with `SettingsValueReader`; the page only asks. Tests: `EramToGeojsonServiceTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/EramToGeojsonViewModel.cs:159-165`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/EramToGeojsonViewModel.cs#L159-L165)
 
@@ -245,7 +245,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-22 · Logic in GUI · Low · The "no two files share a name" rule is only half in Core
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `OutputFileNames.Clashes` checks each new name against every other file's in the same folder (`OutputFileNames.FolderOf`) - renamed too, or keeping FE-Buddy's name - for the File Names tab and for a run, whose parser checks against every file but the GeoJSON; so a settings-block run can no longer write Airways renamed "Airports" over `Airports.txt`, and `Aliases\X.txt` beside the cycle folder's `Duplicate_Alias_Commands.txt` is no clash. Tests: `OutputFileNamesTests`, `FileNamesViewModelTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs:268-280`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs#L268-L280), 300-301
 
@@ -257,7 +257,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W1-10 · Logic in GUI · Low · Fixes re-implements combination parsing and file naming
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: Core's `FixCombination.TryParse` reads a `Combinations` entry for both `FixSettingsParser` and the Fixes tab, and the tab names a combination's files with `FixOutputFiles.GroupKey`. The fix use order went with [U1-1](110_GUI-Lag.md#u1-1). Tests: `FixSettingsParserTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs:973-1007`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/FixesViewModel.cs#L973-L1007), 924, 611-622
 
@@ -269,7 +269,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W2-19 · Logic in GUI · Low · NAVAIDs repeats NavaidBuilder's SHUTDOWN rule
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), with [U1-1](110_GUI-Lag.md#u1-1) in S3: the NAVAID types come from Core's `AiracCycleOptionListBuilder`, which uses `NavaidBuilder.IsShutDown`; the tab's copy is gone · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs:34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L34), 153-159
 
@@ -281,7 +281,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-12 · Logic in GUI · Low · Profile-name "already taken" rule duplicated from Core
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: Core's `UserConfigFile.NewProfileNameProblem` is the rule, used by `CheckNewName` and by the name windows (`ProfileNameViewModel`, and so the import's). One wording now: "There is already a profile called X." Tests: `UserConfigProfilesTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ProfileNameViewModel.cs:143-155`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ProfileNameViewModel.cs#L143-L155)
 
@@ -293,7 +293,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W4-6 · Logic in GUI · Low · Which folder files a conversion reads is decided twice, in the page and in Core
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: each service counts its own folder (`DatToGeojsonService.CountSourceFiles` and the others), with the extension rule its run uses (`ConversionFiles.HasExtension`) and ERAM's closer look (`EramToGeojsonService.IsSourceFile`, which `Resolve` uses too); the pages call it, off the UI thread, and their `IsSourceFile` is gone. `Extensions` stays on the pages for the file picker. Tests: `ConversionSourceFolderTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs:83-96`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs#L83-L96), 474-477 (Core: [`Application/Conversions/ConversionFiles.cs:51-60`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/ConversionFiles.cs#L51-L60))
 
@@ -305,7 +305,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-10 · Logic in GUI · Low · Facility key duplicated as a literal; doc names only one reader
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed, with the key's move ([Q1](010_Decisions.md#q1)): `UserConfigKeys.Facility` (now `General.Facility`) is the one name; `UserConfigAreas.FacilityKey` uses it, `SettingsViewModel.ArtccKey` is gone, and Settings, Procedures, the AIRAC Service, a settings import and the tabs' settings read Core's constant. `UserConfigLayoutTests` covers it through `UserConfigKeys` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:79-84`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L79-L84); [`FeBuddy/FeBuddy.Wpf/ViewModels/ImportSettingsViewModel.cs:252`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ImportSettingsViewModel.cs#L252)
 
@@ -317,7 +317,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-13 · Logic in GUI · Low · Settings backup before reset/uninstall is file logic in the view-model
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `UserConfigFile.CopyProfilesTo(path)` copies the profile in use and every other one beside it, and refuses a path under `AppDataReset.RootDirectory`; Settings keeps the dialog and the toasts. Tests: `UserConfigProfilesTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:1031-1094`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L1031-L1094)
 
@@ -329,7 +329,7 @@ Business rules that live in view-models today and belong in Core: Procedure Char
 
 ### W3-14 · Logic in GUI · Low · Version-check status is worded by three separate ladders (and a failed check is called "offline")
 
-**Status:** Open · **Session:** [S5](020_Work-Plan.md#s5)
+**Status:** Fixed (not yet merged), as proposed: `VersionCheckResult.Status` (`VersionCheckStatus`) is decided once, and the title bar, System health and Settings' "Check now" switch on it; `DisplayVersion` is the one "dev" rule, used by the update window too. A failed check says "Could not check for updates" ("could not check" in System health) unless FE-Buddy is offline. Tests: `VersionCheckResultTests` · **Session:** [S5](020_Work-Plan.md#s5)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs:604-652`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ShellViewModel.cs#L604-L652), 727-736; [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:655-693`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L655-L693); [`FeBuddy/FeBuddy.Wpf/ViewModels/UpdateWindowViewModel.cs:69`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/UpdateWindowViewModel.cs#L69)
 

@@ -7,6 +7,7 @@ using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Application.Settings;
@@ -133,7 +134,21 @@ public static partial class SubServiceSettingsReader
 	/// <returns>The precision.</returns>
 	/// <exception cref="ArgumentException">Thrown when the value is not an integer from 0 to 15.</exception>
 	public static int ReadCoordinatePrecision(IReadOnlyDictionary<string, string> settings) =>
-		SettingsValueReader.IntInRange(settings, "CoordinatePrecision", defaultValue: 6, minimum: 0, maximum: 15);
+		SettingsValueReader.IntInRange(
+			settings, "CoordinatePrecision", defaultValue: GeojsonFileWriter.DefaultPrecision, minimum: GeojsonFileWriter.NoRounding, maximum: GeojsonFileWriter.MaxPrecision);
+
+	/// <summary>
+	/// A saved <c>CoordinatePrecision</c> (Settings ▸ GeoJSON Files), or the default when it isn't a whole
+	/// number from <see cref="GeojsonFileWriter.NoRounding"/> to <see cref="GeojsonFileWriter.MaxPrecision"/>:
+	/// what the Settings page shows and every run is sent. Never throws.
+	/// </summary>
+	/// <param name="saved">The saved value, or <see langword="null"/>.</param>
+	/// <returns>The precision.</returns>
+	public static int CoordinatePrecisionOrDefault(string? saved) =>
+		int.TryParse(saved, NumberStyles.Integer, CultureInfo.InvariantCulture, out int precision)
+		&& precision is >= GeojsonFileWriter.NoRounding and <= GeojsonFileWriter.MaxPrecision
+			? precision
+			: GeojsonFileWriter.DefaultPrecision;
 
 	/// <summary>
 	/// Reads the Region of Interest: <see langword="null"/> unless <c>FilterByRoi</c> is <c>Y</c>,

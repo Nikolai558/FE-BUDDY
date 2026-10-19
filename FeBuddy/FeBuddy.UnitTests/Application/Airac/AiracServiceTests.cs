@@ -270,6 +270,8 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.False(File.Exists(AliasPath("Departures.txt")));
 		Assert.False(File.Exists(AliasPath("Arrivals.txt")));
 		Assert.False(File.Exists(earlierCombined));
+		Assert.Null(result.Departures!.AliasFilePath);
+		Assert.Null(result.Arrivals!.AliasFilePath);
 		Assert.Null(result.CombinedAlias);
 		Assert.Empty(result.DuplicateAliasChoicesMade);
 		Assert.Single(result.DuplicateAliasReport!.Duplicates);

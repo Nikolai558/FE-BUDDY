@@ -42,6 +42,18 @@ public static class DepartureOutputFiles
 	/// <returns>The file key.</returns>
 	public static string KeyFor(CrcFeatureKind kind) => $"Departures_{AiracOutputPaths.FileKindSuffix(kind)}";
 
+	/// <summary>
+	/// How a GeoJSON file is named, for a page that lists the files before a run, ahead of its kind:
+	/// <c>&lt;Airport ID&gt;_&lt;Departure ID&gt;</c>_Lines.geojson (see <see cref="GeojsonFileName"/>).
+	/// </summary>
+	public const string GeojsonFileNamePattern = "<Airport ID>_<Departure ID>";
+
+	/// <summary>
+	/// The folder an airport's GeoJSON files go in, inside the cycle folder, for a page that lists the
+	/// files before a run: <c>Geojson\&lt;ARTCC ID&gt;\&lt;Airport ID&gt;</c> (see <see cref="GeojsonDirectory"/>).
+	/// </summary>
+	public static string GeojsonFolderPattern { get; } = Path.Combine(AiracOutputPaths.GeojsonFolder, "<ARTCC ID>", "<Airport ID>");
+
 	/// <summary>The folder one airport's files go in, e.g. <c>…\Geojson\ZLA\LAX</c>.</summary>
 	/// <param name="settings">The parsed settings.</param>
 	/// <param name="airportProcedure">The airport + procedure being written.</param>

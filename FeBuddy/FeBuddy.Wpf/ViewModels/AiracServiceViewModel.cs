@@ -13,6 +13,7 @@ using FeBuddy.Wpf.Views.Models;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
@@ -64,7 +65,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
-		RunCommand = new RelayCommand(async () => await RunAsync(), () => !IsRunning && IsReady);
+		// Not until the picked cycle's lists are in: a run built from tabs still waiting for them would
+		// leave out what they add (per-ARTCC files and their CRC defaults, for one).
+		RunCommand = new RelayCommand(async () => await RunAsync(), () => !IsRunning && IsSelectedCycleLoaded);
 
 		_general = new AiracGeneralTabViewModel();
 		_general.SubServicesChanged += (_, _) => SyncSubServiceTabs();
@@ -73,7 +76,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			_fileNames.RefreshFiles();
 			PushSelectedCycle();
 			PushTabReadiness();
-			_ = LoadCycleDataAsync();
+			_ = LoadCycleDataAsync(picked: true);
 		};
 
 		// What the run does with duplicate alias commands is the run's, not any tab's, so it sits on Preview Settings.
@@ -100,7 +103,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				{
 					if (entry.Cycle.AiracCycleId == PreviousOfSelectedCycleId)
 					{
-						RefreshProceduresData();
+						RefreshProceduresData(previousChanged: true);
 					}
 				});
 			}
@@ -386,20 +389,46 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private bool IsSelectedCycleLoaded => IsReady && _parsedCycleId == SelectedCycleId && _parsedForSelectedCycle is not null;
 
-	/// <summary>Tells every sub-service tab whether its lists can use the selected cycle yet.</summary>
+	/// <summary>
+	/// Tells every sub-service tab whether its lists can use the selected cycle yet, and why not when
+	/// the cycle won't load: not published, or failed.
+	/// </summary>
 	private void PushTabReadiness()
 	{
+		string? unavailable = IsReady && !IsSelectedCycleLoaded && _loadingCycleId != SelectedCycleId
+			? UnavailableReason(SelectedCycleId)
+			: null;
+
 		foreach (ISubServiceRunTarget target in RunTargets)
 		{
-			target.SetReadiness(IsSelectedCycleLoaded);
+			target.SetReadiness(IsSelectedCycleLoaded, unavailable);
 		}
+
+		CommandManager.InvalidateRequerySuggested();
 	}
+
+	/// <summary>Why a cycle's data won't load, or <see langword="null"/> while it is loading or loaded.</summary>
+	/// <param name="cycleId">The cycle.</param>
+	/// <returns>What the tabs say instead of "Loading".</returns>
+	private static string? UnavailableReason(string cycleId) => AiracCycleDataCache.Instance.GetEntry(cycleId)?.State switch
+	{
+		CycleDataState.NotYetPublished => $"AIRAC {cycleId} isn't published by the FAA yet. Pick another cycle on the General tab.",
+		CycleDataState.Failed => $"AIRAC {cycleId} couldn't be downloaded or read. Pick it again on the General tab to try again, " +
+			"or pick another cycle. The Dashboard activity log says what went wrong.",
+		_ => null,
+	};
 
 	/// <summary>
 	/// Hands the selected cycle's parsed data to every tab, waiting for it while it is still loading
 	/// (the tabs say <c>Loading AIRAC 2611…</c> meanwhile).
 	/// </summary>
-	private async Task LoadCycleDataAsync()
+	/// <param name="picked">Whether the user just picked the cycle: a failed one is then tried again.</param>
+	/// <remarks>
+	/// A cycle the FAA hasn't published, or one that failed, isn't asked for again on every cache
+	/// change - asking for a failed cycle downloads it again, and each failure is another change. The
+	/// tabs say why instead (<see cref="PushTabReadiness"/>).
+	/// </remarks>
+	private async Task LoadCycleDataAsync(bool picked = false)
 	{
 		if (!IsReady)
 		{
@@ -413,11 +442,23 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
+		CycleDataState? state = AiracCycleDataCache.Instance.GetEntry(cycleId)?.State;
+
+		if (state == CycleDataState.NotYetPublished || (state == CycleDataState.Failed && !picked))
+		{
+			PushTabReadiness();
+			return;
+		}
+
 		_loadingCycleId = cycleId;
 
 		try
 		{
 			NasrCsvDataCollection data = await AiracCycleDataCache.Instance.GetAsync(cycleId).ConfigureAwait(false);
+
+			// Every tab's option lists, worked out here, off the UI thread, once per cycle: the UI
+			// thread only fills the toggles from them.
+			AiracCycleOptionLists lists = await Task.Run(() => AiracCycleOptionListBuilder.For(data)).ConfigureAwait(false);
 
 			await _dispatcher.BeginInvoke(() =>
 			{
@@ -434,7 +475,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 				foreach (ISubServiceRunTarget target in RunTargets)
 				{
-					target.LoadCycleDependentLists(data);
+					target.LoadCycleDependentLists(lists);
 				}
 
 				PushTabReadiness();
@@ -443,7 +484,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		}
 		catch (Exception ex)
 		{
-			_ = _dispatcher.BeginInvoke(() => _loadingCycleId = null);
+			_ = _dispatcher.BeginInvoke(() =>
+			{
+				_loadingCycleId = null;
+				PushTabReadiness();
+			});
 			AppLog.Warning("AiracService", $"Could not load parsed data for cycle {cycleId}: {ex.Message}");
 		}
 	}
@@ -465,11 +510,18 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// previous cycle's, for linking deleted procedures back to their chart). Unlike the NASR
 	/// cycle data <see cref="ISubServiceRunTarget.LoadCycleDependentLists"/> hands out, the
 	/// metafile is loaded here, off the UI thread - it is up to 16 MB and takes about 0.3 s to
-	/// parse.
+	/// parse - and only when the tab doesn't already show the selected cycle's, or the previous
+	/// cycle's state changed: not again on every click on the General tab.
 	/// </summary>
-	private void RefreshProceduresData()
+	/// <param name="previousChanged">Whether the previous cycle's state changed, which the tab reports on.</param>
+	private void RefreshProceduresData(bool previousChanged = false)
 	{
 		if (ProceduresTab is not { } tab || _parsedCycleId is not { } cycleId)
+		{
+			return;
+		}
+
+		if (!previousChanged && tab.DtppCycleId == cycleId)
 		{
 			return;
 		}
@@ -498,13 +550,16 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				? File.GetLastWriteTime(file)
 				: null;
 
+			// Indexed here, off the UI thread, once per metafile: the tab only takes the lookups.
+			ProcedureNameIndex? index = dtpp is null ? null : await Task.Run(() => ProcedureNameIndex.For(dtpp)).ConfigureAwait(false);
+
 			await _dispatcher.BeginInvoke(() =>
 			{
 				// The user may have picked another cycle while this one was parsing; its own load
 				// reports in separately, so a stale result must not overwrite it.
 				if (_parsedCycleId == cycleId)
 				{
-					tab.SetDtppData(cycleId, dtpp, previousCycleId, previousAvailable, downloadedLocal, previousLoading);
+					tab.SetDtppData(cycleId, index, previousCycleId, previousAvailable, downloadedLocal, previousLoading);
 				}
 			});
 		}
@@ -531,7 +586,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			// The File Names tab's validity depends on which files the other tabs write.
 			_fileNames.RefreshFiles();
 
-			if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
+			if (!InstalledUpdate.AllowsRun() || !TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
 			{
 				return;
 			}
@@ -555,7 +610,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				OutputDirectory = OutputPreferences.Directory,
 				AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder,
 				// Settings ▸ Facility: listed first in the duplicate alias report.
-				PrimaryFacility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
+				PrimaryFacility = UserConfigFile.GetValue(UserConfigKeys.Facility)?.Trim() is { Length: > 0 } facility
 					? facility.ToUpperInvariant()
 					: null,
 				FileNames = _fileNames.BuildFileNamesBlock(),
@@ -574,7 +629,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				ConcatenateAliases = ConcatenateAliasesTab?.BuildSettingsBlock(),
 			};
 
-			if (AiracService.HasExistingOutput(settings))
+			// Running from here, so the Run button can't start a second run while the folder is looked
+			// at off the UI thread (it can be on a slow share) or the user answers about it.
+			IsRunning = true;
+
+			if (await Task.Run(() => AiracService.HasExistingOutput(settings)))
 			{
 				if (AskAboutExistingOutput(settings) is not { } existingOutput)
 				{
@@ -590,7 +649,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				.Select(t => t.Title)];
 
 			cycleOutputDirectory = settings.CycleOutputDirectory;
-			IsRunning = true;
 
 			_runReview.BeginRun(runningTabTitles);
 			_runReviewShown = true;
@@ -610,20 +668,21 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			// Saved before anything else can fail: the user made these choices to be kept.
 			_duplicateAliases.SaveChoices(result.DuplicateAliasChoicesMade);
 
-			string summary = SummarizeRun(cycle.AiracCycleId, result);
+			string summary = AiracRunSummary.Describe(cycle.AiracCycleId, result);
 			SubServiceRunResult[] subServiceResults = [.. targets
 				.Select(t => t.DescribeRunResult(result))
 				.OfType<SubServiceRunResult>()];
 
-			// A run stopped at the duplicates deleted its alias files.
-			string[] files = [.. CollectFilesWritten(result).Where(file => !result.StoppedAtDuplicateReview || File.Exists(file))];
+			// A run stopped at the duplicates names no alias file: Core deleted them. The folder is looked
+			// at off the UI thread.
+			string? outputFolder = await Task.Run(() => ExistingFolder(result.OutputDirectory));
 
 			_runReview.CompleteRun(
 				result,
 				summary,
 				subServiceResults,
-				files,
-				ExistingFolder(result.OutputDirectory));
+				result.FilesWritten,
+				outputFolder);
 
 			if (result.StoppedAtDuplicateReview)
 			{
@@ -637,7 +696,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		catch (Exception ex) when (started && cycleOutputDirectory is { } outputDirectory)
 		{
 			// A run that fails part way may already have written files; offer the folder if so.
-			_runReview.FailRun(ex.Message, outputDirectory: ExistingFolder(outputDirectory));
+			_runReview.FailRun(ex.Message, outputDirectory: await Task.Run(() => ExistingFolder(outputDirectory)));
 			Toast.Error("AIRAC Service failed", ex.Message);
 		}
 		catch (Exception ex)
@@ -702,193 +761,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <param name="directory">The run's cycle folder.</param>
 	/// <returns>The folder, or <see langword="null"/> when nothing was written.</returns>
 	private static string? ExistingFolder(string directory) => Directory.Exists(directory) ? directory : null;
-
-	/// <summary>Every file the run wrote, across sub-services.</summary>
-	/// <param name="result">The aggregated result.</param>
-	/// <returns>The paths, in sub-service order.</returns>
-	private static string[] CollectFilesWritten(AiracServiceResult result)
-	{
-		List<string> files = [];
-
-		if (result.Airways is { } airways)
-		{
-			files.AddRange(airways.GeojsonFilesWritten);
-
-			if (airways.AliasFilePath is { } airwayAlias)
-			{
-				files.Add(airwayAlias);
-			}
-		}
-
-		if (result.Airports is { } airports)
-		{
-			files.AddRange(airports.GeojsonFilesWritten);
-
-			if (airports.AliasFilePath is { } airportAlias)
-			{
-				files.Add(airportAlias);
-			}
-		}
-
-		if (result.Departures is { } departures)
-		{
-			files.AddRange(departures.GeojsonFilesWritten);
-
-			if (departures.AliasFilePath is { } departureAlias)
-			{
-				files.Add(departureAlias);
-			}
-		}
-
-		if (result.Arrivals is { } arrivals)
-		{
-			files.AddRange(arrivals.GeojsonFilesWritten);
-
-			if (arrivals.AliasFilePath is { } arrivalAlias)
-			{
-				files.Add(arrivalAlias);
-			}
-		}
-
-		if (result.Navaids is { } navaids)
-		{
-			files.AddRange(navaids.GeojsonFilesWritten);
-
-			if (navaids.AliasFilePath is { } navaidAlias)
-			{
-				files.Add(navaidAlias);
-			}
-		}
-
-		if (result.ArtccBoundaries is { } artccBoundaries)
-		{
-			files.AddRange(artccBoundaries.GeojsonFilesWritten);
-		}
-
-		if (result.Fixes is { } fixes)
-		{
-			files.AddRange(fixes.GeojsonFilesWritten);
-		}
-
-		if (result.WxStations is { } wxStations)
-		{
-			files.AddRange(wxStations.GeojsonFilesWritten);
-		}
-
-		if (result.Procedures is { } procedures)
-		{
-			files.AddRange(procedures.FilesWritten);
-
-			if (procedures.AliasFilePath is { } chartRecallAlias)
-			{
-				files.Add(chartRecallAlias);
-			}
-		}
-
-		if (result.Telephony?.AliasFilePath is { } telephonyAlias)
-		{
-			files.Add(telephonyAlias);
-		}
-
-		if (result.DuplicateAliasReport is { } duplicateAliasReport)
-		{
-			files.Add(duplicateAliasReport.FilePath);
-		}
-
-		if (result.CombinedAlias?.FilePath is { } combinedAlias)
-		{
-			files.Add(combinedAlias);
-		}
-
-		return [.. files];
-	}
-
-	/// <summary>Builds the one-line "what the run produced" summary for the completion toast.</summary>
-	/// <param name="cycleId">The cycle that was run.</param>
-	/// <param name="result">The aggregated result.</param>
-	/// <returns>The toast message.</returns>
-	private static string SummarizeRun(string cycleId, AiracServiceResult result)
-	{
-		List<string> parts = [];
-
-		if (result.Airways is { } airways)
-		{
-			parts.Add($"{airways.AirwayCount:N0} airway(s)"
-				+ (airways.ExcludedAirwayIds.Count > 0 ? $", {airways.ExcludedAirwayIds.Count} excluded" : string.Empty));
-		}
-
-		if (result.Airports is { } airports)
-		{
-			parts.Add($"{airports.AirportCount:N0} airport(s)");
-		}
-
-		if (result.Departures is { } departures)
-		{
-			parts.Add($"{departures.AirportProcedureCount:N0} airport departure(s)"
-				+ (departures.SkippedForMissingPointsCount > 0 ? $", {departures.SkippedForMissingPointsCount} skipped" : string.Empty));
-		}
-
-		if (result.Arrivals is { } arrivals)
-		{
-			parts.Add($"{arrivals.AirportProcedureCount:N0} airport arrival(s)"
-				+ (arrivals.SkippedForMissingPointsCount > 0 ? $", {arrivals.SkippedForMissingPointsCount} skipped" : string.Empty));
-		}
-
-		if (result.Navaids is { } navaids)
-		{
-			parts.Add($"{navaids.NavaidCount:N0} NAVAID(s)");
-		}
-
-		if (result.ArtccBoundaries is { } b)
-		{
-			parts.Add($"{b.RingCount:N0} ARTCC boundary line(s)");
-		}
-
-		if (result.Fixes is { } fixes)
-		{
-			parts.Add($"{fixes.FixCount:N0} fix(es)");
-		}
-
-		if (result.WxStations is { } wxStations)
-		{
-			parts.Add($"{wxStations.StationCount:N0} weather station(s)");
-		}
-
-		if (result.Procedures is { } procedures)
-		{
-			if (procedures.FilesWritten.Count > 0)
-			{
-				parts.Add($"{procedures.AirportCount:N0} airport(s) with procedure changes"
-					+ (procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount > 0
-						? $", {procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount} change(s)"
-						: string.Empty));
-			}
-
-			if (procedures.AliasFilePath is not null)
-			{
-				parts.Add($"{procedures.AliasCommandCount:N0} FAA Chart Recall command(s)");
-			}
-		}
-
-		if (result.Telephony is { AliasFilePath: not null } telephony)
-		{
-			parts.Add($"{telephony.AliasCommandCount:N0} telephony command(s)");
-		}
-
-		if (result.CombinedAlias is { FilePath: not null } combinedAlias)
-		{
-			parts.Add($"{Path.GetFileName(combinedAlias.FilePath)} ({combinedAlias.CustomCommandCount + combinedAlias.FeBuddyCommandCount:N0} command(s))");
-		}
-
-		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)
-		{
-			parts.Add($"{duplicateAliasReport.Duplicates.Count:N0} duplicate alias command(s)");
-		}
-
-		return parts.Count == 0
-			? $"Cycle {cycleId}: nothing to produce."
-			: $"Cycle {cycleId}: {string.Join(", ", parts)}.";
-	}
 
 	/// <summary>Offers to save every dirty tab that takes part in one prompt, as the settings-save contract requires.</summary>
 	/// <returns><see langword="true"/> when nothing is left unsaved.</returns>

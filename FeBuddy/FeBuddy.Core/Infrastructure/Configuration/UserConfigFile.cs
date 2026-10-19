@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Infrastructure.Configuration;
 
@@ -103,6 +104,16 @@ public static partial class UserConfigFile
 	/// <see langword="null"/>. A later read that can't get at that profile's file keeps them.
 	/// </summary>
 	private static string? _profileInMemory;
+
+	/// <summary>
+	/// The undo snapshot (<see cref="PreviousFilePath"/>) as it is on disk, so <see cref="CanUndo"/> - which
+	/// WPF asks on every key press and click - never reads the file. Read once per profile, then kept up to
+	/// date wherever this class writes or deletes the file; <see langword="null"/> until then.
+	/// </summary>
+	private static JsonObject? _undoSnapshot;
+
+	/// <summary>The file <see cref="_undoSnapshot"/> was read from or written to.</summary>
+	private static string? _undoSnapshotPath;
 
 	/// <summary>
 	/// The directory holding every settings file: <c>%APPDATA%\FE-Buddy\User Configurations</c> by default.
@@ -416,6 +427,8 @@ public static partial class UserConfigFile
 			{
 				AppLog.Warning(LogSource, $"Could not delete '{Path.GetFileName(PreviousFilePath)}', so Undo last save may put back a setting from before the import.");
 			}
+
+			ForgetUndoSnapshot();
 		}
 
 		ReadAll();
@@ -462,33 +475,117 @@ public static partial class UserConfigFile
 
 		lock (Gate)
 		{
-			JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
-
-			// Snapshot the CURRENT on-disk subtree into the previous file, at the same path.
-			JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
-			JsonNode? currentSubtree = GetNodeAtPath(onDisk, nodePath);
-			SetNodeAtPath(previous, nodePath, currentSubtree?.DeepClone());
-			WriteObject(PreviousFilePath, previous);
-
-			// Replace the subtree on disk with the in-memory version built from the flat dict.
-			JsonNode? newSubtree = BuildSubtree(ProfileValues(Values), nodePath);
-			SetNodeAtPath(onDisk, nodePath, newSubtree);
-			RemoveSharedSettings(onDisk);
-
-			string below = nodePath + ".";
-			string[] sharedHere = [.. UserConfigPortability.SharedByProfiles.Where(key => key == nodePath || key.StartsWith(below, StringComparison.Ordinal))];
-
-			if (sharedHere.Length > 0)
-			{
-				UpdateSharedFile(sharedHere);
-			}
-
-			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
+			WriteNode(nodePath);
 		}
 
 		ReadAll();
 
 		AppLog.Info(LogSource, $"Saved '{nodePath}'.");
+	}
+
+	/// <summary>
+	/// Sets <paramref name="values"/> in memory and saves <paramref name="nodePath"/> with them, as one step -
+	/// for a save made off the UI thread, such as the map's after a click. Unlike <see cref="Save(string)"/>,
+	/// it doesn't read the files again afterwards: that would drop a setting another page has set but not
+	/// yet saved, while this ran.
+	/// </summary>
+	/// <param name="nodePath">The dotted path of the node to save, e.g. <c>Services.MapService</c>.</param>
+	/// <param name="values">The settings to set first, by dotted path, each under <paramref name="nodePath"/>.</param>
+	/// <param name="forProfile">
+	/// The profile they were chosen in: when another is in use by the time this runs, nothing is set or saved.
+	/// </param>
+	/// <param name="quietly"><see langword="true"/> to log the save at Debug level, for settings saved on every click.</param>
+	/// <returns><see langword="false"/> when another profile is in use, so nothing was saved.</returns>
+	/// <exception cref="ArgumentException">A key is not one <see cref="TrySetValue"/> takes, or not under the node.</exception>
+	/// <exception cref="IOException">
+	/// A file could not be written, or is there but could not be read. Nothing is set in memory.
+	/// </exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	public static bool SaveValues(string nodePath, IReadOnlyDictionary<string, string> values, string forProfile, bool quietly = false)
+	{
+		if (string.IsNullOrWhiteSpace(nodePath))
+		{
+			throw new ArgumentException("A node path is required.", nameof(nodePath));
+		}
+
+		ArgumentNullException.ThrowIfNull(values);
+		ArgumentNullException.ThrowIfNull(forProfile);
+
+		if (values.Keys.FirstOrDefault(key => !IsValidKey(key) || !key.StartsWith(nodePath + ".", StringComparison.Ordinal)) is { } wrong)
+		{
+			throw new ArgumentException($"'{wrong}' isn't a setting under '{nodePath}'.", nameof(values));
+		}
+
+		lock (Gate)
+		{
+			if (!string.Equals(_profile, forProfile, StringComparison.OrdinalIgnoreCase))
+			{
+				return false;
+			}
+
+			Dictionary<string, string?> before = values.Keys.ToDictionary(key => key, key => Values.GetValueOrDefault(key), StringComparer.Ordinal);
+
+			foreach (KeyValuePair<string, string> value in values)
+			{
+				Values[value.Key] = value.Value ?? string.Empty;
+			}
+
+			try
+			{
+				WriteNode(nodePath);
+			}
+			catch
+			{
+				// Nothing is taken for saved: memory goes back to what the file still holds.
+				foreach (KeyValuePair<string, string?> value in before)
+				{
+					if (value.Value is null)
+					{
+						Values.Remove(value.Key);
+					}
+					else
+					{
+						Values[value.Key] = value.Value;
+					}
+				}
+
+				throw;
+			}
+		}
+
+		AppLog.Write(quietly ? LogLevel.Debug : LogLevel.Info, LogSource, $"Saved '{nodePath}'.");
+		return true;
+	}
+
+	/// <summary>
+	/// Writes the node's subtree from memory to the profile's file (and any shared setting under it to
+	/// <c>Shared.json</c>), after keeping the file's own as the node's undo snapshot. Call under <see cref="Gate"/>.
+	/// </summary>
+	private static void WriteNode(string nodePath)
+	{
+		JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
+
+		// Snapshot the CURRENT on-disk subtree into the previous file, at the same path.
+		JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
+		JsonNode? currentSubtree = GetNodeAtPath(onDisk, nodePath);
+		SetNodeAtPath(previous, nodePath, currentSubtree?.DeepClone());
+		WriteObject(PreviousFilePath, previous);
+		KeepUndoSnapshot(previous);
+
+		// Replace the subtree on disk with the in-memory version built from the flat dict.
+		JsonNode? newSubtree = BuildSubtree(ProfileValues(Values), nodePath);
+		SetNodeAtPath(onDisk, nodePath, newSubtree);
+		RemoveSharedSettings(onDisk);
+
+		string below = nodePath + ".";
+		string[] sharedHere = [.. UserConfigPortability.SharedByProfiles.Where(key => key == nodePath || key.StartsWith(below, StringComparison.Ordinal))];
+
+		if (sharedHere.Length > 0)
+		{
+			UpdateSharedFile(sharedHere);
+		}
+
+		WriteConfig(ConfigFilePath, onDisk, _stampVersion);
 	}
 
 	/// <summary>
@@ -542,19 +639,23 @@ public static partial class UserConfigFile
 	/// Indicates whether <see cref="Undo(string)"/> can restore a previous value for
 	/// <paramref name="nodePath"/> - i.e. a snapshot for that exact node exists.
 	/// </summary>
+	/// <remarks>
+	/// Answers from memory: the snapshot is read once per profile, and kept up to date by
+	/// <see cref="Save(string)"/>, <see cref="Undo(string)"/> and the writes that delete it. WPF asks on
+	/// every key press and click, so this must not touch the disk.
+	/// </remarks>
 	/// <param name="nodePath">The dotted path that was previously saved.</param>
 	/// <returns><see langword="true"/> if a one-step undo is available for that node.</returns>
 	public static bool CanUndo(string nodePath)
 	{
-		if (string.IsNullOrWhiteSpace(nodePath) || !File.Exists(PreviousFilePath))
+		if (string.IsNullOrWhiteSpace(nodePath))
 		{
 			return false;
 		}
 
 		lock (Gate)
 		{
-			JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
-			return NodeExistsAtPath(previous, nodePath);
+			return NodeExistsAtPath(UndoSnapshot(), nodePath);
 		}
 	}
 
@@ -602,6 +703,7 @@ public static partial class UserConfigFile
 			// Consume the snapshot: undo depth is exactly one.
 			RemoveNodeAtPath(previous, nodePath);
 			WriteObject(PreviousFilePath, previous);
+			KeepUndoSnapshot(previous);
 		}
 
 		ReadAll();
@@ -626,6 +728,7 @@ public static partial class UserConfigFile
 			_sharedStampVersion = UserConfigMigrations.CurrentVersion;
 			_profileUnreadable = false;
 			_profileInMemory = null;
+			ForgetUndoSnapshot();
 		}
 	}
 
@@ -1007,6 +1110,37 @@ public static partial class UserConfigFile
 		File.WriteAllText(path, root.ToJsonString(WriteOptions));
 	}
 
+	/// <summary>The active profile's undo snapshot, read from disk only the first time it is asked for. Call under <see cref="Gate"/>.</summary>
+	private static JsonObject UndoSnapshot()
+	{
+		string path = PreviousFilePath;
+
+		if (_undoSnapshot is null || !string.Equals(_undoSnapshotPath, path, StringComparison.Ordinal))
+		{
+			_undoSnapshot = LoadObjectOrEmpty(path);
+			_undoSnapshotPath = path;
+		}
+
+		return _undoSnapshot;
+	}
+
+	/// <summary>
+	/// Keeps what was just written to <see cref="PreviousFilePath"/>, as reading it back would give it. Call
+	/// under <see cref="Gate"/>, after the write.
+	/// </summary>
+	private static void KeepUndoSnapshot(JsonObject written)
+	{
+		_undoSnapshot = JsonNode.Parse(written.ToJsonString()) as JsonObject;
+		_undoSnapshotPath = PreviousFilePath;
+	}
+
+	/// <summary>Has the next <see cref="CanUndo"/> read the snapshot again: it was deleted, or couldn't be. Call under <see cref="Gate"/>.</summary>
+	private static void ForgetUndoSnapshot()
+	{
+		_undoSnapshot = null;
+		_undoSnapshotPath = null;
+	}
+
 	/// <summary>Writes a whole settings file, stamped with its layout version at the top.</summary>
 	private static void WriteConfig(string path, JsonObject root, int version)
 	{
@@ -1097,6 +1231,8 @@ public static partial class UserConfigFile
 		{
 			AppLog.Warning(LogSource, $"Could not delete '{Path.GetFileName(PreviousFilePath)}', so Undo last save may put back a setting in the old layout.");
 		}
+
+		ForgetUndoSnapshot();
 
 		AppLog.Info(LogSource, $"Brought the settings up from layout {version} to layout {UserConfigMigrations.CurrentVersion}: " +
 			$"{string.Join("; ", result.Applied)}. The file as it was is kept as '{Path.GetFileName(keptAs)}'.");

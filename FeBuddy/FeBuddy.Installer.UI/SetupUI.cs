@@ -33,6 +33,12 @@ namespace FeBuddy.Installer.UI;
 /// Installer's basic progress UI; on a PC whose policy disables embedded UIs, Windows Installer
 /// shows the package's stock dialogs (FeBuddy.UI.wxs) instead.
 /// </para>
+/// <para>
+/// If the window itself fails to open (its theme or the window can't be built), <see cref="Initialize"/>
+/// logs why and returns <see langword="false"/>, so Windows Installer carries on with its own UI at the
+/// level asked for: the stock dialogs, or its basic progress. Should the window fail later, while the
+/// install runs, the install goes on without it rather than ending msiexec.
+/// </para>
 /// </remarks>
 public sealed class SetupUI : IEmbeddedUI
 {
@@ -49,6 +55,10 @@ public sealed class SetupUI : IEmbeddedUI
 
 	private bool _cancelSent;
 	private bool _fatalExit;
+
+	// Set on the window's thread when the window fails; read once its events are set.
+	private volatile bool _windowFailed;
+	private Exception? _windowFailure;
 	private int _installResult = SetupOutcomeRules.ResultNotSent;
 	private string? _lastAction;
 	private int _updatePosted;
@@ -80,6 +90,11 @@ public sealed class SetupUI : IEmbeddedUI
 			// Nothing to ask: install with whatever the command line set, keeping the recorded
 			// shortcut choices on an update the way the full UI does.
 			_windowReady.WaitOne();
+			if (_windowFailed)
+			{
+				return HandBack(session);
+			}
+
 			_choices = new SetupChoices(
 				context.Mode == SetupMode.Uninstall ? SetupOperation.Remove : SetupOperation.Install,
 				context.InstallFolder, context.StartMenuShortcut, context.DesktopShortcut);
@@ -90,6 +105,11 @@ public sealed class SetupUI : IEmbeddedUI
 		}
 		else if (WaitHandle.WaitAny([_started, _left]) == 1)
 		{
+			if (_windowFailed)
+			{
+				return HandBack(session);
+			}
+
 			session.Log("FE-BUDDY setup window: closed before installing.");
 			throw new InstallCanceledException();
 		}
@@ -105,6 +125,16 @@ public sealed class SetupUI : IEmbeddedUI
 		return true;
 	}
 
+	/// <summary>
+	/// The window couldn't open: says why in the install log, and declines, so Windows Installer
+	/// carries on with its own UI.
+	/// </summary>
+	private bool HandBack(Session session)
+	{
+		session.Log($"FE-BUDDY setup window: could not open, so Windows Installer's own UI is used instead. {_windowFailure}");
+		return false;
+	}
+
 	/// <inheritdoc />
 	public MessageResult ProcessMessage(
 		InstallMessage messageType,
@@ -113,7 +143,8 @@ public sealed class SetupUI : IEmbeddedUI
 		MessageIcon icon,
 		MessageDefaultButton defaultButton)
 	{
-		if (_viewModel is null || _dispatcher is null)
+		// A window that failed can't be asked anything: its thread has ended.
+		if (_windowFailed || _viewModel is null || _dispatcher is null)
 		{
 			return MessageResult.None;
 		}
@@ -189,7 +220,7 @@ public sealed class SetupUI : IEmbeddedUI
 	/// <inheritdoc />
 	public void Shutdown()
 	{
-		if (_viewModel is null || _dispatcher is null)
+		if (_windowFailed || _viewModel is null || _dispatcher is null)
 		{
 			return;
 		}
@@ -241,6 +272,13 @@ public sealed class SetupUI : IEmbeddedUI
 			_window.Loaded += (_, _) => _windowReady.Set();
 			_window.Closed += (_, _) => _left.Set();
 			app.Run(_window);
+		}
+		catch (Exception ex)
+		{
+			// Uncaught, this would end msiexec from a background thread. Initialize reads it, if it's
+			// still waiting, and hands the install back to Windows Installer's own UI.
+			_windowFailure = ex;
+			_windowFailed = true;
 		}
 		finally
 		{

@@ -1,3 +1,5 @@
+using System.IO;
+
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
@@ -5,7 +7,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -21,7 +23,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Airports";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Airports}";
 
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public AirportsViewModel()
@@ -83,7 +85,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	/// <remarks>Airports has no option lists built from the cycle, so this does nothing.</remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
 	}
 
@@ -95,11 +97,16 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			return null;
 		}
 
-		string summary = $"{airports.AirportCount:N0} airports, {airports.AirportsInRoiCount:N0} in the ROI";
+		string summary = $"{airports.AirportCount:N0} airports";
+
+		if (HasRoi)
+		{
+			summary += $", {airports.AirportsInRoiCount:N0} in the ROI";
+		}
 
 		if (airports.AliasFilePath is not null)
 		{
-			summary += $", Airports.txt: {airports.AliasCommandCount:N0} alias command(s)";
+			summary += $", {Path.GetFileName(airports.AliasFilePath)}: {airports.AliasCommandCount:N0} alias command(s)";
 		}
 
 		if (airports.GeojsonFilesWritten.Count > 0)

@@ -25,6 +25,17 @@ public static class SctToGeojsonService
 	/// <summary>The extensions a source folder's files must have to be converted.</summary>
 	public static readonly IReadOnlyList<string> Extensions = [".sct2", ".sct"];
 
+	/// <summary>
+	/// Counts the files in <paramref name="folder"/> (not its sub-folders) a run would convert: every file with a <see cref="Extensions"/> extension,
+	/// as the run picks them. For the page that shows the count as the folder is chosen, off the UI thread.
+	/// </summary>
+	/// <param name="folder">The folder.</param>
+	/// <param name="cancellationToken">Stops the count; a newer one has started.</param>
+	/// <returns>Whether the folder is there, how many files it has, or why it couldn't be read.</returns>
+	/// <exception cref="OperationCanceledException">The count was stopped.</exception>
+	public static SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken = default) =>
+		ConversionSourceFolder.Count(folder, Extensions, _ => true, cancellationToken);
+
 	private const string LogSource = "SctToGeojsonService";
 
 	/// <summary>Runs the conversion.</summary>

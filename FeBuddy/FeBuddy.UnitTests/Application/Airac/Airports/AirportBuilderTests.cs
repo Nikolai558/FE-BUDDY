@@ -310,6 +310,29 @@ public sealed class AirportBuilderTests
 		Assert.Equal(["ALL"], airports[2].AirspaceHours);
 	}
 
+	/// <summary>
+	/// Whether a field has a tower comes from NASR's code, not the tower type's display wording (C2-6): <c>ATCT</c>
+	/// and its <c>ATCT-</c> forms are towered; <c>NON-ATCT</c>, a plain <c>TRACON</c> (W6-3), a code NASR adds
+	/// later and a blank aren't.
+	/// </summary>
+	[Theory]
+	[InlineData("ATCT", true)]
+	[InlineData(" atct-a/c ", true)]
+	[InlineData("ATCT-RAPCON", true)]
+	[InlineData("ATCT-TRACON", true)]
+	[InlineData("TRACON", false)]
+	[InlineData("NON-ATCT", false)]
+	[InlineData(" non-atct ", false)]
+	[InlineData("ARTCC", false)]
+	[InlineData("", false)]
+	[InlineData("  ", false)]
+	public void a_field_is_towered_when_its_code_is_an_atct_code(string towerTypeCode, bool expected)
+	{
+		NasrCsvDataCollection data = AirportTestDataBuilder.Build(airports: [AirportTestDataBuilder.Base("OCF", towerTypeCode: towerTypeCode)]);
+
+		Assert.Equal(expected, Assert.Single(AirportBuilder.BuildAll(data).Airports).IsTowered);
+	}
+
 	/// <summary>A field with no tower shows no attendance hours, whatever APT_ATT says; its airspace hours still show.</summary>
 	[Theory]
 	[InlineData("NON-ATCT")]

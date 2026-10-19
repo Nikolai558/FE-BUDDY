@@ -1,4 +1,4 @@
-namespace FeBuddy.Wpf.Map.Models;
+namespace FeBuddy.Core.Domain.Map.Models;
 
 /// <summary>What a <see cref="MapGeometry"/> is drawn as.</summary>
 public enum MapGeometryKind

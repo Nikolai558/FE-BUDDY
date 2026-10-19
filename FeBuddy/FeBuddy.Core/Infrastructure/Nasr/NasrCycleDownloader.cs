@@ -133,8 +133,9 @@ public static class NasrCycleDownloader
 
 		using (HttpClient client = FeBuddyHttp.CreateClient(TimeSpan.FromMinutes(15)))
 		{
+			// Never back on the caller's context: the unzip below takes seconds, and the caller can be the UI thread.
 			using HttpResponseMessage response = await client.GetAsync(
-				downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+				downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
 
 			response.EnsureSuccessStatusCode();
 
@@ -145,7 +146,7 @@ public static class NasrCycleDownloader
 				(received, total) => progress?.Report(new AiracDownloadProgress(
 					AiracDownloadPhase.Downloading,
 					total is long bytes ? Math.Round((double)received / bytes * 100, 1) : null)),
-				cancellationToken);
+				cancellationToken).ConfigureAwait(false);
 		}
 
 		progress?.Report(new AiracDownloadProgress(AiracDownloadPhase.Extracting, null));

@@ -3,6 +3,8 @@ using System.Windows.Media;
 
 using FeBuddy.Wpf.Map.Models;
 
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>

@@ -363,7 +363,7 @@ public static class ArrivalBuilder
 	}
 
 	/// <summary>Splits the raw <c>ARTCC</c> text on whitespace, trims, upper-cases and de-duplicates it, keeping publication order.</summary>
-	private static IReadOnlyList<string> SplitArtccs(string artccText)
+	internal static IReadOnlyList<string> SplitArtccs(string artccText)
 	{
 		List<string> artccs = [];
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);

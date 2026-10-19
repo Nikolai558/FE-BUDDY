@@ -94,7 +94,8 @@ public static class AirwayWaypointBuffer
 						$"Airway '{awyId}': a leg between ({start.Y:F5}, {start.X:F5}) and " +
 						$"({end.Y:F5}, {end.X:F5}) is {legDistanceNm:F2} NM long, shorter than " +
 						$"its combined waypoint buffer radius of {startRadius + endRadius:F1} NM. " +
-						"This leg was dropped."));
+						"This leg was dropped.")
+					{ Subject = awyId });
 					continue;
 				}
 

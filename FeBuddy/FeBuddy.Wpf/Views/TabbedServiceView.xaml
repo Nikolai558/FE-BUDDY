@@ -169,11 +169,18 @@
                         <TextBlock Text="{Binding SelectedTabTitle}" Style="{StaticResource Text.H2}"
                                    Margin="0,0,0,14" />
 
-                        <!-- Every card on the tab tags the outputs it affects, and greys out while they're all off:
-                             which are on, and whose they are, are set once here for the whole page. -->
-                        <ContentControl Content="{Binding SelectedTab}"
-                                        ctl:Card.OutputsOn="{Binding SelectedTab.OutputsOn}"
-                                        ctl:Card.OutputsOwner="{Binding SelectedTab.Title}" />
+                        <!-- The selected tab's page. Each page is built the first time its tab is shown, then
+                             kept, so switching back only shows it again. Every card on a page tags the outputs
+                             it affects, and greys out while they're all off: which are on, and whose they are,
+                             are set once on each page's presenter (its tab is its DataContext). -->
+                        <ctl:KeptContentHost Selected="{Binding SelectedTab}" Items="{Binding Tabs}">
+                            <ctl:KeptContentHost.PresenterStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="ctl:Card.OutputsOn" Value="{Binding OutputsOn}" />
+                                    <Setter Property="ctl:Card.OutputsOwner" Value="{Binding Title}" />
+                                </Style>
+                            </ctl:KeptContentHost.PresenterStyle>
+                        </ctl:KeptContentHost>
 
                         <!-- the same bar again at the end of the page -->
                         <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource TabActionBar}"

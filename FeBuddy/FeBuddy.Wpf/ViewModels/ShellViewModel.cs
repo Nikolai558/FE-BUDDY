@@ -133,6 +133,12 @@ public sealed class ShellViewModel : ObservableObject
 		RefreshSystemHealth();
 		StartGitHubTokenCheck();
 
+		// An update installed while this copy is open (from another Windows account): offer a restart.
+		if (Application.Current is not null)
+		{
+			InstalledUpdate.Start(_dispatcher, DescribeUnfinishedWork);
+		}
+
 		// The launch sequence may have found a first launch, or the old token variable, before this subscribed.
 		_dispatcher.InvokeAsync(ShowLaunchWindows, DispatcherPriority.ApplicationIdle);
 	}
@@ -601,7 +607,7 @@ public sealed class ShellViewModel : ObservableObject
 			return;
 		}
 
-		VersionText = version.CurrentVersion is "0.0.0" or "" ? "dev" : $"v{version.CurrentVersion.TrimStart('v', 'V')}";
+		VersionText = version.DisplayVersion == "dev" ? "dev" : $"v{version.DisplayVersion}";
 
 		// As in 2.x: a copy the MSI did not install (a dev build, or one run from elsewhere) says so.
 		if (!AppEnvironment.IsMsiInstalled && VersionText != "dev")
@@ -609,46 +615,45 @@ public sealed class ShellViewModel : ObservableObject
 			VersionText += " - DEV";
 		}
 
-		IsUpdateAvailable = version.UpdateAvailable && version.LatestVersion is not null;
+		IsUpdateAvailable = version.Status == VersionCheckStatus.UpdateAvailable;
+		VersionBrushKey = "Brush.Accent.Text";
 
-		if (version.WasSkipped)
+		switch (version.Status)
 		{
-			UpdateTooltipTitle = "Not checked for updates";
-			UpdateTooltipBody = "This dev launch left out the check for a newer version.";
-			VersionBrushKey = "Brush.Accent.Text";
-		}
-		else if (!version.CheckSucceeded)
-		{
-			UpdateTooltipTitle = "Update state unknown offline";
-			UpdateTooltipBody = version.Message ?? string.Empty;
-			VersionBrushKey = "Brush.Accent.Text";
-		}
-		else if (IsUpdateAvailable)
-		{
-			UpdateTooltipTitle = $"v{version.LatestVersion} available!";
-			UpdateTooltipBody = $"You are on v{version.CurrentVersion.TrimStart('v', 'V')}. Click to review and update.";
-			UpdateBadgeVersionText = $"v{version.LatestVersion} available";
-			VersionBrushKey = _updateDeclinedThisSession ? "Brush.Warn" : "Brush.Accent.Text";
-		}
-		else if (version.RunningPreReleaseChannel is { } running)
-		{
-			UpdateTooltipTitle = $"Running a {running.DisplayName()} release";
-			UpdateTooltipBody = $"Newer than the latest {version.Channel.DisplayName()} release, v{version.LatestVersion}.";
-			VersionBrushKey = "Brush.Accent.Text";
-		}
-		else if (version.IsAheadOfLatestRelease)
-		{
-			UpdateTooltipTitle = "Running a development build";
-			UpdateTooltipBody = version.LatestVersion is not null
-				? $"Ahead of the latest published v{version.LatestVersion}."
-				: string.Empty;
-			VersionBrushKey = "Brush.Accent.Text";
-		}
-		else
-		{
-			UpdateTooltipTitle = "You are running the latest version.";
-			UpdateTooltipBody = string.Empty;
-			VersionBrushKey = "Brush.Accent.Text";
+			case VersionCheckStatus.Skipped:
+				UpdateTooltipTitle = "Not checked for updates";
+				UpdateTooltipBody = "This dev launch left out the check for a newer version.";
+				break;
+
+			case VersionCheckStatus.Failed:
+				// Offline only when FE-Buddy is: a check can fail online too (GitHub's rate limit, an error).
+				UpdateTooltipTitle = IsOnline ? "Could not check for updates" : "Update state unknown offline";
+				UpdateTooltipBody = version.Message ?? string.Empty;
+				break;
+
+			case VersionCheckStatus.UpdateAvailable:
+				UpdateTooltipTitle = $"v{version.LatestVersion} available!";
+				UpdateTooltipBody = $"You are on v{version.DisplayVersion}. Click to review and update.";
+				UpdateBadgeVersionText = $"v{version.LatestVersion} available";
+				VersionBrushKey = _updateDeclinedThisSession ? "Brush.Warn" : "Brush.Accent.Text";
+				break;
+
+			case VersionCheckStatus.RunningPreRelease:
+				UpdateTooltipTitle = $"Running a {version.RunningPreReleaseChannel!.Value.DisplayName()} release";
+				UpdateTooltipBody = $"Newer than the latest {version.Channel.DisplayName()} release, v{version.LatestVersion}.";
+				break;
+
+			case VersionCheckStatus.AheadOfLatest:
+				UpdateTooltipTitle = "Running a development build";
+				UpdateTooltipBody = version.LatestVersion is not null
+					? $"Ahead of the latest published v{version.LatestVersion}."
+					: string.Empty;
+				break;
+
+			default:
+				UpdateTooltipTitle = "You are running the latest version.";
+				UpdateTooltipBody = string.Empty;
+				break;
 		}
 	}
 
@@ -724,14 +729,16 @@ public sealed class ShellViewModel : ObservableObject
 			[.. cache.Entries.Where(e => cache.LoadsOnDemand && !AiracCycleDataCache.IsSettled(e) && !cache.IsLoading(e)).Select(e => e.Position)]));
 
 		VersionCheckResult? version = AppEnvironment.Version;
-		SystemHealth.Add(version switch
+		SystemHealth.Add(version?.Status switch
 		{
 			null => new HealthRow("Updates", "checking…", StatusKind.Warn),
-			{ WasSkipped: true } => new HealthRow("Updates", "not checked (dev launch)", StatusKind.Ok),
-			{ CheckSucceeded: false } => new HealthRow("Updates", "state unknown (offline)", StatusKind.Warn),
-			{ UpdateAvailable: true } v => new HealthRow("Updates", $"v{v.LatestVersion} available", StatusKind.Warn),
-			{ RunningPreReleaseChannel: { } running } v => new HealthRow("Updates", $"{running.DisplayName()} release — ahead of {v.Channel.DisplayName()}", StatusKind.Ok),
-			{ IsAheadOfLatestRelease: true } => new HealthRow("Updates", "dev build — ahead of release", StatusKind.Ok),
+			VersionCheckStatus.Skipped => new HealthRow("Updates", "not checked (dev launch)", StatusKind.Ok),
+			VersionCheckStatus.Failed => new HealthRow("Updates",
+				AppEnvironment.HasInternetConnection ? "could not check" : "state unknown (offline)", StatusKind.Warn),
+			VersionCheckStatus.UpdateAvailable => new HealthRow("Updates", $"v{version.LatestVersion} available", StatusKind.Warn),
+			VersionCheckStatus.RunningPreRelease => new HealthRow("Updates",
+				$"{version.RunningPreReleaseChannel!.Value.DisplayName()} release — ahead of {version.Channel.DisplayName()}", StatusKind.Ok),
+			VersionCheckStatus.AheadOfLatest => new HealthRow("Updates", "dev build — ahead of release", StatusKind.Ok),
 			_ => new HealthRow("Updates", "latest version", StatusKind.Ok),
 		});
 

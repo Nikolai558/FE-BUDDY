@@ -1,4 +1,4 @@
-namespace FeBuddy.Wpf.Map.Models;
+namespace FeBuddy.Core.Domain.Map.Models;
 
 /// <summary>
 /// One shape to draw: a kind plus a flat list of coordinate runs. For
@@ -9,7 +9,7 @@ namespace FeBuddy.Wpf.Map.Models;
 /// <param name="label">
 /// Text to draw at a point (a vNAS text feature's <c>text</c> lines, joined, or an airport's ID),
 /// or <see langword="null"/> for none. A labelled point is drawn as its text rather than a dot,
-/// unless its layer draws labels beside their symbols (<see cref="MapLayer.LabelBesideSymbol"/>).
+/// unless its layer draws labels beside their symbols.
 /// </param>
 public sealed class MapGeometry(MapGeometryKind kind, IReadOnlyList<IReadOnlyList<GeoPoint>> parts, string? label = null)
 {

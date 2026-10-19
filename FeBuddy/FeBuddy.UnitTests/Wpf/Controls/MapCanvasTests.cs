@@ -8,6 +8,9 @@ using FeBuddy.Wpf.Controls;
 using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Map.Models;
 
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Map.Models;
+
 namespace FeBuddy.UnitTests.Wpf.Controls;
 
 /// <summary>
@@ -293,6 +296,47 @@ public sealed class MapCanvasTests
 			Assert.Same(layer.Geometries[0], Assert.Single(map.HitTest(Middle + new Vector(20, 0))).Geometry);
 		});
 
+	/// <summary>
+	/// A drag that pans the map moves what is drawn rather than drawing it all again on every mouse move;
+	/// it is drawn again where the pan ends, and once the pan has gone a third of the way across.
+	/// </summary>
+	[Fact]
+	public void a_pan_moves_the_drawing_and_draws_it_again_where_it_ends() =>
+		StaThread.Run(() =>
+		{
+			MapCanvas map = Looking(Layer(new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]])));
+			DrawingVisual world = (DrawingVisual)VisualTreeHelper.GetChild(map, 1);
+			DrawingVisual gridLabels = (DrawingVisual)VisualTreeHelper.GetChild(map, 2);
+			TranslateTransform shift = Assert.IsType<TranslateTransform>(world.Transform);
+			Rect labelsBefore = gridLabels.ContentBounds;
+			int drawn = map.Redraws;
+
+			map.PanBy(50, -20);
+			map.PanBy(10, 0);
+			Redrawn();
+
+			Assert.Equal(drawn, map.Redraws);
+			Assert.Equal(60, shift.X, 6);
+			Assert.Equal(-20, shift.Y, 6);
+
+			// The gridline labels aren't moved with the drawing: they are drawn again, still on the map's bottom edge.
+			Assert.Null(gridLabels.Transform);
+			Assert.False(labelsBefore.IsEmpty);
+			Assert.InRange(gridLabels.ContentBounds.Bottom, labelsBefore.Bottom - 1, labelsBefore.Bottom + 1);
+
+			map.SettlePan();
+
+			Assert.Equal(drawn + 1, map.Redraws);
+			Assert.Equal(0, shift.X);
+			Assert.Equal(0, shift.Y);
+
+			map.PanBy(400, 0);
+			Redrawn();
+
+			Assert.Equal(drawn + 2, map.Redraws);
+			Assert.Equal(0, shift.X);
+		});
+
 	/// <summary>Dots held back for being too many in view aren't drawn, so they aren't there to click.</summary>
 	[Fact]
 	public void dots_held_back_are_not_hit() =>
@@ -328,7 +372,7 @@ public sealed class MapCanvasTests
 				new MapGeometry(MapGeometryKind.Line, [[new GeoPoint(40, -100), new GeoPoint(40, -99)]]),
 				new MapGeometry(MapGeometryKind.Point, [[new GeoPoint(40, -99.5)]], "CLE"));
 			MapCanvas map = Looking(layer);
-			DrawingVisual highlight = (DrawingVisual)VisualTreeHelper.GetChild(map, 1);
+			DrawingVisual highlight = (DrawingVisual)VisualTreeHelper.GetChild(map, 3);
 
 			map.Highlighted = [.. map.HitTest(Middle), new MapHit(layer, layer.Geometries[1], new GeoPoint(40, -99.5)) { Index = 1 }];
 			Assert.NotNull(highlight.Drawing);

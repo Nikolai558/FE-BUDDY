@@ -481,6 +481,19 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Equal(ProcedureChartTypes.Default, parsed.ChartTypes);
 	}
 
+	/// <summary>A saved blank list is the user's choice, read the same way as the tab reads it: no chart types, not the defaults.</summary>
+	[Fact]
+	public void blank_chart_types_mean_none()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["ChartTypes"] = "";
+
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
+
+		Assert.Empty(result.Settings.ChartTypes);
+		Assert.Empty(result.Messages.WarningTexts());
+	}
+
 	[Fact]
 	public void chart_types_are_upper_cased_and_deduplicated()
 	{

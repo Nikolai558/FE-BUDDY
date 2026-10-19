@@ -31,13 +31,25 @@ public static class AppVersion
 			return "dev";
 		}
 
-		string? informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-		if (!string.IsNullOrWhiteSpace(informational))
+		return Clean(assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion)
+			?? assembly.GetName().Version?.ToString(3)
+			?? "dev";
+	}
+
+	/// <summary>
+	/// An informational version (or a file's product version, which is the same) without its SemVer build
+	/// metadata: anything after <c>+</c>, such as a commit hash.
+	/// </summary>
+	/// <param name="informational">The version as written in the file.</param>
+	/// <returns>The real version, or <see langword="null"/> when there is none.</returns>
+	internal static string? Clean(string? informational)
+	{
+		if (string.IsNullOrWhiteSpace(informational))
 		{
-			int metadata = informational.IndexOf('+', StringComparison.Ordinal);
-			return (metadata >= 0 ? informational[..metadata] : informational).Trim();
+			return null;
 		}
 
-		return assembly.GetName().Version?.ToString(3) ?? "dev";
+		int metadata = informational.IndexOf('+', StringComparison.Ordinal);
+		return (metadata >= 0 ? informational[..metadata] : informational).Trim();
 	}
 }

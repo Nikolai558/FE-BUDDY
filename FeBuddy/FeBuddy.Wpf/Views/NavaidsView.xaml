@@ -106,7 +106,7 @@
                                    VerticalAlignment="Center" Margin="0,0,12,0" />
                         <ComboBox MinWidth="160" ItemsSource="{Binding FanMarkerStyleOptions}" SelectedItem="{Binding FanMarkerStyle}"
                                   bhv:FieldState.Error="{Binding FieldErrors[FanMarkerStyle]}"
-                                  ToolTip="CRC has no fan marker symbol. Pick the one fan markers are drawn with." />
+                                  bhv:FieldState.Hint="CRC has no fan marker symbol. Pick the one fan markers are drawn with." />
                     </StackPanel>
                 </StackPanel>
             </ctl:Card>

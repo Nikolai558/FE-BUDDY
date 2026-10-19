@@ -1,5 +1,7 @@
+using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -107,6 +109,28 @@ public sealed class ProceduresViewModelTests : IDisposable
 		Assert.Equal("Already included by the ROI specific to the Procedure Charts sub-service: CAK", procedures.NewAirportHint);
 	}
 
+	/// <summary>
+	/// The Add box's entries are worked out once per change, not on every re-query - and a new default
+	/// ROI, set elsewhere without this tab being edited, is such a change.
+	/// </summary>
+	[Fact]
+	public void a_new_default_roi_changes_what_the_add_box_says()
+	{
+		ProceduresViewModel procedures = Loaded();
+		procedures.Area = SubServiceArea.Roi;
+		DefaultRoiStore.Set(new RegionOfInterest(40, -83, 42, -80));
+
+		procedures.NewAirportText = "CAK";
+
+		Assert.Equal("Already included by the default ROI: CAK", procedures.NewAirportHint);
+		Assert.False(procedures.AddAirportCommand.CanExecute(null));
+
+		DefaultRoiStore.Set(new RegionOfInterest(30, -100, 32, -98));
+
+		Assert.Equal(string.Empty, procedures.NewAirportHint);
+		Assert.True(procedures.AddAirportCommand.CanExecute(null));
+	}
+
 	/// <summary>Only the area chosen counts: a facility ticked while the area is the ROI includes nothing.</summary>
 	[Fact]
 	public void a_facility_ticked_includes_nothing_while_the_area_is_something_else()
@@ -178,7 +202,7 @@ public sealed class ProceduresViewModelTests : IDisposable
 		}
 
 		ProceduresViewModel procedures = new();
-		procedures.LoadCycleDependentLists(new NasrCsvDataCollection { Apt = new AptCsvDataCollection { AptBase = airports } });
+		procedures.LoadCycleDependentLists(AiracCycleOptionListBuilder.Build(new NasrCsvDataCollection { Apt = new AptCsvDataCollection { AptBase = airports } }));
 		return procedures;
 	}
 

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -44,7 +45,45 @@ public static class EramToGeojsonService
 	/// <summary>The extensions a source folder's files must have to be converted.</summary>
 	public static readonly IReadOnlyList<string> Extensions = [".xml"];
 
+	/// <summary>
+	/// Counts the files in <paramref name="folder"/> (not its sub-folders) a run would convert: the Geomaps file among them (<see cref="IsSourceFile"/>),
+	/// as the run picks them. For the page that shows the count as the folder is chosen, off the UI thread.
+	/// </summary>
+	/// <param name="folder">The folder.</param>
+	/// <param name="cancellationToken">Stops the count; a newer one has started.</param>
+	/// <returns>Whether the folder is there, how many files it has, or why it couldn't be read.</returns>
+	/// <exception cref="OperationCanceledException">The count was stopped.</exception>
+	public static SourceFolderCount CountSourceFiles(string folder, CancellationToken cancellationToken = default) =>
+		ConversionSourceFolder.Count(folder, Extensions, IsSourceFile, cancellationToken);
+
+	/// <summary>
+	/// Whether an <c>.xml</c> file in a source folder is one a run converts: only a Geomaps file - a folder may
+	/// be a whole ERAM adaptation export, all XML.
+	/// </summary>
+	/// <param name="path">The file.</param>
+	/// <returns><see langword="true"/> for a Geomaps file.</returns>
+	public static bool IsSourceFile(string path) => EramGeoMapReader.IsGeoMapsFile(path);
+
 	private const string LogSource = "EramToGeojsonService";
+
+	/// <summary>
+	/// The folder a run with <paramref name="settings"/> would empty first, when an earlier run left
+	/// anything in it: each run empties <see cref="EramGeojsonWriter.RootFolder"/>, as the original tool
+	/// did, so the GUI asks before it does. <see langword="null"/> when there is nothing to lose.
+	/// </summary>
+	/// <param name="settings">The run's settings block (<c>OutputDirectory</c>, <c>AddFeBuddyOutputFolder</c>).</param>
+	/// <returns>The folder, or <see langword="null"/>.</returns>
+	/// <exception cref="ArgumentException">The block has no output folder.</exception>
+	public static string? ExistingOutput(IReadOnlyDictionary<string, string> settings)
+	{
+		ArgumentNullException.ThrowIfNull(settings);
+
+		string folder = EramGeojsonWriter.OutputDirectory(
+			SettingsValueReader.RequiredString(settings, "OutputDirectory"),
+			SettingsValueReader.YesNo(settings, "AddFeBuddyOutputFolder", defaultValue: true));
+
+		return Directory.Exists(folder) && Directory.EnumerateFileSystemEntries(folder).Any() ? folder : null;
+	}
 
 	/// <summary>Runs the conversion.</summary>
 	/// <param name="settings">The raw settings dictionary (see <see cref="EramToGeojsonSettingsParser"/>).</param>
@@ -70,7 +109,7 @@ public static class EramToGeojsonService
 		// A folder may be a whole ERAM adaptation export: only its Geomaps file is converted, and
 		// its ConsoleCommandControl file is read beside it.
 		IReadOnlyList<string> sources = ConversionFiles.Resolve(
-			parsed, Extensions, LogSource, messages, EramGeoMapReader.IsGeoMapsFile, EramConsoleCommandControlReader.IsConsoleCommandControlFile);
+			parsed, Extensions, LogSource, messages, IsSourceFile, EramConsoleCommandControlReader.IsConsoleCommandControlFile);
 
 		if (sources.Count > 1)
 		{

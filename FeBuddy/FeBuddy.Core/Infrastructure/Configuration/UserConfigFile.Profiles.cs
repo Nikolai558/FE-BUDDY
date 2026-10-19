@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Core.Infrastructure.Configuration;
@@ -184,6 +185,8 @@ public static partial class UserConfigFile
 				MoveQuietly(path, BackupFilePath(renamed, kind));
 			}
 
+			ForgetUndoSnapshot();
+
 			if (_profile.Equals(profile, StringComparison.OrdinalIgnoreCase))
 			{
 				_profile = renamed;
@@ -269,23 +272,79 @@ public static partial class UserConfigFile
 	private static string? ExistingName(string? name) =>
 		ProfileNames().FirstOrDefault(profile => profile.Equals(name?.Trim(), StringComparison.OrdinalIgnoreCase));
 
-	/// <summary>The trimmed new name, once it is checked: usable, and no other profile's.</summary>
-	/// <exception cref="ArgumentException">It isn't.</exception>
-	private static string CheckNewName(string name, string? renaming)
+	/// <summary>
+	/// Why a new profile - or a profile being renamed - can't be called <paramref name="name"/>: a name no
+	/// file can have (<see cref="ProfileNameProblem"/>), or another profile's in any case. What the name
+	/// windows say, and what creating or renaming a profile refuses.
+	/// </summary>
+	/// <param name="name">The name typed.</param>
+	/// <param name="profiles">Every profile now.</param>
+	/// <param name="renaming">The profile being renamed, which may keep its own name in any case; <see langword="null"/> for a new one.</param>
+	/// <returns>A sentence saying what is wrong, or <see langword="null"/>.</returns>
+	public static string? NewProfileNameProblem(string? name, IReadOnlyCollection<string> profiles, string? renaming)
 	{
+		ArgumentNullException.ThrowIfNull(profiles);
+
 		if (ProfileNameProblem(name) is { } problem)
 		{
-			throw new ArgumentException(problem, nameof(name));
+			return problem;
 		}
 
-		string trimmed = name.Trim();
+		string trimmed = name!.Trim();
+		string? taken = profiles.FirstOrDefault(profile => profile.Equals(trimmed, StringComparison.OrdinalIgnoreCase)
+			&& !profile.Equals(renaming, StringComparison.OrdinalIgnoreCase));
 
-		if (ExistingName(trimmed) is { } taken && !taken.Equals(renaming, StringComparison.OrdinalIgnoreCase))
+		return taken is null ? null : $"There is already a profile called {taken}.";
+	}
+
+	/// <summary>The trimmed new name, once it is checked: usable, and no other profile's.</summary>
+	/// <exception cref="ArgumentException">It isn't.</exception>
+	private static string CheckNewName(string name, string? renaming) =>
+		NewProfileNameProblem(name, ProfileNames(), renaming) is { } problem
+			? throw new ArgumentException(problem, nameof(name))
+			: name.Trim();
+
+	/// <summary>
+	/// Copies the profile in use to <paramref name="path"/>, and every other profile beside it, named after the
+	/// copy with the profile's name in brackets (<c>Backup (ZNY).json</c>): each the file as saved - a full
+	/// backup of that profile, which an import reads back. For before a reset or an uninstall empties FE-Buddy's
+	/// folder, so a copy can't be saved inside it.
+	/// </summary>
+	/// <param name="path">Where the profile in use goes.</param>
+	/// <returns>How many profiles were copied.</returns>
+	/// <exception cref="ArgumentException">The path is inside <see cref="AppDataReset.RootDirectory"/>, which a reset empties.</exception>
+	/// <exception cref="IOException">A file could not be copied.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	public static int CopyProfilesTo(string path)
+	{
+		ArgumentNullException.ThrowIfNull(path);
+
+		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+		string full = Path.GetFullPath(path);
+
+		if (full.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
 		{
-			throw new ArgumentException($"There is already a settings profile called '{taken}'.", nameof(name));
+			throw new ArgumentException($"A copy inside {AppDataReset.RootDirectory} would be deleted with it. Choose another folder.", nameof(path));
 		}
 
-		return trimmed;
+		string active = ActiveProfile;
+		string stem = Path.Combine(Path.GetDirectoryName(full)!, Path.GetFileNameWithoutExtension(full));
+		string extension = Path.GetExtension(full);
+		int copied = 0;
+
+		foreach (string profile in Profiles())
+		{
+			string from = ProfileFilePath(profile);
+
+			if (File.Exists(from))
+			{
+				bool inUse = profile.Equals(active, StringComparison.OrdinalIgnoreCase);
+				File.Copy(from, inUse ? full : $"{stem} ({profile}){extension}", overwrite: true);
+				copied++;
+			}
+		}
+
+		return copied;
 	}
 
 	/// <summary>A profile's backup files that exist, with the kind each is.</summary>
@@ -371,6 +430,8 @@ public static partial class UserConfigFile
 				MoveQuietly(path, BackupFilePath(DefaultProfile, match.Groups[1].Value.ToLowerInvariant()));
 			}
 		}
+
+		ForgetUndoSnapshot();
 
 		AppLog.Info(LogSource, string.Create(CultureInfo.InvariantCulture,
 			$"Moved '{LegacyConfigFileName}' into '{ProfilesFolderName}' as the settings profile '{DefaultProfile}'."));

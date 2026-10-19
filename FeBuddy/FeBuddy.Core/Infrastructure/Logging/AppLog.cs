@@ -73,6 +73,24 @@ public static class AppLog
 	}
 
 	/// <summary>
+	/// Starts following the log: <paramref name="onEntry"/> is called for every entry recorded from now on (as
+	/// <see cref="EntryAdded"/>), and the entries the display already holds are returned - both at once, so an
+	/// entry another thread logs meanwhile is in one or the other, exactly once.
+	/// </summary>
+	/// <param name="onEntry">Called for each later entry, on the thread that logs it.</param>
+	/// <returns>The <see cref="DisplayEntries"/> recorded before, oldest first.</returns>
+	public static IReadOnlyList<LogEntry> FollowDisplay(EventHandler<LogEntry> onEntry)
+	{
+		ArgumentNullException.ThrowIfNull(onEntry);
+
+		lock (Gate)
+		{
+			EntryAdded += onEntry;
+			return [.. RecordedEntries.Skip(_displayStart)];
+		}
+	}
+
+	/// <summary>
 	/// The folder log files are written to: <c>%APPDATA%\FE-Buddy\Logs</c> by default.
 	/// </summary>
 	public static string LogDirectory
@@ -102,10 +120,14 @@ public static class AppLog
 		}
 
 		LogEntry entry = new(DateTime.UtcNow, level, source ?? string.Empty, message ?? string.Empty);
+		EventHandler<LogEntry>? entryAdded;
 
+		// The subscribers are taken with the entry, so one that started following with FollowDisplay
+		// either has the entry in its snapshot or is told of it - never both, never neither.
 		lock (Gate)
 		{
 			RecordedEntries.Add(entry);
+			entryAdded = EntryAdded;
 		}
 
 		// Fire-and-forget onto the background writer. TryWrite on an unbounded channel only
@@ -114,7 +136,7 @@ public static class AppLog
 
 		try
 		{
-			EntryAdded?.Invoke(null, entry);
+			entryAdded?.Invoke(null, entry);
 		}
 		catch
 		{

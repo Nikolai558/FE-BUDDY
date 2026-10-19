@@ -1,7 +1,5 @@
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels;
-
-using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;

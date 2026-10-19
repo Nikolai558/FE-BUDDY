@@ -6,8 +6,7 @@ using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
-
-using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo;
@@ -60,8 +59,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private const string NoCrcFilesMessage =
 		"CRC-ERAM defaults are set to go on specific files, but none is ticked. Tick at least one, or choose No CRC-ERAM defaults.";
 
-	private const string OverrideRoiKey = "Roi.OverrideDefaultRoi";
-
 	private const string OverrideCornersNode = "Roi.OverrideCorners";
 
 	private const string CrcDefaultsScopeKey = "CrcDefaultsScope";
@@ -84,6 +81,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private string _neLat = string.Empty;
 	private string _neLon = string.Empty;
 	private bool _isCycleReady;
+	private string? _cycleUnavailable;
 
 	/// <summary>Wires the ROI picker and follows the shared default ROI.</summary>
 	protected GeojsonSubServiceViewModel()
@@ -396,15 +394,29 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		private set => SetProperty(ref _isCycleReady, value);
 	}
 
-	/// <summary>What a list built from the cycle says until <see cref="IsCycleReady"/>, e.g. <c>Loading AIRAC 2611…</c>.</summary>
-	public string CycleWaitingText => SelectedCycle is { } cycle ? $"Loading AIRAC {cycle.AiracCycleId}…" : "Waiting for AIRAC data…";
+	/// <summary>
+	/// What a list built from the cycle says until <see cref="IsCycleReady"/>: e.g. <c>Loading AIRAC 2611…</c>,
+	/// or why the cycle won't load.
+	/// </summary>
+	public string CycleWaitingText => _cycleUnavailable
+		?? (SelectedCycle is { } cycle ? $"Loading AIRAC {cycle.AiracCycleId}…" : "Waiting for AIRAC data…");
 
 	/// <summary>
 	/// Called by the parent whenever the selected cycle's data is ready or not (see
 	/// <see cref="ISubServiceRunTarget"/>).
 	/// </summary>
 	/// <param name="ready">Whether the selected cycle's data has loaded.</param>
-	public void SetReadiness(bool ready) => IsCycleReady = ready;
+	/// <param name="unavailableReason">Why the selected cycle won't load, or <see langword="null"/> while it is loading or loaded.</param>
+	public void SetReadiness(bool ready, string? unavailableReason = null)
+	{
+		IsCycleReady = ready;
+
+		if (_cycleUnavailable != unavailableReason)
+		{
+			_cycleUnavailable = unavailableReason;
+			OnPropertyChanged(nameof(CycleWaitingText));
+		}
+	}
 
 	// ================= for the derived tab =================
 
@@ -487,7 +499,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		ArgumentNullException.ThrowIfNull(file);
 
-		return file.IsGeojson ? AiracOutputPaths.GeojsonFolder : AiracOutputPaths.AliasFolder;
+		return OutputFileNames.FolderOf(file.Key);
 	}
 
 	/// <summary>Where a CRC defaults row is saved under this tab's config node.</summary>
@@ -627,7 +639,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		if (Areas.Count > 0)
 		{
 			_area = SavedArea();
-			_overrideRoi = GetBool(OverrideRoiKey, false);
+			_overrideRoi = GetBool(UserConfigAreas.OverrideRoiKey, false);
 			_swLat = Get($"{OverrideCornersNode}.SwLat") ?? string.Empty;
 			_swLon = Get($"{OverrideCornersNode}.SwLon") ?? string.Empty;
 			_neLat = Get($"{OverrideCornersNode}.NeLat") ?? string.Empty;
@@ -676,7 +688,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		if (Areas.Count > 0)
 		{
 			Set(UserConfigAreas.AreaKey, Area.ToString());
-			Set(OverrideRoiKey, YesNo(OverrideRoi));
+			Set(UserConfigAreas.OverrideRoiKey, YesNo(OverrideRoi));
 			Set($"{OverrideCornersNode}.SwLat", SwLat);
 			Set($"{OverrideCornersNode}.SwLon", SwLon);
 			Set($"{OverrideCornersNode}.NeLat", NeLat);
@@ -941,7 +953,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	private SubServiceArea SavedArea()
 	{
-		string tab = NodePath[(NodePath.LastIndexOf('.') + 1)..];
+		string tab = AiracTabs.TabOf(NodePath) ?? string.Empty;
 
 		foreach (string? saved in new[] { Get(UserConfigAreas.AreaKey), UserConfigAreas.DefaultFor(tab, UserConfigFile.GetValue) })
 		{
@@ -989,6 +1001,16 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		OnPropertyChanged(nameof(DefaultRoiSummary));
 		OnPropertyChanged(nameof(HasDefaultRoi));
 		RaiseWhatYoullGetChanged();
+		OnRoiChanged();
+	}
+
+	/// <summary>
+	/// After the ROI in use may have changed - the tab's own, the choice between it and the default, or
+	/// the default itself, which changes without the tab being edited. For a tab that keeps something
+	/// worked out from the ROI.
+	/// </summary>
+	protected virtual void OnRoiChanged()
+	{
 	}
 
 	private void RaiseAreaChoices()

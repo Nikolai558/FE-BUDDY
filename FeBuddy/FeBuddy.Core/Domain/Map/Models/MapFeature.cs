@@ -1,7 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 
-namespace FeBuddy.Wpf.Map.Models;
+namespace FeBuddy.Core.Domain.Map.Models;
 
 /// <summary>
 /// What a Ctrl+click on the map shows about a shape (issue #327): the GeoJSON feature it came from -

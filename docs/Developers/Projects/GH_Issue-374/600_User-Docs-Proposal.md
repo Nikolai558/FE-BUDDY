@@ -57,7 +57,7 @@ The goal: user manuals so short that nobody needs to read them, with anything th
 | [D2-43](#d2-43) | Cut | First launch (Getting-Started.md:28-35) | Open |
 | [D2-44](#d2-44) | Cut | Settings - once (Getting-Started.md:37-47) | Open |
 | [D2-45](#d2-45) | Keep (shortened) | Your first run (Getting-Started.md:49-60) | Open |
-| [D2-46](#d2-46) | Move into the GUI | Every cycle after (Getting-Started.md:62-65) | Agreed, changed |
+| [D2-46](#d2-46) | Move into the GUI | Every cycle after (Getting-Started.md:62-65) | Fixed |
 | [D2-47](#d2-47) | Cut | Where next (Getting-Started.md:67-71) | Open |
 | [D2-48](#d2-48) | Cut | How often do I run FE-Buddy? (FAQ-and-Troubleshooting.md:5-8) | Open |
 | [D2-49](#d2-49) | Keep (shortened) | Where are my files? (FAQ-and-Troubleshooting.md:10-14) | Open |
@@ -241,7 +241,7 @@ its tests, README and the issue templates link to them).
 
 ### D2-46 · Every cycle after
 
-**Status:** Agreed, changed: option A, save the cycle position, before 3.0 ([Q7](010_Decisions.md#q7))
+**Status:** Fixed (not yet merged), option A ([Q7](010_Decisions.md#q7)): the General tab saves `CyclePosition` (Current or Next), not the cycle ID, so it opens on the cycle in effect. A saved Previous, or a cycle ID an older build saved, opens on Current; a saved Next the FAA hasn't published yet opens on Current with a note, keeping the saved choice. Getting-Started's step 5 and Settings-Reference.md updated. Tests: `AiracGeneralTabViewModelTests.the_cycle_is_saved_as_its_position_and_reopens_on_it`, `anything_but_a_saved_next_opens_on_current`, `a_saved_next_cycle_not_yet_published_opens_on_current`
 
 **Doc:** [`docs/Users/Getting-Started.md:62-65`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/docs/Users/Getting-Started.md?plain=1#L62-L65)
 

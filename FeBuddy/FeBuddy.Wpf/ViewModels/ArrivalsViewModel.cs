@@ -15,7 +15,7 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Crc.Models;
-using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -31,17 +31,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Arrivals";
+	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.Arrivals}";
 	private const string CrcClassName = "Arrivals";
-	private const string AmendmentDateFormat = "yyyy-MM-dd";
-	private const int MaxAmendedWithinCycles = 1000;
-	private const int MaxAmendedWithinDays = 36500;
-
-	/// <summary>How each arrival's GeoJSON files are named, before the kind of file: <c>DTW_TPGUN_STAR</c>.</summary>
-	private const string FileNamePattern = "<Airport ID>_<Arrival ID>_STAR";
-
-	/// <summary>The folder each airport's GeoJSON files go in, inside the cycle's folder.</summary>
-	private const string FolderPattern = @"Geojson\<ARTCC ID>\<Airport ID>\";
 
 	private ArrivalRoiMode _roiMode = ArrivalRoiMode.Airport;
 	private ArrivalAmendmentFilter _amendmentFilter = ArrivalAmendmentFilter.None;
@@ -131,7 +122,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	public override IEnumerable<OutputFileEntry> OutputFileEntries() =>
 		OutputFiles().Select(file => file.IsGeojson
 			? new OutputFileEntry(
-				file.Key, Path.Combine(FolderOf(file), "<ARTCC>", "<airport>"), $"<airport>_<procedure>_STAR_{file.Label}.geojson", Title, CanRename: false)
+				file.Key, Path.Combine(FolderOf(file), "<ARTCC ID>", "<Airport ID>"), $"{ArrivalOutputFiles.GeojsonFileNamePattern}_{file.Label}.geojson", Title, CanRename: false)
 			: OutputFileEntry.Renamable(file.Key, FolderOf(file), Title));
 
 	// ================= procedures =================
@@ -231,27 +222,23 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// Builds the ARTCC toggle list from the cycle's <c>STAR_BASE</c>. <c>STAR_BASE.ARTCC</c> can
-	/// list several centres space-separated (e.g. <c>"ZDC ZNY"</c>) when a STAR is shared between
-	/// them, so each value is split on whitespace before the pieces are trimmed, upper-cased,
-	/// deduplicated and sorted. A STAR shared by two ARTCCs still follows each airport's own ARTCC
-	/// when filtering - this list only decides which toggles to offer.
+	/// Builds the ARTCC toggle list from the cycle's <c>STAR_BASE</c>. An ARTCC already listed keeps
+	/// what is ticked on screen; a new one starts as saved (or as the Settings facility).
+	/// <c>STAR_BASE.ARTCC</c> can name several centres for a STAR they share; each is offered, and a
+	/// shared STAR still follows each airport's own ARTCC when filtering.
 	/// </remarks>
-	public void LoadCycleDependentLists(NasrCsvDataCollection data)
+	public void LoadCycleDependentLists(AiracCycleOptionLists lists)
 	{
-		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
+		ArgumentNullException.ThrowIfNull(lists);
 
-		string[] artccs = [.. data.RequireStar().StarBase
-			.SelectMany(s => (s.Artcc ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
-			.Select(a => a.Trim().ToUpperInvariant())
-			.Where(a => a.Length > 0)
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.OrderBy(a => a, StringComparer.OrdinalIgnoreCase)];
+		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
+		Dictionary<string, bool> shown = Artccs.ToDictionary(t => t.Artcc, t => t.IsSelected, StringComparer.OrdinalIgnoreCase);
 
 		Artccs.Clear();
-		foreach (string artcc in artccs)
+		foreach (string artcc in lists.StarArtccs)
 		{
-			Artccs.Add(new ArtccToggle(artcc, _savedArtccFilter.Contains(artcc), OnArtccToggled));
+			bool selected = shown.TryGetValue(artcc, out bool onScreen) ? onScreen : _savedArtccFilter.Contains(artcc);
+			Artccs.Add(new ArtccToggle(artcc, selected, OnArtccToggled));
 		}
 
 		// The list was empty when this tab snapshotted itself at construction; re-take the
@@ -277,7 +264,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 		if (arrivals.AliasFilePath is not null)
 		{
-			summary += $", Arrivals.txt: {arrivals.AliasCommandCount:N0} alias command(s)";
+			summary += $", {Path.GetFileName(arrivals.AliasFilePath)}: {arrivals.AliasCommandCount:N0} alias command(s)";
 		}
 
 		return new SubServiceRunResult(Title, summary, arrivals.Messages);
@@ -312,7 +299,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 				s["AmendedWithinDays"] = AmendedWithinDays.Trim();
 				break;
 			case ArrivalAmendmentFilter.Date when AmendedOnOrAfter is { } onOrAfter:
-				s["AmendedOnOrAfter"] = onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture);
+				s["AmendedOnOrAfter"] = onOrAfter.ToString(ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture);
 				break;
 		}
 
@@ -342,17 +329,17 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		{
 			if (EmitLines)
 			{
-				files.Add(new($"{FileNamePattern}_Lines.geojson", "Each arrival's routes, drawn as lines."));
+				files.Add(new($"{ArrivalOutputFiles.GeojsonFileNamePattern}_Lines.geojson", "Each arrival's routes, drawn as lines."));
 			}
 
 			if (EmitSymbols)
 			{
-				files.Add(new($"{FileNamePattern}_Symbols.geojson", "Each arrival's waypoint symbols."));
+				files.Add(new($"{ArrivalOutputFiles.GeojsonFileNamePattern}_Symbols.geojson", "Each arrival's waypoint symbols."));
 			}
 
 			if (EmitText)
 			{
-				files.Add(new($"{FileNamePattern}_Text.geojson", "Each arrival's waypoint IDs."));
+				files.Add(new($"{ArrivalOutputFiles.GeojsonFileNamePattern}_Text.geojson", "Each arrival's waypoint IDs."));
 			}
 		}
 
@@ -374,7 +361,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			.ToList())
 		{
 			Files = files,
-			Notes = !noArtccs && GenerateGeojson ? [$"Each airport's GeoJSON files go in `{FolderPattern}`."] : [],
+			Notes = !noArtccs && GenerateGeojson ? [$"Each airport's GeoJSON files go in `{ArrivalOutputFiles.GeojsonFolderPattern}\\`."] : [],
 		};
 	}
 
@@ -421,7 +408,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		_amendedWithinCycles = Get("Amendment.WithinCycles") ?? "1";
 		_amendedWithinDays = Get("Amendment.WithinDays") ?? "30";
 		_amendedOnOrAfter = DateTime.TryParseExact(
-			Get("Amendment.OnOrAfter")?.Trim(), AmendmentDateFormat, CultureInfo.InvariantCulture,
+			Get("Amendment.OnOrAfter")?.Trim(), ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture,
 			DateTimeStyles.None, out DateTime onOrAfter)
 			? onOrAfter
 			: null;
@@ -438,7 +425,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		Set("Amendment.Filter", _amendmentFilter.ToString());
 		Set("Amendment.WithinCycles", AmendedWithinCycles);
 		Set("Amendment.WithinDays", AmendedWithinDays);
-		Set("Amendment.OnOrAfter", AmendedOnOrAfter?.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture) ?? string.Empty);
+		Set("Amendment.OnOrAfter", AmendedOnOrAfter?.ToString(ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture) ?? string.Empty);
 		SaveSharedSettings();
 	}
 
@@ -466,19 +453,19 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		switch (_amendmentFilter)
 		{
 			case ArrivalAmendmentFilter.Cycles:
-				if (!TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out _))
+				if (!TryParseWholeNumber(AmendedWithinCycles, 1, ProcedureAmendmentFilter.MaxWithinCycles, out _))
 				{
 					validation.AddField(nameof(AmendedWithinCycles),
-						$"Enter a whole number of cycles from 1 to {MaxAmendedWithinCycles}.");
+						$"Enter a whole number of cycles from 1 to {ProcedureAmendmentFilter.MaxWithinCycles}.");
 				}
 
 				break;
 
 			case ArrivalAmendmentFilter.Days:
-				if (!TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out _))
+				if (!TryParseWholeNumber(AmendedWithinDays, 1, ProcedureAmendmentFilter.MaxWithinDays, out _))
 				{
 					validation.AddField(nameof(AmendedWithinDays),
-						$"Enter a whole number of days from 1 to {MaxAmendedWithinDays}.");
+						$"Enter a whole number of days from 1 to {ProcedureAmendmentFilter.MaxWithinDays}.");
 				}
 
 				break;
@@ -506,11 +493,11 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		return _amendmentFilter switch
 		{
 			ArrivalAmendmentFilter.Cycles => DescribeCyclesFilter(),
-			ArrivalAmendmentFilter.Days => TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out int days) && days == 1
+			ArrivalAmendmentFilter.Days => TryParseWholeNumber(AmendedWithinDays, 1, ProcedureAmendmentFilter.MaxWithinDays, out int days) && days == 1
 								? "those amended in the last day, counting back from today"
 								: $"those amended in the last {AmendedWithinDays.Trim()} days, counting back from today",
 			ArrivalAmendmentFilter.Date => AmendedOnOrAfter is { } onOrAfter
-								? $"those amended on or after {onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture)}"
+								? $"those amended on or after {onOrAfter.ToString(ProcedureAmendmentFilter.DateFormat, CultureInfo.InvariantCulture)}"
 								: "those amended on or after a date not yet picked",
 			_ => null,
 		};
@@ -523,7 +510,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	/// <returns>e.g. <c>those amended in cycle 2610</c> or <c>those amended in the last 3 cycles (since cycle 2608)</c>.</returns>
 	private string DescribeCyclesFilter()
 	{
-		if (!TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out int cycles))
+		if (!TryParseWholeNumber(AmendedWithinCycles, 1, ProcedureAmendmentFilter.MaxWithinCycles, out int cycles))
 		{
 			return $"those amended in the last {AmendedWithinCycles.Trim()} cycles";
 		}

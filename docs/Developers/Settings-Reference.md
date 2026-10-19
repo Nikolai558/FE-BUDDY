@@ -100,6 +100,18 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `Wel
 | `WelcomeShown` | `Y` once the first-launch welcome to FE-Buddy 3 has been shown (`WelcomeNotice`) | none |
 | `RememberWindowPlacement` | `Y` / `N` - the main window reopens where it was closed. Saved at once by Settings ▸ Main Window; `N` also removes `MainWindowPlacement` | `Y` |
 | `MainWindowPlacement` | `left,top,width,height,dpi,state` in physical screen pixels, e.g. `2120,140,1800,1170,144,Maximized` (`SavedWindowPlacement`). Checked against the screens connected at each launch (`WindowPlacementRules`); anything unreadable means the default | none: 1200 x 780, centered on the main screen |
+| `Facility` | the Settings ▸ Facility ARTCC, e.g. `ZOB` (`UserConfigKeys.Facility`). The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedure Charts' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedure Charts until each is first saved | none |
+| `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
+| `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
+| `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
+
+The default ROI is saved by `DefaultRoiStore`, under its own `General.DefaultRoi` node: by the Map as
+soon as it is set or cleared, by Settings when **Save** is pressed. Clearing it only sets `FilterByRoi`
+to `N`; the corners stay in the file but aren't read until a new ROI replaces them.
+
+Before 3.0, the Facility, the coordinate precision and the default ROI were kept under
+`Services.AiracService` (`UserArtccId`, `CoordinatePrecision`, `DefaultRoi.*`). They moved here with no
+settings-layout step: a file from then opens Settings with no facility, 6 decimal places and no default ROI.
 
 ### Services.AiracService.General
 
@@ -108,22 +120,9 @@ The AIRAC Service's General tab. Its node sits beside the other tabs' nodes, so 
 
 | Key | Values | Default |
 |---|---|---|
-| `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
+| `CyclePosition` | `Current` or `Next`: the cycle last saved, so the tab reopens on the same kind of cycle. Anything else (`Previous` too) opens on Current, and so does a saved `Next` the FAA hasn't published yet | `Current` |
 | `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
-
-### Services.AiracService
-
-| Key | Values | Default |
-|---|---|---|
-| `UserArtccId` | the Settings ▸ Facility ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedure Charts' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedure Charts until each is first saved | none |
-| `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
-| `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
-| `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
-
-The default ROI is saved by `DefaultRoiStore`: by the Map as soon as it is set or cleared, by
-Settings when **Save** is pressed. Clearing it only sets `FilterByRoi` to `N`; the corners stay in
-the file but aren't read until a new ROI replaces them.
 
 ### Services.AiracService.DuplicateAliases
 
@@ -196,7 +195,7 @@ accept and ignore them.
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
 | `OutputDirectory` | not saved | the folder the run writes into (below) | **required** |
-| `CoordinatePrecision` | `Services.AiracService.CoordinatePrecision` | `1`-`15`, or `0` not to round (`GeojsonFileWriter.NoRounding`) | `6` |
+| `CoordinatePrecision` | `General.CoordinatePrecision` | `1`-`15`, or `0` not to round (`GeojsonFileWriter.NoRounding`) | `6` |
 | `IncludeFebCustomProperties` | | `Y` / `N` | `N` |
 | `FebProperties` | | list of the sub-service's `feb.*` names; **required** when the above is `Y` | none |
 | `CrcDefaultsFor` | `CrcDefaultsScope` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `CrcDefaultsFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
@@ -447,12 +446,12 @@ facilities), `Roi` (every airport inside it), `Everything` (every airport in the
 | `HelpCommandName` | | the help command's name, letters and numbers only; a dot in front is dropped. Sent only while `IncludeHelpCommand` and `RenameHelpCommand` are `Y` | `helpCHARTRECALL` |
 | - | `RenameHelpCommand` | `Y` / `N` - use `HelpCommandName` rather than the default name; saved, not sent | `N` |
 | `Facilities` | | list of ARTCC IDs whose airports are included; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
-| `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
+| `PrimaryFacility` | not saved (`General.Facility`) | the ARTCC whose section leads both documents | none |
 | `Airports` | | list of FAA or ICAO IDs (saved as the FAA ID) | none |
 | `Procedures` | | list of departure and arrival root names, included wherever charted, e.g. `BRWNZ` | none |
 | `AirportProcedures` | | list of `<airport>\|<departure or arrival root name>`, e.g. `PIT\|GRUUB` | none |
 | `IncludeProceduresWithFixInFacility` | | `Y` / `N` - also include, at any airport, the departures and arrivals whose route has a fix in `PrimaryFacility`. The tab sends `N` while no facility is set | `Y` |
-| `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH` | `IAP,STR,DP,ODP,DAU,APD` |
+| `ChartTypes` | | d-TPP chart codes a whole airport contributes: `IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH`; blank for none | `IAP,STR,DP,ODP,DAU,APD` |
 | `JsonFields` | | optional `Procedures.json` fields (`ProcedureJsonField`); blank for none of them, so only the fields always written | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
 
 - The three `Generate…` keys can't all be `N`.

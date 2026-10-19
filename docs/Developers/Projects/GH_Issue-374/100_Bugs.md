@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2), and N1-5 onward, found in the review of the S2 to S5 code, are [S14](020_Work-Plan.md#s14). Each fix should come with a regression test.
 
-**71 findings** (2 High, 16 Med, 53 Low), 57 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**71 findings** (2 High, 16 Med, 53 Low), 62 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -25,8 +25,8 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
 | [N1-5](#n1-5) | Bug | Med | Going back to an already-loaded cycle leaves Procedure Charts with no chart data | Fixed | S14 |
 | [N1-6](#n1-6) | Bug | Med | Add Custom Aliases keeps a "no alias commands" error after the file is fixed | Fixed | S14 |
-| [N1-7](#n1-7) | Bug | Med | A save, map change or import made during a profile switch or import can land in the wrong profile | Open | S14 |
-| [N1-8](#n1-8) | Bug | Med | A settings write cut short can lose a whole profile | Open | S14 |
+| [N1-7](#n1-7) | Bug | Med | A save, map change or import made during a profile switch or import can land in the wrong profile | Fixed | S14 |
+| [N1-8](#n1-8) | Bug | Med | A settings write cut short can lose a whole profile | Fixed | S14 |
 | [N1-9](#n1-9) | Bug | Med | The restart is offered while the update is still installing; a rolled-back update blocks runs | Open | S14 |
 | [C3-17](#c3-17) | Bug | Low | A custom alias file's address with a secret is echoed when it isn't http(s) | Deferred | After 3.0 |
 | [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Fixed | S2 |
@@ -67,9 +67,9 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [N1-12](#n1-12) | Bug | Low | An overtaken cycle load clears the newer load's "loading" mark | Fixed | S14 |
 | [N1-13](#n1-13) | Bug | Low | "Pick it again to try again" can't work: clicking the selected cycle does nothing | Fixed | S14 |
 | [N1-14](#n1-14) | Bug | Low | Background reads on File Conversions, Wx Stations and Telephony fail silently; an older read can win | Fixed | S14 |
-| [N1-15](#n1-15) | Bug | Low | A map change whose save failed is lost unless the same setting is changed again | Open | S14 |
-| [N1-16](#n1-16) | Bug | Low | An unexpected failure during a profile change or an import is never reported | Open | S14 |
-| [N1-17](#n1-17) | Bug | Low | "Home view saved" is shown even when nothing was saved | Open | S14 |
+| [N1-15](#n1-15) | Bug | Low | A map change whose save failed is lost unless the same setting is changed again | Fixed | S14 |
+| [N1-16](#n1-16) | Bug | Low | An unexpected failure during a profile change or an import is never reported | Fixed | S14 |
+| [N1-17](#n1-17) | Bug | Low | "Home view saved" is shown even when nothing was saved | Fixed | S14 |
 | [N1-18](#n1-18) | Bug | Low | An undo file locked at its first read turns Undo off until the next save | Fixed | S14 |
 | [N1-19](#n1-19) | Bug | Low | The cached undo snapshot can disagree with the file; Undo stays on and does nothing | Fixed | S14 |
 | [N1-20](#n1-20) | Bug | Low | Marking the News read saves the whole General node | Fixed | S14 |
@@ -276,7 +276,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-7 · Bug · Med · A page save, a map change or an import made during a profile switch or import can land in the wrong profile
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). One shared flag, `SettingsBusy`, is set while a profile change or an import runs: the profile list, Import, New, Rename and Delete are off, and `SettingsWrites` refuses a page's save with a message to wait. `DeferredSave` saves into the profile a change was made in, a profile change or an import saves the map's waiting changes first, and the comment on `Run` says so; `ReplaceAll` takes no profile argument (optional). Tests: `DeferredSaveTests.a_change_made_before_a_switch_is_not_saved_into_the_new_profile`, `SettingsProfilesViewModelTests.the_list_and_import_are_off_while_a_profile_change_or_an_import_runs` and `SettingsWritesTests.a_save_while_a_profile_change_runs_is_refused` (each fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/SettingsView.xaml:86-88`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Views/SettingsView.xaml#L86-L88) (the profile list has no `IsEnabled`), 42 (Import); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:161-167`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L161-L167), [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:359-399`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L359-L399) (`_busy` only gates the profile card); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:829-848`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L829-L848), [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:871`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L871), 893, 898-908 (`_importing` only gates Import); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs:304-305`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs#L304-L305), 430-440, 451-459; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:397-437`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L397-L437) (`ReplaceAll`); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:146-162`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L146-L162) (`SwitchProfile`); [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:57-62`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L57-L62), [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:82`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L82); [`FeBuddy/FeBuddy.Wpf/Shell/SettingsWrites.cs:25-40`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/SettingsWrites.cs#L25-L40)
 
@@ -290,7 +290,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-8 · Bug · Med · A settings write cut short (closing FE-Buddy mid-switch, a crash, power loss) can lose a whole profile
 
-**Status:** Open; half fixed (not yet merged) in S14 part 3: every settings write (a profile, `Shared.json`, the undo snapshot, a new profile) goes beside the file first, flushed to disk, then moves over it, and a profile that can't be read as settings is kept as `UserConfig-damaged.<Profile>.json` (a `damaged` backup kind, in Settings-Reference) before a save writes over it. Tests: `UserConfigFileTests.a_damaged_profile_is_kept` and `a_write_that_stops_part_way_leaves_the_file_as_it_was` (both fail on the old code). Left for part 4: the wait at close · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). Part 3: every settings write (a profile, `Shared.json`, the undo snapshot, a new profile) goes beside the file first, flushed to disk, then moves over it, and a profile that can't be read as settings is kept as `UserConfig-damaged.<Profile>.json` (a `damaged` backup kind, in Settings-Reference); tests `UserConfigFileTests.a_damaged_profile_is_kept` and `a_write_that_stops_part_way_leaves_the_file_as_it_was` (both fail on the old code). Part 4: closing waits up to 5 seconds for a profile change or an import still writing its files (`App.OnExit`); test `SettingsBusyTests.closing_waits_for_the_file_work_running`, of the new wait · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:1107-1111`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L1107-L1111) (`WriteObject`, a plain `File.WriteAllText`, used for the profile at 588, 701 and 1220, `Shared.json` at 990, the undo snapshot at 572 and 705, and `CreateProfile`, [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:131`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L131)); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:260-267`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L260-L267) and 1071-1088 (an unreadable file); [`FeBuddy/FeBuddy.Wpf/App.xaml.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs) and [`FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml.cs:80-89`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml.cs#L80-L89) (nothing waits at close). Already safe: `ReplaceAll` ([`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:405-418`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L405-L418), a temp file and `File.Replace`)
 
@@ -800,7 +800,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-15 · Bug · Low · A map change whose save failed is lost unless the same setting is changed again
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). A failed save's values are kept, under a lock, and saved with the next save - after any change, or as FE-Buddy closes - unless the same setting changed since; `Forget` drops them, and the timer isn't restarted for them. The remark says so. Test: `DeferredSaveTests.a_failed_save_is_tried_again_with_the_next_change` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:21-22`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L21-L22) (the remark), [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:89-99`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L89-L99) (`TakeChanges` empties the queue), [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:101-116`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L101-L116), 118-128; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:537-552`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L537-L552) (`SaveValues` rolls memory back)
 
@@ -812,7 +812,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-16 · Bug · Low · An unexpected failure during a profile change or an import is never reported
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `Run`'s continuation reads `work.Exception` rather than `work.Result` and catches a failure as the pages follow; `ImportAsync` has a last `catch (Exception)`. Both log an error and show it. Test: `SettingsProfilesViewModelTests.a_failure_after_the_switch_is_reported` (fails on the old code); the import's catch has no test, as the import opens file dialogs · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:380-394`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L380-L394) (`work.Result` rethrows a step's exception; `then` runs `_reload`, [`FeBuddy/FeBuddy.Wpf/Shell/ConfigPages.cs:72-75`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/ConfigPages.cs#L72-L75), outside any try); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:137`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L137) (`_ = ImportAsync()`), [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:850-934`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L850-L934) (only `UserConfigTransferException` is caught; e.g. `UserConfigTransfer.cs:153` can throw `FileNotFoundException`); [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:164-166`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L164-L166)
 
@@ -826,7 +826,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-17 · Bug · Low · "Home view saved" is shown even when nothing was saved
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `DeferredSave.Save` returns what `SaveValues` returns, so `SaveNowAsync` is `false` once another profile is in use and "Home view saved" doesn't show. Test: `DeferredSaveTests.a_change_made_before_a_switch_is_not_saved_into_the_new_profile` checks the `false` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:452-459`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L452-L459); [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:77-80`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L77-L80), [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:106-107`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L106-L107)
 

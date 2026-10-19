@@ -1,3 +1,5 @@
+using System.Collections.Specialized;
+
 using FeBuddy.Wpf.ViewModels;
 
 using FeBuddy.Core.Application.Launch;
@@ -77,6 +79,34 @@ public sealed class DashboardViewModelTests : IDisposable
 		Assert.Equal(0, dashboard.AllCount);
 		Assert.Equal(0, dashboard.WarningCount);
 		Assert.Equal(0, dashboard.InfoCount);
+	}
+
+	/// <summary>
+	/// A burst of entries - a run's - reaches the log as one change, not one per entry and one per entry
+	/// dropped, each of which the filtered view would handle in turn on the UI thread.
+	/// </summary>
+	[Fact]
+	public void a_burst_is_shown_in_one_change()
+	{
+		DashboardViewModel dashboard = new();
+		AppLog.Info("Test", "before the burst");
+		dashboard.ShowIncoming();
+		int changes = 0;
+		((INotifyCollectionChanged)dashboard.LogView).CollectionChanged += (_, _) => changes++;
+
+		for (int i = 0; i < DashboardViewModel.MaxShownEntries + 500; i++)
+		{
+			AppLog.Info("Test", $"info {i}");
+		}
+
+		dashboard.ShowIncoming();
+
+		Assert.True(changes <= 2, $"{changes} changes.");
+		LogEntry[] shown = [.. dashboard.LogView.Cast<LogEntry>()];
+		Assert.Equal(DashboardViewModel.MaxShownEntries, shown.Length);
+		Assert.Equal($"info {DashboardViewModel.MaxShownEntries + 499}", shown[0].Message);
+		Assert.Equal("info 500", shown[^1].Message);
+		Assert.Equal(DashboardViewModel.MaxShownEntries, dashboard.InfoCount);
 	}
 
 	/// <summary>An environment change that leaves the News as it was leaves the posts on screen as they are.</summary>

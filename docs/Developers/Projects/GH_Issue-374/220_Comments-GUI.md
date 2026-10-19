@@ -107,7 +107,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 | [W5-21](#w5-21) | Stale doc | Low | FebPropertiesCard's usage example binds IsEnabled, which no view does | Open | S8 |
 | [W5-35](#w5-35) | Minor | Low | SourceFilesCard uses a literal ✕ glyph instead of the icon token | Open | S8 |
 | [W5-30](#w5-30) | Wrong doc | Low | SummaryCard header says "every AIRAC sub-service tab" | Open | S8 |
-| [N1-37](#n1-37) | Wrong doc | Low | ReportReset's summary sits on ShowSplash | Open | S14 |
+| [N1-37](#n1-37) | Wrong doc | Low | ReportReset's summary sits on ShowSplash | Fixed | S14 |
 
 ## FeBuddy.Wpf
 
@@ -157,7 +157,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 
 ### N1-37 · Wrong doc · Low · `ReportReset`'s summary sits on `ShowSplash`
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The summary is moved onto `ReportReset` · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:113-117`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L113-L117), 132
 

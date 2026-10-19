@@ -110,7 +110,21 @@ public partial class App : Application
 		}
 	}
 
-	/// <summary>Says the reset is done, and what it could not delete, if anything.</summary>
+	/// <inheritdoc />
+	/// <remarks>
+	/// Waits up to five seconds for a settings profile change or import still writing its files, so FE-Buddy
+	/// doesn't close half way through writing a profile.
+	/// </remarks>
+	protected override void OnExit(ExitEventArgs e)
+	{
+		if (!SettingsBusy.WaitForFileWork(TimeSpan.FromSeconds(5)))
+		{
+			AppLog.Warning("App", "FE-Buddy closed while a settings profile change or import was still writing its files.");
+		}
+
+		base.OnExit(e);
+	}
+
 	/// <summary>
 	/// FE-Buddy's mark on screen while a reset runs: WPF's own splash, drawn without the dispatcher, so it
 	/// shows before any window can. <see langword="null"/> when it can't be shown; the reset goes ahead.
@@ -129,6 +143,7 @@ public partial class App : Application
 		}
 	}
 
+	/// <summary>Says the reset is done, and what it could not delete, if anything.</summary>
 	private static void ReportReset(AppDataResetResult reset)
 	{
 		string settings = reset.SettingsKept ? "Your settings were kept." : "FE-Buddy is back to its default settings.";

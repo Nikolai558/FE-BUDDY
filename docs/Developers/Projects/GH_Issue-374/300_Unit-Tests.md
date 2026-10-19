@@ -114,7 +114,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 | [N1-38](#n1-38) | History wording | Low | Tests and comments added since the review cite finding IDs and narrate history | Open | S14 |
 | [N1-39](#n1-39) | Wrong doc | Low | AiracGeneralTabViewModelTests: the "older build" case uses a key no release saved | Fixed | S14 |
 | [N1-40](#n1-40) | Minor | Low | New tests: misplaced summaries, wall-clock limits, an untested Telephony guard | Fixed | S14 |
-| [N1-41](#n1-41) | Minor | Low | DeferredSave's timer, close and retry untested; a save-failure test fails only at its first write | Open | S14 |
+| [N1-41](#n1-41) | Minor | Low | DeferredSave's timer, close and retry untested; a save-failure test fails only at its first write | Fixed | S14 |
 | [N1-42](#n1-42) | Minor | Low | New tests that can't catch what they guard (update watcher, FieldState, Telephony name) | Open | S14 |
 
 ## FeBuddy.UnitTests
@@ -1359,7 +1359,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 
 ### N1-41 · Minor · Low · DeferredSave's timer, close and retry have no test; a save-failure test fails only at its first write
 
-**Status:** Open; half fixed (not yet merged) in S14 part 3: UserConfigFileTests has the read-only profile case, `a_profile_that_cannot_be_written_rolls_memory_back_and_offers_no_undo` (memory rolled back, `CanUndo` stays false; fails on the old code, which kept the failed save's snapshot). Left for part 4: the DeferredSave tests (timer, close, retry) · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). Part 3 added the read-only profile case to UserConfigFileTests, `a_profile_that_cannot_be_written_rolls_memory_back_and_offers_no_undo` (fails on the old code). Part 4 adds to DeferredSaveTests `a_change_is_saved_once_the_changes_stop` and `a_change_waiting_is_saved_as_fe_buddy_closes` (both pass on the old code, which did this untested) and the retry test, `a_failed_save_is_tried_again_with_the_next_change` · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Wpf/Shell/DeferredSaveTests.cs:45-92`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/Shell/DeferredSaveTests.cs#L45-L92); [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigFileTests.cs:328-344`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigFileTests.cs#L328-L344)
 

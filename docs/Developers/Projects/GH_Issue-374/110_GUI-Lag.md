@@ -41,8 +41,8 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 | [U1-15](#u1-15) | GUI lag | Low | Switching AIRAC Service tabs rebuilds the whole tab view | Fixed | S3 |
 | [N1-29](#n1-29) | GUI lag | Low | The d-TPP metafile is parsed again on every refresh; the index cache never hits | Fixed | S14 |
 | [N1-30](#n1-30) | GUI lag | Low | The UI thread waits on the settings lock while a background save holds it | Fixed | S14 |
-| [N1-31](#n1-31) | GUI lag | Low | FolderProbe blocks a pool thread per check of an offline network folder | Open | S14 |
-| [N1-32](#n1-32) | GUI lag | Low | A burst of log entries updates the Dashboard one entry at a time | Open | S14 |
+| [N1-31](#n1-31) | GUI lag | Low | FolderProbe blocks a pool thread per check of an offline network folder | Fixed | S14 |
+| [N1-32](#n1-32) | GUI lag | Low | A burst of log entries updates the Dashboard one entry at a time | Fixed | S14 |
 
 ## High
 
@@ -454,7 +454,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### N1-31 · GUI lag · Low · FolderProbe leaves a thread-pool thread blocked for each check of an offline network folder
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `FolderProbe` keeps each question still running by folder, under a lock, and a call for the same folder waits for the same answer; each runs `LongRunning`, on a thread of its own. Test: `FolderProbeTests.a_folder_still_being_asked_is_not_asked_again` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/FolderProbe.cs:20-30`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/FileSystem/FolderProbe.cs#L20-L30); [`FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs:41-44`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/OutputPreferences.cs#L41-L44) (5 pickers)
 
@@ -466,7 +466,7 @@ Work the GUI does on the UI thread. Timings are estimates: nothing could be prof
 
 ### N1-32 · GUI lag · Low · A burst of log entries updates the Dashboard one entry at a time
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). A batch of over 50 entries is swapped in as one change (`BulkObservableCollection.ReplaceAll`), then counted again; smaller ones go in one at a time as before, and the counts still cover only the entries shown. Test: `DashboardViewModelTests.a_burst_is_shown_in_one_change` (fails on the old code, with 3,001 changes) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:231-254`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L231-L254), 41, 201-214
 

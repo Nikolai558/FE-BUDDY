@@ -92,7 +92,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	private ReleaseChannel _channel;
 	private ReleaseChannel _savedChannel;
 	private string? _selectedFacility;
-	private bool _importing;
 	private string _outputDir = string.Empty;
 	private bool _addFeBuddyFolder = true;
 	private int _coordinatePrecision = GeojsonFileWriter.DefaultPrecision;
@@ -134,7 +133,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		EditRoiCommand = new RelayCommand(EditRoi);
 		ClearRoiCommand = new RelayCommand(ClearRoi, () => DefaultRoi is not null);
 		ExportCommand = new RelayCommand(Export);
-		ImportCommand = new RelayCommand(() => _ = ImportAsync(), () => !_importing);
+		ImportCommand = new RelayCommand(() => _ = ImportAsync(), () => !SettingsBusy.IsBusy);
 		NewGitHubTokenCommand = new RelayCommand(NewGitHubToken);
 		ResetCommand = new RelayCommand(Reset);
 		UninstallCommand = new RelayCommand(Uninstall, () => CanUninstall);
@@ -824,26 +823,31 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>
 	/// Imports a settings file the user picks. The file is read, planned and applied off the UI thread - it
 	/// can be 2 MB, and the plan looks for every folder it names, which on a disconnected drive takes
-	/// seconds; the windows and the pages reading the import stay on it.
+	/// seconds; the windows and the pages reading the import stay on it. Meanwhile
+	/// <see cref="SettingsBusy"/> keeps the profile card and Import off, and refuses the pages' saves.
 	/// </summary>
 	private async Task ImportAsync()
 	{
-		if (_importing)
+		if (SettingsBusy.IsBusy)
 		{
 			return;
 		}
 
-		_importing = true;
-		CommandManager.InvalidateRequerySuggested();
+		SettingsBusy.Start();
 
 		try
 		{
 			await ImportPickedAsync();
 		}
+		catch (Exception ex)
+		{
+			// Nothing waits for this task: a failure nothing below expects is reported here, not lost.
+			AppLog.Error("Settings", $"The settings import failed: {ex.Message}");
+			Toast.Error("Import failed", ex.Message);
+		}
 		finally
 		{
-			_importing = false;
-			CommandManager.InvalidateRequerySuggested();
+			SettingsBusy.Finish();
 		}
 	}
 
@@ -895,7 +899,10 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		{
 			string newProfile = choice.IsNewProfile ? choice.NewProfileName.Trim() : string.Empty;
 
-			await Task.Run(() =>
+			// The map's changes still waiting are saved first, into the profile they were made in.
+			await MapLayersState.SaveWaitingChangesIfCreated();
+
+			Task apply = Task.Run(() =>
 			{
 				if (newProfile.Length > 0)
 				{
@@ -906,6 +913,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 					UserConfigTransfer.Apply(plan);
 				}
 			});
+
+			SettingsBusy.Track(apply);
+			await apply;
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
 		{

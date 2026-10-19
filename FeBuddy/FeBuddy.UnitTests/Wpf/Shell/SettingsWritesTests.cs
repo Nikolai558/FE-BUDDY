@@ -115,4 +115,24 @@ public sealed class SettingsWritesTests : IDisposable
 		Assert.Equal("2026-10-19.2", JsonNode.Parse(File.ReadAllText(UserConfigFile.SharedFilePath))!["General"]!["NewsLastOpen"]!.GetValue<string>());
 		Assert.True(UserConfigFile.CanUndo(DefaultRoiStore.Node));
 	}
+
+	/// <summary>While a profile change or an import runs, a page's save is refused, saying to wait for it, and nothing is written.</summary>
+	[Fact]
+	public void a_save_while_a_profile_change_runs_is_refused()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Airways.OutputBy", "HighLow");
+		SettingsBusy.Start();
+
+		try
+		{
+			Assert.False(SettingsWrites.TrySave("Services.AiracService.Airways", "Airways settings"));
+		}
+		finally
+		{
+			SettingsBusy.Finish();
+		}
+
+		Assert.Contains(Toast.Items, t => t.Title == "Could not save the Airways settings" && t.Message!.StartsWith("A settings profile change or import is running.", StringComparison.Ordinal));
+		Assert.DoesNotContain("HighLow", File.ReadAllText(UserConfigFile.ConfigFilePath), StringComparison.Ordinal);
+	}
 }

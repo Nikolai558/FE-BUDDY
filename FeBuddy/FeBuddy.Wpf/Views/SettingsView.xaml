@@ -84,7 +84,7 @@
                                         Command="{Binding DeleteCommand}" />
                             </StackPanel>
                             <ComboBox Style="{StaticResource Themed.ComboBox}" Width="300" HorizontalAlignment="Left"
-                                      ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}"
+                                      ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" IsEnabled="{Binding CanChooseProfile}"
                                       ToolTip="The profile in use. Choose another to switch to it." />
                         </DockPanel>
                         <TextBlock bhv:InlineCode.Text="{Binding FileNote}" Style="{StaticResource Text.Caption}"

@@ -40,8 +40,14 @@ public sealed class DashboardViewModel : ObservableObject
 	/// </summary>
 	internal const int MaxShownEntries = 2000;
 
+	/// <summary>
+	/// A batch bigger than this is shown with one change to the list rather than one per entry: the filtered
+	/// view handles each change on its own, so a run's burst of hundreds would stall the UI thread.
+	/// </summary>
+	private const int BurstSize = 50;
+
 	private readonly Dispatcher _dispatcher;
-	private readonly ObservableCollection<LogEntry> _allLog = [];
+	private readonly BulkObservableCollection<LogEntry> _allLog = [];
 
 	// Entries logged since the last batch was shown; any thread adds, the UI thread takes them.
 	private readonly ConcurrentQueue<LogEntry> _incoming = new();
@@ -232,22 +238,41 @@ public sealed class DashboardViewModel : ObservableObject
 	{
 		Interlocked.Exchange(ref _batchQueued, 0);
 
-		bool changed = false;
+		List<LogEntry> batch = [];
 
 		while (_incoming.TryDequeue(out LogEntry? entry))
 		{
-			_allLog.Insert(0, entry);
-			Count(entry, 1);
-			changed = true;
+			batch.Add(entry);
 		}
 
-		while (_allLog.Count > MaxShownEntries)
+		if (batch.Count > BurstSize)
 		{
-			Count(_allLog[^1], -1);
-			_allLog.RemoveAt(_allLog.Count - 1);
+			// The whole list, newest first and capped, swapped in as one change; then counted again.
+			batch.Reverse();
+			_allLog.ReplaceAll(batch.Concat(_allLog).Take(MaxShownEntries));
+			_counts.Clear();
+
+			foreach (LogEntry entry in _allLog)
+			{
+				Count(entry, 1);
+			}
+		}
+		else
+		{
+			foreach (LogEntry entry in batch)
+			{
+				_allLog.Insert(0, entry);
+				Count(entry, 1);
+			}
+
+			while (_allLog.Count > MaxShownEntries)
+			{
+				Count(_allLog[^1], -1);
+				_allLog.RemoveAt(_allLog.Count - 1);
+			}
 		}
 
-		if (changed)
+		if (batch.Count > 0)
 		{
 			RaiseLogCounts();
 		}

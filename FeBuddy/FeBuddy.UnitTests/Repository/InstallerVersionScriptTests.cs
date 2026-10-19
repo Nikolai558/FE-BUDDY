@@ -3,9 +3,9 @@ using System.Diagnostics;
 namespace FeBuddy.UnitTests.Repository;
 
 /// <summary>
-/// Runs <c>FeBuddy.Installer\Get-InstallerVersion.ps1</c> under Windows PowerShell 5.1, as <c>build.cmd</c> does
-/// (O1-23): the counter it advances is written as UTF-8 without a byte-order mark, laid out exactly as the tracked
-/// file is, so a build changes one number and <see cref="FileEncodingTests"/> still passes.
+/// Runs <c>FeBuddy.Installer\Get-InstallerVersion.ps1</c> under Windows PowerShell 5.1, as <c>build.cmd</c> does:
+/// the counter it advances is written as UTF-8 without a byte-order mark, with the line ending the file already
+/// has (LF for a new one), so a build changes one number and <see cref="FileEncodingTests"/> still passes.
 /// </summary>
 public sealed class InstallerVersionScriptTests : IDisposable
 {
@@ -24,8 +24,8 @@ public sealed class InstallerVersionScriptTests : IDisposable
 		}
 	}
 
-	private static string Counter(int major, int minor, int build) =>
-		$"{{\r\n  \"major\": {major},\r\n  \"counterMinor\": {minor},\r\n  \"counterBuild\": {build}\r\n}}\r\n";
+	private static string Counter(int major, int minor, int build, string newline = "\n") =>
+		$"{{{newline}  \"major\": {major},{newline}  \"counterMinor\": {minor},{newline}  \"counterBuild\": {build}{newline}}}{newline}";
 
 	/// <summary>Runs the script with Windows PowerShell on a copy of the counter, returning what it prints.</summary>
 	private string Run(string realVersion, string counterPath)
@@ -55,19 +55,24 @@ public sealed class InstallerVersionScriptTests : IDisposable
 		return output.Trim();
 	}
 
-	/// <summary>A release advances the build number, and the file is the tracked layout with no byte-order mark.</summary>
-	[Fact]
-	public void the_counter_is_advanced_and_written_without_a_byte_order_mark()
+	/// <summary>
+	/// A release advances the build number, and the file keeps its layout and its line ending - LF as the repository
+	/// stores it, or CRLF as a checkout may give it - with no byte-order mark.
+	/// </summary>
+	[Theory]
+	[InlineData("\n")]
+	[InlineData("\r\n")]
+	public void the_counter_is_advanced_and_written_as_it_was(string newline)
 	{
 		Directory.CreateDirectory(_root);
 		string counter = Path.Combine(_root, "installer-version-counter.json");
-		File.WriteAllText(counter, Counter(3, 0, 17));
+		File.WriteAllText(counter, Counter(3, 0, 17, newline));
 
 		Assert.Equal("3.0.18", Run("3.0.0-beta.13", counter));
-		Assert.Equal(System.Text.Encoding.UTF8.GetBytes(Counter(3, 0, 18)), File.ReadAllBytes(counter));
+		Assert.Equal(System.Text.Encoding.UTF8.GetBytes(Counter(3, 0, 18, newline)), File.ReadAllBytes(counter));
 	}
 
-	/// <summary>A new major version starts its counter over; a counter that isn't there yet starts at 0.0.</summary>
+	/// <summary>A new major version starts its counter over; a counter that isn't there yet starts at 0.0, with LF.</summary>
 	[Fact]
 	public void a_new_major_or_a_missing_counter_starts_over()
 	{

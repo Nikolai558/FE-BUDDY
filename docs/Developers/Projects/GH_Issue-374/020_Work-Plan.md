@@ -19,7 +19,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S3](#s3) | GUI lag: AIRAC Service and File Conversions | Done | [110](110_GUI-Lag.md) |
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | Done | [110](110_GUI-Lag.md) |
 | [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | Done | [120](120_Logic-In-GUI.md) |
-| [S14](#s14) | **Next:** fixes to the code S2 to S5 added | 8 | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
+| [S14](#s14) | **Next:** fixes to the code S2 to S5 added | 1 | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
 | [S6](#s6) | Old-version code (D1), unused code and the H4 renames, plus two S12 fixes for the public beta | 106 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
 | [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
 | [S8](#s8) | Comments and XML docs: GUI | 93 | [220](220_Comments-GUI.md) |
@@ -117,7 +117,7 @@ On 2026-10-19, after Nikolas's last push (`4893e32`), the code [S2](#s2) to [S5]
 | The update watcher ([#379](https://github.com/Nikolai558/FE-BUDDY/issues/379)), the setup window, the build counter | [N1-9](100_Bugs.md#n1-9) (Med), [N1-24](100_Bugs.md#n1-24), [N1-25](100_Bugs.md#n1-25), [N1-26](100_Bugs.md#n1-26), [N1-27](100_Bugs.md#n1-27), [N1-28](100_Bugs.md#n1-28), [N1-42](300_Unit-Tests.md#n1-42) |
 | House rules in the new code and tests | [N1-38](300_Unit-Tests.md#n1-38) |
 
-**Fixed (not yet merged):** [N1-5](100_Bugs.md#n1-5), [N1-10](100_Bugs.md#n1-10), [N1-11](100_Bugs.md#n1-11), [N1-12](100_Bugs.md#n1-12), [N1-13](100_Bugs.md#n1-13), [N1-29](110_GUI-Lag.md#n1-29), [N1-35](200_Comments-Core.md#n1-35), [N1-39](300_Unit-Tests.md#n1-39), [N1-43](500_Developer-Docs.md#n1-43), [N1-6](100_Bugs.md#n1-6), [N1-14](100_Bugs.md#n1-14), [N1-22](100_Bugs.md#n1-22), [N1-23](100_Bugs.md#n1-23), [N1-33](120_Logic-In-GUI.md#n1-33), [N1-40](300_Unit-Tests.md#n1-40), [N1-18](100_Bugs.md#n1-18), [N1-19](100_Bugs.md#n1-19), [N1-20](100_Bugs.md#n1-20), [N1-21](100_Bugs.md#n1-21), [N1-30](110_GUI-Lag.md#n1-30), [N1-36](200_Comments-Core.md#n1-36), and [W7-8](220_Comments-GUI.md#w7-8) (S8) with it; [N1-7](100_Bugs.md#n1-7), [N1-8](100_Bugs.md#n1-8), [N1-15](100_Bugs.md#n1-15), [N1-16](100_Bugs.md#n1-16), [N1-17](100_Bugs.md#n1-17), [N1-31](110_GUI-Lag.md#n1-31), [N1-32](110_GUI-Lag.md#n1-32), [N1-37](220_Comments-GUI.md#n1-37), [N1-41](300_Unit-Tests.md#n1-41).
+**Fixed (not yet merged):** [N1-5](100_Bugs.md#n1-5), [N1-10](100_Bugs.md#n1-10), [N1-11](100_Bugs.md#n1-11), [N1-12](100_Bugs.md#n1-12), [N1-13](100_Bugs.md#n1-13), [N1-29](110_GUI-Lag.md#n1-29), [N1-35](200_Comments-Core.md#n1-35), [N1-39](300_Unit-Tests.md#n1-39), [N1-43](500_Developer-Docs.md#n1-43), [N1-6](100_Bugs.md#n1-6), [N1-14](100_Bugs.md#n1-14), [N1-22](100_Bugs.md#n1-22), [N1-23](100_Bugs.md#n1-23), [N1-33](120_Logic-In-GUI.md#n1-33), [N1-40](300_Unit-Tests.md#n1-40), [N1-18](100_Bugs.md#n1-18), [N1-19](100_Bugs.md#n1-19), [N1-20](100_Bugs.md#n1-20), [N1-21](100_Bugs.md#n1-21), [N1-30](110_GUI-Lag.md#n1-30), [N1-36](200_Comments-Core.md#n1-36), and [W7-8](220_Comments-GUI.md#w7-8) (S8) with it; [N1-7](100_Bugs.md#n1-7), [N1-8](100_Bugs.md#n1-8), [N1-15](100_Bugs.md#n1-15), [N1-16](100_Bugs.md#n1-16), [N1-17](100_Bugs.md#n1-17), [N1-31](110_GUI-Lag.md#n1-31), [N1-32](110_GUI-Lag.md#n1-32), [N1-37](220_Comments-GUI.md#n1-37), [N1-41](300_Unit-Tests.md#n1-41), [N1-9](100_Bugs.md#n1-9), [N1-24](100_Bugs.md#n1-24), [N1-25](100_Bugs.md#n1-25), [N1-26](100_Bugs.md#n1-26), [N1-27](100_Bugs.md#n1-27), [N1-28](100_Bugs.md#n1-28), [N1-42](300_Unit-Tests.md#n1-42).
 
 <a id="s6"></a>
 
@@ -232,7 +232,8 @@ Opened by Nikolas on 2026-10-16. Low risk: it needs two Windows accounts, one wi
 
 **Fixed** (not yet merged), both ways: Core's `InstalledVersionWatcher` watches FE-Buddy's own `FE-BUDDY.dll` and
 reads nothing until Windows reports a change to it. Once it has been quiet for 3 seconds (an install replaces it in
-steps), the product version on disk is compared with the running one. When they differ, the main window offers a
+steps) and Windows Installer has finished (its `Global\_MSIExecute` mutex is free), the product version on disk is
+compared with the running one, so an update that rolls back is never reported. When they differ, the main window offers a
 restart (`InstalledUpdate`, warning about anything unfinished, as Settings' restarts do), and until FE-Buddy restarts,
 starting an AIRAC Service run or a file conversion offers it again instead of running. Tests:
 `InstalledVersionWatcherTests`.
@@ -240,8 +241,8 @@ starting an AIRAC Service run or a file conversion offers it again instead of ru
 **Found on a VM** (two accounts, Nikolas, 2026-10-18): the first version never noticed. The update's own uninstall
 of the old version moves the files in use out to `C:\Config.Msi`, deletes the emptied `C:\Program Files\FE-BUDDY`,
 then creates it again for the new files, so a watch on the folder was left on the deleted one. The watcher now also
-watches the folder above it, sets its watch up again on the new folder, and looks again while the file is missing
-mid-install; a test deletes and recreates the folder as Windows Installer does. Testing it in one account doesn't work:
+watches the folder above it, sets its watch up again on the new folder as soon as it is created, and looks again while
+the file is missing mid-install, starting over for each new folder; a test deletes and recreates the folder as Windows Installer does. Testing it in one account doesn't work:
 that same uninstall step closes FE-Buddy in the installing account, whatever Restart Manager is told.
 
 **Found next** (the VM retest, then replayed on Nikolas's PC against a running FE-Buddy): the check then ran, but read
@@ -253,7 +254,9 @@ when it starts and what each check finds. **Retest** with two accounts on the VM
 
 **Found in the review of the new code** (2026-10-19): the offer can come while the update is still installing, and an
 update that rolls back leaves runs blocked ([N1-9](100_Bugs.md#n1-9)); the watcher can also crash FE-Buddy or stop
-looking ([N1-25](100_Bugs.md#n1-25), [N1-26](100_Bugs.md#n1-26)). Fixed in [S14](#s14), before the two-account retest.
+looking ([N1-25](100_Bugs.md#n1-25), [N1-26](100_Bugs.md#n1-26)). Fixed in [S14](#s14) (not yet merged), before the two-account
+retest: the offer waits for Windows Installer to finish, so a rolled-back update is never offered, the new folder is
+watched as soon as it is created, and nothing the watcher meets can end FE-Buddy.
 
 ### [#375](https://github.com/Nikolai558/FE-BUDDY/issues/375) · The installer's shortcuts showed a cached 2.x icon
 

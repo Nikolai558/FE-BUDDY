@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2), and N1-5 onward, found in the review of the S2 to S5 code, are [S14](020_Work-Plan.md#s14). Each fix should come with a regression test.
 
-**71 findings** (2 High, 16 Med, 53 Low), 62 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**71 findings** (2 High, 16 Med, 53 Low), 68 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -27,7 +27,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [N1-6](#n1-6) | Bug | Med | Add Custom Aliases keeps a "no alias commands" error after the file is fixed | Fixed | S14 |
 | [N1-7](#n1-7) | Bug | Med | A save, map change or import made during a profile switch or import can land in the wrong profile | Fixed | S14 |
 | [N1-8](#n1-8) | Bug | Med | A settings write cut short can lose a whole profile | Fixed | S14 |
-| [N1-9](#n1-9) | Bug | Med | The restart is offered while the update is still installing; a rolled-back update blocks runs | Open | S14 |
+| [N1-9](#n1-9) | Bug | Med | The restart is offered while the update is still installing; a rolled-back update blocks runs | Fixed | S14 |
 | [C3-17](#c3-17) | Bug | Low | A custom alias file's address with a secret is echoed when it isn't http(s) | Deferred | After 3.0 |
 | [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Fixed | S2 |
 | [C1-2](#c1-2) | Bug | Low | A cancelled run can leave a cycle's parse permanently "cancelled" for the session | Fixed | S2 |
@@ -76,11 +76,11 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [N1-21](#n1-21) | Bug | Low | Copying the profiles shows every argument error as "Choose another folder" | Fixed | S14 |
 | [N1-22](#n1-22) | Bug | Low | The File Names tab and the run check name clashes against different lists | Fixed | S14 |
 | [N1-23](#n1-23) | Bug | Low | The Map rejects a UTF-16 or ANSI GeoJSON file with a misleading reason | Fixed | S14 |
-| [N1-24](#n1-24) | Bug | Low | If the setup window crashes mid-install, msiexec can wait forever | Open | S14 |
-| [N1-25](#n1-25) | Bug | Low | The update watcher can crash FE-Buddy if the folder disappears mid-check | Open | S14 |
-| [N1-26](#n1-26) | Bug | Low | The update watcher stops looking after 5 minutes without the dll | Open | S14 |
-| [N1-27](#n1-27) | Bug | Low | The update watcher logs "changed on disk" when nothing changed | Open | S14 |
-| [N1-28](#n1-28) | Bug | Low | Get-InstallerVersion.ps1 writes CRLF; the repository stores LF | Open | S14 |
+| [N1-24](#n1-24) | Bug | Low | If the setup window crashes mid-install, msiexec can wait forever | Fixed | S14 |
+| [N1-25](#n1-25) | Bug | Low | The update watcher can crash FE-Buddy if the folder disappears mid-check | Fixed | S14 |
+| [N1-26](#n1-26) | Bug | Low | The update watcher stops looking after 5 minutes without the dll | Fixed | S14 |
+| [N1-27](#n1-27) | Bug | Low | The update watcher logs "changed on disk" when nothing changed | Fixed | S14 |
+| [N1-28](#n1-28) | Bug | Low | Get-InstallerVersion.ps1 writes CRLF; the repository stores LF | Fixed | S14 |
 
 ## High
 
@@ -304,7 +304,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-9 · Bug · Med · The other account's FE-Buddy offers the restart while the update is still installing, and a rolled-back update blocks runs
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `Check` first asks whether Windows Installer is running anything (its `Global\_MSIExecute` mutex, opened with `Mutex.TryOpenExisting`; one it may not open counts as held; injected for tests) and, while it is, looks again later. After setting its watch up again on a new folder it looks again rather than comparing in the same pass. `NewVersion` isn't cleared on a downgrade. The docs listed, and 020's #379 notes, are reworded. Tests: `InstalledVersionWatcherTests.an_update_is_not_reported_while_an_install_is_running` and `a_rolled_back_update_is_not_reported` (both fail on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:207-223`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L207-L223) (only `FE-BUDDY.dll` events start the settle), 184-187 (not recursive), [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:242-281`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L242-L281) (`Check`: 260-264 re-arm and compare in one pass; 264-277 `_raised`, both watches off), 76; [`FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs:56-61`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs#L56-L61), 69-78 (`NewVersion` never cleared); docs: [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:12-14`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L12-L14), 84, [`FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs:16`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs#L16), and [020's #379 notes](020_Work-Plan.md#related-issues)
 
@@ -502,7 +502,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### O1-23 · Bug · Low · Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM
 
-**Status:** Fixed (not yet merged), much as proposed: `Get-InstallerVersion.ps1` writes the counter itself, as UTF-8 without a BOM, laid out as the tracked file is, so Windows PowerShell 5.1 and PowerShell 7 write the same bytes and a build changes one number. Tests: `InstallerVersionScriptTests`, which run the script under Windows PowerShell 5.1 · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), much as proposed: `Get-InstallerVersion.ps1` writes the counter itself, as UTF-8 without a BOM, in one layout with the line ending the file already has ([N1-28](#n1-28)), so Windows PowerShell 5.1 and PowerShell 7 write the same bytes and a build changes one number. Tests: `InstallerVersionScriptTests`, which run the script under Windows PowerShell 5.1 · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1:81`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1#L81); [`FeBuddy/build.cmd:3`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/build.cmd#L3)
 
@@ -910,7 +910,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-24 · Bug · Low · If the setup window crashes mid-install, msiexec can wait for it forever
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The window thread's catch ends its dispatcher (`WindowCalls.EndWindowThread`), and `Ask`, FatalExit and `Shutdown` go through `WindowCalls.Invoke`, which answers `None` (or skips) once the window's thread has ended. `WindowCalls` is compiled into the unit tests as `SetupOutcomeRules` is, so no VM check is needed. Test: `WindowCallsTests.calls_to_a_window_whose_loop_has_failed_end_at_once` (fails on the old code: the waiting call never ends) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Installer.UI/SetupUI.cs:276-282`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer.UI/SetupUI.cs#L276-L282), [`FeBuddy/FeBuddy.Installer.UI/SetupUI.cs:314-332`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer.UI/SetupUI.cs#L314-L332) (`Ask`), 195-199 (FatalExit), 238-247 (`Shutdown`); the remarks at [`FeBuddy/FeBuddy.Installer.UI/SetupUI.cs:39-40`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer.UI/SetupUI.cs#L39-L40)
 
@@ -922,7 +922,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-25 · Bug · Low · The update watcher can crash FE-Buddy if the install folder disappears mid-check, and leaks a watch if it can't start
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `WatchFolder` has one try around making and turning on the watch (`ArgumentException`, `IOException`, `UnauthorizedAccessException`: disposed, tried again at the next check), the timer's callback logs anything else as a warning, and the constructor disposes what it made if the parent watch fails. Test: `InstalledVersionWatcherTests.a_watch_that_fails_to_start_once_does_not_stop_the_checks`, with an internal watch factory (on the old code the exception ends the test process) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:69`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L69) (the timer callback), [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:181-204`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L181-L204) (only `ArgumentException` caught; `EnableRaisingEvents` at 200 throws `FileNotFoundException`), [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:73-81`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L73-L81), 279; [`FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs:44-52`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs#L44-L52)
 
@@ -934,7 +934,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-26 · Bug · Low · After 5 minutes without `FE-BUDDY.dll`, or a second install in one session, the update watcher stops looking
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The parent watch's Created handler watches the new folder at once, starts the missing checks over and schedules a check, so the new file's own changes start the check. Test: `InstalledVersionWatcherTests.a_folder_recreated_after_the_missing_checks_ran_out_is_still_followed`, with an internal limit of 3 (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:249-261`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L249-L261) (252 stops after the limit; 260, the only reset, and 261, the only re-arm, follow a successful read), 31 (`MaxMissingChecks`), 76-79
 
@@ -946,7 +946,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-27 · Bug · Low · The update watcher logs "changed on disk" when nothing changed, and reads the file three times
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). Each check reads the file once, compares that, logs "is now vX on disk, vY running" or "was written again, still vY", and raises with that version. Test: `InstalledVersionWatcherTests.the_same_version_or_a_stopped_watcher_reports_nothing` checks the log (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:249`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L249), 262, 264, [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:156-157`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L156-L157)
 
@@ -958,7 +958,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-28 · Bug · Low · `Get-InstallerVersion.ps1` writes the counter with CRLF, but the repository stores it with LF
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The script writes the line ending the file already has (CRLF if what it read has one, else LF; a new file gets LF), with no `.gitattributes`; its comment, the test's summary and O1-23's Status are reworded. Tests: `InstallerVersionScriptTests.the_counter_is_advanced_and_written_as_it_was` (LF and CRLF) and `a_new_major_or_a_missing_counter_starts_over` (the LF cases fail on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1:81-88`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1#L81-L88), 50-53; [`FeBuddy/FeBuddy.UnitTests/Repository/InstallerVersionScriptTests.cs:5-9`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Repository/InstallerVersionScriptTests.cs#L5-L9), 27-28, 64, 67, 76-83
 

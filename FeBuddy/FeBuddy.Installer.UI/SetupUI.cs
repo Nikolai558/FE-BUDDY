@@ -195,7 +195,7 @@ public sealed class SetupUI : IEmbeddedUI
 			case InstallMessage.FatalExit:
 				_fatalExit = true;
 				string fatal = messageRecord.ToString();
-				_dispatcher.Invoke(() => _viewModel.AddError(fatal));
+				WindowCalls.Invoke(_dispatcher, () => _viewModel.AddError(fatal));
 				return MessageResult.OK;
 
 			case InstallMessage.InstallEnd:
@@ -235,7 +235,7 @@ public sealed class SetupUI : IEmbeddedUI
 			context.Version,
 			() => InstalledFeBuddy.Read().Version);
 
-		_dispatcher.Invoke(() =>
+		WindowCalls.Invoke(_dispatcher, () =>
 		{
 			_viewModel.Finish(outcome);
 
@@ -246,7 +246,7 @@ public sealed class SetupUI : IEmbeddedUI
 			}
 		});
 
-		// The finish page stays up until the user closes it.
+		// The finish page stays up until the user closes it; a window that failed has already gone.
 		_uiThread?.Join();
 	}
 
@@ -276,9 +276,11 @@ public sealed class SetupUI : IEmbeddedUI
 		catch (Exception ex)
 		{
 			// Uncaught, this would end msiexec from a background thread. Initialize reads it, if it's
-			// still waiting, and hands the install back to Windows Installer's own UI.
+			// still waiting, and hands the install back to Windows Installer's own UI. A call Windows
+			// Installer's thread is waiting on, or makes later, ends rather than waiting for good.
 			_windowFailure = ex;
 			_windowFailed = true;
+			WindowCalls.EndWindowThread();
 		}
 		finally
 		{
@@ -313,7 +315,8 @@ public sealed class SetupUI : IEmbeddedUI
 
 	private MessageResult Ask(PromptRequest request, InstallMessage messageType)
 	{
-		MessageResult answer = (MessageResult)_dispatcher!.Invoke(new Func<object>(() =>
+		// A window that has failed meanwhile can't answer: Windows Installer decides, as it does with no window.
+		MessageResult answer = WindowCalls.Invoke(_dispatcher!, () =>
 		{
 			if (messageType is InstallMessage.Error or InstallMessage.OutOfDiskSpace)
 			{
@@ -321,7 +324,7 @@ public sealed class SetupUI : IEmbeddedUI
 			}
 
 			return _viewModel!.AskUser(request);
-		}));
+		}, MessageResult.None);
 
 		if (answer is MessageResult.Cancel or MessageResult.Abort)
 		{

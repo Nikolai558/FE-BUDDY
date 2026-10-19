@@ -6,6 +6,7 @@ using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -131,6 +132,20 @@ public sealed class RunResultSummaryTests : IDisposable
 				Messages = [],
 				Elapsed = TimeSpan.Zero,
 			},
+			Telephony = new TelephonyServiceResult
+			{
+				IcaoAssignmentCount = 3,
+				SpecialCallSignCount = 2,
+				VirtualAirlineCount = 0,
+				VatsimRadarVirtualAirlineCount = 0,
+				NoDesignatorCount = 0,
+				NoTelephonyCount = 0,
+				ExpiredCount = 0,
+				AliasFilePath = Path.Combine(Aliases, "ZOB_Telephony.txt"),
+				AliasCommandCount = 9,
+				Messages = [],
+				Elapsed = TimeSpan.Zero,
+			},
 		});
 
 		Assert.Contains("ZOB_Airports.txt: 240 alias command(s)", new AirportsViewModel().DescribeRunResult(result)!.Summary);
@@ -138,5 +153,6 @@ public sealed class RunResultSummaryTests : IDisposable
 		Assert.Contains("ZOB_SIDs.txt: 2 alias command(s)", new DeparturesViewModel().DescribeRunResult(result)!.Summary);
 		Assert.Contains("ZOB_Navaids.txt: 10 alias command(s)", new NavaidsViewModel().DescribeRunResult(result)!.Summary);
 		Assert.Contains("ZOB_Airways.txt: 4 alias line(s)", new AirwaysViewModel().DescribeRunResult(result)!.Summary);
+		Assert.StartsWith("ZOB_Telephony.txt: 9 command(s)", new TelephonyViewModel().DescribeRunResult(result)!.Summary, StringComparison.Ordinal);
 	}
 }

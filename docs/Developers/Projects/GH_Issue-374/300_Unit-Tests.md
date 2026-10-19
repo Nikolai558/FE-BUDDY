@@ -115,7 +115,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 | [N1-39](#n1-39) | Wrong doc | Low | AiracGeneralTabViewModelTests: the "older build" case uses a key no release saved | Fixed | S14 |
 | [N1-40](#n1-40) | Minor | Low | New tests: misplaced summaries, wall-clock limits, an untested Telephony guard | Fixed | S14 |
 | [N1-41](#n1-41) | Minor | Low | DeferredSave's timer, close and retry untested; a save-failure test fails only at its first write | Fixed | S14 |
-| [N1-42](#n1-42) | Minor | Low | New tests that can't catch what they guard (update watcher, FieldState, Telephony name) | Open | S14 |
+| [N1-42](#n1-42) | Minor | Low | New tests that can't catch what they guard (update watcher, FieldState, Telephony name) | Fixed | S14 |
 
 ## FeBuddy.UnitTests
 
@@ -1617,7 +1617,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 
 ### N1-42 · Minor · Low · New tests that can't catch what they guard: the update watcher's retry and loaded copy, FieldState, Telephony's file name
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The retry test moves the file out, deletes the folder, creates it again and lets its check find nothing before the new file comes; the loaded-copy test asserts the control (Windows' version information gives the old version) and unloads in a `finally`. FieldStateTests uses the theme's own styles from `Controls.Inputs.xaml`, in XAML that declares the `bhv` prefix as the views do, and scans the views for a box with both `bhv:FieldState.Error` and its own `ToolTip` (none today). RunResultSummaryTests adds Telephony's `ZOB_Telephony.txt`. They guard what already works, so they pass on the old code too · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs:121-145`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs#L121-L145), [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs:51-68`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Platform/InstalledVersionWatcherTests.cs#L51-L68); [`FeBuddy/FeBuddy.UnitTests/Wpf/Behaviors/FieldStateTests.cs:30-53`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/Behaviors/FieldStateTests.cs#L30-L53); [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/RunResultSummaryTests.cs:80-139`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/RunResultSummaryTests.cs#L80-L139)
 

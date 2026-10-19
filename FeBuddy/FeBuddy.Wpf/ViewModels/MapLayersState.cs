@@ -151,6 +151,13 @@ public sealed class MapLayersState : ObservableObject
 	/// </summary>
 	public static void ReloadFromConfigIfCreated() => _shared?.ReloadFromConfig();
 
+	/// <summary>
+	/// Saves the map's changes still waiting now, into the profile they were made in: before a profile change
+	/// or an import replaces the settings. Nothing waits until a map has been opened. Call on the UI thread.
+	/// </summary>
+	/// <returns>A task that completes once they are saved, or weren't.</returns>
+	internal static Task<bool> SaveWaitingChangesIfCreated() => _shared?._save.SaveNowAsync() ?? Task.FromResult(true);
+
 	/// <summary>Raised when the maps should frame some layers (a file just loaded, or its zoom button).</summary>
 	public event EventHandler<IReadOnlyList<MapLayer>>? FrameLayersRequested;
 

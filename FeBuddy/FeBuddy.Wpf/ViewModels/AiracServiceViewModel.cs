@@ -60,6 +60,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	private string? _parsedCycleId;
 	private string? _loadingCycleId;
 
+	/// <summary>
+	/// Each cycle's d-TPP Metafile, read and indexed once, so a refresh of the Procedure Charts tab
+	/// reuses it rather than parsing up to 16 MB again. One that faults, or finds no metafile, is
+	/// dropped, so the next refresh asks again. Used on the UI thread only.
+	/// </summary>
+	private readonly Dictionary<string, Task<DtppIndex>> _dtppIndexes = new(StringComparer.OrdinalIgnoreCase);
+
 	/// <summary>Builds the screen, restores the saved tabs, and starts loading the selected cycle.</summary>
 	public AiracServiceViewModel()
 	{
@@ -73,11 +80,20 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		_general.SubServicesChanged += (_, _) => SyncSubServiceTabs();
 		_general.CycleChanged += (_, _) =>
 		{
+			// The tabs drop the old cycle's data for the one picked, so a cycle loaded earlier is handed
+			// over again when it is picked back: the cache and the option lists return what they have.
+			if (_parsedCycleId != SelectedCycleId)
+			{
+				_parsedCycleId = null;
+				_parsedForSelectedCycle = null;
+			}
+
 			_fileNames.RefreshFiles();
 			PushSelectedCycle();
 			PushTabReadiness();
 			_ = LoadCycleDataAsync(picked: true);
 		};
+		_general.CycleRetryRequested += (_, _) => _ = LoadCycleDataAsync(picked: true);
 
 		// What the run does with duplicate alias commands is the run's, not any tab's, so it sits on Preview Settings.
 		_duplicateAliases = new DuplicateAliasesCardViewModel(
@@ -383,6 +399,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The cycle picked on the General tab.</summary>
 	private string SelectedCycleId => AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).AiracCycleId;
 
+	/// <summary>The cycle whose data is being loaded for the tabs, or <see langword="null"/>. For tests.</summary>
+	internal string? LoadingCycleId => _loadingCycleId;
+
 	/// <summary>
 	/// Whether the tabs have the selected cycle's data. The service opens once the current cycle is
 	/// ready, so the next or previous cycle can still be loading when it's picked.
@@ -462,7 +481,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 			await _dispatcher.BeginInvoke(() =>
 			{
-				_loadingCycleId = null;
+				// A cycle picked since may be loading in its turn: its mark stays.
+				if (_loadingCycleId == cycleId)
+				{
+					_loadingCycleId = null;
+				}
 
 				// Another cycle may have been picked while this one loaded: its own load hands it over.
 				if (SelectedCycleId != cycleId)
@@ -486,7 +509,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		{
 			_ = _dispatcher.BeginInvoke(() =>
 			{
-				_loadingCycleId = null;
+				if (_loadingCycleId == cycleId)
+				{
+					_loadingCycleId = null;
+				}
+
 				PushTabReadiness();
 			});
 			AppLog.Warning("AiracService", $"Could not load parsed data for cycle {cycleId}: {ex.Message}");
@@ -509,35 +536,64 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// Tells the included Procedures tab about the selected cycle's FAA d-TPP Metafile (and the
 	/// previous cycle's, for linking deleted procedures back to their chart). Unlike the NASR
 	/// cycle data <see cref="ISubServiceRunTarget.LoadCycleDependentLists"/> hands out, the
-	/// metafile is loaded here, off the UI thread - it is up to 16 MB and takes about 0.3 s to
-	/// parse - and only when the tab doesn't already show the selected cycle's, or the previous
-	/// cycle's state changed: not again on every click on the General tab.
+	/// metafile is loaded off the UI thread - it is up to 16 MB and takes about 0.3 s to parse - once
+	/// per cycle (<see cref="DtppIndexFor"/>), and handed over only once the selected cycle is loaded:
+	/// when the tab doesn't already show its metafile, or the previous cycle's state changed.
 	/// </summary>
 	/// <param name="previousChanged">Whether the previous cycle's state changed, which the tab reports on.</param>
 	private void RefreshProceduresData(bool previousChanged = false)
 	{
-		if (ProceduresTab is not { } tab || _parsedCycleId is not { } cycleId)
+		if (ProceduresTab is not { } tab || !IsSelectedCycleLoaded)
 		{
 			return;
 		}
+
+		string cycleId = SelectedCycleId;
 
 		if (!previousChanged && tab.DtppCycleId == cycleId)
 		{
 			return;
 		}
 
-		_ = LoadProceduresDataAsync(tab, cycleId, PreviousOfSelectedCycleId);
+		_ = LoadProceduresDataAsync(tab, cycleId, PreviousOfSelectedCycleId, DtppIndexFor(cycleId));
 	}
 
 	/// <summary>The cycle before the one picked on the General tab, whose metafile the changes report links to.</summary>
 	private string PreviousOfSelectedCycleId =>
 		AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).EffectiveDateUtc).AiracCycleId;
 
-	private async Task LoadProceduresDataAsync(ProceduresViewModel tab, string cycleId, string previousCycleId)
+	/// <summary>
+	/// A cycle's d-TPP Metafile, indexed for the Procedures tab: read and indexed off the UI thread the
+	/// first time it is asked for, and the same task after that (<see cref="_dtppIndexes"/>).
+	/// </summary>
+	/// <param name="cycleId">The cycle.</param>
+	/// <returns>The index (<see langword="null"/> with no metafile) and when the metafile was downloaded.</returns>
+	private Task<DtppIndex> DtppIndexFor(string cycleId)
+	{
+		if (!_dtppIndexes.TryGetValue(cycleId, out Task<DtppIndex>? index))
+		{
+			index = Task.Run(async () =>
+			{
+				DtppMetafileDataCollection? dtpp = await AiracCycleDataCache.Instance.GetDtppAsync(cycleId).ConfigureAwait(false);
+
+				DateTime? downloadedLocal = AiracCycleDataCache.Instance.FindDtppFile(cycleId) is { } file
+					? File.GetLastWriteTime(file)
+					: null;
+
+				return new DtppIndex(dtpp is null ? null : ProcedureNameIndex.For(dtpp), downloadedLocal);
+			});
+
+			_dtppIndexes[cycleId] = index;
+		}
+
+		return index;
+	}
+
+	private async Task LoadProceduresDataAsync(ProceduresViewModel tab, string cycleId, string previousCycleId, Task<DtppIndex> indexTask)
 	{
 		try
 		{
-			DtppMetafileDataCollection? dtpp = await AiracCycleDataCache.Instance.GetDtppAsync(cycleId).ConfigureAwait(false);
+			DtppIndex dtpp = await indexTask.ConfigureAwait(false);
 
 			bool previousAvailable = AiracCycleDataCache.Instance.FindDtppFile(previousCycleId) is not null;
 
@@ -546,28 +602,42 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				&& AiracCycleDataCache.Instance.GetEntry(previousCycleId) is { CycleDirectory: null } previous
 				&& !AiracCycleDataCache.IsSettled(previous);
 
-			DateTime? downloadedLocal = AiracCycleDataCache.Instance.FindDtppFile(cycleId) is { } file
-				? File.GetLastWriteTime(file)
-				: null;
-
-			// Indexed here, off the UI thread, once per metafile: the tab only takes the lookups.
-			ProcedureNameIndex? index = dtpp is null ? null : await Task.Run(() => ProcedureNameIndex.For(dtpp)).ConfigureAwait(false);
-
 			await _dispatcher.BeginInvoke(() =>
 			{
-				// The user may have picked another cycle while this one was parsing; its own load
-				// reports in separately, so a stale result must not overwrite it.
-				if (_parsedCycleId == cycleId)
+				// No metafile yet: ask again next time rather than keep the answer.
+				if (dtpp.Index is null)
 				{
-					tab.SetDtppData(cycleId, index, previousCycleId, previousAvailable, downloadedLocal, previousLoading);
+					ForgetDtppIndex(cycleId, indexTask);
+				}
+
+				// The user may have picked another cycle while this one was loading; its own load
+				// reports in separately, so a stale result must not overwrite it.
+				if (SelectedCycleId == cycleId)
+				{
+					tab.SetDtppData(cycleId, dtpp.Index, previousCycleId, previousAvailable, dtpp.Downloaded, previousLoading);
 				}
 			});
 		}
 		catch (Exception ex)
 		{
+			_ = _dispatcher.BeginInvoke(() => ForgetDtppIndex(cycleId, indexTask));
 			AppLog.Warning("AiracService", $"Could not load the d-TPP Metafile for cycle {cycleId}: {ex.Message}");
 		}
 	}
+
+	/// <summary>Drops a cycle's indexed metafile, unless a newer load has already taken its place.</summary>
+	private void ForgetDtppIndex(string cycleId, Task<DtppIndex> indexTask)
+	{
+		if (_dtppIndexes.TryGetValue(cycleId, out Task<DtppIndex>? kept) && kept == indexTask)
+		{
+			_dtppIndexes.Remove(cycleId);
+		}
+	}
+
+	/// <summary>A cycle's d-TPP Metafile, indexed for the Procedures tab, and when it was downloaded.</summary>
+	/// <param name="Index">The lookups, or <see langword="null"/> when the cycle has no metafile.</param>
+	/// <param name="Downloaded">When the metafile was downloaded, in local time.</param>
+	private readonly record struct DtppIndex(ProcedureNameIndex? Index, DateTime? Downloaded);
 
 	/// <summary>
 	/// Saves anything unsaved (with the user's blessing), refuses to start while a tab is invalid,
@@ -585,6 +655,15 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		{
 			// The File Names tab's validity depends on which files the other tabs write.
 			_fileNames.RefreshFiles();
+
+			// The custom alias files on this PC are looked at again, off the UI thread, so one the user
+			// has fixed since doesn't stop the run. Running meanwhile, so the Run button can't start a second run.
+			if (ConcatenateAliasesTab is { } customAliases)
+			{
+				IsRunning = true;
+				await customAliases.CheckLocalFilesAsync();
+				IsRunning = false;
+			}
 
 			if (!InstalledUpdate.AllowsRun() || !TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
 			{

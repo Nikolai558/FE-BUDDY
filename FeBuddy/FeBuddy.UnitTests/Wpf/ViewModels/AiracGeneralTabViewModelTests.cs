@@ -1,3 +1,6 @@
+using System.Collections.Specialized;
+
+using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
@@ -277,8 +280,8 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 	}
 
 	/// <summary>
-	/// The tab saves which cycle - Current or Next - not its ID, so next cycle it reopens on the same
-	/// kind of cycle, never on last cycle's data by mistake.
+	/// The tab saves which cycle - <c>Previous</c>, <c>Current</c> or <c>Next</c> - not its ID, so next cycle it reopens
+	/// on the same kind of cycle, never on last cycle's data by mistake.
 	/// </summary>
 	[Fact]
 	public void the_cycle_is_saved_as_its_position_and_reopens_on_it()
@@ -291,16 +294,16 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.Equal(AiracCyclePosition.Next, new AiracGeneralTabViewModel().SelectedCyclePosition);
 	}
 
-	/// <summary>A saved Previous, a cycle ID an older build saved, or nothing at all opens on Current.</summary>
+	/// <summary>Only <c>CyclePosition</c> is read; any other value or key opens on Current.</summary>
 	[Theory]
-	[InlineData("CyclePosition", "Previous")]
-	[InlineData("CyclePosition", "Current")]
-	[InlineData("CyclePosition", "2")]
-	[InlineData("AiracCycleId", "2609")]
+	[InlineData($"{Node}.CyclePosition", "Previous")]
+	[InlineData($"{Node}.CyclePosition", "Current")]
+	[InlineData($"{Node}.CyclePosition", "2")]
+	[InlineData("Services.AiracService.AiracCycleId", "2609")]
 	public void anything_but_a_saved_next_opens_on_current(string key, string value)
 	{
 		AppEnvironment.LaunchUtcNow = new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc);
-		UserConfigFile.TrySetValue($"{Node}.{key}", value);
+		UserConfigFile.TrySetValue(key, value);
 
 		AiracGeneralTabViewModel general = new();
 
@@ -330,6 +333,38 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 		Assert.Equal(AiracCyclePosition.Next, general.SelectedCyclePosition);
 		Assert.Equal(1, cycleChanges);
+	}
+
+	/// <summary>
+	/// Reading the settings again (here Discard) keeps an unpublished saved Next on Current, as launch
+	/// does: no unsaved mark, no cycle change, and the same message.
+	/// </summary>
+	[Fact]
+	public async Task a_reload_keeps_an_unpublished_saved_next_on_current()
+	{
+		UserConfigFile.TrySetValue($"{Node}.CyclePosition", "Next");
+		await PrepareCyclesAsync(new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc), withDtpp: _ => true, notPublished: "2611");
+		AiracGeneralTabViewModel general = new();
+		int cycleChanges = 0;
+		general.CycleChanged += (_, _) => cycleChanges++;
+		List<string> toasts = [];
+		NotifyCollectionChangedEventHandler shown = (_, e) => toasts.AddRange(e.NewItems?.OfType<ToastItem>().Select(toast => toast.Title) ?? []);
+		Toast.Items.CollectionChanged += shown;
+
+		try
+		{
+			general.SubServices[0].IsIncluded = false;
+			general.RevertChanges();
+		}
+		finally
+		{
+			Toast.Items.CollectionChanged -= shown;
+		}
+
+		Assert.Equal(AiracCyclePosition.Current, general.SelectedCyclePosition);
+		Assert.False(general.IsDirty);
+		Assert.Equal(0, cycleChanges);
+		Assert.Contains("Opened on the current AIRAC cycle", toasts);
 	}
 
 	[Fact]

@@ -12,8 +12,9 @@ namespace FeBuddy.Wpf.Shell;
 
 /// <summary>
 /// An update installed on this PC while this copy of FE-Buddy is open - by another Windows account, whose open
-/// copy Windows Installer can't close. This copy would then run a mix of old and new files, so as soon as the
-/// update has finished (<see cref="InstalledVersionWatcher"/>) it offers a restart, and a run waits for one.
+/// copy Windows Installer can't close. This copy would then run a mix of old and new files, so once the update is
+/// in - Windows Installer has finished, and the program file has been quiet for a moment
+/// (<see cref="InstalledVersionWatcher"/>) - it offers a restart, and a run waits for one.
 /// </summary>
 public static class InstalledUpdate
 {

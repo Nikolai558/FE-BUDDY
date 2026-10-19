@@ -791,7 +791,6 @@ public sealed class TelephonyViewModelTests : IDisposable
 	private static VirtualAirlineListRefreshResult Offline() =>
 		new(new SharedDataRefreshResult(null, null, "offline"), new SharedDataRefreshResult(null, null, "offline"));
 
-	/// <summary>A tab using this copy of the list, whose downloads count how often they are asked for and never touch the network.</summary>
 	/// <summary>Waits for the download ticking the box started: the list is read off the UI thread, so it finishes later.</summary>
 	private static async Task DownloadFinished(TelephonyViewModel tab)
 	{
@@ -803,6 +802,7 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.False(tab.IsDownloadingVatsimRadarList);
 	}
 
+	/// <summary>A tab using this copy of the list, whose downloads count how often they are asked for and never touch the network.</summary>
 	private static (TelephonyViewModel Tab, Func<int> Downloads) TabUsing(VatsimRadarCopy? copy, VirtualAirlineListRefreshResult? downloadResult = null)
 	{
 		int downloads = 0;
@@ -1034,5 +1034,61 @@ public sealed class TelephonyViewModelTests : IDisposable
 		tab.IncludeVatsimRadarList = true;
 		Assert.StartsWith("Included. FE-Buddy's copy is from ", Row(), StringComparison.Ordinal);
 		Assert.EndsWith("FE-Buddy has no copy of the GNG fictional airline list yet, so the list is missing its airlines.", Row(), StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// A download that finishes while FE-Buddy's kept copies of the list are still being read keeps its own copy:
+	/// the read, finishing last, is dropped.
+	/// </summary>
+	[Fact]
+	public async Task a_download_finishing_during_the_kept_copy_read_keeps_its_copy()
+	{
+		Directory.CreateDirectory(_root);
+		string vatsimRadar = Path.Combine(_root, "vr.json");
+		File.WriteAllText(vatsimRadar, """[{ "icao": "OCN", "name": "vOCN", "callsign": "Ocean", "virtual": true }]""");
+		(TelephonyViewModel tab, _) = TabUsing(null, new VirtualAirlineListRefreshResult(
+			new SharedDataRefreshResult(null, null, "offline"),
+			new SharedDataRefreshResult(vatsimRadar, DateTime.UtcNow, FailureReason: null)));
+		using ManualResetEventSlim release = new();
+		Task read = tab.LoadVatsimRadarCopyAsync(() =>
+		{
+			release.Wait();
+			return ListOf(("DAL", "Delta", "Fly Delta Virtual"), ("WAT", "Walker", "Walker Air"));
+		});
+
+		await tab.DownloadVatsimRadarListAsync();
+		release.Set();
+		await read;
+
+		Assert.Contains(": 1 virtual airlines.", tab.VatsimRadarListStatus, StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// An older look at FE-Buddy's copy of the FAA pages that finishes after a newer one - the tab's first, after a
+	/// run's, say - doesn't overwrite it; a look that fails says so, and why.
+	/// </summary>
+	[Fact]
+	public async Task an_older_look_at_the_faa_pages_copy_finishing_last_doesnt_win_and_a_failed_one_says_why()
+	{
+		TelephonyViewModel tab = new();
+		using ManualResetEventSlim release = new();
+		tab.DescribeTelephonyCopy = _ =>
+		{
+			release.Wait();
+			return "The older look.";
+		};
+		Task older = tab.RefreshTelephonyDataAsync();
+
+		tab.DescribeTelephonyCopy = _ => "The newer look.";
+		await tab.RefreshTelephonyDataAsync();
+		release.Set();
+		await older;
+
+		Assert.Equal("The newer look.", tab.TelephonyDataStatus);
+
+		tab.DescribeTelephonyCopy = _ => throw new IOException("boom");
+		await tab.RefreshTelephonyDataAsync();
+
+		Assert.Equal("FE-Buddy couldn't read its copy: boom", tab.TelephonyDataStatus);
 	}
 }

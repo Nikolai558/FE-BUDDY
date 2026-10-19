@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [S11](020_Work-Plan.md#s11).
 
-**36 findings** (1 High, 4 Med, 31 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**37 findings** (1 High, 4 Med, 32 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -46,6 +46,7 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 | [D1b-16](#d1b-16) | Stale doc | Low | TODO.md: Harness item still open; the "tested today" list misses newer Wpf tests | Fixed | S11 |
 | [O1-36](#o1-36) | Wrong doc | Low | VERSIONING.md: the version check keeps only "the user's channel" | Fixed | S11 |
 | [D1b-1](#d1b-1) | Unused | High | Remove CRC's AliasParser.cs from the repository before the public release | Agreed, changed | S6 |
+| [N1-43](#n1-43) | Wrong doc | Low | Settings-Reference: CyclePosition can be Previous; General section narrates history | Fixed | S14 |
 
 ## docs
 
@@ -576,6 +577,20 @@ Developer docs: `docs/Developers`, `README.md` and `docs/SECURITY.md`. Session [
 **Problem:** VersionCheck keeps every release on the user's channel or a more stable one (VersionCheck.cs:103 skips only `parsed.Channel < channel`); the same file's channel section (lines 43-45) and Architecture.md:312-313 say so.
 
 **Proposed:** `... keeps those on the user's channel or a more stable one, and compares by SemVer (ProductVersion).`
+
+<a id="n1-43"></a>
+
+### N1-43 · Wrong doc · Low · Settings-Reference: `CyclePosition` can also be Previous; the `General` section narrates history
+
+**Status:** Fixed (not yet merged). The `CyclePosition` row and the `General` section's note are reworded as proposed · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`docs/Developers/Settings-Reference.md:112-114`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/docs/Developers/Settings-Reference.md#L112-L114), 123; the save: [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:281`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L281)
+
+**Says:** `Current` or `Next`: the cycle last saved … Anything else (`Previous` too) opens on Current; "Before 3.0 … They moved here with no settings-layout step"
+
+**Problem:** The General tab saves `Previous` too (`SelectedCyclePosition.ToString()`), so the Values column is incomplete. Lines 112-114 explain the keys by where they were before ([H3](010_Decisions.md#h3), which applies to the developer docs).
+
+**Proposed:** Line 123: "`Current`, `Next` or `Previous`: the cycle last saved. A saved `Next` reopens on Next unless the FAA hasn't published it; anything else opens on Current." Lines 112-114: "No settings-layout step brings these keys in from `Services.AiracService` (`UserArtccId`, `CoordinatePrecision`, `DefaultRoi.*`): a file that has them there opens Settings with no facility, 6 decimal places and no default ROI."
 
 ## docs/Developers/Reference
 

@@ -3,7 +3,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 namespace FeBuddy.UnitTests.Wpf.ViewModels.Models;
 
 /// <summary>
-/// Covers what a CRC ERAM defaults row marks (W4-8): a blank box only while the row is required, and a value the
+/// Covers what a CRC ERAM defaults row marks: a blank box only while the row is required, and a value the
 /// run would refuse - out of range, not a listed style, a malformed filter list - always, counted as not filled in.
 /// </summary>
 public sealed class EramClassDefaultTests

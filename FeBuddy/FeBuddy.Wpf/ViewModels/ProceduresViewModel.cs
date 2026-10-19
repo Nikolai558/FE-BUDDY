@@ -1679,11 +1679,12 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	/// <remarks>
 	/// Another cycle picked: the old cycle's chart data and NASR airport lookups no longer describe it,
-	/// so they go until the new cycle's arrive. Its facility toggles stay, keeping what is ticked.
+	/// so they go until the new cycle's arrive, even when its metafile hadn't arrived yet. Its facility
+	/// toggles stay, keeping what is ticked.
 	/// </remarks>
 	protected override void OnSelectedCycleChanged()
 	{
-		if (_dtppCycleId is null || _dtppCycleId == SelectedCycle?.AiracCycleId)
+		if (_dtppCycleId == SelectedCycle?.AiracCycleId)
 		{
 			return;
 		}

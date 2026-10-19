@@ -122,7 +122,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	public override IEnumerable<OutputFileEntry> OutputFileEntries() =>
 		OutputFiles().Select(file => file.IsGeojson
 			? new OutputFileEntry(
-				file.Key, Path.Combine(FolderOf(file), "<ARTCC ID>", "<Airport ID>"), $"{ArrivalOutputFiles.GeojsonFileNamePattern}_{file.Label}.geojson", Title, CanRename: false)
+				file.Key, ArrivalOutputFiles.GeojsonFolderPattern, $"{ArrivalOutputFiles.GeojsonFileNamePattern}_{file.Label}.geojson", Title, CanRename: false)
 			: OutputFileEntry.Renamable(file.Key, FolderOf(file), Title));
 
 	// ================= procedures =================

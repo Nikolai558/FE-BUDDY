@@ -256,7 +256,7 @@ public sealed class UserConfigProfilesTests : IDisposable
 	// ---- a copy before a reset or an uninstall ----
 
 	/// <summary>
-	/// The profile in use is copied to the path chosen and every other one beside it, named after the copy (W3-13);
+	/// The profile in use is copied to the path chosen and every other one beside it, named after the copy;
 	/// a copy can't go inside FE-Buddy's own folder, which a reset or an uninstall empties.
 	/// </summary>
 	[Fact]

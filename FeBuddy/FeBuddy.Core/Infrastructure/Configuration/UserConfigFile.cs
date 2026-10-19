@@ -1,4 +1,6 @@
+using System.Collections.Frozen;
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -19,7 +21,7 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// <remarks>
 /// <para>
 /// On disk each file is a nested JSON object. In memory the two are one flat dictionary keyed by
-/// dotted path (e.g. <c>Services.AiracService.UserArtccId</c>), the same shape as the settings blocks
+/// dotted path (e.g. <c>General.Facility</c>), the same shape as the settings blocks
 /// the sub-services read. Every leaf value is a string. A key in
 /// <see cref="UserConfigPortability.SharedByProfiles"/> - the update channel, which News has been read,
 /// FE-Buddy's GitHub token - is kept in <c>Shared.json</c>, with the name of the active profile; every
@@ -76,8 +78,9 @@ public static partial class UserConfigFile
 	private static readonly Dictionary<string, string> Values = new(StringComparer.Ordinal);
 	private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
 
-	private static string _root = AppPaths.AppDataDirectory;
-	private static string _profile = DefaultProfile;
+	// Read without Gate, so the UI thread never waits for a save; each is only ever replaced whole, under Gate.
+	private static volatile string _root = AppPaths.AppDataDirectory;
+	private static volatile string _profile = DefaultProfile;
 
 	/// <summary>
 	/// The layout every write stamps the file with: the current one, unless the file was read in a
@@ -106,40 +109,27 @@ public static partial class UserConfigFile
 	private static string? _profileInMemory;
 
 	/// <summary>
-	/// The undo snapshot (<see cref="PreviousFilePath"/>) as it is on disk, so <see cref="CanUndo"/> - which
-	/// WPF asks on every key press and click - never reads the file. Read once per profile, then kept up to
-	/// date wherever this class writes or deletes the file; <see langword="null"/> until then.
+	/// The nodes in the undo snapshot (<see cref="PreviousFilePath"/>), so <see cref="CanUndo"/> - which WPF
+	/// asks on every key press and click - answers without reading the file or waiting for a save. Read by
+	/// <see cref="ReadAll"/>, or by <see cref="CanUndo"/> when it has not been, and replaced whole wherever this
+	/// class reads, writes or deletes the file. <see langword="null"/> until it is read, after a read that
+	/// failed, and when this class can't be sure it matches the file: the next ask reads it again.
 	/// </summary>
-	private static JsonObject? _undoSnapshot;
+	private static volatile UndoSnapshotNodes? _undoSnapshot;
 
-	/// <summary>The file <see cref="_undoSnapshot"/> was read from or written to.</summary>
-	private static string? _undoSnapshotPath;
+	/// <summary>
+	/// Called with each settings file's path once its new contents are written beside it, just before they
+	/// replace it. Unit tests only: to hold a write back, or fail it.
+	/// </summary>
+	internal static Action<string>? WritingFileForTesting { get; set; }
 
 	/// <summary>
 	/// The directory holding every settings file: <c>%APPDATA%\FE-Buddy\User Configurations</c> by default.
 	/// </summary>
-	public static string Directory
-	{
-		get
-		{
-			lock (Gate)
-			{
-				return Path.Combine(_root, ProfilesFolderName);
-			}
-		}
-	}
+	public static string Directory => Path.Combine(_root, ProfilesFolderName);
 
 	/// <summary>The settings profile in use, e.g. <c>Default</c>.</summary>
-	public static string ActiveProfile
-	{
-		get
-		{
-			lock (Gate)
-			{
-				return _profile;
-			}
-		}
-	}
+	public static string ActiveProfile => _profile;
 
 	/// <summary>The full path of the active profile's settings file, e.g. <c>UserConfig.Default.json</c>.</summary>
 	public static string ConfigFilePath => ProfileFilePath(ActiveProfile);
@@ -155,6 +145,12 @@ public static partial class UserConfigFile
 	/// before the last <see cref="ReplaceAll"/>, kept so an import can be taken back by hand.
 	/// </summary>
 	public static string BeforeImportFilePath => BackupFilePath(ActiveProfile, "before-import");
+
+	/// <summary>
+	/// The full path of <c>UserConfig-damaged.&lt;Profile&gt;.json</c>: the active profile as it was when it couldn't
+	/// be read as settings (cut short by a crash, say), kept before a save wrote over it.
+	/// </summary>
+	public static string DamagedFilePath => BackupFilePath(ActiveProfile, "damaged");
 
 	/// <summary>
 	/// The full path a profile in an older layout is kept at once it has been brought forward, e.g.
@@ -200,6 +196,8 @@ public static partial class UserConfigFile
 			_profile = PickProfile(sharedRead.ActiveProfile);
 			BringSharedForward(sharedRead);
 			Dictionary<string, string> shared = sharedRead.Values;
+
+			ReadUndoSnapshotIfNeeded();
 
 			string path = ConfigFilePath;
 
@@ -271,6 +269,7 @@ public static partial class UserConfigFile
 	/// <summary>
 	/// Writes the entire in-memory dictionary - the active profile's settings to its file, the shared
 	/// ones to <c>Shared.json</c> - then re-reads them so the dictionary reflects exactly what is on disk.
+	/// A profile that can't be read as settings is kept first (<see cref="DamagedFilePath"/>).
 	/// </summary>
 	/// <exception cref="IOException">
 	/// A file could not be written or read, or the profile's file couldn't be read when the settings
@@ -288,6 +287,7 @@ public static partial class UserConfigFile
 					$"'{Path.GetFileName(ConfigFilePath)}' couldn't be read, so it wasn't written over: that would replace every setting in it.");
 			}
 
+			KeepProfileIfDamaged();
 			UpdateSharedFile(UserConfigPortability.SharedByProfiles);
 			WriteConfig(ConfigFilePath, BuildTree(ProfileValues(Values)), _stampVersion);
 		}
@@ -296,7 +296,7 @@ public static partial class UserConfigFile
 	}
 
 	/// <summary>
-	/// Gets a single value by dotted path (e.g. <c>Services.AiracService.UserArtccId</c>).
+	/// Gets a single value by dotted path (e.g. <c>General.Facility</c>).
 	/// </summary>
 	/// <param name="dottedPath">The dotted path of the leaf value.</param>
 	/// <returns>The stored string, or <see langword="null"/> if the path is not set.</returns>
@@ -559,33 +559,77 @@ public static partial class UserConfigFile
 
 	/// <summary>
 	/// Writes the node's subtree from memory to the profile's file (and any shared setting under it to
-	/// <c>Shared.json</c>), after keeping the file's own as the node's undo snapshot. Call under <see cref="Gate"/>.
+	/// <c>Shared.json</c>), after keeping the file's own as the node's undo snapshot. A snapshot that is there
+	/// but can't be read fails the save, rather than be written back with this node alone; when the save
+	/// fails after the snapshot is written, the snapshot is put back as it was. Call under <see cref="Gate"/>.
 	/// </summary>
 	private static void WriteNode(string nodePath)
 	{
-		JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
+		JsonObject onDisk = LoadProfileToUpdate();
 
 		// Snapshot the CURRENT on-disk subtree into the previous file, at the same path.
-		JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
+		JsonObject previous = LoadObjectToUpdate(PreviousFilePath);
+		JsonObject? snapshotAsItWas = File.Exists(PreviousFilePath) ? previous.DeepClone().AsObject() : null;
 		JsonNode? currentSubtree = GetNodeAtPath(onDisk, nodePath);
 		SetNodeAtPath(previous, nodePath, currentSubtree?.DeepClone());
-		WriteObject(PreviousFilePath, previous);
-		KeepUndoSnapshot(previous);
+		bool snapshotWritten = false;
 
-		// Replace the subtree on disk with the in-memory version built from the flat dict.
-		JsonNode? newSubtree = BuildSubtree(ProfileValues(Values), nodePath);
-		SetNodeAtPath(onDisk, nodePath, newSubtree);
-		RemoveSharedSettings(onDisk);
-
-		string below = nodePath + ".";
-		string[] sharedHere = [.. UserConfigPortability.SharedByProfiles.Where(key => key == nodePath || key.StartsWith(below, StringComparison.Ordinal))];
-
-		if (sharedHere.Length > 0)
+		try
 		{
-			UpdateSharedFile(sharedHere);
-		}
+			WriteObject(PreviousFilePath, previous);
+			snapshotWritten = true;
+			KeepUndoSnapshot(previous);
 
-		WriteConfig(ConfigFilePath, onDisk, _stampVersion);
+			// Replace the subtree on disk with the in-memory version built from the flat dict.
+			JsonNode? newSubtree = BuildSubtree(ProfileValues(Values), nodePath);
+			SetNodeAtPath(onDisk, nodePath, newSubtree);
+			RemoveSharedSettings(onDisk);
+
+			string below = nodePath + ".";
+			string[] sharedHere = [.. UserConfigPortability.SharedByProfiles.Where(key => key == nodePath || key.StartsWith(below, StringComparison.Ordinal))];
+
+			if (sharedHere.Length > 0)
+			{
+				UpdateSharedFile(sharedHere);
+			}
+
+			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
+		}
+		catch
+		{
+			ForgetUndoSnapshot();
+
+			if (snapshotWritten)
+			{
+				PutUndoSnapshotBack(snapshotAsItWas);
+			}
+
+			throw;
+		}
+	}
+
+	/// <summary>
+	/// Puts the undo snapshot back as it was before a save that failed - or deletes it, when there was none -
+	/// so Undo last save never offers to undo a save that didn't happen. Logs rather than throws: the save's own
+	/// error is the one to report. Call under <see cref="Gate"/>.
+	/// </summary>
+	private static void PutUndoSnapshotBack(JsonObject? asItWas)
+	{
+		try
+		{
+			if (asItWas is null)
+			{
+				File.Delete(PreviousFilePath);
+			}
+			else
+			{
+				WriteObject(PreviousFilePath, asItWas);
+			}
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning(LogSource, $"Could not put '{Path.GetFileName(PreviousFilePath)}' back as it was after the save failed: {ex.Message}");
+		}
 	}
 
 	/// <summary>
@@ -618,6 +662,8 @@ public static partial class UserConfigFile
 	/// </summary>
 	/// <param name="keys">The shared settings to write.</param>
 	/// <exception cref="ArgumentException">A key is not one every profile shares.</exception>
+	/// <exception cref="IOException"><c>Shared.json</c> could not be written, or is there but could not be read.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
 	public static void SaveShared(params string[] keys)
 	{
 		ArgumentNullException.ThrowIfNull(keys);
@@ -640,9 +686,11 @@ public static partial class UserConfigFile
 	/// <paramref name="nodePath"/> - i.e. a snapshot for that exact node exists.
 	/// </summary>
 	/// <remarks>
-	/// Answers from memory: the snapshot is read once per profile, and kept up to date by
-	/// <see cref="Save(string)"/>, <see cref="Undo(string)"/> and the writes that delete it. WPF asks on
-	/// every key press and click, so this must not touch the disk.
+	/// Answers from memory, without waiting for a save: WPF asks on every key press and click. The snapshot
+	/// is read by <see cref="ReadAll"/> and kept up to date by <see cref="Save(string)"/>,
+	/// <see cref="Undo(string)"/> and the writes that delete it. When it hasn't been read - or couldn't be,
+	/// locked by another program for a moment - this reads it, unless a save is running; until it is read,
+	/// the answer is <see langword="false"/>.
 	/// </remarks>
 	/// <param name="nodePath">The dotted path that was previously saved.</param>
 	/// <returns><see langword="true"/> if a one-step undo is available for that node.</returns>
@@ -653,10 +701,32 @@ public static partial class UserConfigFile
 			return false;
 		}
 
-		lock (Gate)
+		UndoSnapshotNodes? snapshot = _undoSnapshot;
+
+		if (snapshot is null || !string.Equals(snapshot.Path, PreviousFilePath, StringComparison.Ordinal))
 		{
-			return NodeExistsAtPath(UndoSnapshot(), nodePath);
+			if (!Gate.TryEnter())
+			{
+				return false;
+			}
+
+			try
+			{
+				ReadUndoSnapshotIfNeeded();
+				snapshot = _undoSnapshot;
+			}
+			finally
+			{
+				Gate.Exit();
+			}
+
+			if (snapshot is null)
+			{
+				return false;
+			}
 		}
+
+		return snapshot.Nodes.Contains(string.Join('.', nodePath.Split('.', StringSplitOptions.RemoveEmptyEntries)));
 	}
 
 	/// <summary>
@@ -668,8 +738,8 @@ public static partial class UserConfigFile
 	/// <param name="nodePath">The dotted path to restore.</param>
 	/// <returns><see langword="true"/> if a previous value was restored.</returns>
 	/// <exception cref="IOException">
-	/// The profile's file could not be written, or is there but could not be read. Nothing was restored
-	/// unless the profile was written and only the snapshot couldn't be updated.
+	/// The profile's file could not be written, or it or the snapshot is there but could not be read. Nothing
+	/// was restored unless the profile was written and only the snapshot couldn't be updated.
 	/// </exception>
 	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
 	public static bool Undo(string nodePath)
@@ -681,21 +751,18 @@ public static partial class UserConfigFile
 
 		lock (Gate)
 		{
-			if (!File.Exists(PreviousFilePath))
-			{
-				return false;
-			}
-
-			JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
+			JsonObject previous = LoadObjectToUpdate(PreviousFilePath);
 
 			if (!NodeExistsAtPath(previous, nodePath))
 			{
+				// What is on disk, so Undo last save turns off rather than staying on and doing nothing.
+				KeepUndoSnapshot(previous);
 				return false;
 			}
 
 			JsonNode? snapshot = GetNodeAtPath(previous, nodePath);
 
-			JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
+			JsonObject onDisk = LoadProfileToUpdate();
 			SetNodeAtPath(onDisk, nodePath, snapshot?.DeepClone());
 			RemoveSharedSettings(onDisk);
 			WriteConfig(ConfigFilePath, onDisk, _stampVersion);
@@ -729,6 +796,7 @@ public static partial class UserConfigFile
 			_profileUnreadable = false;
 			_profileInMemory = null;
 			ForgetUndoSnapshot();
+			WritingFileForTesting = null;
 		}
 	}
 
@@ -842,6 +910,11 @@ public static partial class UserConfigFile
 		int Version,
 		IReadOnlyList<string> Applied,
 		string? MigrationError);
+
+	/// <summary>The nodes in an undo snapshot, for <see cref="CanUndo"/>.</summary>
+	/// <param name="Path">The snapshot's file, which names its profile.</param>
+	/// <param name="Nodes">The dotted path of every node in it, and the empty path of its top.</param>
+	private sealed record UndoSnapshotNodes(string Path, IReadOnlySet<string> Nodes);
 
 	/// <summary>
 	/// Reads <c>Shared.json</c>: the shared settings in it, brought up to the current layout in memory
@@ -1104,42 +1177,137 @@ public static partial class UserConfigFile
 		}
 	}
 
-	private static void WriteObject(string path, JsonObject root)
+	/// <summary>
+	/// Reads the active profile to write it back with a change (<see cref="LoadObjectToUpdate"/>), after keeping
+	/// it when it can't be read as settings (<see cref="KeepProfileIfDamaged"/>). Call under <see cref="Gate"/>.
+	/// </summary>
+	private static JsonObject LoadProfileToUpdate()
 	{
-		System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-		File.WriteAllText(path, root.ToJsonString(WriteOptions));
-	}
+		JsonObject onDisk = LoadObjectToUpdate(ConfigFilePath);
 
-	/// <summary>The active profile's undo snapshot, read from disk only the first time it is asked for. Call under <see cref="Gate"/>.</summary>
-	private static JsonObject UndoSnapshot()
-	{
-		string path = PreviousFilePath;
-
-		if (_undoSnapshot is null || !string.Equals(_undoSnapshotPath, path, StringComparison.Ordinal))
+		// Empty is a file that is missing, empty, or not a JSON object: writing replaces it.
+		if (onDisk.Count == 0)
 		{
-			_undoSnapshot = LoadObjectOrEmpty(path);
-			_undoSnapshotPath = path;
+			KeepProfileIfDamaged();
 		}
 
-		return _undoSnapshot;
+		return onDisk;
 	}
 
 	/// <summary>
-	/// Keeps what was just written to <see cref="PreviousFilePath"/>, as reading it back would give it. Call
-	/// under <see cref="Gate"/>, after the write.
+	/// Keeps the active profile as <see cref="DamagedFilePath"/> when it is there but can't be read as settings
+	/// - cut short by a crash, say - before anything writes over it, so what is left in it isn't lost. Call
+	/// under <see cref="Gate"/>.
 	/// </summary>
-	private static void KeepUndoSnapshot(JsonObject written)
+	/// <exception cref="IOException">The file could not be read, or the copy written.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	private static void KeepProfileIfDamaged()
 	{
-		_undoSnapshot = JsonNode.Parse(written.ToJsonString()) as JsonObject;
-		_undoSnapshotPath = PreviousFilePath;
+		string path = ConfigFilePath;
+
+		if (!File.Exists(path))
+		{
+			return;
+		}
+
+		try
+		{
+			if (JsonNode.Parse(File.ReadAllText(path)) is JsonObject)
+			{
+				return;
+			}
+		}
+		catch (JsonException)
+		{
+			// Damaged: kept below.
+		}
+
+		File.Copy(path, DamagedFilePath, overwrite: true);
+		AppLog.Warning(LogSource, $"'{Path.GetFileName(path)}' couldn't be read as settings, so it is kept as '{Path.GetFileName(DamagedFilePath)}' before it is written over.");
+	}
+
+	/// <summary>
+	/// Writes a settings file whole: beside it first (<c>&lt;file&gt;.tmp</c>), flushed to disk, then moved over
+	/// it, so a write cut short - a crash, a power cut - leaves the file as it was rather than half written.
+	/// </summary>
+	private static void WriteObject(string path, JsonObject root)
+	{
+		System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+		string temp = path + ".tmp";
+
+		try
+		{
+			using (FileStream stream = new(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+			{
+				stream.Write(Encoding.UTF8.GetBytes(root.ToJsonString(WriteOptions)));
+				stream.Flush(flushToDisk: true);
+			}
+
+			WritingFileForTesting?.Invoke(path);
+			File.Move(temp, path, overwrite: true);
+		}
+		catch
+		{
+			DeleteIfPresent(temp);
+			throw;
+		}
+	}
+
+	/// <summary>
+	/// Reads the active profile's undo snapshot when <see cref="_undoSnapshot"/> doesn't hold it. One that is
+	/// missing or isn't valid JSON is empty; one that is there but can't be read - locked by another program,
+	/// say - is left unread, so the next ask reads it again. Call under <see cref="Gate"/>.
+	/// </summary>
+	private static void ReadUndoSnapshotIfNeeded()
+	{
+		if (_undoSnapshot is { } held && string.Equals(held.Path, PreviousFilePath, StringComparison.Ordinal))
+		{
+			return;
+		}
+
+		try
+		{
+			KeepUndoSnapshot(LoadObjectToUpdate(PreviousFilePath));
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			ForgetUndoSnapshot();
+		}
+	}
+
+	/// <summary>
+	/// Keeps the nodes of what <see cref="PreviousFilePath"/> holds - just written, or read. Call under
+	/// <see cref="Gate"/>, after the write or read.
+	/// </summary>
+	private static void KeepUndoSnapshot(JsonObject snapshot)
+	{
+		HashSet<string> nodes = [string.Empty];
+		AddNodes(snapshot, prefix: null, nodes);
+		_undoSnapshot = new UndoSnapshotNodes(PreviousFilePath, nodes.ToFrozenSet(StringComparer.Ordinal));
+	}
+
+	/// <summary>Adds the dotted path of every node under <paramref name="obj"/> that <see cref="NodeExistsAtPath"/> can reach.</summary>
+	private static void AddNodes(JsonObject obj, string? prefix, HashSet<string> nodes)
+	{
+		foreach (KeyValuePair<string, JsonNode?> pair in obj)
+		{
+			if (pair.Key.Length == 0 || pair.Key.Contains('.', StringComparison.Ordinal))
+			{
+				continue;
+			}
+
+			string path = prefix is null ? pair.Key : $"{prefix}.{pair.Key}";
+			nodes.Add(path);
+
+			if (pair.Value is JsonObject child)
+			{
+				AddNodes(child, path, nodes);
+			}
+		}
 	}
 
 	/// <summary>Has the next <see cref="CanUndo"/> read the snapshot again: it was deleted, or couldn't be. Call under <see cref="Gate"/>.</summary>
-	private static void ForgetUndoSnapshot()
-	{
-		_undoSnapshot = null;
-		_undoSnapshotPath = null;
-	}
+	private static void ForgetUndoSnapshot() => _undoSnapshot = null;
 
 	/// <summary>Writes a whole settings file, stamped with its layout version at the top.</summary>
 	private static void WriteConfig(string path, JsonObject root, int version)

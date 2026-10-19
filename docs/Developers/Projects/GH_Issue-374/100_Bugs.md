@@ -2,9 +2,9 @@
 
 Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/Nikolai558/FE-BUDDY/issues/374)).
 
-Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
+Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2), and N1-5 onward, found in the review of the S2 to S5 code, are [S14](020_Work-Plan.md#s14). Each fix should come with a regression test.
 
-**47 findings** (2 High, 11 Med, 34 Low), 44 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**71 findings** (2 High, 16 Med, 53 Low), 68 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -23,6 +23,11 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [W1-13](#w1-13) | Bug | Med | Unticking every Procedures.json field gives the 8 default fields | Fixed | S1 |
 | [W3-15](#w3-15) | Bug | Med | Reset window says settings backups are always deleted, but a reset that keeps settings keeps them | Fixed | S1 |
 | [C1-5](#c1-5) | Bug | Med | The update's relaunch inherits msiexec's elevation | Fixed | S1 |
+| [N1-5](#n1-5) | Bug | Med | Going back to an already-loaded cycle leaves Procedure Charts with no chart data | Fixed | S14 |
+| [N1-6](#n1-6) | Bug | Med | Add Custom Aliases keeps a "no alias commands" error after the file is fixed | Fixed | S14 |
+| [N1-7](#n1-7) | Bug | Med | A save, map change or import made during a profile switch or import can land in the wrong profile | Fixed | S14 |
+| [N1-8](#n1-8) | Bug | Med | A settings write cut short can lose a whole profile | Fixed | S14 |
+| [N1-9](#n1-9) | Bug | Med | The restart is offered while the update is still installing; a rolled-back update blocks runs | Fixed | S14 |
 | [C3-17](#c3-17) | Bug | Low | A custom alias file's address with a secret is echoed when it isn't http(s) | Deferred | After 3.0 |
 | [O1-42](#o1-42) | Bug | Low | DEV-CleanBuild.bat misses FeBuddy.Installer.UI and every obj folder | Fixed | S2 |
 | [C1-2](#c1-2) | Bug | Low | A cancelled run can leave a cycle's parse permanently "cancelled" for the session | Fixed | S2 |
@@ -57,6 +62,25 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [O1-2](#o1-2) | Bug | Low | Any CPU never builds FeBuddy.UnitTests | Fixed | S2 |
 | [T2-8](#t2-8) | Bug | Low | NasrCsvParserMappingTests computes expected numbers with the PC's culture | Fixed | S2 |
 | [T2-9](#t2-9) | Bug | Low | FileEncodingTests walks build.ps1's `publish\` and `releases\` output | Fixed | S2 |
+| [N1-10](#n1-10) | Bug | Low | Procedure Charts can still get the previous cycle's d-TPP data while a new cycle loads | Fixed | S14 |
+| [N1-11](#n1-11) | Bug | Low | A reload reopens the General tab on an unpublished saved Next | Fixed | S14 |
+| [N1-12](#n1-12) | Bug | Low | An overtaken cycle load clears the newer load's "loading" mark | Fixed | S14 |
+| [N1-13](#n1-13) | Bug | Low | "Pick it again to try again" can't work: clicking the selected cycle does nothing | Fixed | S14 |
+| [N1-14](#n1-14) | Bug | Low | Background reads on File Conversions, Wx Stations and Telephony fail silently; an older read can win | Fixed | S14 |
+| [N1-15](#n1-15) | Bug | Low | A map change whose save failed is lost unless the same setting is changed again | Fixed | S14 |
+| [N1-16](#n1-16) | Bug | Low | An unexpected failure during a profile change or an import is never reported | Fixed | S14 |
+| [N1-17](#n1-17) | Bug | Low | "Home view saved" is shown even when nothing was saved | Fixed | S14 |
+| [N1-18](#n1-18) | Bug | Low | An undo file locked at its first read turns Undo off until the next save | Fixed | S14 |
+| [N1-19](#n1-19) | Bug | Low | The cached undo snapshot can disagree with the file; Undo stays on and does nothing | Fixed | S14 |
+| [N1-20](#n1-20) | Bug | Low | Marking the News read saves the whole General node | Fixed | S14 |
+| [N1-21](#n1-21) | Bug | Low | Copying the profiles shows every argument error as "Choose another folder" | Fixed | S14 |
+| [N1-22](#n1-22) | Bug | Low | The File Names tab and the run check name clashes against different lists | Fixed | S14 |
+| [N1-23](#n1-23) | Bug | Low | The Map rejects a UTF-16 or ANSI GeoJSON file with a misleading reason | Fixed | S14 |
+| [N1-24](#n1-24) | Bug | Low | If the setup window crashes mid-install, msiexec can wait forever | Fixed | S14 |
+| [N1-25](#n1-25) | Bug | Low | The update watcher can crash FE-Buddy if the folder disappears mid-check | Fixed | S14 |
+| [N1-26](#n1-26) | Bug | Low | The update watcher stops looking after 5 minutes without the dll | Fixed | S14 |
+| [N1-27](#n1-27) | Bug | Low | The update watcher logs "changed on disk" when nothing changed | Fixed | S14 |
+| [N1-28](#n1-28) | Bug | Low | Get-InstallerVersion.ps1 writes CRLF; the repository stores LF | Fixed | S14 |
 
 ## High
 
@@ -223,6 +247,72 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 **Problem:** The elevation comments in Updates are accurate (update runs elevated, uninstall deliberately not). But the "relaunch" after an update is started from inside the elevated msiexec (the external setup UI's `LaunchIfChosen`, or the stock ExitDialog's immediate `LaunchFEBUDDY`), so FE-Buddy comes back elevated - and for a standard user who typed an administrator's password, as that administrator, with the administrator's %APPDATA% (settings, AIRAC cache, credentials). This is the same hazard AppUninstall's remark (AppUninstall.cs:8-13) explains for uninstall. It also means an elevated FE-Buddy can't receive drag-and-drop from Explorer.
 
 **Proposed:** Relaunch FE-Buddy un-elevated as the signed-in user, e.g. start it through `explorer.exe "<path>\FE-BUDDY.exe"` from the setup UI, or another de-elevation route; then test "Update now" on a standard account with over-the-shoulder credentials.
+
+<a id="n1-5"></a>
+
+### N1-5 · Bug · Med · Going back to a cycle that was already loaded leaves Procedure Charts with no chart data
+
+**Status:** Fixed (not yet merged). Picking a cycle that isn't the one loaded clears the screen's loaded cycle, so picking a loaded cycle back hands its data over again; Procedure Charts also drops its NASR lookups when the cycle changes before the metafile arrives. Test: `CycleSwitchTests.going_back_to_a_loaded_cycle_brings_procedure_charts_data_back` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:74-80`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L74-L80), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:438-443`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L438-L443) (the early return at 440), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:463-483`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L463-L483); [`FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs:1684-1703`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ProceduresViewModel.cs#L1684-L1703)
+
+**Problem:** Pick Next on the General tab while it isn't published, failed or is still loading, then go back to Current. Procedure Charts stays on "Chart data appears once the selected cycle's data is loaded", with no procedure lookups and no NASR airport lookups (so the Area's "already included" hint is gone too). Picking Next cleared all of it; picking Current again returns early in `LoadCycleDataAsync` (`_parsedCycleId` is still Current), so nothing hands the data back. Toggling a General row brings back the d-TPP data only.
+
+**Proposed:** In the `CycleChanged` handler, before `LoadCycleDataAsync(picked: true)`, set `_parsedCycleId` and `_parsedForSelectedCycle` to null when `_parsedCycleId` isn't the selected cycle, so going back takes the normal hand-over. It is cheap: the cache and `AiracCycleOptionListBuilder` return what they already have. Optionally drop `_dtppCycleId is null ||` at ProceduresViewModel.cs:1686, so the NASR lookups are cleared too when the cycle changes before the metafile arrives. Test: `CycleSwitchTests.going_back_to_a_loaded_cycle_brings_procedure_charts_data_back` (Next not published; wait until `IsDtppKnown`; pick Next, then Current; `IsDtppKnown` and `DtppCycleId == "2610"`; today false and null).
+
+<a id="n1-6"></a>
+
+### N1-6 · Bug · Med · Add Custom Aliases keeps a "no alias commands" error after the file is fixed, blocking Save and Run
+
+**Status:** Fixed (not yet merged). **Check** on a file row, and a run, look at the files on this PC again, and a look a newer one has overtaken shows nothing, so a fixed file stops blocking Save and Run. Tests: `ConcatenateAliasesViewModelTests.checking_a_fixed_file_clears_its_no_alias_commands_error` and `an_older_check_of_the_files_that_finishes_last_is_not_shown` (both fail on the old code); the run's look has no test, as no unit test drives a run · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:77-79`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L77-L79) (the cache), [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:336-348`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L336-L348) (`Validate`), [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:372-404`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L372-L404) (no sequence guard), [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:424-467`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L424-L467) (`CheckAsync`), [`FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs:591-606`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ConcatenateAliasesViewModel.cs#L591-L606); refreshed only at 315, 107-111, 360-363 and 541-548; blocking at [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:79-87`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L79-L87) and [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:589`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L589), 767-814
+
+**Problem:** Once a file on this PC has been found to have no alias commands, the error stays until the path or the list is edited or the tab reloads. The user fixes the file and clicks **Check**: the row says "Read N alias command(s)", but the red error remains, **Save** refuses, and **Run** stops with "Add Custom Aliases has settings that need fixing". Two checks running at once (on load and after typing) can also finish out of order, and the older result wins.
+
+**Proposed:** `CheckAsync` re-checks the local files (`await CheckLocalFilesAsync()`) for a file row; `RunAsync` does too, when the tab exists, before saving the tabs; `CheckLocalFilesAsync` keeps a generation counter and applies only the latest check. Test: as `a_file_on_this_pc_with_no_alias_commands_cannot_be_saved`, but after fixing the file call `CheckAsync(tab.Sources[0])`; `Error` is null and `Save()` is true.
+
+<a id="n1-7"></a>
+
+### N1-7 · Bug · Med · A page save, a map change or an import made during a profile switch or import can land in the wrong profile
+
+**Status:** Fixed (not yet merged). One shared flag, `SettingsBusy`, is set while a profile change or an import runs: the profile list, Import, New, Rename and Delete are off, and `SettingsWrites` refuses a page's save with a message to wait. `DeferredSave` saves into the profile a change was made in, a profile change or an import saves the map's waiting changes first, and the comment on `Run` says so; `ReplaceAll` takes no profile argument (optional). Tests: `DeferredSaveTests.a_change_made_before_a_switch_is_not_saved_into_the_new_profile`, `SettingsProfilesViewModelTests.the_list_and_import_are_off_while_a_profile_change_or_an_import_runs` and `SettingsWritesTests.a_save_while_a_profile_change_runs_is_refused` (each fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/Views/SettingsView.xaml:86-88`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Views/SettingsView.xaml#L86-L88) (the profile list has no `IsEnabled`), 42 (Import); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:161-167`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L161-L167), [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:359-399`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L359-L399) (`_busy` only gates the profile card); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:829-848`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L829-L848), [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:871`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L871), 893, 898-908 (`_importing` only gates Import); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs:304-305`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigTransfer.cs#L304-L305), 430-440, 451-459; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:397-437`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L397-L437) (`ReplaceAll`); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:146-162`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L146-L162) (`SwitchProfile`); [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:57-62`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L57-L62), [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:82`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L82); [`FeBuddy/FeBuddy.Wpf/Shell/SettingsWrites.cs:25-40`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/SettingsWrites.cs#L25-L40)
+
+**Problem:** Since profile changes and imports run off the UI thread, the GUI stays live while they run, which on a OneDrive or network folder takes seconds. Meanwhile the user can pick another profile, start Import, use New, Rename or Delete during an import, change the map, or press Save on any page. `SwitchProfile` sets the new profile in one lock section and reads its settings in a second one, so a page save that gets the lock in between writes the old profile's values into the new profile's file (a Settings **Save** writes all of them). An import applied after a switch lands in the new profile, with the old profile's PC-only values, and its message names the wrong profile. `DeferredSave` reads the active profile when it saves, not when the change was made, so a map click from before a switch is saved into the new profile, which defeats `SaveValues`' own profile check.
+
+**Proposed:** One shared "settings busy" flag (static, with a changed event), set while a profile change or an import runs. Bind the profile list's `IsEnabled` to it; add it to Import, New, Rename and Delete's `CanExecute`; `SettingsWrites.Try*` refuse with a toast while it is set. `DeferredSave.Set` records the profile with the first change after `Forget`, and the save uses that profile. A profile change saves the map's waiting changes (`SaveNowAsync`) before its file step. Optionally give `ReplaceAll` a profile argument, as `SaveValues` has. Tests: `DeferredSaveTests.a_change_made_before_a_switch_is_not_saved_into_the_new_profile` (create `ZNY`; on Default, `Set` a map key; `SwitchProfile("ZNY")`; `SaveNowAsync()`; ZNY's file must not have the key; today it does), and a view-model test that the profile list and Import are disabled while either runs.
+
+**Note:** [T3-6](110_GUI-Lag.md#t3-6)'s Status was corrected with this review: a profile chosen while another change runs is refused (the list goes back to the profile in use), not queued. The comment at `SettingsProfilesViewModel.cs:355` ("Nothing else can change the profiles meanwhile") is untrue while an import runs; fix it with this one.
+
+<a id="n1-8"></a>
+
+### N1-8 · Bug · Med · A settings write cut short (closing FE-Buddy mid-switch, a crash, power loss) can lose a whole profile
+
+**Status:** Fixed (not yet merged). Part 3: every settings write (a profile, `Shared.json`, the undo snapshot, a new profile) goes beside the file first, flushed to disk, then moves over it, and a profile that can't be read as settings is kept as `UserConfig-damaged.<Profile>.json` (a `damaged` backup kind, in Settings-Reference); tests `UserConfigFileTests.a_damaged_profile_is_kept` and `a_write_that_stops_part_way_leaves_the_file_as_it_was` (both fail on the old code). Part 4: closing waits up to 5 seconds for a profile change or an import still writing its files (`App.OnExit`); test `SettingsBusyTests.closing_waits_for_the_file_work_running`, of the new wait · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:1107-1111`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L1107-L1111) (`WriteObject`, a plain `File.WriteAllText`, used for the profile at 588, 701 and 1220, `Shared.json` at 990, the undo snapshot at 572 and 705, and `CreateProfile`, [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:131`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L131)); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:260-267`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L260-L267) and 1071-1088 (an unreadable file); [`FeBuddy/FeBuddy.Wpf/App.xaml.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs) and [`FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml.cs:80-89`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml.cs#L80-L89) (nothing waits at close). Already safe: `ReplaceAll` ([`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:405-418`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L405-L418), a temp file and `File.Replace`)
+
+**Problem:** Settings files are written in place, so a write that is cut short leaves a truncated file. A truncated profile reads as invalid JSON: FE-Buddy opens it on defaults, and the next save reads it as empty and writes back only the node being saved, so every other setting in the profile is gone. A truncated `Shared.json` loses the shared settings and the active profile's name. FE-Buddy can also close in the middle of such a write: nothing waits for a profile change (`Working`) or an import at close. A plain switch is mostly safe, but New, Delete and import-as-a-new-profile have later steps that aren't.
+
+**Proposed:** `WriteObject` writes `<file>.tmp`, flushes it to disk (`Flush(true)`), then `File.Move(tmp, path, overwrite: true)`, as `ReplaceAll` already does. Before anything writes over a profile that couldn't be read as JSON, keep a copy as `UserConfig-damaged.<Profile>.json` (a `damaged` `BackupKind`). At close, wait up to 5 seconds for a profile change or import that is running. Tests: `UserConfigFileTests.a_damaged_profile_is_kept` (write `{"General":{"Facility":"ZOB"` as the profile, `ReadAll`, save a map key; the damaged text survives in `UserConfig-damaged.Default.json`; today it is gone), and a test that a failed write leaves the previous file whole.
+
+**Note:** Keep Nik's read and write safety rules (`_profileUnreadable`, `_profileInMemory`, `LoadObjectToUpdate`) as they are; [N1-4](#n1-4) covers a file that is locked, this one a file that is damaged.
+
+<a id="n1-9"></a>
+
+### N1-9 · Bug · Med · The other account's FE-Buddy offers the restart while the update is still installing, and a rolled-back update blocks runs
+
+**Status:** Fixed (not yet merged). `Check` first asks whether Windows Installer is running anything (its `Global\_MSIExecute` mutex, opened with `Mutex.TryOpenExisting`; one it may not open counts as held; injected for tests) and, while it is, looks again later. After setting its watch up again on a new folder it looks again rather than comparing in the same pass. `NewVersion` isn't cleared on a downgrade. The docs listed, and 020's #379 notes, are reworded. Tests: `InstalledVersionWatcherTests.an_update_is_not_reported_while_an_install_is_running` and `a_rolled_back_update_is_not_reported` (both fail on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:207-223`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L207-L223) (only `FE-BUDDY.dll` events start the settle), 184-187 (not recursive), [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:242-281`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L242-L281) (`Check`: 260-264 re-arm and compare in one pass; 264-277 `_raised`, both watches off), 76; [`FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs:56-61`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs#L56-L61), 69-78 (`NewVersion` never cleared); docs: [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:12-14`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L12-L14), 84, [`FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs:16`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs#L16), and [020's #379 notes](020_Work-Plan.md#related-issues)
+
+**Problem:** During an update the recreated folder isn't watched, so the first poll that finds the new `FE-BUDDY.dll` raises at once, 0 to 3 seconds after that one file lands, however many of the other files are still to come. Restarting then starts FE-Buddy from a half-written folder, and the new process can lock files the install still needs. If the install then fails or is cancelled and rolls back, nothing looks again (`_raised` is set, both watches are off), and `NewVersion` stays set: every run is refused until a restart, for an update that never happened. The docs promise the offer comes "as soon as the update has finished".
+
+**Proposed:** At the top of `Check`, while Windows Installer's `Global\_MSIExecute` mutex exists (an install is running, rollback included), schedule another check and return. Open it with `Mutex.TryOpenExisting` and dispose it; treat `UnauthorizedAccessException` as "held". Inject the check for tests (an internal `Func<bool> installRunning`). After re-arming on a new folder, schedule a check instead of comparing in the same pass. Reword the docs once true. Tests in `InstalledVersionWatcherTests`: `an_update_is_not_reported_while_an_install_is_running` (no `Updated` while `installRunning` is true; `Updated` once it turns false) and `a_rolled_back_update_is_not_reported`.
+
+**Note:** The two-account VM check of [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) comes after this fix. Any product's install holds the mutex; that only delays the offer.
 
 ## Low
 
@@ -412,7 +502,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### O1-23 · Bug · Low · Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM
 
-**Status:** Fixed (not yet merged), much as proposed: `Get-InstallerVersion.ps1` writes the counter itself, as UTF-8 without a BOM, laid out as the tracked file is, so Windows PowerShell 5.1 and PowerShell 7 write the same bytes and a build changes one number. Tests: `InstallerVersionScriptTests`, which run the script under Windows PowerShell 5.1 · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), much as proposed: `Get-InstallerVersion.ps1` writes the counter itself, as UTF-8 without a BOM, in one layout with the line ending the file already has ([N1-28](#n1-28)), so Windows PowerShell 5.1 and PowerShell 7 write the same bytes and a build changes one number. Tests: `InstallerVersionScriptTests`, which run the script under Windows PowerShell 5.1 · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1:81`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1#L81); [`FeBuddy/build.cmd:3`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/build.cmd#L3)
 
@@ -645,6 +735,236 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 **Problem:** Summary says build output is skipped, but `FeBuddy/build.ps1` creates `FeBuddy\publish` (a self-contained publish: hundreds of runtime files) and `FeBuddy\releases` (the MSI) (build.ps1:6, 17-18, 27-28), both gitignored (.gitignore:23, 170). After a local installer build, the test reads every published file and fails on any third-party file that starts with a BOM, which is not a repository file.
 
 **Proposed:** Add `"publish", "releases"` to `SkippedFolders`.
+
+<a id="n1-10"></a>
+
+### N1-10 · Bug · Low · Procedure Charts can still get the previous cycle's d-TPP data while a new cycle loads
+
+**Status:** Fixed (not yet merged). The Procedures tab's metafile is handed over only while the selected cycle is loaded, and a result lands only if its cycle is still the one selected. Test: `CycleSwitchTests.a_cycle_that_hasnt_loaded_never_gets_the_last_cycles_metafile` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:517-530`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L517-L530) (519; 529 pairs it with `PreviousOfSelectedCycleId`), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:556-564`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L556-L564) (560)
+
+**Problem:** [W1-15](#w1-15)'s fix is partly undone: these lines use `_parsedCycleId`, the last cycle loaded, not the one selected. With a new cycle picked that hasn't loaded, toggling a sub-service or an output on the General tab loads the old cycle's metafile and applies it, and a metafile load still running at the switch lands the same way. Procedure Charts then says "Cycle 2610: … airports" and resolves picks against 2610 while 2611 is selected.
+
+**Proposed:** At 519: return unless the selected cycle is loaded, and use `SelectedCycleId`. At 560: compare with `SelectedCycleId`. Test: in `CycleSwitchTests`, wait until `DtppCycleId == "2610"`, pick an unpublished Next, untick a General row; `DtppCycleId` is null (today "2610").
+
+<a id="n1-11"></a>
+
+### N1-11 · Bug · Low · Discard, Undo, an import or a profile switch reopens the General tab on an unpublished saved Next
+
+**Status:** Fixed (not yet merged). `LoadFromConfig` opens an unpublished saved Next on Current, as launch does, with the same "Opened on the current AIRAC cycle" message, no `CycleChanged` and no unsaved mark. Test: `AiracGeneralTabViewModelTests.a_reload_keeps_an_unpublished_saved_next_on_current` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:232-259`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L232-L259) (239-240), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:268-276`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L268-L276), 176-213; [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:149-183`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L149-L183); [`FeBuddy/FeBuddy.Wpf/Shell/ConfigPages.cs:44-62`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/ConfigPages.cs#L44-L62)
+
+**Problem:** With `CyclePosition=Next` saved and Next not published, the screen opens on Current with a message, as [Q7](010_Decisions.md#q7) decided. But a reload (**Discard**, **Undo last save**, a settings import, a profile switch) goes to Next: every tab says "AIRAC 2611 isn't published… Pick another cycle" and Run is off, until some unrelated cache event runs the fallback and jumps back to Current with the message.
+
+**Proposed:** In `LoadFromConfig`, call `OpenOnCurrentWhileSavedNextIsUnpublished()` right after `_cycleFromSave = true;` (`_loading` is set, so no `CycleChanged` and no unsaved mark); line 66 still covers the first load. Optionally skip the message on a reload. Test: `AiracGeneralTabViewModelTests.a_reload_keeps_an_unpublished_saved_next_on_current` (save Next, 2611 not published; untick a row, `RevertChanges()`; Current, not dirty, no `CycleChanged`).
+
+<a id="n1-12"></a>
+
+### N1-12 · Bug · Low · A cycle load that was overtaken clears the "loading" mark of the one that overtook it
+
+**Status:** Fixed (not yet merged). A finished load clears the "loading" mark only when it is its own. Test: `CycleSwitchTests.an_overtaken_load_leaves_the_newer_pick_loading` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:465`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L465), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:489-490`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L489-L490) (the guard at 440)
+
+**Problem:** Pick B, then C while B is loading. When B finishes it sets `_loadingCycleId` to null while C is still loading, so every later cache state change starts another load of C. The download and parse are shared, but each load hands over again: every tab rebuilds its lists and the metafile is parsed again ([N1-29](110_GUI-Lag.md#n1-29)). A stale failure also redoes the tabs' readiness as if C weren't loading.
+
+**Proposed:** At both places: `if (_loadingCycleId == cycleId) _loadingCycleId = null;`. Test: expose `LoadingCycleId` internally; pick Next, then Previous, with Next's download held; release it; `LoadingCycleId` is still Previous (today null).
+
+<a id="n1-13"></a>
+
+### N1-13 · Bug · Low · "Pick it again on the General tab to try again" can't work: clicking the selected cycle does nothing
+
+**Status:** Fixed (not yet merged). Each cycle row has a `PickCommand` on its radio button, run on every click; picking the selected cycle again while it has failed raises `CycleRetryRequested`, which loads it again, so "Pick it again on the General tab to try again" now works. Test: `CycleSwitchTests.picking_a_failed_cycle_again_tries_it_again` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:413-419`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L413-L419) (416); [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:399-409`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L399-L409), [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs:108-116`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracGeneralTabViewModel.cs#L108-L116); [`FeBuddy/FeBuddy.Wpf/Views/AiracGeneralTabView.xaml:100-102`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Views/AiracGeneralTabView.xaml#L100-L102)
+
+**Problem:** Clicking a radio button that is already checked changes nothing, so no retry happens. The only way is to pick another cycle and come back, which runs into [N1-5](#n1-5) when the other cycle is the loaded one.
+
+**Proposed:** Give `CycleOption` a `PickCommand` bound on the radio button (a command runs on every click). When the cycle picked is already selected and failed, raise a `CycleRetryRequested` event, which `AiracServiceViewModel` handles with `LoadCycleDataAsync(picked: true)`. Test: a 2611 download that always throws; pick Next, then `PickCommand.Execute`; a third download attempt (today none).
+
+<a id="n1-14"></a>
+
+### N1-14 · Bug · Low · Background reads on File Conversions, Wx Stations and Telephony aren't reported when they fail, and an older read can win
+
+**Status:** Fixed (not yet merged). A folder count that throws shows "This folder can't be read: …" and logs a warning; Wx Stations' and Telephony's looks at their kept copies log a failure and show "FE-Buddy couldn't read its copy: …", and an overtaken look shows nothing; Telephony's real-operator and virtual airline list reads log a failure too. Tests: `FileConversionTabViewModelTests.a_count_that_fails_says_the_folder_cant_be_read`, `WxStationsViewModelTests.a_look_that_fails_says_so_and_an_older_one_finishing_last_doesnt_win` and `TelephonyViewModelTests.an_older_look_at_the_faa_pages_copy_finishing_last_doesnt_win_and_a_failed_one_says_why` (each fails on the old code); the real-operator read has no test, as it reads nothing outside the app · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs:499-529`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/FileConversionTabViewModel.cs#L499-L529) (516; 155, 260); [`FeBuddy/FeBuddy.Wpf/ViewModels/WxStationsViewModel.cs:79`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/WxStationsViewModel.cs#L79), 86-90; [`FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs:106-127`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L106-L127), 173-188, 204-217; [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:164-165`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L164-L165)
+
+**Problem:** These run without anyone awaiting them. A folder count that throws anything but a cancellation leaves "Counting files…" on screen and blocks Run until the folder changes (Core catches the usual IO errors, so this needs something unexpected). A failed Wx Stations or Telephony read leaves the status empty or stale, logged only when the garbage collector finds the task. An older Telephony status or real-operator read that finishes last (after a run's refresh, say) overwrites the newer one; Wx Stations has no ordering guard either.
+
+**Proposed:** `CountFolderAsync`: a last `catch (Exception)` that, if this is still the current count, shows "This folder can't be read: …", clears `_countingFolder` and logs a warning. Wx Stations and Telephony: try/catch with a warning and a "couldn't read its copy: …" status, and a version number per refresh checked before applying the result. Tests: a count that throws "boom" shows "This folder can't be read: boom"; with Telephony's describe step injectable (as `RefreshVatsimRadarList` is), an older refresh released last doesn't win.
+
+<a id="n1-15"></a>
+
+### N1-15 · Bug · Low · A map change whose save failed is lost unless the same setting is changed again
+
+**Status:** Fixed (not yet merged). A failed save's values are kept, under a lock, and saved with the next save - after any change, or as FE-Buddy closes - unless the same setting changed since; `Forget` drops them, and the timer isn't restarted for them. The remark says so. Test: `DeferredSaveTests.a_failed_save_is_tried_again_with_the_next_change` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:21-22`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L21-L22) (the remark), [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:89-99`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L89-L99) (`TakeChanges` empties the queue), [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:101-116`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L101-L116), 118-128; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:537-552`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L537-L552) (`SaveValues` rolls memory back)
+
+**Problem:** When a map save fails (a locked file), the change stays on screen, but it is no longer queued and memory has been rolled back. A later change to another map setting saves only that one, and closing FE-Buddy saves nothing for it, so the choice is gone at the next launch. The remark says "the next change tries again"; only changing the same setting again does.
+
+**Proposed:** Keep the failed values (a lock-protected `_failed` dictionary). `TakeChanges` adds back the failed keys not changed since; `Forget` clears them. Don't restart the timer for them. Reword the remark to say what happens. Test: `DeferredSaveTests.a_failed_save_is_tried_again_with_the_next_change` (make `PreviousFilePath` a folder so the save fails; `Set` Gridlines, `SaveNowAsync` is false; remove the folder; `Set` the opacity, `SaveNowAsync` is true; the file has Gridlines too).
+
+<a id="n1-16"></a>
+
+### N1-16 · Bug · Low · An unexpected failure during a profile change or an import is never reported
+
+**Status:** Fixed (not yet merged). `Run`'s continuation reads `work.Exception` rather than `work.Result` and catches a failure as the pages follow; `ImportAsync` has a last `catch (Exception)`. Both log an error and show it. Test: `SettingsProfilesViewModelTests.a_failure_after_the_switch_is_reported` (fails on the old code); the import's catch has no test, as the import opens file dialogs · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs:380-394`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsProfilesViewModel.cs#L380-L394) (`work.Result` rethrows a step's exception; `then` runs `_reload`, [`FeBuddy/FeBuddy.Wpf/Shell/ConfigPages.cs:72-75`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/ConfigPages.cs#L72-L75), outside any try); [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:137`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L137) (`_ = ImportAsync()`), [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:850-934`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L850-L934) (only `UserConfigTransferException` is caught; e.g. `UserConfigTransfer.cs:153` can throw `FileNotFoundException`); [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:164-166`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L164-L166)
+
+**Problem:** Any exception these steps don't expect is stored in a task nobody awaits, so there is no message and no refresh, and the profile list can keep showing a profile that isn't in use. The only trace is an "unobserved task exception" log line, written whenever the garbage collector gets to it.
+
+**Proposed:** In `Run`'s continuation use `work.Exception?.GetBaseException()` instead of `work.Result`, and wrap `then(done)` in a try/catch that logs and shows an error. Give `ImportAsync` a last `catch (Exception)` that logs and shows an error. Test: `SettingsProfilesViewModelTests.a_failure_after_the_switch_is_reported` (`reload` throws; choose `ZNY`; an Error toast and an Error log entry).
+
+**Note:** The same pattern on the AIRAC tabs is [N1-14](#n1-14).
+
+<a id="n1-17"></a>
+
+### N1-17 · Bug · Low · "Home view saved" is shown even when nothing was saved
+
+**Status:** Fixed (not yet merged). `DeferredSave.Save` returns what `SaveValues` returns, so `SaveNowAsync` is `false` once another profile is in use and "Home view saved" doesn't show. Test: `DeferredSaveTests.a_change_made_before_a_switch_is_not_saved_into_the_new_profile` checks the `false` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:452-459`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L452-L459); [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:77-80`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L77-L80), [`FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs:106-107`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DeferredSave.cs#L106-L107)
+
+**Problem:** `DeferredSave.Save` ignores `SaveValues`' `false` (it refused, e.g. the profile changed), and returns `true`; with nothing waiting, `SaveNowAsync` also returns `true`. So the Map's "Home view saved" message can show when the home view wasn't saved.
+
+**Proposed:** `Save` returns what `SaveValues` returns; the message shows only on `true`. Test: a `DeferredSaveTests` case where `SaveValues` refuses returns `false`.
+
+<a id="n1-18"></a>
+
+### N1-18 · Bug · Low · An undo file locked the first time it is read turns "Undo last save" off until the next save
+
+**Status:** Fixed (not yet merged). A missing or invalid snapshot still reads as empty; one that is there but can't be read is left unread, so the next `CanUndo` reads it again, and a save fails rather than write it back with one node. Test: `UserConfigFileTests.a_snapshot_locked_at_first_ask_is_read_again` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:1090-1105`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L1090-L1105), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:1114-1125`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L1114-L1125) (the cached snapshot), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:569`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L569)
+
+**Problem:** The first `CanUndo` reads the undo snapshot file with `LoadObjectOrEmpty`, which turns any error into an empty object, and caches it. If the file is locked at that moment (antivirus, a sync tool), every **Undo last save** stays greyed out until a save, undo or profile switch, although the snapshot is on disk. At 569 the same read treats a locked snapshot as empty and rewrites it with one node, losing the other pages' snapshots.
+
+**Proposed:** A missing file or invalid JSON still caches an empty snapshot. On `IOException` or `UnauthorizedAccessException`, answer empty for this call only and leave `_undoSnapshot` null, so a later call reads again. In `WriteNode`, let that error through (the save then fails and says so, as [N1-4](#n1-4) does for the profile). Test: `UserConfigFileTests.a_snapshot_locked_at_first_ask_is_read_again` (save a node twice; re-read; with the snapshot opened `FileShare.None`, `CanUndo` is false; after closing it, `CanUndo` is true; today it stays false).
+
+<a id="n1-19"></a>
+
+### N1-19 · Bug · Low · The cached undo snapshot can disagree with the file: Undo stays on and does nothing
+
+**Status:** Fixed (not yet merged). `Undo`'s early return keeps what is on disk, a failed save forgets the cache (and puts the snapshot back once it was written), `DeleteProfile` forgets it, and the doc is fixed. Test: `UserConfigFileTests.undo_with_no_snapshot_on_disk_turns_undo_off` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:684-694`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L684-L694) (`Undo`'s early returns), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:569-573`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L569-L573), 585-588, [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:108-112`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L108-L112) (the doc), 642-646; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:206-226`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L206-L226) (`DeleteProfile`); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:161-170`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L161-L170)
+
+**Problem:** When the snapshot file is gone, `Undo` returns early without updating the cache, so **Undo last save** stays on and silently does nothing. `WriteNode` truncates the snapshot file before writing it (572); if that write fails, the cache no longer matches the disk. `DeleteProfile` doesn't forget the cache (harmless today: only a profile not in use can be deleted, and the cache is keyed by path). The doc at 108-112 says the cache always matches the file.
+
+**Proposed:** In `Undo`'s early returns, update the cache to what is on disk; the page asks `CanUndo` again after a `false`. In `WriteNode`, forget the cache if a write fails ([N1-8](#n1-8)'s write through a temp file also removes the truncation). Call `ForgetUndoSnapshot()` in `DeleteProfile`. Fix the doc. Test: `UserConfigFileTests.undo_with_no_snapshot_on_disk_turns_undo_off` (save twice; delete the snapshot file; `Undo` is false, then `CanUndo` is false; today it stays true).
+
+<a id="n1-20"></a>
+
+### N1-20 · Bug · Low · Marking the News read saves the whole `General` node, over the default ROI's undo snapshot
+
+**Status:** Fixed (not yet merged). The Dashboard's new `MarkNewsRead` saves `NewsLastOpen` alone through the new `SettingsWrites.TrySaveShared`; `SaveShared`'s doc lists its IO errors. Test: `SettingsWritesTests.marking_the_news_read_saves_only_that_setting` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:317-330`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L317-L330) (327: `TrySave("General", …)`); [`FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs:22`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs#L22) (`General.DefaultRoi`); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:564-589`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L564-L589), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:621-636`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L621-L636) (`SaveShared`); [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/UserConfigLayoutTests.cs:161-178`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/UserConfigLayoutTests.cs#L161-L178)
+
+**Problem:** The Dashboard saves the whole `General` node to record that the News was read, though that key (`NewsLastOpen`) lives only in `Shared.json`. The save rewrites the profile and every shared `General.*` key, and replaces the undo snapshot's `General` entry, dropping the default ROI's (`General.DefaultRoi`). It breaks [H5](010_Decisions.md#h5) (one settings node per page), and the layout test doesn't list `General`, so it doesn't notice.
+
+**Proposed:** Save the key alone with `UserConfigFile.SaveShared(UserConfigKeys.NewsLastOpen)` through a new `SettingsWrites.TrySaveShared` (`SaveShared` can throw IO errors, whatever its doc says; fix the doc). Test: move the save into an internal `MarkNewsRead`; set the default ROI twice, then `MarkNewsRead`; the snapshot file is unchanged (today it changes) and `Shared.json` has `NewsLastOpen`.
+
+<a id="n1-21"></a>
+
+### N1-21 · Bug · Low · Copying the profiles to a folder: every argument error is shown as "Choose another folder"
+
+**Status:** Fixed (not yet merged). New `UserConfigFile.IsInsideAppData`, checked before the copy (`CopyProfilesTo` still refuses one too); any other argument error is logged and shown as a failed copy. Test: `UserConfigFileTests.a_copy_inside_fe_buddys_folder_is_recognised`, of the new check; the page's catch opens a file dialog, so it has no test · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:1096-1107`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L1096-L1107); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:318-348`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L318-L348) (327 is the intended throw; 322-323, 331 and 342 can throw `ArgumentException` too)
+
+**Problem:** The page catches every `ArgumentException` from `CopyProfilesTo` as "the folder is inside FE-Buddy's own, choose another", and logs nothing. Rare: a path from the save dialog almost never reaches the other throws.
+
+**Proposed:** Add `UserConfigFile.IsInsideAppData(path)` in Core and check it before copying (keep 327 as a guard); any other `ArgumentException` goes to the logged error branch. Test: `UserConfigFileTests.a_copy_inside_fe_buddys_folder_is_recognised`.
+
+<a id="n1-22"></a>
+
+### N1-22 · Bug · Low · The File Names tab and the run check name clashes against different lists
+
+**Status:** Fixed (not yet merged). `OutputFileNamesParser.KeptFileKeys` is public, and the File Names tab checks a new name against it as the run does; the run's comment is reworded, and `a_run_refuses_a_name_another_file_keeps` is kept. Test: `FileNamesViewModelTests.a_name_another_file_keeps_is_refused_even_when_this_run_doesnt_write_it` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/OutputFileNamesParser.cs:32-40`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Application/Airac/OutputFileNamesParser.cs#L32-L40) (`OtherFileKeys`), 73-80; [`FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs:252`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/FileNamesViewModel.cs#L252), 268-271; [`FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs:338-352`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/AiracServiceViewModel.cs#L338-L352); [`FeBuddy/FeBuddy.UnitTests/Application/Airac/Models/OutputFileNamesTests.cs:156-164`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Application/Airac/Models/OutputFileNamesTests.cs#L156-L164)
+
+**Problem:** The tab checks a new name against the files this run writes; the run checks it against every alias file FE-Buddy can write, always. So with Airways included and Airports not, renaming `Airways.txt` to "Airports" shows no error on the tab, and Run then stops with "Airports.txt is already the name of another file". The test `a_run_refuses_a_name_another_file_keeps` asserts that. The other way round (the tab refusing what the run allows) can't be reached today.
+
+**Proposed:** Make the tab use the run's rule (every run of a cycle writes into the same folder, so a name FE-Buddy uses for another file there is unsafe even if this run doesn't write it): expose `OutputFileNamesParser.KeptFileKeys` and have `FileNamesViewModel.Validate` pass `rows.Select(r => r.Key).Concat(KeptFileKeys)` to `Clashes`. Fix the comment at `OutputFileNamesParser.cs:73-75`. Test: `FileNamesViewModelTests` (only Airways listed; rename `Airways.txt` to "Airports"; the row shows the clash error).
+
+<a id="n1-23"></a>
+
+### N1-23 · Bug · Low · The Map rejects a UTF-16 or ANSI GeoJSON file with a misleading reason
+
+**Status:** Fixed (not yet merged). The Map still reads UTF-8 only, and says so: a UTF-16 or UTF-32 file (its byte-order mark, or a zero in its first two bytes) fails with "Not UTF-8 text (saved as UTF-16) - save it as UTF-8", an ANSI one with "Not UTF-8 text - save it as UTF-8"; `ReadFile`'s doc is reworded as proposed. Tests: `GeojsonFileReaderTests.a_file_not_saved_as_utf8_says_to_save_it_as_utf8` and `text_saved_as_utf16_or_utf32_is_named` (fail on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs:43-45`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs#L43-L45) (the doc), 56-57, 65-69, [`FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs:78-81`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs#L78-L81) ("Not valid JSON"), [`FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs:92-95`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Geojson/GeojsonFileReader.cs#L92-L95) ("Not laid out as GeoJSON"), 125, 153, 155, 172, 197-200; shown at [`FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs:1014`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/MapLayersState.cs#L1014), 1027
+
+**Problem:** Since [S5](020_Work-Plan.md#s5) the Map reads GeoJSON as UTF-8 only, as the GeoJSON standard says (Nik, on purpose). But the message doesn't say so. A UTF-16 file (Notepad's "Unicode", Windows PowerShell 5's `>`) fails with "Not valid JSON"; an ANSI file with a non-ASCII character ("Café") fails with "Not laid out as GeoJSON". Both loaded before. The doc says the file is parsed "as it streams in"; `JsonDocument.Parse(Stream)` reads it all first (it still saves the string copy, which is the point).
+
+**Proposed:** Keep UTF-8 only, and say so: on a UTF-16 or UTF-32 byte-order mark, or a zero second byte, throw `FormatException("Not UTF-8 text (saved as UTF-16) - save it as UTF-8")`; catch `InvalidOperationException` whose inner exception is a `DecoderFallbackException` as "Not UTF-8 text - save it as UTF-8". Keep "Not laid out as GeoJSON" for anything else. Doc: "Reads the file straight from its UTF-8 bytes, without decoding it to a string first: a run's output can be tens of MB." Tests in `GeojsonFileReaderTests`: a Latin-1 file with "Caf\xE9" and a file written with `Encoding.Unicode` each fail with the UTF-8 message.
+
+<a id="n1-24"></a>
+
+### N1-24 · Bug · Low · If the setup window crashes mid-install, msiexec can wait for it forever
+
+**Status:** Fixed (not yet merged). The window thread's catch ends its dispatcher (`WindowCalls.EndWindowThread`), and `Ask`, FatalExit and `Shutdown` go through `WindowCalls.Invoke`, which answers `None` (or skips) once the window's thread has ended. `WindowCalls` is compiled into the unit tests as `SetupOutcomeRules` is, so no VM check is needed. Test: `WindowCallsTests.calls_to_a_window_whose_loop_has_failed_end_at_once` (fails on the old code: the waiting call never ends) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Installer.UI/SetupUI.cs:276-282`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer.UI/SetupUI.cs#L276-L282), [`FeBuddy/FeBuddy.Installer.UI/SetupUI.cs:314-332`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer.UI/SetupUI.cs#L314-L332) (`Ask`), 195-199 (FatalExit), 238-247 (`Shutdown`); the remarks at [`FeBuddy/FeBuddy.Installer.UI/SetupUI.cs:39-40`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer.UI/SetupUI.cs#L39-L40)
+
+**Problem:** When an exception escapes the window thread's `app.Run` (for example from a progress update posted with `BeginInvoke`), it is caught, but the window's dispatcher is never shut down. A call msiexec's thread has already queued with `Dispatcher.Invoke` (a question, FatalExit, `Shutdown`) then never runs or returns. The install never finishes, Windows Installer's lock stays held, and every other install says another installation is in progress until msiexec is killed in Task Manager. The remarks say the install goes on without the window.
+
+**Proposed:** In the catch at 276-282, after setting `_windowFailed`, call `Dispatcher.CurrentDispatcher.InvokeShutdown()` (in a try/catch): queued and later `Invoke`s then abort at once. In `Ask`, FatalExit and `Shutdown`, catch `OperationCanceledException` and answer `MessageResult.None` (skip, in `Shutdown`). Test: move the window-thread call into a helper linked into FeBuddy.UnitTests the way `SetupOutcomeRules` is; an STA thread whose loop dies; the helper returns None within 5 seconds. Otherwise check it on a VM with a debug build that throws on purpose.
+
+<a id="n1-25"></a>
+
+### N1-25 · Bug · Low · The update watcher can crash FE-Buddy if the install folder disappears mid-check, and leaks a watch if it can't start
+
+**Status:** Fixed (not yet merged). `WatchFolder` has one try around making and turning on the watch (`ArgumentException`, `IOException`, `UnauthorizedAccessException`: disposed, tried again at the next check), the timer's callback logs anything else as a warning, and the constructor disposes what it made if the parent watch fails. Test: `InstalledVersionWatcherTests.a_watch_that_fails_to_start_once_does_not_stop_the_checks`, with an internal watch factory (on the old code the exception ends the test process) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:69`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L69) (the timer callback), [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:181-204`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L181-L204) (only `ArgumentException` caught; `EnableRaisingEvents` at 200 throws `FileNotFoundException`), [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:73-81`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L73-L81), 279; [`FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs:44-52`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/InstalledUpdate.cs#L44-L52)
+
+**Problem:** If the install folder vanishes between creating the watch and turning it on, the exception escapes on a timer thread and FE-Buddy in the other account exits, losing unfinished work. If the parent watch can't be created in the constructor, the folder watch and the timer already made are never disposed.
+
+**Proposed:** In `WatchFolder`, one try around creating and turning on the watch: catch `ArgumentException`, `IOException` and `UnauthorizedAccessException`, dispose it and return. Wrap the timer callback in a try/catch that logs a warning. In the constructor, build the parent watch in a local, and on any exception dispose everything and rethrow. Test: with an internal watcher factory, a factory that throws `FileNotFoundException` once doesn't stop later checks.
+
+<a id="n1-26"></a>
+
+### N1-26 · Bug · Low · After 5 minutes without `FE-BUDDY.dll`, or a second install in one session, the update watcher stops looking
+
+**Status:** Fixed (not yet merged). The parent watch's Created handler watches the new folder at once, starts the missing checks over and schedules a check, so the new file's own changes start the check. Test: `InstalledVersionWatcherTests.a_folder_recreated_after_the_missing_checks_ran_out_is_still_followed`, with an internal limit of 3 (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:249-261`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L249-L261) (252 stops after the limit; 260, the only reset, and 261, the only re-arm, follow a successful read), 31 (`MaxMissingChecks`), 76-79
+
+**Problem:** The new folder is watched only once the dll has been read in it; until then only polling finds it, and polling stops for good after 100 misses (5 minutes). A stalled install, or an uninstall followed later by an install, is never seen: no restart is offered and runs aren't blocked, which is [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) again.
+
+**Proposed:** In the parent watch's Created handler, call `WatchFolder()`, reset `_missingChecks` and schedule a check, so the new dll's own events start the check and polling is only a fallback. Test: `a_folder_recreated_after_the_missing_checks_ran_out_is_still_followed` (an internal `maxMissingChecks` of 3).
+
+<a id="n1-27"></a>
+
+### N1-27 · Bug · Low · The update watcher logs "changed on disk" when nothing changed, and reads the file three times
+
+**Status:** Fixed (not yet merged). Each check reads the file once, compares that, logs "is now vX on disk, vY running" or "was written again, still vY", and raises with that version. Test: `InstalledVersionWatcherTests.the_same_version_or_a_stopped_watcher_reports_nothing` checks the log (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:249`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L249), 262, 264, [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs:156-157`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledVersionWatcher.cs#L156-L157)
+
+**Problem:** Every check that finds the file logs "FE-BUDDY.dll changed on disk: vX there, vY running", even when X is Y (a repair, a rollback). The file is read three times per check, so the logged version can differ from the one reported, and if it vanishes between reads the check neither raises nor tries again.
+
+**Proposed:** Read once, compare that, log "now vX on disk, vY running" or "written again, still vY", and raise with that version. Test (optional): same version written, no "changed on disk" line.
+
+<a id="n1-28"></a>
+
+### N1-28 · Bug · Low · `Get-InstallerVersion.ps1` writes the counter with CRLF, but the repository stores it with LF
+
+**Status:** Fixed (not yet merged). The script writes the line ending the file already has (CRLF if what it read has one, else LF; a new file gets LF), with no `.gitattributes`; its comment, the test's summary and O1-23's Status are reworded. Tests: `InstallerVersionScriptTests.the_counter_is_advanced_and_written_as_it_was` (LF and CRLF) and `a_new_major_or_a_missing_counter_starts_over` (the LF cases fail on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1:81-88`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1#L81-L88), 50-53; [`FeBuddy/FeBuddy.UnitTests/Repository/InstallerVersionScriptTests.cs:5-9`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Repository/InstallerVersionScriptTests.cs#L5-L9), 27-28, 64, 67, 76-83
+
+**Problem:** The repository has no `.gitattributes` and stores `installer-version-counter.json` with LF (`git ls-files --eol`: `i/lf w/lf`). With `core.autocrlf=false` the checkout is LF and the script writes CRLF, so a build shows every line changed and a commit would store CRLF. The comment, the test's summary and [O1-23](#o1-23)'s Status say it is "laid out as the tracked file is", which is true only of a CRLF checkout. CI is unaffected (`Push-InstallerCounter.ps1` converts to LF).
+
+**Proposed:** Write the line ending the file already has (`\r\n` if the text read at 52 has one, otherwise `\n`; a new file gets `\n`). Reword 81-83, the test summary and O1-23's Status. Test: LF in gives LF out; CRLF in gives CRLF out; no file gives LF.
 
 ## Reported more than once
 

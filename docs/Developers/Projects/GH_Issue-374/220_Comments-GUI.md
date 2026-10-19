@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-Plan.md#s8).
 
-**97 findings** (2 Med, 95 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**98 findings** (2 Med, 96 Low). Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -27,7 +27,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 | [W6-29](#w6-29) | Minor | Low | The AiracLayerKind enum is not in Map/Models | Agreed | S6 |
 | [W6-26](#w6-26) | Minor | Low | BaseMap.Load hides why a base layer failed to load | Open | S8 |
 | [W6-16](#w6-16) | Minor | Low | GeoJsonReader.Read's `<returns>` leaves out the Multi* types and skipped shapes | Open | S8 |
-| [W7-8](#w7-8) | Stale doc | Low | DefaultRoiStore names a settings file that no longer exists, and `Changed`'s doc misses `NotifyReloaded` | Open | S8 |
+| [W7-8](#w7-8) | Stale doc | Low | DefaultRoiStore names a settings file that no longer exists, and `Changed`'s doc misses `NotifyReloaded` | Fixed | S8 |
 | [W7-9](#w7-9) | Wrong doc | Low | Links' summary lists only three places; the links are used in six | Open | S8 |
 | [W7-10](#w7-10) | History wording | Low | Feature number in two summaries | Open | S8 |
 | [W7-12](#w7-12) | Minor | Low | Five window-placement data records sit in a file named after no type, outside Shell/Models/ | Agreed | S6 |
@@ -107,6 +107,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 | [W5-21](#w5-21) | Stale doc | Low | FebPropertiesCard's usage example binds IsEnabled, which no view does | Open | S8 |
 | [W5-35](#w5-35) | Minor | Low | SourceFilesCard uses a literal ✕ glyph instead of the icon token | Open | S8 |
 | [W5-30](#w5-30) | Wrong doc | Low | SummaryCard header says "every AIRAC sub-service tab" | Open | S8 |
+| [N1-37](#n1-37) | Wrong doc | Low | ReportReset's summary sits on ShowSplash | Fixed | S14 |
 
 ## FeBuddy.Wpf
 
@@ -151,6 +152,18 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 **Problem:** The comment matches the settings, but both are already the defaults for net10.0, so the lines change nothing (no other project in the solution sets them). Note the line-21 comment "unused usings are reported (IDE0005)" is true only in the IDE: `.editorconfig` sets IDE0005 to `suggestion` and no project sets `EnforceCodeStyleInBuild`, so a build never reports it.
 
 **Proposed:** Either delete lines 44-46, or keep them as documentation. Optionally reword line 21: `<!-- Every public member must be documented (CS1591); also lets the IDE flag unused usings (IDE0005). -->`
+
+<a id="n1-37"></a>
+
+### N1-37 · Wrong doc · Low · `ReportReset`'s summary sits on `ShowSplash`
+
+**Status:** Fixed (not yet merged). The summary is moved onto `ReportReset` · **Session:** [S14](020_Work-Plan.md#s14)
+
+**Where:** [`FeBuddy/FeBuddy.Wpf/App.xaml.cs:113-117`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs#L113-L117), 132
+
+**Problem:** Line 113 is `ReportReset`'s summary, but it sits above `ShowSplash`'s own, so `ShowSplash` has two and `ReportReset` (132) none.
+
+**Proposed:** Move line 113 to above line 132.
 
 ## FeBuddy.Wpf/Behaviors
 
@@ -364,7 +377,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 
 ### W7-8 · Stale doc · Low · DefaultRoiStore names a settings file that no longer exists, and `Changed`'s doc misses `NotifyReloaded`
 
-**Status:** Open · **Session:** [S8](020_Work-Plan.md#s8)
+**Status:** Fixed (not yet merged), with [N1-36](200_Comments-Core.md#n1-36) in [S14](020_Work-Plan.md#s14): line 9 names `General.DefaultRoi` in the profile in use, and `Changed`'s summary adds `NotifyReloaded`, after an import or a profile switch · **Session:** [S8](020_Work-Plan.md#s8)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs:9`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs#L9),29
 

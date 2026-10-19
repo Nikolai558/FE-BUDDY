@@ -10,7 +10,7 @@ Open work only. When an item is done, delete it - the commit is the record.
 - **Share repeated code.** Departures and Arrivals are near copies of each other; share what they
   have in common, and look for other copies at the same time.
 - **One home for values used in several places.** Start with the d-TPP Metafile timing
-  ("approximately 20 days prior to" a cycle), now written out in Core, the General tab tooltip,
+  ("approximately 20 days prior to" a cycle), written out in Core, the General tab tooltip,
   the run advisory and the docs: make it one Core constant. Then look for other values hard-coded
   in more than one place.
 - **A new AIRAC cycle during a session.** When a cycle takes effect while FE-Buddy is open, pick

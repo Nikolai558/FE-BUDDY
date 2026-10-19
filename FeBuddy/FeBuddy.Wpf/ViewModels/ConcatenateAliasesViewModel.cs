@@ -78,6 +78,10 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	// (CheckLocalFilesAsync); validating and the rows' notices only read it.
 	private readonly Dictionary<string, LocalAliasFileState> _localFiles = new(StringComparer.OrdinalIgnoreCase);
 
+	// Numbers the checks of the files on this PC, so only the latest is shown: two can run at once
+	// (when the tab loads and after typing), and the older may finish last.
+	private int _localFilesCheck;
+
 	// Checks the files once the user stops typing a path, rather than on every keystroke: a half-typed
 	// path on a share that isn't there would tie up a check for seconds each time.
 	private readonly DispatcherTimer _checkAfterTyping;
@@ -364,13 +368,21 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	}
 
 	/// <summary>
+	/// Finds what a file on this PC is, unit tests only: stands in for
+	/// <see cref="AliasSourceLoader.InspectLocalFile"/> so they can hold a check back.
+	/// </summary>
+	internal Func<string, LocalAliasFileState> InspectLocalFile { get; set; } = AliasSourceLoader.InspectLocalFile;
+
+	/// <summary>
 	/// Finds what each local file the rows name is - there, readable, an alias file - off the UI thread,
 	/// then shows it: the rows' notices and the tab's validation only read what was found. Runs when
-	/// the tab loads, when the list changes, and once the user stops typing a path.
+	/// the tab loads, when the list changes, once the user stops typing a path, when a file row is
+	/// checked and before a run. A check overtaken by a newer one shows nothing.
 	/// </summary>
 	/// <returns>A task that completes when the rows show what was found.</returns>
 	internal async Task CheckLocalFilesAsync()
 	{
+		int check = ++_localFilesCheck;
 		string[] paths = [.. Sources
 			.Where(row => row.IsFile)
 			.Select(row => row.Location.Trim())
@@ -382,10 +394,17 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 			return;
 		}
 
+		Func<string, LocalAliasFileState> inspect = InspectLocalFile;
+
 		try
 		{
 			Dictionary<string, LocalAliasFileState> found = await Task.Run(() =>
-				paths.ToDictionary(path => path, AliasSourceLoader.InspectLocalFile, StringComparer.OrdinalIgnoreCase));
+				paths.ToDictionary(path => path, inspect, StringComparer.OrdinalIgnoreCase));
+
+			if (check != _localFilesCheck)
+			{
+				return;
+			}
 
 			foreach ((string path, LocalAliasFileState state) in found)
 			{
@@ -398,7 +417,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		catch (Exception ex)
 		{
 			// A path Windows refuses outright (too long, a reserved name) is the row's to say; this keeps
-			// anything unexpected from taking FE-Buddy down, since nothing waits for the check.
+			// anything unexpected from taking FE-Buddy down, since the check is mostly started and left to run.
 			AppLog.Warning(LogSource, $"Checking the custom alias files failed: {ex.Message}");
 		}
 	}
@@ -417,7 +436,8 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	/// Reads a row's file now, and shows what the run would get - and, when GitHub refused or hid it,
 	/// what to try (<see cref="AliasSourceRow.Troubleshooting"/>). A GitHub address is turned into its
 	/// Raw link first. A result for an address or credential the user has changed since is dropped,
-	/// so it never shows against the new one.
+	/// so it never shows against the new one. A file row also has the files on this PC looked at
+	/// again, so a file the user has fixed stops being held against the tab.
 	/// </summary>
 	/// <param name="row">The row.</param>
 	/// <returns>A task that completes when the row shows the result.</returns>
@@ -463,6 +483,11 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		finally
 		{
 			row.IsChecking = false;
+		}
+
+		if (row.IsFile)
+		{
+			await CheckLocalFilesAsync();
 		}
 	}
 

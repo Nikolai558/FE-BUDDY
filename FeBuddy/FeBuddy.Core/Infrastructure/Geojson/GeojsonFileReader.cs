@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 
 using FeBuddy.Core.Domain.Map.Models;
@@ -41,12 +42,14 @@ public static class GeojsonFileReader
 	}
 
 	/// <summary>
-	/// Reads a GeoJSON file into a flat list of map geometries, parsing it as it streams in - a run's output
-	/// can be tens of MB, which reading it into a string first would hold in memory twice.
+	/// Reads a GeoJSON file into a flat list of map geometries. Reads the file straight from its UTF-8 bytes,
+	/// without decoding it to a string first: a run's output can be tens of MB.
 	/// </summary>
 	/// <param name="path">The file.</param>
 	/// <returns>Every Point, LineString and Polygon geometry found, in file order.</returns>
-	/// <exception cref="FormatException">The file is not usable GeoJSON (see <see cref="Read(string)"/>).</exception>
+	/// <exception cref="FormatException">
+	/// The file is not UTF-8 text, as GeoJSON must be, or not usable GeoJSON (see <see cref="Read(string)"/>).
+	/// </exception>
 	/// <exception cref="IOException">The file could not be read.</exception>
 	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
 	public static IReadOnlyList<MapGeometry> ReadFile(string path)
@@ -57,15 +60,52 @@ public static class GeojsonFileReader
 		return Read(stream);
 	}
 
-	/// <summary>Reads UTF-8 GeoJSON from <paramref name="stream"/> into a flat list of map geometries.</summary>
+	/// <summary>
+	/// Reads UTF-8 GeoJSON from <paramref name="stream"/> into a flat list of map geometries. GeoJSON is UTF-8
+	/// only, so UTF-16 or UTF-32 text is refused, with a reason that says so - when the stream can seek back
+	/// after its first bytes are looked at (a file can).
+	/// </summary>
 	/// <param name="stream">The GeoJSON, read to its end; the caller disposes it.</param>
 	/// <returns>Every Point, LineString and Polygon geometry found, in file order.</returns>
-	/// <exception cref="FormatException">The stream is not usable GeoJSON (see <see cref="Read(string)"/>).</exception>
+	/// <exception cref="FormatException">
+	/// The stream is not UTF-8 text, or not usable GeoJSON (see <see cref="Read(string)"/>).
+	/// </exception>
 	/// <exception cref="IOException">The stream could not be read.</exception>
 	public static IReadOnlyList<MapGeometry> Read(Stream stream)
 	{
 		ArgumentNullException.ThrowIfNull(stream);
+
+		if (stream.CanSeek)
+		{
+			RefuseUtf16OrUtf32(stream);
+		}
+
 		return Read(() => JsonDocument.Parse(stream));
+	}
+
+	/// <summary>
+	/// Refuses text saved as UTF-16 (Notepad's "Unicode", Windows PowerShell's <c>&gt;</c>) or UTF-32: by its
+	/// byte-order mark, or a zero byte where JSON's first character, ASCII, would have none. Leaves the stream
+	/// where it was.
+	/// </summary>
+	private static void RefuseUtf16OrUtf32(Stream stream)
+	{
+		long start = stream.Position;
+		byte[] head = new byte[4];
+		int count = stream.ReadAtLeast(head, head.Length, throwOnEndOfStream: false);
+		stream.Position = start;
+
+		string? encoding = head.AsSpan(0, count) switch
+		{
+			[0xFF, 0xFE, 0x00, 0x00, ..] or [0x00, 0x00, 0xFE, 0xFF, ..] => "UTF-32",
+			[0xFF, 0xFE, ..] or [0xFE, 0xFF, ..] or [0x00, ..] or [_, 0x00, ..] => "UTF-16",
+			_ => null,
+		};
+
+		if (encoding is not null)
+		{
+			throw new FormatException($"Not UTF-8 text (saved as {encoding}) - save it as UTF-8");
+		}
 	}
 
 	private static IReadOnlyList<MapGeometry> Read(Func<JsonDocument> parse)
@@ -88,6 +128,11 @@ public static class GeojsonFileReader
 			try
 			{
 				ReadNode(doc.RootElement, label: null, feature: null, number: null, result, state);
+			}
+			catch (InvalidOperationException ex) when (ex.InnerException is DecoderFallbackException)
+			{
+				// Text that isn't UTF-8 (ANSI, say) is found out only when a string holding a character outside ASCII is read.
+				throw new FormatException("Not UTF-8 text - save it as UTF-8", ex);
 			}
 			catch (InvalidOperationException ex)
 			{

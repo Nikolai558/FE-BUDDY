@@ -38,7 +38,6 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 	private readonly Func<IReadOnlyList<string>> _reload;
 	private readonly Dispatcher _dispatcher;
 	private string? _selectedProfile;
-	private bool _busy;
 	private Task _working = Task.CompletedTask;
 
 	/// <summary>Creates the card, asking the user in FE-Buddy's own windows.</summary>
@@ -68,9 +67,10 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 		_reload = reload;
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
-		NewCommand = new RelayCommand(New, () => !_busy);
-		RenameCommand = new RelayCommand(Rename, () => !_busy);
-		DeleteCommand = new RelayCommand(Delete, () => CanDelete && !_busy);
+		NewCommand = new RelayCommand(New, () => !SettingsBusy.IsBusy);
+		RenameCommand = new RelayCommand(Rename, () => !SettingsBusy.IsBusy);
+		DeleteCommand = new RelayCommand(Delete, () => CanDelete && !SettingsBusy.IsBusy);
+		SettingsBusy.Changed += (_, _) => OnPropertyChanged(nameof(CanChooseProfile));
 
 		Refresh();
 	}
@@ -111,6 +111,9 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 
 	/// <summary>Whether there is another profile to switch to, so the one in use can be deleted.</summary>
 	public bool CanDelete => Profiles.Count > 1;
+
+	/// <summary>Whether another profile can be chosen in the list: not while a profile change or an import runs.</summary>
+	public bool CanChooseProfile => !SettingsBusy.IsBusy;
 
 	/// <summary>Makes a new profile - from a copy of the one in use, or every default - and switches to it.</summary>
 	public ICommand NewCommand { get; }
@@ -160,7 +163,7 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 	/// <param name="profile">The profile chosen.</param>
 	internal void SwitchTo(string profile)
 	{
-		if (_busy || profile.Equals(ActiveProfile, StringComparison.OrdinalIgnoreCase))
+		if (SettingsBusy.IsBusy || profile.Equals(ActiveProfile, StringComparison.OrdinalIgnoreCase))
 		{
 			ShowActive();
 			return;
@@ -193,7 +196,7 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 
 	private void New()
 	{
-		if (_busy)
+		if (SettingsBusy.IsBusy)
 		{
 			return;
 		}
@@ -241,7 +244,7 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 
 	private void Rename()
 	{
-		if (_busy)
+		if (SettingsBusy.IsBusy)
 		{
 			return;
 		}
@@ -275,7 +278,7 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 
 	private void Delete()
 	{
-		if (_busy)
+		if (SettingsBusy.IsBusy)
 		{
 			return;
 		}
@@ -350,51 +353,87 @@ public sealed class SettingsProfilesViewModel : ObservableObject
 
 	/// <summary>
 	/// Does a profile change's file work off the UI thread - the profile's files can be slow to answer
-	/// (OneDrive, a network profile) - one step after another until one fails, telling the user why. Then,
-	/// on the UI thread, <paramref name="then"/> takes how many steps were done, to have the pages follow.
-	/// Nothing else can change the profiles meanwhile.
+	/// (OneDrive, a network profile) - one step after another until one fails, telling the user why. The
+	/// map's changes still waiting are saved first, into the profile they were made in. Then, on the UI
+	/// thread, <paramref name="then"/> takes how many steps were done, to have the pages follow. Meanwhile
+	/// <see cref="SettingsBusy"/> keeps the profile list, Import, New, Rename and Delete off, and refuses
+	/// the pages' saves.
 	/// </summary>
 	/// <param name="steps">Each step's message should it fail, and the step.</param>
 	/// <param name="then">What follows, given how many steps were done.</param>
 	private void Run(IReadOnlyList<(string Failure, Action Step)> steps, Action<int> then)
 	{
-		_busy = true;
-		CommandManager.InvalidateRequerySuggested();
+		SettingsBusy.Start();
+		Task<bool> mapSaved = MapLayersState.SaveWaitingChangesIfCreated();
 
-		_working = Task.Run(() =>
-			{
-				for (int i = 0; i < steps.Count; i++)
-				{
-					try
-					{
-						steps[i].Step();
-					}
-					catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
-					{
-						return (Done: i, Error: ex);
-					}
-				}
+		Task<(int Done, Exception? Error)> fileWork = mapSaved.ContinueWith(
+			_ => RunSteps(steps), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+		SettingsBusy.Track(fileWork);
 
-				return (Done: steps.Count, Error: (Exception?)null);
-			})
+		_working = fileWork
 			.ContinueWith(
-				work => _dispatcher.InvokeAsync(() =>
-				{
-					_busy = false;
-					(int done, Exception? error) = work.Result;
-
-					if (error is not null)
-					{
-						AppLog.Warning(LogSource, $"{steps[done].Failure}: {error.Message}");
-						Toast.Error(steps[done].Failure, error.Message);
-					}
-
-					then(done);
-					CommandManager.InvalidateRequerySuggested();
-				}).Task,
+				work => _dispatcher.InvokeAsync(() => Finished(work, steps, then)).Task,
 				CancellationToken.None,
 				TaskContinuationOptions.None,
 				TaskScheduler.Default)
 			.Unwrap();
+	}
+
+	/// <summary>Runs each step in turn until one fails as a step can: how many were done, and why the next failed.</summary>
+	private static (int Done, Exception? Error) RunSteps(IReadOnlyList<(string Failure, Action Step)> steps)
+	{
+		for (int i = 0; i < steps.Count; i++)
+		{
+			try
+			{
+				steps[i].Step();
+			}
+			catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+			{
+				return (i, ex);
+			}
+		}
+
+		return (steps.Count, null);
+	}
+
+	/// <summary>
+	/// The profile change's file work is over: says why a step failed, then <paramref name="then"/> has the
+	/// pages follow. A failure no step expects - in the file work, or as the pages follow - is logged and
+	/// shown too, rather than lost in a task nothing waits for.
+	/// </summary>
+	private void Finished(Task<(int Done, Exception? Error)> work, IReadOnlyList<(string Failure, Action Step)> steps, Action<int> then)
+	{
+		SettingsBusy.Finish();
+
+		try
+		{
+			if (work.Exception?.GetBaseException() is { } unexpected)
+			{
+				ReportUnexpected(unexpected);
+				Refresh();
+				return;
+			}
+
+			(int done, Exception? error) = work.Result;
+
+			if (error is not null)
+			{
+				AppLog.Warning(LogSource, $"{steps[done].Failure}: {error.Message}");
+				Toast.Error(steps[done].Failure, error.Message);
+			}
+
+			then(done);
+		}
+		catch (Exception ex)
+		{
+			ReportUnexpected(ex);
+		}
+	}
+
+	private static void ReportUnexpected(Exception ex)
+	{
+		AppLog.Error(LogSource, $"Changing the settings profile failed: {ex.Message}");
+		Toast.Error("Settings profile change failed", ex.Message);
 	}
 }

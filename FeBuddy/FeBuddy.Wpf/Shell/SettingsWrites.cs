@@ -13,6 +13,8 @@ namespace FeBuddy.Wpf.Shell;
 /// <remarks>
 /// On a failure the user is told, and the settings in memory are read again from disk, so nothing
 /// takes the change for saved. The page keeps showing what the user chose, so saving again tries again.
+/// While a profile change or an import runs (<see cref="SettingsBusy"/>), nothing is saved and the user is
+/// asked to wait for it.
 /// </remarks>
 internal static class SettingsWrites
 {
@@ -23,6 +25,15 @@ internal static class SettingsWrites
 	/// <param name="what">What is being saved, for the message, e.g. <c>Airways settings</c>.</param>
 	/// <returns><see langword="true"/> when it was saved.</returns>
 	internal static bool TrySave(string nodePath, string what) => Try(() => UserConfigFile.Save(nodePath), what);
+
+	/// <summary>
+	/// Saves settings every profile shares to <c>Shared.json</c> alone (<see cref="UserConfigFile.SaveShared"/>),
+	/// leaving the profile and its undo snapshot as they are.
+	/// </summary>
+	/// <param name="keys">The shared settings, e.g. <see cref="UserConfigKeys.NewsLastOpen"/>.</param>
+	/// <param name="what">What is being saved, for the message.</param>
+	/// <returns><see langword="true"/> when they were saved.</returns>
+	internal static bool TrySaveShared(string[] keys, string what) => Try(() => UserConfigFile.SaveShared(keys), what);
 
 	/// <summary>Writes every setting in memory (<see cref="UserConfigFile.Write"/>).</summary>
 	/// <param name="what">What is being saved, for the message.</param>
@@ -41,6 +52,13 @@ internal static class SettingsWrites
 
 	private static bool Try(Action write, string what)
 	{
+		if (SettingsBusy.IsBusy)
+		{
+			// The profile in use, and the settings in memory, are about to change: a save now could land in the wrong profile.
+			Toast.Warn($"Could not save the {what}", "A settings profile change or import is running. Wait for it to finish, then try again.");
+			return false;
+		}
+
 		try
 		{
 			write();

@@ -1,10 +1,12 @@
 using System.Windows.Threading;
 
 using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.Shell.Models;
 using FeBuddy.Wpf.ViewModels;
 
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
@@ -108,6 +110,74 @@ public sealed class SettingsProfilesViewModelTests : IDisposable
 		Assert.Equal(1, _reloads);
 		Assert.Empty(_asked);
 		Assert.Contains(Toast.Items, t => t.Title == "Settings profile switched");
+	});
+
+	/// <summary>
+	/// While a profile change runs - and while an import does - the profile list, New, Rename, Delete and Import
+	/// are off, so nothing else changes the profiles or the settings meanwhile; they are back once it is done.
+	/// </summary>
+	[Fact]
+	public void the_list_and_import_are_off_while_a_profile_change_or_an_import_runs() => StaThread.Run(() =>
+	{
+		SettingsProfilesViewModel card = Card();
+		using ManualResetEventSlim writing = new();
+		using ManualResetEventSlim release = new();
+		UserConfigFile.WritingFileForTesting = _ =>
+		{
+			writing.Set();
+			release.Wait();
+		};
+
+		card.SelectedProfile = "ZNY";
+		Pump();
+
+		try
+		{
+			// The ten seconds are only a guard against hanging: the switch reaches its file at once.
+			Assert.True(writing.Wait(TimeSpan.FromSeconds(10)));
+			Assert.False(card.CanChooseProfile);
+			Assert.True(SettingsBusy.IsBusy);
+			Assert.False(card.NewCommand.CanExecute(null));
+			Assert.False(card.DeleteCommand.CanExecute(null));
+		}
+		finally
+		{
+			// Whatever happened above, the switch holding the settings is let go.
+			UserConfigFile.WritingFileForTesting = null;
+			release.Set();
+		}
+
+		Finish(card);
+
+		Assert.True(card.CanChooseProfile);
+		Assert.True(card.NewCommand.CanExecute(null));
+
+		SettingsBusy.Start();
+
+		try
+		{
+			Assert.False(card.CanChooseProfile);
+			Assert.False(card.RenameCommand.CanExecute(null));
+		}
+		finally
+		{
+			SettingsBusy.Finish();
+		}
+	});
+
+	/// <summary>A failure nothing expects as the pages follow a switch - here, one throwing - is logged and shown, not lost.</summary>
+	[Fact]
+	public void a_failure_after_the_switch_is_reported() => StaThread.Run(() =>
+	{
+		SettingsProfilesViewModel card = new((_, _, _) => true, _ => false, () => [], () => throw new InvalidOperationException("boom"));
+
+		card.SelectedProfile = "ZNY";
+		Pump();
+		Finish(card);
+
+		Assert.Contains(Toast.Items, t => t.Kind == ToastKind.Error && t.Message == "boom");
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Error && e.Message.EndsWith("boom", StringComparison.Ordinal));
+		Assert.False(SettingsBusy.IsBusy);
 	});
 
 	/// <summary>The list going empty, or choosing the profile in use, is no choice.</summary>

@@ -35,4 +35,32 @@ public sealed class FolderProbeTests
 		Assert.False(exists);
 		Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Took {stopwatch.Elapsed}.");
 	}
+
+	/// <summary>
+	/// A folder still being asked about - a share that hasn't answered - isn't asked again: each question would hold
+	/// another thread until the share times out.
+	/// </summary>
+	[Fact]
+	public void a_folder_still_being_asked_is_not_asked_again()
+	{
+		using ManualResetEventSlim release = new();
+		string share = @"\\offline\share-" + Guid.NewGuid().ToString("N");
+		int asked = 0;
+
+		bool Exists(string _)
+		{
+			Interlocked.Increment(ref asked);
+
+			// The ten seconds are only a guard against hanging: the test lets it answer.
+			release.Wait(TimeSpan.FromSeconds(10));
+			return true;
+		}
+
+		Assert.False(FolderProbe.Exists(share, TimeSpan.FromMilliseconds(100), Exists));
+		Assert.False(FolderProbe.Exists(share, TimeSpan.FromMilliseconds(100), Exists));
+		Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref asked) > 0, TimeSpan.FromSeconds(10)));
+
+		Assert.Equal(1, Volatile.Read(ref asked));
+		release.Set();
+	}
 }

@@ -311,8 +311,8 @@ public sealed class AirportBuilderTests
 	}
 
 	/// <summary>
-	/// Whether a field has a tower comes from NASR's code, not the tower type's display wording (C2-6): <c>ATCT</c>
-	/// and its <c>ATCT-</c> forms are towered; <c>NON-ATCT</c>, a plain <c>TRACON</c> (W6-3), a code NASR adds
+	/// Whether a field has a tower comes from NASR's code, not the tower type's display wording: <c>ATCT</c>
+	/// and its <c>ATCT-</c> forms are towered; <c>NON-ATCT</c>, a plain <c>TRACON</c>, a code NASR adds
 	/// later and a blank aren't.
 	/// </summary>
 	[Theory]

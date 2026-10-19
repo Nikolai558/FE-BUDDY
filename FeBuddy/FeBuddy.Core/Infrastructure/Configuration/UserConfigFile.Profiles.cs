@@ -16,8 +16,8 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// A profile's name is used in its file's name, so it follows Windows' rules for one
 /// (<see cref="ProfileNameProblem"/>), and two names that differ only in case are the same profile.
 /// Its backups - the undo snapshot, the file before an import, a file brought forward from an older
-/// layout - are named <c>UserConfig-&lt;kind&gt;.&lt;Profile&gt;.json</c>, so they can never be mistaken
-/// for a profile, and they move and go with it.
+/// layout, a file that couldn't be read as settings - are named <c>UserConfig-&lt;kind&gt;.&lt;Profile&gt;.json</c>,
+/// so they can never be mistaken for a profile, and they move and go with it.
 /// </para>
 /// </remarks>
 public static partial class UserConfigFile
@@ -36,23 +36,14 @@ public static partial class UserConfigFile
 	private static readonly Regex LegacyBackupName = new(@"^UserConfig\.(previous|before-import|v\d+)\.json$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
 	/// <summary>The kinds of backup a profile has.</summary>
-	private static readonly Regex BackupKind = new(@"^(previous|before-import|v\d+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+	private static readonly Regex BackupKind = new(@"^(previous|before-import|damaged|v\d+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
 	/// <summary>Whether any settings are saved: a profile, or an older FE-Buddy's file not yet moved in.</summary>
 	public static bool HasSettings =>
 		ProfileNames().Count > 0 || File.Exists(Path.Combine(RootDirectory, LegacyConfigFileName));
 
 	/// <summary>The folder that stands for <c>%APPDATA%\FE-Buddy</c>.</summary>
-	private static string RootDirectory
-	{
-		get
-		{
-			lock (Gate)
-			{
-				return _root;
-			}
-		}
-	}
+	private static string RootDirectory => _root;
 
 	/// <summary>Every profile, in name order: each one with a file, and the one in use even before it has one.</summary>
 	/// <returns>The names.</returns>
@@ -220,6 +211,8 @@ public static partial class UserConfigFile
 			{
 				DeleteIfPresent(path);
 			}
+
+			ForgetUndoSnapshot();
 		}
 
 		AppLog.Info(LogSource, $"Deleted settings profile '{profile}'.");
@@ -312,21 +305,20 @@ public static partial class UserConfigFile
 	/// </summary>
 	/// <param name="path">Where the profile in use goes.</param>
 	/// <returns>How many profiles were copied.</returns>
-	/// <exception cref="ArgumentException">The path is inside <see cref="AppDataReset.RootDirectory"/>, which a reset empties.</exception>
+	/// <exception cref="ArgumentException">
+	/// The path is inside <see cref="AppDataReset.RootDirectory"/>, which a reset empties (<see cref="IsInsideAppData"/>), or
+	/// is not one Windows can use.
+	/// </exception>
 	/// <exception cref="IOException">A file could not be copied.</exception>
 	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
 	public static int CopyProfilesTo(string path)
 	{
-		ArgumentNullException.ThrowIfNull(path);
-
-		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-		string full = Path.GetFullPath(path);
-
-		if (full.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
+		if (IsInsideAppData(path))
 		{
 			throw new ArgumentException($"A copy inside {AppDataReset.RootDirectory} would be deleted with it. Choose another folder.", nameof(path));
 		}
 
+		string full = Path.GetFullPath(path);
 		string active = ActiveProfile;
 		string stem = Path.Combine(Path.GetDirectoryName(full)!, Path.GetFileNameWithoutExtension(full));
 		string extension = Path.GetExtension(full);
@@ -345,6 +337,21 @@ public static partial class UserConfigFile
 		}
 
 		return copied;
+	}
+
+	/// <summary>
+	/// Whether <paramref name="path"/> is inside <see cref="AppDataReset.RootDirectory"/>, FE-Buddy's own folder,
+	/// which a reset or an uninstall empties: a copy of the settings saved there would go with it.
+	/// </summary>
+	/// <param name="path">The path.</param>
+	/// <returns><see langword="true"/> when it is.</returns>
+	/// <exception cref="ArgumentException">The path is not one Windows can use.</exception>
+	public static bool IsInsideAppData(string path)
+	{
+		ArgumentNullException.ThrowIfNull(path);
+
+		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+		return Path.GetFullPath(path).StartsWith(folder, StringComparison.OrdinalIgnoreCase);
 	}
 
 	/// <summary>A profile's backup files that exist, with the kind each is.</summary>

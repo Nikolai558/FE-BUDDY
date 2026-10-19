@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
@@ -826,5 +827,152 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Equal("Beta", UserConfigFile.GetValue("General.UpdateChannel"));
 		Assert.Null(UserConfigFile.GetValue(UserConfigVersion.FileKey));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("has a settings layout stamp FE-Buddy can't read", StringComparison.Ordinal));
+	}
+
+	// ---- writes cut short, damaged files and the undo snapshot ----
+
+	/// <summary>Saves the Airways node twice, so its undo snapshot holds it.</summary>
+	private static void SaveAirwaysTwice()
+	{
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+		UserConfigFile.Save(AirwaysNode);
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "Designation");
+		UserConfigFile.Save(AirwaysNode);
+	}
+
+	/// <summary>
+	/// A profile cut short (by a crash, say) can't be read as settings, so a save replaces it; what is left of it
+	/// is kept first, as <c>UserConfig-damaged.&lt;Profile&gt;.json</c>.
+	/// </summary>
+	[Fact]
+	public void a_damaged_profile_is_kept()
+	{
+		const string damaged = "{\"General\":{\"Facility\":\"ZOB\"";
+		WriteFile(damaged);
+		UserConfigFile.ReadAll();
+
+		UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "N" }, UserConfigFile.DefaultProfile);
+
+		Assert.Equal(damaged, File.ReadAllText(Path.Combine(UserConfigFile.Directory, "UserConfig-damaged.Default.json")));
+		Assert.Equal("N", UserConfigFile.GetValue(MapNode + ".Gridlines"));
+	}
+
+	/// <summary>
+	/// A settings file is written beside itself first and only then moved over it, so a write that stops part way
+	/// leaves the file as it was, and nothing behind.
+	/// </summary>
+	[Fact]
+	public void a_write_that_stops_part_way_leaves_the_file_as_it_was()
+	{
+		UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "Y" }, UserConfigFile.DefaultProfile);
+		string before = File.ReadAllText(UserConfigFile.ConfigFilePath);
+		UserConfigFile.WritingFileForTesting = path =>
+		{
+			if (path == UserConfigFile.ConfigFilePath)
+			{
+				throw new IOException("power cut");
+			}
+		};
+
+		Assert.Throws<IOException>(() => UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "N" }, UserConfigFile.DefaultProfile));
+
+		Assert.Equal(before, File.ReadAllText(UserConfigFile.ConfigFilePath));
+		Assert.Empty(Directory.GetFiles(UserConfigFile.Directory, "*.tmp"));
+	}
+
+	/// <summary>
+	/// A profile that can't be written - read-only, say - once its undo snapshot has been: memory goes back to what
+	/// the file holds, and Undo last save doesn't offer to undo the save that failed.
+	/// </summary>
+	[Fact]
+	public void a_profile_that_cannot_be_written_rolls_memory_back_and_offers_no_undo()
+	{
+		UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "Y" }, UserConfigFile.DefaultProfile);
+		File.SetAttributes(UserConfigFile.ConfigFilePath, FileAttributes.ReadOnly);
+
+		try
+		{
+			Assert.Throws<UnauthorizedAccessException>(() => UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "N" }, UserConfigFile.DefaultProfile));
+
+			Assert.Equal("Y", UserConfigFile.GetValue(MapNode + ".Gridlines"));
+			Assert.False(UserConfigFile.CanUndo(MapNode));
+		}
+		finally
+		{
+			File.SetAttributes(UserConfigFile.ConfigFilePath, FileAttributes.Normal);
+		}
+	}
+
+	/// <summary>
+	/// An undo snapshot locked by another program the first time it is asked for - at launch, say - isn't taken
+	/// for empty for good: once it can be read, Undo last save is on again.
+	/// </summary>
+	[Fact]
+	public void a_snapshot_locked_at_first_ask_is_read_again()
+	{
+		SaveAirwaysTwice();
+
+		// A new launch: the snapshot hasn't been read yet.
+		UserConfigFile.ConfigureForTesting(_directory);
+
+		using (new FileStream(UserConfigFile.PreviousFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			UserConfigFile.ReadAll();
+			Assert.False(UserConfigFile.CanUndo(AirwaysNode));
+		}
+
+		Assert.True(UserConfigFile.CanUndo(AirwaysNode));
+	}
+
+	/// <summary>An undo snapshot gone from disk turns Undo last save off at the first try, rather than leave it on doing nothing.</summary>
+	[Fact]
+	public void undo_with_no_snapshot_on_disk_turns_undo_off()
+	{
+		SaveAirwaysTwice();
+		Assert.True(UserConfigFile.CanUndo(AirwaysNode));
+		File.Delete(UserConfigFile.PreviousFilePath);
+
+		Assert.False(UserConfigFile.Undo(AirwaysNode));
+		Assert.False(UserConfigFile.CanUndo(AirwaysNode));
+	}
+
+	/// <summary>
+	/// The profile in use and Undo last save answer while a save holds the files - on a slow folder that is a
+	/// while - so the UI thread, which asks on every key press, never waits for it.
+	/// </summary>
+	[Fact]
+	public async Task reads_do_not_wait_for_a_save()
+	{
+		SaveAirwaysTwice();
+		using ManualResetEventSlim writing = new();
+		using ManualResetEventSlim release = new();
+		UserConfigFile.WritingFileForTesting = _ =>
+		{
+			writing.Set();
+			release.Wait();
+		};
+
+		Task save = Task.Run(() => UserConfigFile.SaveValues(MapNode, new Dictionary<string, string> { [MapNode + ".Gridlines"] = "N" }, UserConfigFile.DefaultProfile));
+		writing.Wait();
+		Task<(bool CanUndo, string Profile)> reads = Task.Run(() => (UserConfigFile.CanUndo(AirwaysNode), UserConfigFile.ActiveProfile));
+
+		// Only a guard against hanging: the reads take no time unless they wait for the save.
+		bool answered = await Task.WhenAny(reads, Task.Delay(TimeSpan.FromSeconds(10))) == reads;
+		release.Set();
+		await save;
+
+		Assert.True(answered, "The reads waited for the save.");
+		Assert.Equal((true, UserConfigFile.DefaultProfile), await reads);
+	}
+
+	/// <summary>A copy of the settings inside FE-Buddy's own folder, which a reset or an uninstall empties, is recognised before it is made.</summary>
+	[Fact]
+	public void a_copy_inside_fe_buddys_folder_is_recognised()
+	{
+		Assert.True(UserConfigFile.IsInsideAppData(Path.Combine(AppDataReset.RootDirectory, "Backup.json")));
+		Assert.True(UserConfigFile.IsInsideAppData(Path.Combine(AppDataReset.RootDirectory, "Logs", "..", "Backup.json")));
+		Assert.False(UserConfigFile.IsInsideAppData(AppDataReset.RootDirectory.TrimEnd(Path.DirectorySeparatorChar) + " backups" + Path.DirectorySeparatorChar + "Backup.json"));
+		Assert.False(UserConfigFile.IsInsideAppData(Path.Combine(_directory, "Backup.json")));
+		Assert.Throws<ArgumentNullException>(() => UserConfigFile.IsInsideAppData(null!));
 	}
 }

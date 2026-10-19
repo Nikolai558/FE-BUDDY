@@ -20,8 +20,8 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 | [S4](#s4) | GUI lag: Map, Dashboard, Settings and startup | Done | [110](110_GUI-Lag.md) |
 | [S5](#s5) | Business logic from the GUI into Core, plus the Settings page's own node ([H5](010_Decisions.md#h5)) | Done | [120](120_Logic-In-GUI.md) |
 | [S14](#s14) | Fixes to the code S2 to S5 added | Done | [100](100_Bugs.md), [110](110_GUI-Lag.md), [120](120_Logic-In-GUI.md), [200](200_Comments-Core.md), [220](220_Comments-GUI.md), [300](300_Unit-Tests.md), [500](500_Developer-Docs.md) |
-| [S6](#s6) | **Next:** old-version code (D1), unused code and the H4 renames, plus two S12 fixes for the public beta | 1 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
-| [S7](#s7) | Comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
+| [S6](#s6) | Old-version code (D1), unused code and the H4 renames, plus two S12 fixes for the public beta | 1 | [130](130_Old-Version-Code.md), [140](140_Unused-Code.md) |
+| [S7](#s7) | **Next:** comments and XML docs: Core and NASR | 158 | [200](200_Comments-Core.md), [210](210_Comments-NASR.md) |
 | [S8](#s8) | Comments and XML docs: GUI | 93 | [220](220_Comments-GUI.md) |
 | [S9](#s9) | Unit tests | 101 | [300](300_Unit-Tests.md) |
 | [S10](#s10) | Installer, Versioning, CI and build scripts | 41 | [400](400_Installer-Harness-CI.md) |
@@ -172,7 +172,7 @@ Every finding in [500_Developer-Docs.md](500_Developer-Docs.md) apart from [D1b-
 
 **Fixed (not yet merged):** the house rules H1 to H5, written into `Code-Structure.md`; the `TODO.md` items; [D1b-2](500_Developer-Docs.md#d1b-2), [D1b-3](500_Developer-Docs.md#d1b-3), [D1b-9](500_Developer-Docs.md#d1b-9), [W5-22](500_Developer-Docs.md#w5-22), [W7-26](500_Developer-Docs.md#w7-26), [D1b-16](500_Developer-Docs.md#d1b-16), [C1-32](500_Developer-Docs.md#c1-32), [C1-33](500_Developer-Docs.md#c1-33), [D1b-4](500_Developer-Docs.md#d1b-4), [D1b-5](500_Developer-Docs.md#d1b-5), [D1b-6](500_Developer-Docs.md#d1b-6), [D1b-7](500_Developer-Docs.md#d1b-7), [D1a-1](500_Developer-Docs.md#d1a-1), [D1a-4](500_Developer-Docs.md#d1a-4), [D1a-5](500_Developer-Docs.md#d1a-5), [D1a-6](500_Developer-Docs.md#d1a-6), [D1a-7](500_Developer-Docs.md#d1a-7), [D1a-8](500_Developer-Docs.md#d1a-8), [C2-31](500_Developer-Docs.md#c2-31), [C2-32](500_Developer-Docs.md#c2-32), [C3-15](500_Developer-Docs.md#c3-15), [D1a-10](500_Developer-Docs.md#d1a-10), [D1a-13](500_Developer-Docs.md#d1a-13), [D1a-14](500_Developer-Docs.md#d1a-14), [D1a-18](500_Developer-Docs.md#d1a-18), [D1b-13](500_Developer-Docs.md#d1b-13), [D1b-14](500_Developer-Docs.md#d1b-14), [D1b-15](500_Developer-Docs.md#d1b-15), [O1-36](500_Developer-Docs.md#o1-36), [N1-1](500_Developer-Docs.md#n1-1), [D1a-3](500_Developer-Docs.md#d1a-3) (with the Settings page's keys in [S5](#s5))
 
-**Still to do:** [D1a-11](500_Developer-Docs.md#d1a-11) goes with its code in [S6](#s6); [D1b-11](500_Developer-Docs.md#d1b-11) and [D1b-12](500_Developer-Docs.md#d1b-12) wait for the [3.0.0 release day](#release-day).
+**Still to do:** [D1b-11](500_Developer-Docs.md#d1b-11) and [D1b-12](500_Developer-Docs.md#d1b-12) wait for the [3.0.0 release day](#release-day).
 
 <a id="s12"></a>
 

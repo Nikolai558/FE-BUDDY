@@ -59,7 +59,7 @@ As of 2026-10-19: the review is done and Nikolas has answered every decision and
 
 **Since the review:** Nikolas opened [#378](https://github.com/Nikolai558/FE-BUDDY/issues/378) (a side effect of the [C1-5](100_Bugs.md#c1-5) fix; fixed in [S1](020_Work-Plan.md#s1) and tested on a VM, not yet merged) and [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) (low risk; fixed in [S2](020_Work-Plan.md#s2), not yet merged or tested with two accounts). See [020_Work-Plan.md](020_Work-Plan.md#related-issues).
 
-**Next:** [S6](020_Work-Plan.md#s6). [S1](020_Work-Plan.md#s1) to [S5](020_Work-Plan.md#s5) are done (not yet merged), so every bug not deferred is, and every GUI lag and logic-in-GUI finding, and the Settings page's keys are in its own node. [S14](020_Work-Plan.md#s14), the fixes to what the review of that new code found, is done too (not yet merged). S11 is done but for the findings that go with S6 and the release day. Kyle has confirmed [D3](010_Decisions.md#d3), the last open detail.
+**Next:** [S7](020_Work-Plan.md#s7). [S1](020_Work-Plan.md#s1) to [S5](020_Work-Plan.md#s5) are done (not yet merged), so every bug not deferred is, and every GUI lag and logic-in-GUI finding, and the Settings page's keys are in its own node. [S14](020_Work-Plan.md#s14), the fixes to what the review of that new code found, is done too (not yet merged), and so is [S6](020_Work-Plan.md#s6): the old-version and unused code and the H4 renames, all but the News stub ([C7-1](130_Old-Version-Code.md#c7-1)), which stays until after 3.0. S11 is done but for the findings that wait for the release day. Kyle has confirmed [D3](010_Decisions.md#d3), the last open detail.
 
 ## The files
 

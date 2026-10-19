@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
@@ -195,7 +196,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		if (navaids.AliasFilePath is not null)
 		{
-			summary += $", Navaids.txt: {navaids.AliasCommandCount:N0} alias command(s)";
+			summary += $", {Path.GetFileName(navaids.AliasFilePath)}: {navaids.AliasCommandCount:N0} alias command(s)";
 		}
 
 		return new SubServiceRunResult(Title, summary, navaids.Messages);

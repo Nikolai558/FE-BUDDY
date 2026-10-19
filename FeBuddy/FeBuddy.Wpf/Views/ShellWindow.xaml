@@ -445,7 +445,7 @@
                                    VerticalOffset="-14" HorizontalOffset="0"
                                    IsOpen="{Binding IsChecked, ElementName=HealthButton, Mode=TwoWay}"
                                    StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-                                <ctl:Card Header="Systems" Style="{StaticResource Card.Popup}" MinWidth="264">
+                                <ctl:Card Header="Systems" Style="{StaticResource Card.Popup.Above}" MinWidth="264">
                                     <StackPanel>
                                         <ItemsControl ItemsSource="{Binding SystemHealth}">
                                             <ItemsControl.ItemTemplate>

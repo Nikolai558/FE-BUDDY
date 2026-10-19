@@ -61,9 +61,9 @@ The bugs to fix before anything else, each with a regression test.
 
 Every other bug in [100_Bugs.md](100_Bugs.md), High and Med first.
 
-**Fixed (not yet merged):** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [W4-7](100_Bugs.md#w4-7) (with [U1-6](110_GUI-Lag.md#u1-6) in S3), [W2-5](100_Bugs.md#w2-5) (with [W2-6](110_GUI-Lag.md#w2-6) in S3), [W6-3](100_Bugs.md#w6-3) (with [C2-6](120_Logic-In-GUI.md#c2-6) in S5)
+**Fixed (not yet merged):** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [W4-7](100_Bugs.md#w4-7) (with [U1-6](110_GUI-Lag.md#u1-6) in S3), [W2-5](100_Bugs.md#w2-5) (with [W2-6](110_GUI-Lag.md#w2-6) in S3), [W6-3](100_Bugs.md#w6-3) (with [C2-6](120_Logic-In-GUI.md#c2-6) in S5), [W1-7](100_Bugs.md#w1-7), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W7-22](100_Bugs.md#w7-22)
 
-**Still to do:** [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30), [W1-7](100_Bugs.md#w1-7), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W7-22](100_Bugs.md#w7-22)
+**Still to do:** [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30)
 
 **Also:**
 

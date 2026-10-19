@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
@@ -250,7 +251,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		if (airways.AliasFilePath is not null)
 		{
-			summary += $", Airways.txt: {airways.AliasAirwayLineCount:N0} alias line(s)";
+			summary += $", {Path.GetFileName(airways.AliasFilePath)}: {airways.AliasAirwayLineCount:N0} alias line(s)";
 		}
 
 		if (airways.GeojsonFilesWritten.Count > 0)

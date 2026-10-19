@@ -264,7 +264,7 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 		if (arrivals.AliasFilePath is not null)
 		{
-			summary += $", Arrivals.txt: {arrivals.AliasCommandCount:N0} alias command(s)";
+			summary += $", {Path.GetFileName(arrivals.AliasFilePath)}: {arrivals.AliasCommandCount:N0} alias command(s)";
 		}
 
 		return new SubServiceRunResult(Title, summary, arrivals.Messages);

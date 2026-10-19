@@ -9,9 +9,16 @@ namespace FeBuddy.Wpf.Behaviors;
 /// <c>Card.NeedsAttention</c>).
 /// </summary>
 /// <remarks>
+/// <para>
 /// The bound value is the message itself (or <see langword="null"/> when the field is fine), which
 /// keeps the view declarative: one binding per box, no code-behind, and the message the style
 /// shows cannot drift from the message the validator produced.
+/// </para>
+/// <para>
+/// A box that also has a hint sets <c>bhv:FieldState.Hint</c>, not <c>ToolTip</c>: the themed TextBox and
+/// ComboBox styles show the hint as the tool-tip and swap in the error while there is one. A local
+/// <c>ToolTip</c> would always win over the style, so the error would never show.
+/// </para>
 /// </remarks>
 public static class FieldState
 {
@@ -20,6 +27,12 @@ public static class FieldState
 		DependencyProperty.RegisterAttached(
 			"Error", typeof(string), typeof(FieldState),
 			new PropertyMetadata(null, OnErrorChanged));
+
+	/// <summary>The tool-tip a box shows while it has no error, e.g. <c>BCG group: an integer 1–40.</c></summary>
+	public static readonly DependencyProperty HintProperty =
+		DependencyProperty.RegisterAttached(
+			"Hint", typeof(string), typeof(FieldState),
+			new PropertyMetadata(null));
 
 	private static readonly DependencyPropertyKey HasErrorKey =
 		DependencyProperty.RegisterAttachedReadOnly(
@@ -45,6 +58,16 @@ public static class FieldState
 	/// <param name="element">The input.</param>
 	/// <returns>The message, or <see langword="null"/>.</returns>
 	public static string? GetError(DependencyObject element) => (string?)element.GetValue(ErrorProperty);
+
+	/// <summary>Sets the tool-tip an input shows while it has no error.</summary>
+	/// <param name="element">The input.</param>
+	/// <param name="value">The hint, or <see langword="null"/>.</param>
+	public static void SetHint(DependencyObject element, string? value) => element.SetValue(HintProperty, value);
+
+	/// <summary>Gets the tool-tip an input shows while it has no error.</summary>
+	/// <param name="element">The input.</param>
+	/// <returns>The hint, or <see langword="null"/>.</returns>
+	public static string? GetHint(DependencyObject element) => (string?)element.GetValue(HintProperty);
 
 	/// <summary>Whether the input currently has a validation message.</summary>
 	/// <param name="element">The input.</param>

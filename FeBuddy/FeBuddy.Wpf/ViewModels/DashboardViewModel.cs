@@ -56,7 +56,7 @@ public sealed class DashboardViewModel : ObservableObject
 	private bool _isLogCollapsed = true;
 	private LogLevel? _levelFilter;
 
-	/// <summary>Creates the view-model, seeds the log from <see cref="AppLog.DisplayEntries"/>, and starts following it.</summary>
+	/// <summary>Creates the view-model, seeds the log from <see cref="AppLog.DisplayEntries"/> and follows it (<see cref="AppLog.FollowDisplay"/>).</summary>
 	public DashboardViewModel()
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -72,14 +72,14 @@ public sealed class DashboardViewModel : ObservableObject
 		ClearLogCommand = new RelayCommand(ClearLog);
 		DismissCycleDayCommand = new RelayCommand(DismissCycleDay);
 
-		// Seed from whatever the log already holds since the last Clear, then follow it live.
-		foreach (LogEntry entry in AppLog.DisplayEntries.Reverse().Take(MaxShownEntries))
+		// Seed from whatever the log already holds since the last Clear and follow it live, in one step: the
+		// launch logs from another thread while this is built, and each entry must show exactly once.
+		foreach (LogEntry entry in AppLog.FollowDisplay(OnLogEntryAdded).Reverse().Take(MaxShownEntries))
 		{
 			_allLog.Add(entry);
 			Count(entry, 1);
 		}
 
-		AppLog.EntryAdded += OnLogEntryAdded;
 		AppEnvironment.Changed += OnEnvironmentChanged;
 		AiracCycleDataCache.Instance.StateChanged += OnCycleStateChanged;
 

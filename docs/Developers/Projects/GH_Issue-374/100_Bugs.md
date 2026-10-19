@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
 
-**47 findings** (2 High, 11 Med, 34 Low), 36 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**47 findings** (2 High, 11 Med, 34 Low), 42 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -42,18 +42,18 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [T1c-26](#t1c-26) | Bug | Low | Two tests read the clock twice and can fail at 0000Z | Fixed | S2 |
 | [W7-4](#w7-4) | Bug | Low | The "last-chance" crash handler only sees exceptions on the UI thread | Fixed | S1 |
 | [W6-3](#w6-3) | Bug | Low | The "Towered Airports" layer would include any airport whose tower code has no display mapping, e.g. `TRACON` | Fixed | S2 |
-| [W7-22](#w7-22) | Bug | Low | Card.Popup casts its shadow upwards, onto the map toolbar for the two map menus | Open | S2 |
+| [W7-22](#w7-22) | Bug | Low | Card.Popup casts its shadow upwards, onto the map toolbar for the two map menus | Fixed | S2 |
 | [W2-8](#w2-8) | Bug | Low | A run can start before the selected cycle's lists exist, and silently drops CRC defaults | Fixed | S2 |
 | [W2-9](#w2-9) | Bug | Low | Picking a cycle the FAA hasn't published leaves every tab on "Loading AIRAC &lt;id>…" for good | Fixed | S2 |
 | [W2-10](#w2-10) | Bug | Low | A cycle switch rebuilds the ARTCC / NAVAID-type toggles from the saved filter, losing unsaved ticks | Fixed | S1 |
-| [W2-37](#w2-37) | Bug | Low | Review summaries name the default alias file and always mention the ROI | Open | S2 |
+| [W2-37](#w2-37) | Bug | Low | Review summaries name the default alias file and always mention the ROI | Fixed | S2 |
 | [W2-5](#w2-5) | Bug | Low | Review tab reports alias files that a run stopped at the duplicate review deleted | Fixed | S2 |
-| [W3-16](#w3-16) | Bug | Low | Dashboard can miss log entries written while it is being built | Open | S2 |
-| [W4-8](#w4-8) | Bug | Low | CRC defaults rows accept any non-blank bcg/style/thickness/size, so an imported or hand-edited bad value passes the tab and fails the run | Open | S2 |
+| [W3-16](#w3-16) | Bug | Low | Dashboard can miss log entries written while it is being built | Fixed | S2 |
+| [W4-8](#w4-8) | Bug | Low | CRC defaults rows accept any non-blank bcg/style/thickness/size, so an imported or hand-edited bad value passes the tab and fails the run | Fixed | S2 |
 | [W1-15](#w1-15) | Bug | Low | Procedure Charts keeps the previous cycle's d-TPP lookups after a cycle switch | Fixed | S2 |
 | [W4-7](#w4-7) | Bug | Low | A folder that exists but can't be listed is reported as "does not exist" | Fixed | S2 |
-| [W1-7](#w1-7) | Bug | Low | Telephony's "real operator" note counts expired U.S. special call signs, which the run drops | Open | S2 |
-| [W5-3](#w5-3) | Bug | Low | Error tooltips never show on CRC ERAM Defaults drop-downs or on the fan-marker style box | Open | S2 |
+| [W1-7](#w1-7) | Bug | Low | Telephony's "real operator" note counts expired U.S. special call signs, which the run drops | Fixed | S2 |
+| [W5-3](#w5-3) | Bug | Low | Error tooltips never show on CRC ERAM Defaults drop-downs or on the fan-marker style box | Fixed | S2 |
 | [O1-2](#o1-2) | Bug | Low | Any CPU never builds FeBuddy.UnitTests | Fixed | S2 |
 | [T2-8](#t2-8) | Bug | Low | NasrCsvParserMappingTests computes expected numbers with the PC's culture | Fixed | S2 |
 | [T2-9](#t2-9) | Bug | Low | FileEncodingTests walks build.ps1's `publish\` and `releases\` output | Fixed | S2 |
@@ -466,7 +466,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W7-22 · Bug · Low · Card.Popup casts its shadow upwards, onto the map toolbar for the two map menus
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed, both ways: `Card.Popup` casts its shadow down, for the map's two menus, and the Systems flyout, which opens above its button, keeps its upward shadow on a variant of its own, `Card.Popup.Above` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Theme/Controls.Surfaces.xaml:184-196`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Theme/Controls.Surfaces.xaml#L184-L196)
 
@@ -516,7 +516,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W2-37 · Bug · Low · Review summaries name the default alias file and always mention the ROI
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed, and on Departures, Airways and Telephony too, which had the same default name: each summary names the alias file the run wrote, and Airports counts the airports in the ROI only when the tab uses one. Tests: `RunResultSummaryTests` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs:280`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/ArrivalsViewModel.cs#L280); [`AirportsViewModel.cs:98`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/AirportsViewModel.cs#L98), 102; [`NavaidsViewModel.cs:200`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/NavaidsViewModel.cs#L200)
 
@@ -540,7 +540,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W3-16 · Bug · Low · Dashboard can miss log entries written while it is being built
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), the second way proposed: `AppLog.FollowDisplay` subscribes and takes the display's entries under one lock, and `Write` takes the subscribers with the entry, so an entry logged meanwhile is in the snapshot or the callbacks, exactly once. The Dashboard seeds and follows through it. Tests: `AppLogTests` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:61-67`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L61-L67)
 
@@ -552,7 +552,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W4-8 · Bug · Low · CRC defaults rows accept any non-blank bcg/style/thickness/size, so an imported or hand-edited bad value passes the tab and fails the run
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), the better way proposed: `CrcDefaultsReader.IsValidValue(kind, property, value)` parses each value as the readers do and holds it to `CrcPropertyValidator`'s ranges and styles. A row marks a value it refuses ("Pick one of the listed values.", or the filters' rule) whether or not it is required, and counts it as not filled in. The Canonical remark says so. Tests: `CrcDefaultsReaderTests`, `EramClassDefaultTests` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/Models/EramClassDefault.cs:242-248`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/Models/EramClassDefault.cs#L242-L248), 288-289, 382-406
 
@@ -588,7 +588,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W1-7 · Bug · Low · Telephony's "real operator" note counts expired U.S. special call signs, which the run drops
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: `TelephonyBuilder.RealOperators` gives the operators a run writes - the rows `Read` keeps, expired U.S. special call signs left out, the first of each - from the parsed pages or from FE-Buddy's kept copies, on the run's date. The tab's own reader is gone. The note now names the company as the card prints it, upper case. Tests: `TelephonyBuilderTests` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs:168-207`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/ViewModels/TelephonyViewModel.cs#L168-L207), 451-455, 779
 
@@ -602,7 +602,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### W5-3 · Bug · Low · Error tooltips never show on CRC ERAM Defaults drop-downs or on the fan-marker style box
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), one style for every box rather than one per hint: a new `bhv:FieldState.Hint` is the tool-tip the themed TextBox and ComboBox styles show, as a setter, so their error trigger replaces it. The seven boxes, and the offset boxes (their `OffsetBox` style is gone), set it instead of `ToolTip`; no other box in the app had both. Tests: `FieldStateTests` · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Views/Cards/CrcDefaultsPanel.xaml:100-132`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/Cards/CrcDefaultsPanel.xaml#L100-L132); [`FeBuddy/FeBuddy.Wpf/Views/NavaidsView.xaml:107-109`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Views/NavaidsView.xaml#L107-L109)
 

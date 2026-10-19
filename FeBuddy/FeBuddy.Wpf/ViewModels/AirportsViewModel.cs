@@ -1,3 +1,5 @@
+using System.IO;
+
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
@@ -95,11 +97,16 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			return null;
 		}
 
-		string summary = $"{airports.AirportCount:N0} airports, {airports.AirportsInRoiCount:N0} in the ROI";
+		string summary = $"{airports.AirportCount:N0} airports";
+
+		if (HasRoi)
+		{
+			summary += $", {airports.AirportsInRoiCount:N0} in the ROI";
+		}
 
 		if (airports.AliasFilePath is not null)
 		{
-			summary += $", Airports.txt: {airports.AliasCommandCount:N0} alias command(s)";
+			summary += $", {Path.GetFileName(airports.AliasFilePath)}: {airports.AliasCommandCount:N0} alias command(s)";
 		}
 
 		if (airports.GeojsonFilesWritten.Count > 0)

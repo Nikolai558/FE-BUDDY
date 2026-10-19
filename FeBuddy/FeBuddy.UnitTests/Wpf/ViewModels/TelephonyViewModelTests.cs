@@ -933,32 +933,6 @@ public sealed class TelephonyViewModelTests : IDisposable
 		Assert.False(item.HasNote);
 	}
 
-	/// <summary>The real operators come from FE-Buddy's copies of the FAA's pages: the first of each 3LD (or identifier) and telephony.</summary>
-	[Fact]
-	public void the_real_operators_are_read_from_the_faa_pages()
-	{
-		Directory.CreateDirectory(_root);
-		string register = Path.Combine(_root, "register.html");
-		string special = Path.Combine(_root, "special.html");
-		File.WriteAllText(register,
-			"<table><thead><tr><th>Company</th><th>Country</th><th>Telephony</th><th>3-Ltr</th></tr></thead><tbody>" +
-			"<tr><td>AMERICAN AIRLINES INC.</td><td>UNITED STATES</td><td>AMERICAN</td><td>AAL</td></tr>" +
-			"<tr><td>ANOTHER AMERICAN</td><td>UNITED STATES</td><td>AMERICAN</td><td>aal</td></tr>" +
-			"<tr><td>NO DESIGNATOR</td><td>FRANCE</td><td>NOBODY</td><td>...</td></tr>" +
-			"</tbody></table>");
-		File.WriteAllText(special,
-			"<table><thead><tr><th>Telephony/Call Sign</th><th>Identifier</th><th>Company or Operating Agency</th><th>Expiration Date</th></tr></thead>" +
-			"<tbody><tr><td>AIR SIX</td><td>ARSIX</td><td>NYC Environmental Protection</td><td>N/A</td></tr></tbody></table>");
-
-		IReadOnlyDictionary<(string Designator, string Telephony), string> operators = TelephonyViewModel.ReadRealOperators(register, special);
-
-		Assert.Equal(2, operators.Count);
-		Assert.Equal("AMERICAN AIRLINES INC.", operators[("AAL", "AMERICAN")]);
-		Assert.Equal("NYC Environmental Protection", operators[("ARSIX", "AIR SIX")]);
-		Assert.Empty(TelephonyViewModel.ReadRealOperators(Path.Combine(_root, "none.html"), Path.Combine(_root, "none.html")));
-		Assert.Empty(TelephonyViewModel.ReadRealOperators(special, Path.Combine(_root, "none.html")));
-	}
-
 	[Fact]
 	public void the_lists_status_says_how_old_the_copies_are_and_how_many_they_have_or_that_there_is_none()
 	{

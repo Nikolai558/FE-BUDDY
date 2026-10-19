@@ -271,7 +271,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		if (departures.AliasFilePath is not null)
 		{
-			summary += $", Departures.txt: {departures.AliasCommandCount:N0} alias command(s)";
+			summary += $", {Path.GetFileName(departures.AliasFilePath)}: {departures.AliasCommandCount:N0} alias command(s)";
 		}
 
 		return new SubServiceRunResult(Title, summary, departures.Messages);

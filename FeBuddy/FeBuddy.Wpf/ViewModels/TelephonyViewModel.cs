@@ -19,7 +19,6 @@ using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.SharedData.Models;
 using FeBuddy.Core.Infrastructure.Telephony;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
-using FeBuddy.Core.Infrastructure.Telephony.Parsers;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -197,8 +196,9 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			: "FE-Buddy has no copy yet. Every run downloads the latest pages first, so the first run needs an internet connection.";
 
 	/// <summary>
-	/// Reads the real operators from FE-Buddy's copies of the FAA's pages, off the UI thread, to say
-	/// which of the user's virtual airlines share one's 3LD and telephony. A tab built outside the app
+	/// Reads the real operators a run writes from FE-Buddy's copies of the FAA's pages, off the UI thread,
+	/// to say which of the user's virtual airlines share one's 3LD and telephony (Core's rules, expired
+	/// U.S. special call signs left out). A tab built outside the app
 	/// (a unit test) reads nothing: the tests hand the operators in (<see cref="UseRealOperators"/>).
 	/// </summary>
 	private void LoadRealOperators()
@@ -208,61 +208,12 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			return;
 		}
 
-		_ = Task.Run(() => ReadRealOperators(TelephonyFiles.RegisterFilePath, TelephonyFiles.SpecialCallSignsFilePath))
+		_ = Task.Run(() => TelephonyBuilder.RealOperators(TelephonyFiles.RegisterFilePath, TelephonyFiles.SpecialCallSignsFilePath))
 			.ContinueWith(
 				read => _dispatcher.BeginInvoke(() => UseRealOperators(read.Result)),
 				CancellationToken.None,
 				TaskContinuationOptions.OnlyOnRanToCompletion,
 				TaskScheduler.Default);
-	}
-
-	/// <summary>
-	/// The real operators in FE-Buddy's copies of the FAA's pages, by 3LD (or identifier) and telephony,
-	/// upper case: the first one's company or agency for each. A copy that is missing or can't be read
-	/// gives none.
-	/// </summary>
-	/// <param name="registerPath">The register's copy.</param>
-	/// <param name="specialCallSignsPath">The U.S. special call signs' copy.</param>
-	/// <returns>The operators.</returns>
-	internal static IReadOnlyDictionary<(string Designator, string Telephony), string> ReadRealOperators(string registerPath, string specialCallSignsPath)
-	{
-		Dictionary<(string Designator, string Telephony), string> operators = [];
-
-		void Add(string identifier, string telephony, string company)
-		{
-			if (TelephonyNaming.CommandName(identifier) is not null && !string.IsNullOrWhiteSpace(telephony))
-			{
-				operators.TryAdd((identifier.Trim().ToUpperInvariant(), telephony.Trim().ToUpperInvariant()), company.Trim());
-			}
-		}
-
-		try
-		{
-			if (File.Exists(registerPath))
-			{
-				foreach (TelephonyHtmlDataModel.Assignment row in TelephonyHtmlParser.ParseRegister(registerPath))
-				{
-					if (TelephonyNaming.IsThreeLetterDesignator(row.ThreeLetterDesignator))
-					{
-						Add(row.ThreeLetterDesignator, row.Telephony, row.Company);
-					}
-				}
-			}
-
-			if (File.Exists(specialCallSignsPath))
-			{
-				foreach (TelephonyHtmlDataModel.SpecialCallSign row in TelephonyHtmlParser.ParseSpecialCallSigns(specialCallSignsPath))
-				{
-					Add(row.Identifier, row.Telephony, row.Agency);
-				}
-			}
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
-		{
-			// What could be read is kept; the run reports a copy that can't be read.
-		}
-
-		return operators;
 	}
 
 	/// <summary>Uses these real operators - read from FE-Buddy's copies, or handed in by a test - and refreshes what the card says.</summary>
@@ -568,7 +519,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 			: $"{telephony.IcaoAssignmentCount:N0} ICAO operator(s) and {telephony.SpecialCallSignCount:N0} U.S. special call sign(s)";
 
 		string summary = telephony.AliasFilePath is not null
-			? $"{TelephonyOutputFiles.Alias}: {telephony.AliasCommandCount:N0} command(s) for {operators}"
+			? $"{Path.GetFileName(telephony.AliasFilePath)}: {telephony.AliasCommandCount:N0} command(s) for {operators}"
 			: "Nothing written";
 
 		return new SubServiceRunResult(Title, summary, telephony.Messages);

@@ -209,6 +209,7 @@ FeBuddy.Wpf/
   a box (`AddField`, shown on it through `FieldState`) or to a whole card (`AddArea` with a
   `ServiceAreas` key, which the card binds as its own `FieldState.Error`). `AttentionCard` lists
   every problem at the top of the tab, and a `Card` holding one is outlined (`Card.NeedsAttention`).
+  A box with a hint sets `FieldState.Hint`, not `ToolTip`: a local tool-tip would hide its error.
 - **One map.** `Views/MapWorkspace` is the Map page and every map window (`RoiPickerWindow`).
   `MapViewModel` holds the box being edited and where it goes (`IRoiTarget`); everything else lives
   in `MapLayersState.Shared`, so every map shows the same layers. `Controls/MapCanvas` is a

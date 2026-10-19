@@ -1,6 +1,8 @@
 using System.Globalization;
 using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc;
+using FeBuddy.Core.Domain.Crc.Models;
 
 namespace FeBuddy.Wpf.ViewModels.Models;
 
@@ -23,6 +25,11 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// <see cref="YOffset"/> hold the text as typed; any whole number (negative included) is
 /// valid, and anything else is marked on the box and counts as not filled in.
 /// </para>
+/// <para>
+/// Every value is checked with the run's own rule (<see cref="CrcDefaultsReader.IsValidValue"/>), so one the
+/// run would refuse - a <c>bcg</c> of <c>50</c> or a <c>style</c> of <c>Dotted</c> from a hand-edited file or
+/// an import - is marked on its box and counts as not filled in, rather than failing the run.
+/// </para>
 /// </remarks>
 /// <param name="className">The class this row configures, e.g. <c>High</c> or <c>Airports</c>.</param>
 /// <param name="kind">Which block the row belongs to; decides the fields it shows.</param>
@@ -32,6 +39,10 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	private const string RequiredMessage = "Required while CRC ERAM defaults are on.";
 	private const string WholeNumberMessage = "Must be a whole number, e.g. 0, 12 or -4.";
 	private const string YesNoMessage = "Choose Yes or No.";
+	private const string PickMessage = "Pick one of the listed values.";
+
+	private static readonly string FiltersMessage =
+		$"Must be whole numbers from {CrcPropertyValidator.MinFilter} to {CrcPropertyValidator.MaxFilter}, separated by commas, e.g. 2,7.";
 
 	/// <summary>The stored value for "Yes" in <see cref="Underline"/> and <see cref="Opaque"/>.</summary>
 	public const string Yes = "Y";
@@ -235,44 +246,51 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	}
 
 	/// <summary>
-	/// Whether any field this row shows is still empty - or, for the Text-only fields, holds a
-	/// value that is not usable (an offset that is not a whole number, or an underline / opaque
-	/// value other than <c>Y</c> / <c>N</c>).
+	/// Whether any field this row shows is still empty, or holds a value the run would refuse
+	/// (<see cref="CrcDefaultsReader.IsValidValue"/>).
 	/// </summary>
 	public bool HasMissingValues =>
-		IsBlank(Bcg)
-		|| IsBlank(Filters)
-		|| (AsksForStyle && IsBlank(Style))
-		|| (ShowThickness && IsBlank(Thickness))
-		|| (ShowSize && IsBlank(Size))
-		|| (ShowTextOptions && (!IsYesNo(Underline) || !IsYesNo(Opaque) || !IsInteger(XOffset) || !IsInteger(YOffset)));
+		!IsValid("bcg", Bcg)
+		|| !IsValid("filters", Filters)
+		|| (AsksForStyle && !IsValid("style", Style))
+		|| (ShowThickness && !IsValid("thickness", Thickness))
+		|| (ShowSize && !IsValid("size", Size))
+		|| (ShowTextOptions && (!IsValid("underline", Underline) || !IsValid("opaque", Opaque) || !IsValid("xOffset", XOffset) || !IsValid("yOffset", YOffset)));
 
 	/// <summary>The <c>bcg</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? BcgError => MissingError(true, Bcg);
+	public string? BcgError => FieldError(true, "bcg", Bcg, PickMessage);
 
 	/// <summary>The <c>filters</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? FiltersError => MissingError(true, Filters);
+	public string? FiltersError => FieldError(true, "filters", Filters, FiltersMessage);
 
 	/// <summary>The <c>style</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? StyleError => MissingError(AsksForStyle, Style);
+	public string? StyleError => FieldError(AsksForStyle, "style", Style, PickMessage);
 
 	/// <summary>The <c>thickness</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? ThicknessError => MissingError(ShowThickness, Thickness);
+	public string? ThicknessError => FieldError(ShowThickness, "thickness", Thickness, PickMessage);
 
 	/// <summary>The <c>size</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? SizeError => MissingError(ShowSize, Size);
+	public string? SizeError => FieldError(ShowSize, "size", Size, PickMessage);
 
 	/// <summary>The <c>underline</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? UnderlineError => YesNoError(Underline);
+	public string? UnderlineError => FieldError(ShowTextOptions, "underline", Underline, YesNoMessage);
 
 	/// <summary>The <c>opaque</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? OpaqueError => YesNoError(Opaque);
+	public string? OpaqueError => FieldError(ShowTextOptions, "opaque", Opaque, YesNoMessage);
 
 	/// <summary>The <c>xOffset</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? XOffsetError => OffsetError(XOffset);
+	public string? XOffsetError => FieldError(ShowTextOptions, "xOffset", XOffset, WholeNumberMessage);
 
 	/// <summary>The <c>yOffset</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? YOffsetError => OffsetError(YOffset);
+	public string? YOffsetError => FieldError(ShowTextOptions, "yOffset", YOffset, WholeNumberMessage);
+
+	/// <summary>The kind of CRC defaults this row holds, as Core names it.</summary>
+	private CrcFeatureKind CrcKind => Kind switch
+	{
+		EramFieldKind.Line => CrcFeatureKind.Line,
+		EramFieldKind.Symbol => CrcFeatureKind.Symbol,
+		_ => CrcFeatureKind.Text,
+	};
 
 	private void SetField(ref string field, string value, string errorPropertyName)
 	{
@@ -285,16 +303,13 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 		_onChanged();
 	}
 
-	private string? MissingError(bool applies, string value) =>
-		IsRequired && applies && IsBlank(value) ? RequiredMessage : null;
-
 	/// <summary>
-	/// Error for an offset box: required-and-blank reads as missing; a non-blank value that is
-	/// not a whole number is always reported, so a typo is marked as soon as it is typed.
+	/// A box's error: blank reads as missing while the row is required; a value the run would refuse is
+	/// always reported, so a typo or a bad value from a file is marked as soon as it is there.
 	/// </summary>
-	private string? OffsetError(string value)
+	private string? FieldError(bool applies, string property, string value, string invalidMessage)
 	{
-		if (!ShowTextOptions)
+		if (!applies)
 		{
 			return null;
 		}
@@ -304,27 +319,10 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 			return IsRequired ? RequiredMessage : null;
 		}
 
-		return IsInteger(value) ? null : WholeNumberMessage;
+		return IsValid(property, value) ? null : invalidMessage;
 	}
 
-	/// <summary>
-	/// Error for an underline / opaque box: required-and-blank reads as missing; a value other
-	/// than <c>Y</c> / <c>N</c> (only possible from a hand-edited config) is always reported.
-	/// </summary>
-	private string? YesNoError(string value)
-	{
-		if (!ShowTextOptions)
-		{
-			return null;
-		}
-
-		if (IsBlank(value))
-		{
-			return IsRequired ? RequiredMessage : null;
-		}
-
-		return IsYesNo(value) ? null : YesNoMessage;
-	}
+	private bool IsValid(string property, string value) => CrcDefaultsReader.IsValidValue(CrcKind, property, value);
 
 	private void RaiseFieldErrors()
 	{
@@ -340,11 +338,6 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	}
 
 	private static bool IsBlank(string value) => string.IsNullOrWhiteSpace(value);
-
-	private static bool IsInteger(string value) =>
-		int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _);
-
-	private static bool IsYesNo(string value) => value is Yes or No;
 
 	/// <summary>
 	/// Returns <c>Y</c> or <c>N</c> for any spelling of yes / no (<c>y</c>, <c>Yes</c>,
@@ -382,7 +375,7 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	/// <summary>
 	/// Returns the option matching <paramref name="value"/> in its canonical spelling, so a
 	/// value restored from config in another case still selects in the drop-down. A value that
-	/// matches nothing is kept as it is, for the validator to report.
+	/// matches nothing is kept as it is, and the row marks it (<see cref="CrcDefaultsReader.IsValidValue"/>).
 	/// </summary>
 	/// <param name="value">The incoming value.</param>
 	/// <param name="options">The allowed values for this field.</param>

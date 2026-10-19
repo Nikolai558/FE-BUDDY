@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2). Each fix should come with a regression test.
 
-**47 findings** (2 High, 11 Med, 34 Low), 42 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**47 findings** (2 High, 11 Med, 34 Low), 44 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -37,8 +37,8 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [C6-23](#c6-23) | Bug | Low | CredentialStore leaves the Basic sign-in's UTF-8 bytes (user:password) uncleared, contrary to its own rule | Fixed | S2 |
 | [C5-22](#c5-22) | Bug | Low | DAT and SCT readers never throw InvalidDataException, so a wrong file is an advisory, not a failed file | Deferred | After 3.0 |
 | [C7-10](#c7-10) | Bug | Low | A 404 for the previous cycle is logged as "not published by the FAA yet" | Fixed | S2 |
-| [O1-30](#o1-30) | Bug | Low | A failure building the setup window cancels the install instead of falling back | Open | S2 |
-| [O1-23](#o1-23) | Bug | Low | Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM | Open | S2 |
+| [O1-30](#o1-30) | Bug | Low | A failure building the setup window cancels the install instead of falling back | Fixed | S2 |
+| [O1-23](#o1-23) | Bug | Low | Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM | Fixed | S2 |
 | [T1c-26](#t1c-26) | Bug | Low | Two tests read the clock twice and can fail at 0000Z | Fixed | S2 |
 | [W7-4](#w7-4) | Bug | Low | The "last-chance" crash handler only sees exceptions on the UI thread | Fixed | S1 |
 | [W6-3](#w6-3) | Bug | Low | The "Towered Airports" layer would include any airport whose tower code has no display mapping, e.g. `TRACON` | Fixed | S2 |
@@ -400,7 +400,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### O1-30 · Bug · Low · A failure building the setup window cancels the install instead of falling back
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), as proposed: `RunWindow` catches a failure and notes it, and `Initialize`, still waiting, logs why and returns `false`, so Windows Installer carries on with its own UI at the level asked for (the stock dialogs, or basic progress). A failure later, while installing, no longer ends msiexec: messages and `Shutdown` skip the window. The remark says both. Not unit-tested (it needs a Windows Installer session); built only · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Installer.UI/SetupUI.cs:31-34`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Installer.UI/SetupUI.cs#L31-L34), 91-95, 224-250
 
@@ -412,7 +412,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### O1-23 · Bug · Low · Under Windows PowerShell 5.1 (build.cmd) the counter is rewritten with a BOM
 
-**Status:** Open · **Session:** [S2](020_Work-Plan.md#s2)
+**Status:** Fixed (not yet merged), much as proposed: `Get-InstallerVersion.ps1` writes the counter itself, as UTF-8 without a BOM, laid out as the tracked file is, so Windows PowerShell 5.1 and PowerShell 7 write the same bytes and a build changes one number. Tests: `InstallerVersionScriptTests`, which run the script under Windows PowerShell 5.1 · **Session:** [S2](020_Work-Plan.md#s2)
 
 **Where:** [`FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1:81`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1#L81); [`FeBuddy/build.cmd:3`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/build.cmd#L3)
 

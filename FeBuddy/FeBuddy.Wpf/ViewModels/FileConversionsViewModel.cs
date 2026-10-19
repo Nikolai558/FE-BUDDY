@@ -245,7 +245,7 @@ public sealed class FileConversionsViewModel : ObservableObject, IOpensAtStart
 
 		try
 		{
-			if (IsRunning || !TrySave(conversion))
+			if (IsRunning || !InstalledUpdate.AllowsRun() || !TrySave(conversion))
 			{
 				return;
 			}

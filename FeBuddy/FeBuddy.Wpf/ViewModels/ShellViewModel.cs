@@ -133,6 +133,12 @@ public sealed class ShellViewModel : ObservableObject
 		RefreshSystemHealth();
 		StartGitHubTokenCheck();
 
+		// An update installed while this copy is open (from another Windows account): offer a restart.
+		if (Application.Current is not null)
+		{
+			InstalledUpdate.Start(_dispatcher, DescribeUnfinishedWork);
+		}
+
 		// The launch sequence may have found a first launch, or the old token variable, before this subscribed.
 		_dispatcher.InvokeAsync(ShowLaunchWindows, DispatcherPriority.ApplicationIdle);
 	}

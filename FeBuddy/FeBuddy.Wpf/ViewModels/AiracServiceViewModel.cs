@@ -586,7 +586,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			// The File Names tab's validity depends on which files the other tabs write.
 			_fileNames.RefreshFiles();
 
-			if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
+			if (!InstalledUpdate.AllowsRun() || !TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
 			{
 				return;
 			}

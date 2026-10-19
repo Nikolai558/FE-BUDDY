@@ -61,13 +61,11 @@ The bugs to fix before anything else, each with a regression test.
 
 Every other bug in [100_Bugs.md](100_Bugs.md), High and Med first.
 
-**Fixed (not yet merged):** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [W4-7](100_Bugs.md#w4-7) (with [U1-6](110_GUI-Lag.md#u1-6) in S3), [W2-5](100_Bugs.md#w2-5) (with [W2-6](110_GUI-Lag.md#w2-6) in S3), [W6-3](100_Bugs.md#w6-3) (with [C2-6](120_Logic-In-GUI.md#c2-6) in S5), [W1-7](100_Bugs.md#w1-7), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W7-22](100_Bugs.md#w7-22)
-
-**Still to do:** [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30)
+**Fixed (not yet merged):** [C1-2](100_Bugs.md#c1-2), [C1-3](100_Bugs.md#c1-3), [C4-11](100_Bugs.md#c4-11), [C2-3](100_Bugs.md#c2-3), [C3-16](100_Bugs.md#c3-16), [C5-8](100_Bugs.md#c5-8), [C5-23](100_Bugs.md#c5-23), [C6-23](100_Bugs.md#c6-23), [C6-29](100_Bugs.md#c6-29), [C7-10](100_Bugs.md#c7-10), [O1-2](100_Bugs.md#o1-2), [O1-42](100_Bugs.md#o1-42), [T1c-26](100_Bugs.md#t1c-26), [T2-8](100_Bugs.md#t2-8), [T2-9](100_Bugs.md#t2-9), [W4-7](100_Bugs.md#w4-7) (with [U1-6](110_GUI-Lag.md#u1-6) in S3), [W2-5](100_Bugs.md#w2-5) (with [W2-6](110_GUI-Lag.md#w2-6) in S3), [W6-3](100_Bugs.md#w6-3) (with [C2-6](120_Logic-In-GUI.md#c2-6) in S5), [W1-7](100_Bugs.md#w1-7), [W2-37](100_Bugs.md#w2-37), [W3-16](100_Bugs.md#w3-16), [W4-8](100_Bugs.md#w4-8), [W5-3](100_Bugs.md#w5-3), [W7-22](100_Bugs.md#w7-22), [O1-23](100_Bugs.md#o1-23), [O1-30](100_Bugs.md#o1-30) - every S2 bug.
 
 **Also:**
 
-- [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) ([Q9](010_Decisions.md#q9)): a restart notice when FE-Buddy is updated from another Windows account. See [Related issues](#related-issues).
+- [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) ([Q9](010_Decisions.md#q9)): a restart notice when FE-Buddy is updated from another Windows account. See [Related issues](#related-issues). **Done** (not yet merged).
 - Save the General tab's cycle position, not the cycle ID ([Q7](010_Decisions.md#q7), [D2-46](600_User-Docs-Proposal.md#d2-46)), under its new node from S1. **Done** (not yet merged).
 
 [C1-4](100_Bugs.md#c1-4) and [C5-22](100_Bugs.md#c5-22) are deferred ([Q2](010_Decisions.md#q2), [Q3](010_Decisions.md#q3)).
@@ -210,6 +208,13 @@ Opened by Nikolas on 2026-10-16. A side effect of the [C1-5](100_Bugs.md#c1-5) f
 ### [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379) · FE-Buddy left open in another account keeps running the old version
 
 Opened by Nikolas on 2026-10-16. Low risk: it needs two Windows accounts, one with FE-Buddy left open while the other updates. Nikolas proposes watching `FE-BUDDY.dll` with a `FileSystemWatcher` and showing a Restart notice when its version changes. That is cheap. The watcher's events arrive on a thread-pool thread, so only the notice itself should go to the UI thread. A simpler option: compare the version on disk only when a run starts. Decided ([Q9](010_Decisions.md#q9)): before 3.0, in [S2](#s2).
+
+**Fixed** (not yet merged), both ways: Core's `InstalledVersionWatcher` watches FE-Buddy's own `FE-BUDDY.dll` and
+reads nothing until Windows reports a change to it. Once it has been quiet for 3 seconds (an install replaces it in
+steps), the product version on disk is compared with the running one. When they differ, the main window offers a
+restart (`InstalledUpdate`, warning about anything unfinished, as Settings' restarts do), and until FE-Buddy restarts,
+starting an AIRAC Service run or a file conversion offers it again instead of running. Tests:
+`InstalledVersionWatcherTests`. **Not yet tested** with two Windows accounts.
 
 ### [#375](https://github.com/Nikolai558/FE-BUDDY/issues/375) · The installer's shortcuts showed a cached 2.x icon
 

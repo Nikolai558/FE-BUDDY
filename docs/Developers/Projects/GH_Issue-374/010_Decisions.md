@@ -211,7 +211,7 @@ Someone with a real cycle on disk can check. The answer decides whether [C2-11](
 
 ### Q9 · [#379](https://github.com/Nikolai558/FE-BUDDY/issues/379): before 3.0 or after?
 
-**Status:** Answered (Nikolas, 2026-10-17)
+**Status:** Answered (Nikolas, 2026-10-17). Done (not yet merged) in [S2](020_Work-Plan.md#s2), both ways: a watcher offers the restart, and a run waits for it
 
 FE-Buddy left open in another Windows account keeps running the old version after an update. Low risk. See [020_Work-Plan.md](020_Work-Plan.md#related-issues).
 

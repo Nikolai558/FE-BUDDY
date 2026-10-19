@@ -78,6 +78,15 @@ else {
     $counter.counterBuild = $nextBuild
 }
 
-($counter | ConvertTo-Json) | Set-Content -Path $CounterFilePath -Encoding utf8
+# Written out by hand, not with ConvertTo-Json and Set-Content: Windows PowerShell 5.1 (build.cmd)
+# indents differently and writes a UTF-8 byte-order mark, which FileEncodingTests refuses. This way
+# both PowerShells write the same bytes, and a build's diff is the one number it changed.
+$json = "{`r`n" +
+    "  `"major`": $([int]$counter.major),`r`n" +
+    "  `"counterMinor`": $([int]$counter.counterMinor),`r`n" +
+    "  `"counterBuild`": $([int]$counter.counterBuild)`r`n" +
+    "}`r`n"
+$counterFullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($CounterFilePath)
+[System.IO.File]::WriteAllText($counterFullPath, $json, (New-Object System.Text.UTF8Encoding $false))
 
 Write-Output "$($counter.major).$($counter.counterMinor).$($counter.counterBuild)"

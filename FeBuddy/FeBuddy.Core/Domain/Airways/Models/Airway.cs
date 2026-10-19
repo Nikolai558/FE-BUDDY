@@ -19,17 +19,8 @@ public sealed class Airway
 	/// </summary>
 	public required string Designation { get; init; }
 
-	/// <summary>The airway location code: A (Alaska), H (Hawaii), or C (U.S. Contiguous).</summary>
-	public required string AwyLocation { get; init; }
-
-	/// <summary>The highest <c>MAX_AUTH_ALT</c> found across this airway's segments, if any.</summary>
-	public int? MaxAuthAlt { get; init; }
-
 	/// <summary>This airway's computed High/Low/Other classification.</summary>
 	public required AirwayAltitudeClass AltitudeClass { get; init; }
-
-	/// <summary>The normalized point-to-point segments that make up this airway, in order.</summary>
-	public required IReadOnlyList<AirwaySegment> Segments { get; init; }
 
 	/// <summary>
 	/// Every waypoint on this airway, ordered and de-duplicated (a waypoint that is both the

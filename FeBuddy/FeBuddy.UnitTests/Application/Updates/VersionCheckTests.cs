@@ -578,7 +578,7 @@ public sealed class VersionCheckTests : IDisposable
 		Assert.False(result.UpdateAvailable);
 	}
 
-	/// <summary><see cref="VersionCheckResult.ParseChannel"/> is case-insensitive and defaults to Stable.</summary>
+	/// <summary><see cref="VersionCheckResult.ParseChannel"/> is case-insensitive, and gives the fallback for a missing or unrecognized value.</summary>
 	[Theory]
 	[InlineData("Stable", ReleaseChannel.Stable)]
 	[InlineData("beta", ReleaseChannel.Beta)]
@@ -590,7 +590,7 @@ public sealed class VersionCheckTests : IDisposable
 	[InlineData("0", ReleaseChannel.Stable)]
 	public void parse_channel_handles_stored_values(string? stored, ReleaseChannel expected)
 	{
-		Assert.Equal(expected, VersionCheckResult.ParseChannel(stored));
+		Assert.Equal(expected, VersionCheckResult.ParseChannel(stored, ReleaseChannel.Stable));
 	}
 
 	/// <summary>With a fallback, a missing or unrecognized value gives the fallback; a stored one still wins.</summary>

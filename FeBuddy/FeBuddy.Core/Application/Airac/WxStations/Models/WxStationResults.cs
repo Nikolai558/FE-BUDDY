@@ -31,7 +31,7 @@ public sealed record WxStationServiceResult : ServiceResult
 	/// </summary>
 	public required int StationCount { get; init; }
 
-	/// <summary>How many <c>&lt;Station&gt;</c> rows the source file listed in total, before any selection rule.</summary>
+	/// <summary>How many <c>&lt;Station&gt;</c> rows the source file listed in total, before any selection rule. For the Harness's report and tests.</summary>
 	public required int TotalStationCount { get; init; }
 
 	/// <summary>How many of the included stations fell inside the ROI, and so appear in the GeoJSON output.</summary>
@@ -40,6 +40,6 @@ public sealed record WxStationServiceResult : ServiceResult
 	/// <summary>Full paths of every GeoJSON file written.</summary>
 	public required IReadOnlyList<string> GeojsonFilesWritten { get; init; }
 
-	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>.</summary>
+	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>. For the Harness's report and tests.</summary>
 	public required IReadOnlyDictionary<string, int> GeojsonFeatureCountsByFile { get; init; }
 }

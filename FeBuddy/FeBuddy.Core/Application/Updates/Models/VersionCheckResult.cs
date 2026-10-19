@@ -108,15 +108,6 @@ public record VersionCheckResult(
 	public bool CanGoBack => RunningPreReleaseChannel is not null && LatestVersion is not null;
 
 	/// <summary>
-	/// Parses the user's update channel from its stored name (<c>General.UpdateChannel</c>:
-	/// <c>Stable</c>, <c>ReleaseCandidate</c>, <c>Beta</c> or <c>Alpha</c>), falling back to
-	/// <see cref="ReleaseChannel.Stable"/> for a missing or unrecognized value.
-	/// </summary>
-	/// <param name="value">The stored channel name (case-insensitive).</param>
-	/// <returns>The parsed channel, or <see cref="ReleaseChannel.Stable"/>.</returns>
-	public static ReleaseChannel ParseChannel(string? value) => ParseChannel(value, ReleaseChannel.Stable);
-
-	/// <summary>
 	/// Parses the user's update channel from its stored name, falling back to <paramref name="fallback"/>
 	/// for a missing or unrecognized value.
 	/// </summary>

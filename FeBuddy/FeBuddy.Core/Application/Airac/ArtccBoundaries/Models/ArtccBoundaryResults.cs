@@ -34,6 +34,6 @@ public sealed record ArtccBoundaryServiceResult : ServiceResult
 	/// <summary>Full paths of every GeoJSON file written.</summary>
 	public required IReadOnlyList<string> GeojsonFilesWritten { get; init; }
 
-	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>.</summary>
+	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>. For the Harness's report and tests.</summary>
 	public required IReadOnlyDictionary<string, int> GeojsonFeatureCountsByFile { get; init; }
 }

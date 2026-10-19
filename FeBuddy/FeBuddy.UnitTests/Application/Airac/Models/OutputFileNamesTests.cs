@@ -45,7 +45,6 @@ public sealed class OutputFileNamesTests
 		Assert.Equal("ZOB High.geojson", names.FileName("airways_high_lines"));
 		Assert.Equal("ZOB Airways.txt", names.FileName("Airways.txt"));
 		Assert.Equal("Airways_Low_Lines.geojson", names.FileName("Airways_Low_Lines"));
-		Assert.Equal("ZOB Airways", names.NewNames["Airways.txt"]);
 	}
 
 	[Theory]

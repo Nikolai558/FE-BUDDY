@@ -31,7 +31,7 @@ public sealed class UserConfigMigrationsTests
 
 		Assert.Equal(Settings(("General.B", "1"), ("General.C", "Y")), result.Values);
 		Assert.Equal(["Renamed A to B", "Y/N for C"], result.Applied);
-		Assert.Equal((2, 4), (result.FromVersion, result.ToVersion));
+		Assert.Equal(4, result.ToVersion);
 		Assert.True(result.Migrated);
 	}
 

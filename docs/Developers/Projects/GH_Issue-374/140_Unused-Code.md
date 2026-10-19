@@ -10,43 +10,43 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 | ID | Kind | Sev | Finding | Status | Session |
 |---|---|---|---|---|---|
-| [C1-6](#c1-6) | Test-only | Med | Launch progress and LaunchResult exist only for tests | Open | S6 |
-| [C5-2](#c5-2) | Test-only | Med | Location's DMS half and GeoMath's DMS helpers are used only by tests, and they cost a string format for every Location | Open | S6 |
+| [C1-6](#c1-6) | Test-only | Med | Launch progress and LaunchResult exist only for tests | Fixed | S6 |
+| [C5-2](#c5-2) | Test-only | Med | Location's DMS half and GeoMath's DMS helpers are used only by tests, and they cost a string format for every Location | Fixed | S6 |
 | [W5-1](#w5-1) | Unused | Med | ShellWindow maps AirwaysViewModel to AirwaysView, but the shell never shows it | Open | S6 |
-| [C1-8](#c1-8) | Test-only | Low | AiracCycleDataCache.PrepareCyclesAsync(previous, current, next, ct) is used only by tests | Open | S6 |
-| [C1-7](#c1-7) | Unused | Low | AiracSharedDataLoader.LoadTelephonyAsync(CancellationToken) has no caller; its 3-arg internal twin is test-only | Open | S6 |
-| [C2-26](#c2-26) | Test-only | Low | Model members filled by these builders but read only by tests | Open | S6 |
-| [C2-27](#c2-27) | Test-only | Low | AirwayWaypointBuffer.Buffer's default radii are used only by tests | Open | S6 |
-| [C3-20](#c3-20) | Test-only | Low | `ArtccBoundaryOutputFiles.ClassFor(string group)` is an identity function only its test calls | Open | S6 |
-| [C2-24](#c2-24) | Unused | Low | Departures/Arrivals advisory condition is always true | Open | S6 |
-| [C2-28](#c2-28) | Test-only | Low | Result counts read only by the Harness and tests | Open | S6 |
-| [C1-10](#c1-10) | Test-only | Low | DuplicateAliasReportResult.LineCount is read only by a test | Open | S6 |
-| [C1-9](#c1-9) | Test-only | Low | OutputFileNames.NewNames is read only by tests | Open | S6 |
-| [C3-19](#c3-19) | Unused | Low | `NavaidAliasGenerateResult.Messages` is always empty | Open | S6 |
-| [C4-20](#c4-20) | Test-only | Low | ChartRecallAliasLine.AirportId and ChartCode | Open | S6 |
-| [T1a-37](#t1a-37) | Unused | Low | Procedures builder and writer `Messages` lists are always empty | Open | S6 |
-| [C4-19](#c4-19) | Test-only | Low | ProcedureRouteSet.Routes | Open | S6 |
-| [C4-18](#c4-18) | Test-only | Low | RoutePointArtccResolver.AmbiguousPoints and its list | Open | S6 |
-| [C3-21](#c3-21) | Test-only | Low | Result counters only the Harness and tests read | Open | S6 |
-| [C4-21](#c4-21) | Unused | Low | AliasPractice.js exposes window.feBuddyPractice, which nothing reads | Open | S6 |
-| [C5-21](#c5-21) | Test-only | Low | Small result fields, an out parameter and two defaults that only tests use | Open | S6 |
-| [C1-13](#c1-13) | Test-only | Low | ServiceResult.Warnings is used only by the Harness and tests | Open | S6 |
-| [C1-12](#c1-12) | Test-only | Low | NewsCheckResult.FromNetwork is read only by tests | Open | S6 |
+| [C1-8](#c1-8) | Test-only | Low | AiracCycleDataCache.PrepareCyclesAsync(previous, current, next, ct) is used only by tests | Fixed | S6 |
+| [C1-7](#c1-7) | Unused | Low | AiracSharedDataLoader.LoadTelephonyAsync(CancellationToken) has no caller; its 3-arg internal twin is test-only | Fixed | S6 |
+| [C2-26](#c2-26) | Test-only | Low | Model members filled by these builders but read only by tests | Fixed | S6 |
+| [C2-27](#c2-27) | Test-only | Low | AirwayWaypointBuffer.Buffer's default radii are used only by tests | Fixed | S6 |
+| [C3-20](#c3-20) | Test-only | Low | `ArtccBoundaryOutputFiles.ClassFor(string group)` is an identity function only its test calls | Fixed | S6 |
+| [C2-24](#c2-24) | Unused | Low | Departures/Arrivals advisory condition is always true | Fixed | S6 |
+| [C2-28](#c2-28) | Test-only | Low | Result counts read only by the Harness and tests | Kept | S6 |
+| [C1-10](#c1-10) | Test-only | Low | DuplicateAliasReportResult.LineCount is read only by a test | Fixed | S6 |
+| [C1-9](#c1-9) | Test-only | Low | OutputFileNames.NewNames is read only by tests | Fixed | S6 |
+| [C3-19](#c3-19) | Unused | Low | `NavaidAliasGenerateResult.Messages` is always empty | Fixed | S6 |
+| [C4-20](#c4-20) | Test-only | Low | ChartRecallAliasLine.AirportId and ChartCode | Fixed | S6 |
+| [T1a-37](#t1a-37) | Unused | Low | Procedures builder and writer `Messages` lists are always empty | Fixed | S6 |
+| [C4-19](#c4-19) | Test-only | Low | ProcedureRouteSet.Routes | Fixed | S6 |
+| [C4-18](#c4-18) | Test-only | Low | RoutePointArtccResolver.AmbiguousPoints and its list | Fixed | S6 |
+| [C3-21](#c3-21) | Test-only | Low | Result counters only the Harness and tests read | Fixed | S6 |
+| [C4-21](#c4-21) | Unused | Low | AliasPractice.js exposes window.feBuddyPractice, which nothing reads | Fixed | S6 |
+| [C5-21](#c5-21) | Test-only | Low | Small result fields, an out parameter and two defaults that only tests use | Fixed | S6 |
+| [C1-13](#c1-13) | Test-only | Low | ServiceResult.Warnings is used only by the Harness and tests | Kept | S6 |
+| [C1-12](#c1-12) | Test-only | Low | NewsCheckResult.FromNetwork is read only by tests | Fixed | S6 |
 | [T1b-21](#t1b-21) | Test-only | Low | ReadArea's no-`Area` fallback is reached only by tests | Fixed | S6 |
-| [C1-11](#c1-11) | Test-only | Low | VersionCheckResult.ParseChannel(string?) (one-argument overload) is used only by a test | Open | S6 |
-| [C5-6](#c5-6) | Unused | Low | Airway.Segments and AirwayPoint.FoundIn are written but never read; Airway.AwyLocation and Airway.MaxAuthAlt are read only by a test | Open | S6 |
-| [C6-28](#c6-28) | Test-only | Low | UserConfigPackage.ConfigVersion (and its default) and UserConfigMigrationResult.FromVersion are read only by tests | Open | S6 |
-| [C6-25](#c6-25) | Test-only | Low | UserConfigFile.ProfileExists | Open | S6 |
+| [C1-11](#c1-11) | Test-only | Low | VersionCheckResult.ParseChannel(string?) (one-argument overload) is used only by a test | Fixed | S6 |
+| [C5-6](#c5-6) | Unused | Low | Airway.Segments and AirwayPoint.FoundIn are written but never read; Airway.AwyLocation and Airway.MaxAuthAlt are read only by a test | Fixed | S6 |
+| [C6-28](#c6-28) | Test-only | Low | UserConfigPackage.ConfigVersion (and its default) and UserConfigMigrationResult.FromVersion are read only by tests | Fixed | S6 |
+| [C6-25](#c6-25) | Test-only | Low | UserConfigFile.ProfileExists | Fixed | S6 |
 | [C6-4](#c6-4) | Unused | Low | `v\d+` in LegacyBackupName matches a file no release ever wrote | Fixed | S6 |
 | [C6-27](#c6-27) | Test-only | Low | UserConfigMigrationContext.Move, ChangeValue and Values are used only by tests | Kept | S6 |
-| [C5-5](#c5-5) | Test-only | Low | EramProperties' custom equality serves only tests; its remark claims a grouping that doesn't happen | Open | S6 |
-| [C6-26](#c6-26) | Test-only | Low | AppLog.GetLogFilePath is used only by tests and duplicates the writer's own path logic | Open | S6 |
-| [C7-18](#c7-18) | Test-only | Low | `MarkdownParser.ParseInlines`'s `issueUrlBase` and `linkBase` parameters are used only by tests | Open | S6 |
-| [C7-21](#c7-21) | Unused | Low | Markdown features no current content uses (recommend keeping them) | Open | S6 |
-| [C7-8](#c7-8) | Unused | Low | `AiracCycleAvailability.ProbeAsync`'s try/catch can never catch; cancellation is logged as a probe error | Open | S6 |
-| [C7-16](#c7-16) | Test-only | Low | `InstalledProduct.ProductSemVer` is read only by tests | Open | S6 |
-| [C7-17](#c7-17) | Test-only | Low | `TelephonyHtmlParser.Parse(registerPath, specialCallSignsPath)` is used only by tests | Open | S6 |
-| [C7-15](#c7-15) | Test-only | Low | Row-model fields that production code never reads (Wx stations, d-TPP) | Open | S6 |
+| [C5-5](#c5-5) | Test-only | Low | EramProperties' custom equality serves only tests; its remark claims a grouping that doesn't happen | Fixed | S6 |
+| [C6-26](#c6-26) | Test-only | Low | AppLog.GetLogFilePath is used only by tests and duplicates the writer's own path logic | Fixed | S6 |
+| [C7-18](#c7-18) | Test-only | Low | `MarkdownParser.ParseInlines`'s `issueUrlBase` and `linkBase` parameters are used only by tests | Fixed | S6 |
+| [C7-21](#c7-21) | Unused | Low | Markdown features no current content uses (recommend keeping them) | Kept | S6 |
+| [C7-8](#c7-8) | Unused | Low | `AiracCycleAvailability.ProbeAsync`'s try/catch can never catch; cancellation is logged as a probe error | Fixed | S6 |
+| [C7-16](#c7-16) | Test-only | Low | `InstalledProduct.ProductSemVer` is read only by tests | Fixed | S6 |
+| [C7-17](#c7-17) | Test-only | Low | `TelephonyHtmlParser.Parse(registerPath, specialCallSignsPath)` is used only by tests | Fixed | S6 |
+| [C7-15](#c7-15) | Test-only | Low | Row-model fields that production code never reads (Wx stations, d-TPP) | Fixed | S6 |
 | [W6-25](#w6-25) | Unused | Low | AliasGuideDocumentView.Divider always gets the same margin | Open | S6 |
 | [W6-20](#w6-20) | Unused | Low | BesideOrBelow.HorizontalSpacing is never set | Open | S6 |
 | [W6-21](#w6-21) | Unused | Low | CommandTablePanel's four spacing dependency properties are set only by a test, to their defaults | Open | S6 |
@@ -95,7 +95,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C1-6 · Test-only · Med · Launch progress and LaunchResult exist only for tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The launch progress types, `LaunchResult` and the normal-launch `RunAsync` overload are deleted; `RunAsync` returns `Task`, and LaunchSequenceTests assert on `AppEnvironment` and the log · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Launch/Models/LaunchProgress.cs:1-74`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/Models/LaunchProgress.cs#L1-L74); [`FeBuddy/FeBuddy.Core/Application/Launch/Models/LaunchResult.cs:1-12`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/Models/LaunchResult.cs#L1-L12); [`FeBuddy/FeBuddy.Core/Application/Launch/LaunchSequence.cs:55-67`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Launch/LaunchSequence.cs#L55-L67) (3-arg `RunAsync`), 60, 75, 297-350
 
@@ -109,7 +109,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C5-2 · Test-only · Med · Location's DMS half and GeoMath's DMS helpers are used only by tests, and they cost a string format for every Location
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Location` is a plain record of decimal degrees with the range check; the DMS constructor and properties, the custom equality, GeoMath's DMS helpers and their tests are deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Domain/Geo/Models/Location.cs:3-31`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Geo/Models/Location.cs#L3-L31),48-68,77,88,92-104; [`FeBuddy/FeBuddy.Core/Domain/Geo/GeoMath.cs:17-21`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Geo/GeoMath.cs#L17-L21),31,40-91,213-233
 
@@ -141,7 +141,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C1-8 · Test-only · Low · AiracCycleDataCache.PrepareCyclesAsync(previous, current, next, ct) is used only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The overload without a plan is deleted; the tests pass `AiracLaunchPlan.Everything` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs:231-245`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracCycleDataCache.cs#L231-L245)
 
@@ -155,7 +155,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C1-7 · Unused · Low · AiracSharedDataLoader.LoadTelephonyAsync(CancellationToken) has no caller; its 3-arg internal twin is test-only
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). Both overloads are deleted; the tests call the internal one with `refreshVirtualAirlineList: null` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/AiracSharedDataLoader.cs:68-72`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/AiracSharedDataLoader.cs#L68-L72), 113-121
 
@@ -171,7 +171,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C2-26 · Test-only · Low · Model members filled by these builders but read only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Airway.AwyLocation`, `MaxAuthAlt` and `Segments`, both raw routes' `TransitionCode`, and `CodeIdFor`'s `usedFallback` are deleted, with the asserts that read them · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayBuilder.cs:171-174`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayBuilder.cs#L171-L174) (`Airway.AwyLocation`, `MaxAuthAlt`, `Segments`); [`ArrivalBuilder.cs:487`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalBuilder.cs#L487) / [`DepartureBuilder.cs:370`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Departures/DepartureBuilder.cs#L370) (`ArrivalRawRoute.TransitionCode`, `DepartureRawRoute.TransitionCode`); [`ArrivalBuilder.cs:117`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalBuilder.cs#L117) / [`DepartureBuilder.cs:85`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Departures/DepartureBuilder.cs#L85) (`CodeIdFor(..., out _)`). The members are declared in Domain.
 
@@ -187,7 +187,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C2-27 · Test-only · Low · AirwayWaypointBuffer.Buffer's default radii are used only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). Both radii are required; the tests pass the default radii · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayWaypointBuffer.cs:60-61`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/AirwayWaypointBuffer.cs#L60-L61)
 
@@ -201,7 +201,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C3-20 · Test-only · Low · `ArtccBoundaryOutputFiles.ClassFor(string group)` is an identity function only its test calls
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `ClassFor(string)` and its test are deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/ArtccBoundaries/ArtccBoundaryOutputFiles.cs:50-53`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/ArtccBoundaries/ArtccBoundaryOutputFiles.cs#L50-L53) ; [`FeBuddy/FeBuddy.UnitTests/Application/Airac/ArtccBoundaries/ArtccBoundaryOutputFilesTests.cs:25`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/ArtccBoundaries/ArtccBoundaryOutputFilesTests.cs#L25)
 
@@ -217,7 +217,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C2-24 · Unused · Low · Departures/Arrivals advisory condition is always true
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The check is `output.Count == 0` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Departures/DepartureService.cs:76`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Departures/DepartureService.cs#L76); [`FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalService.cs:76`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/ArrivalService.cs#L76)
 
@@ -231,7 +231,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C2-28 · Test-only · Low · Result counts read only by the Harness and tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Kept (not yet merged): the Harness's report prints them, and their docs now say they are for the Harness's report and tests · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Departures/Models/DepartureResults.cs:40-44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Departures/Models/DepartureResults.cs#L40-L44), 56; [`FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/Models/ArrivalResults.cs:40-44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Arrivals/Models/ArrivalResults.cs#L40-L44), 56; [`Airports/Models/AirportResults.cs:41`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airports/Models/AirportResults.cs#L41); [`Airways/Models/AirwayServiceResult.cs:18`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Airways/Models/AirwayServiceResult.cs#L18)
 
@@ -245,7 +245,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C1-10 · Test-only · Low · DuplicateAliasReportResult.LineCount is read only by a test
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `LineCount` is deleted; the test counts the duplicate's lines itself · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Models/DuplicateAliasModels.cs:115-116`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Models/DuplicateAliasModels.cs#L115-L116)
 
@@ -259,7 +259,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C1-9 · Test-only · Low · OutputFileNames.NewNames is read only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `NewNames` is deleted; the tests check `FileName(key)` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Models/OutputFileNames.cs:79-80`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Models/OutputFileNames.cs#L79-L80)
 
@@ -273,7 +273,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C3-19 · Unused · Low · `NavaidAliasGenerateResult.Messages` is always empty
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Messages` is gone from the result, the writer and NavaidService · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Navaids/Models/NavaidResults.cs:28-35`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Navaids/Models/NavaidResults.cs#L28-L35) ; [`FeBuddy/FeBuddy.Core/Application/Airac/Navaids/NavaidAliasWriter.cs:57`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Navaids/NavaidAliasWriter.cs#L57),61,104 ; [`FeBuddy/FeBuddy.Core/Application/Airac/Navaids/NavaidService.cs:66-69`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Navaids/NavaidService.cs#L66-L69)
 
@@ -287,7 +287,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C4-20 · Test-only · Low · ChartRecallAliasLine.AirportId and ChartCode
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). Both are deleted from `ChartRecallAliasLine`, with the test asserts · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/Models/ChartRecallResults.cs:10-11`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/Models/ChartRecallResults.cs#L10-L11), 15
 
@@ -301,7 +301,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### T1a-37 · Unused · Low · Procedures builder and writer `Messages` lists are always empty
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `ProcedureBuildResult` loses `Messages`; the two writers return the path written, and their result types and the three `AddRange` calls are gone · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureBuilder.cs:57`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureBuilder.cs#L57), 114; [`ProcedureChangesMarkdownWriter.cs:109`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureChangesMarkdownWriter.cs#L109); [`ProceduresJsonWriter.cs:81`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProceduresJsonWriter.cs#L81); tests asserting it: [`ProcedureChangesMarkdownWriterTests.cs:62`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Procedures/ProcedureChangesMarkdownWriterTests.cs#L62), [`ProceduresJsonWriterTests.cs:69`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.UnitTests/Application/Airac/Procedures/ProceduresJsonWriterTests.cs#L69)
 
@@ -315,7 +315,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C4-19 · Test-only · Low · ProcedureRouteSet.Routes
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Routes` is deleted; the test takes a route through `At` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureRouteSet.cs:19-20`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/ProcedureRouteSet.cs#L19-L20)
 
@@ -331,7 +331,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C4-18 · Test-only · Low · RoutePointArtccResolver.AmbiguousPoints and its list
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `AmbiguousPoints` and its list are deleted; the tests assert on the log line each ambiguous point already writes · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Procedures/RoutePointArtccResolver.cs:40`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Procedures/RoutePointArtccResolver.cs#L40), 78-79, 121
 
@@ -347,7 +347,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C3-21 · Test-only · Low · Result counters only the Harness and tests read
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `DuplicateCommandCount` is deleted (the advisory carries the count); the counters the Harness prints stay, and their docs say so · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Airac/Telephony/Models/TelephonyResults.cs:59-66`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Telephony/Models/TelephonyResults.cs#L59-L66) ; [`FeBuddy/FeBuddy.Core/Application/Airac/WxStations/Models/WxStationResults.cs:34-35`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/WxStations/Models/WxStationResults.cs#L34-L35) ; [`FeBuddy/FeBuddy.Core/Application/Airac/ConcatenateAliases/Models/ConcatenateAliasesResults.cs:79-84`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/ConcatenateAliases/Models/ConcatenateAliasesResults.cs#L79-L84) ; [`ArtccBoundaryResults.cs:37-38`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/ArtccBoundaries/Models/ArtccBoundaryResults.cs#L37-L38), [`FixResults.cs:39-40`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Fixes/Models/FixResults.cs#L39-L40), [`NavaidResults.cs:56-57`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/Navaids/Models/NavaidResults.cs#L56-L57), [`WxStationResults.cs:43-44`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Airac/WxStations/Models/WxStationResults.cs#L43-L44) (`GeojsonFeatureCountsByFile`)
 
@@ -361,7 +361,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C4-21 · Unused · Low · AliasPractice.js exposes window.feBuddyPractice, which nothing reads
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The line is deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/AliasGuide/AliasPractice.js:477`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/AliasGuide/AliasPractice.js#L477)
 
@@ -375,7 +375,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C5-21 · Test-only · Low · Small result fields, an out parameter and two defaults that only tests use
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `LinesRead` and both `RecordsSkipped` are deleted, `CodeIdFor` has no `usedFallback`, `GetCycle` needs a date, and `GeoMath.Distance` always rounds to 6 places · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Conversions/DatToGeojson/Models/DatFileConversion.cs:15-16`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/DatToGeojson/Models/DatFileConversion.cs#L15-L16),21-22; [`FeBuddy/FeBuddy.Core/Application/Conversions/Models/SourceFileConversion.cs:21-22`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Conversions/Models/SourceFileConversion.cs#L21-L22); [`FeBuddy/FeBuddy.Core/Domain/Arrivals/ArrivalNaming.cs:71-73`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Arrivals/ArrivalNaming.cs#L71-L73); [`FeBuddy/FeBuddy.Core/Domain/Departures/DepartureNaming.cs:70-72`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Departures/DepartureNaming.cs#L70-L72); [`FeBuddy/FeBuddy.Core/Domain/Airac/AiracCycleResolver.cs:33-40`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Airac/AiracCycleResolver.cs#L33-L40); [`FeBuddy/FeBuddy.Core/Domain/Geo/GeoMath.cs:96-99`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Geo/GeoMath.cs#L96-L99)
 
@@ -389,7 +389,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C1-13 · Test-only · Low · ServiceResult.Warnings is used only by the Harness and tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Kept (not yet merged): it is the Harness's report, and its doc now says it is for the Harness's report and tests · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Models/ServiceResult.cs:30-38`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Models/ServiceResult.cs#L30-L38)
 
@@ -405,7 +405,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C1-12 · Test-only · Low · NewsCheckResult.FromNetwork is read only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `FromNetwork` is deleted; the tests read the source from the log, or count the News requests · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/News/Models/NewsPost.cs:76`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/News/Models/NewsPost.cs#L76), 82
 
@@ -435,7 +435,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C1-11 · Test-only · Low · VersionCheckResult.ParseChannel(string?) (one-argument overload) is used only by a test
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The overload is deleted; its test passes `ReleaseChannel.Stable` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Application/Updates/Models/VersionCheckResult.cs:90-97`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Application/Updates/Models/VersionCheckResult.cs#L90-L97)
 
@@ -449,7 +449,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C5-6 · Unused · Low · Airway.Segments and AirwayPoint.FoundIn are written but never read; Airway.AwyLocation and Airway.MaxAuthAlt are read only by a test
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `Airway.Segments`, `AirwayPoint.FoundIn` and WaypointLocator's `foundIn` are deleted, and `AwyLocation` and `MaxAuthAlt` with [C2-26](#c2-26) · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Domain/Airways/Models/Airway.cs:22-26`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Airways/Models/Airway.cs#L22-L26),31-32; [`FeBuddy/FeBuddy.Core/Domain/Airways/Models/AirwayPoint.cs:15-17`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Domain/Airways/Models/AirwayPoint.cs#L15-L17),23; [`FeBuddy/FeBuddy.Core/Infrastructure/Nasr/WaypointLocator.cs:33`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Nasr/WaypointLocator.cs#L33),69,127-172
 
@@ -465,7 +465,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C6-28 · Test-only · Low · UserConfigPackage.ConfigVersion (and its default) and UserConfigMigrationResult.FromVersion are read only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The `ConfigVersion` default and `FromVersion` are deleted, and the tests pass a layout; `ConfigVersion` stays, as the import tests read the layout a file was taken as · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/Models/UserConfigPackage.cs:14`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/Models/UserConfigPackage.cs#L14), 21; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/Models/UserConfigMigrationResult.cs:5`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/Models/UserConfigMigrationResult.cs#L5), 10
 
@@ -479,7 +479,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C6-25 · Test-only · Low · UserConfigFile.ProfileExists
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `ProfileExists` and its asserts are deleted · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:71-75`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L71-L75)
 
@@ -525,7 +525,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C5-5 · Test-only · Low · EramProperties' custom equality serves only tests; its remark claims a grouping that doesn't happen
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The custom equality is deleted; the reader's tests compare `Filters` by content in a helper of their own · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Eram/Models/EramProperties.cs:55-89`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Eram/Models/EramProperties.cs#L55-L89)
 
@@ -539,7 +539,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C6-26 · Test-only · Low · AppLog.GetLogFilePath is used only by tests and duplicates the writer's own path logic
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `GetLogFilePath`, the writer, the prune pattern and the date parse share one file-name helper · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Logging/AppLog.cs:236-243`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Logging/AppLog.cs#L236-L243), 310
 
@@ -553,7 +553,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C7-18 · Test-only · Low · `MarkdownParser.ParseInlines`'s `issueUrlBase` and `linkBase` parameters are used only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `ParseInlines` takes the text alone; the link tests go through `Parse` · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Markdown/MarkdownParser.cs:53-63`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Markdown/MarkdownParser.cs#L53-L63)
 
@@ -567,7 +567,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C7-21 · Unused · Low · Markdown features no current content uses (recommend keeping them)
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Kept (not yet merged): authors write News and release notes expecting GitHub's Markdown, and a dropped feature would show as raw markup · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Markdown/MarkdownParser.cs:112-118`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Markdown/MarkdownParser.cs#L112-L118) + 160-177 (fenced code), 209-210 (ordered lists' start number), 319-326 (hard breaks), 389-395 (backslash escapes), 420-438 (images), 444-455 (autolinks), 457-468 (bare URLs), 482-501 (`~~strike~~`, `_`/`__` emphasis); [`FeBuddy/FeBuddy.Core/Infrastructure/Markdown/Models/MarkdownBlock.cs:20-22`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Markdown/Models/MarkdownBlock.cs#L20-L22), 28-30
 
@@ -581,7 +581,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C7-8 · Unused · Low · `AiracCycleAvailability.ProbeAsync`'s try/catch can never catch; cancellation is logged as a probe error
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). A cancelled probe throws rather than being logged as a probe error, with no ranged GET after it; the outer catch is gone, and the remarks say when the GET is tried · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Nasr/AiracCycleAvailability.cs:19`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Nasr/AiracCycleAvailability.cs#L19), 56-72, 111-115
 
@@ -593,7 +593,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C7-16 · Test-only · Low · `InstalledProduct.ProductSemVer` is read only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `ProductSemVer` is deleted, and `InstallerState.wxs` says which values the app and the setup window read · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledProduct.cs:26-27`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Platform/InstalledProduct.cs#L26-L27); (related) [`FeBuddy/FeBuddy.Installer/InstallerState.wxs:6`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Installer/InstallerState.wxs#L6)
 
@@ -609,7 +609,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C7-17 · Test-only · Low · `TelephonyHtmlParser.Parse(registerPath, specialCallSignsPath)` is used only by tests
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). The combined `Parse` and its four tests are deleted, and TelephonyDataCollection's summary says AiracSharedDataLoader assembles it · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Telephony/Parsers/TelephonyHtmlParser.cs:40-56`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Telephony/Parsers/TelephonyHtmlParser.cs#L40-L56); [`FeBuddy/FeBuddy.Core/Infrastructure/Telephony/Models/TelephonyDataCollection.cs:5`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Telephony/Models/TelephonyDataCollection.cs#L5)
 
@@ -625,7 +625,7 @@ App code nothing uses, and app code only the tests use (unused test helpers are 
 
 ### C7-15 · Test-only · Low · Row-model fields that production code never reads (Wx stations, d-TPP)
 
-**Status:** Open · **Session:** [S6](020_Work-Plan.md#s6)
+**Status:** Fixed (not yet merged). `NumResults` is deleted; the d-TPP and Wx row fields stay, as complete mirrors of their files like the NASR models · **Session:** [S6](020_Work-Plan.md#s6)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/WxStations/Models/WxStationDataCollection.cs:12-17`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/WxStations/Models/WxStationDataCollection.cs#L12-L17) (`NumResults`); [`WxStationXmlDataModel.cs:21`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/WxStations/Models/WxStationXmlDataModel.cs#L21) (`StationId`), 45 (`FaaId`), 53 (`WmoId`), 91 (`ElevationM`), 107 (`State`); [`FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/Models/DtppMetafileDataCollection.cs:21`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/Models/DtppMetafileDataCollection.cs#L21) (`FromEdate`), 27 (`ToEdate`), 39 (`ToEffectiveUtc`); [`DtppMetafileXmlDataModel.cs:38`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Core/Infrastructure/Dtpp/Models/DtppMetafileXmlDataModel.cs#L38) (`StateFullName`), 59 (`Volume`), 211 (`CnFlg`), 225 (`CnSection`), 237 (`CnPage`), 253 (`BvSection`), 262 (`BvPage`), 286 (`TwoColored`)
 

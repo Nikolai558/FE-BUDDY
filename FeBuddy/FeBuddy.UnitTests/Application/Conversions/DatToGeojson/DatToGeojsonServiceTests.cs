@@ -127,9 +127,7 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 		Assert.Empty(result.Warnings);
 
 		DatFileConversion a = result.Files[0];
-		Assert.Equal(2, a.LinesRead);
 		Assert.Equal(2, a.LinesWritten);
-		Assert.Equal(0, a.RecordsSkipped);
 		Assert.Null(a.Error);
 
 		JsonElement feature = Assert.Single(Features(a.OutputPath!).EnumerateArray());
@@ -236,7 +234,6 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 
 		DatFileConversion empty = Assert.Single(result.Files);
 		Assert.Null(empty.OutputPath);
-		Assert.Equal(1, empty.RecordsSkipped);
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && m.Text.Contains("1 LINE block(s) with fewer than two points"));
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains("has no lines"));
 		Assert.Contains(result.Warnings, w => w.StartsWith("EMPTY.dat: Line 2:"));

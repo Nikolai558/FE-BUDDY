@@ -73,7 +73,7 @@ public static class DepartureService
 
 		// Filters that leave nothing to write would otherwise end in a clean-looking run with no
 		// output folder at all, so say why.
-		if (output.Count == 0 && (settings.GenerateGeojson || settings.GenerateAliasFile))
+		if (output.Count == 0)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, "DepartureService",
 				"No departure procedures matched your filters, so no Departures files were written.")

@@ -37,10 +37,10 @@ public sealed record DepartureAliasGenerateResult(
 /// </summary>
 public sealed record DepartureServiceResult : ServiceResult
 {
-	/// <summary>How many procedures were in <c>DP_BASE</c>, before any filtering.</summary>
+	/// <summary>How many procedures were in <c>DP_BASE</c>, before any filtering. For the Harness's report and tests.</summary>
 	public required int ProcedureCount { get; init; }
 
-	/// <summary>How many procedures passed the procedure-level filters (type, ARTCC, amendment date).</summary>
+	/// <summary>How many procedures passed the procedure-level filters (type, ARTCC, amendment date). For the Harness's report and tests.</summary>
 	public required int ProceduresInScopeCount { get; init; }
 
 	/// <summary>How many airport + procedure pairs were output (after the ROI filter).</summary>
@@ -52,7 +52,7 @@ public sealed record DepartureServiceResult : ServiceResult
 	/// <summary>Full paths of every GeoJSON file written.</summary>
 	public required IReadOnlyList<string> GeojsonFilesWritten { get; init; }
 
-	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>.</summary>
+	/// <summary>Rendered Feature count for each path in <see cref="GeojsonFilesWritten"/>. For the Harness's report and tests.</summary>
 	public required IReadOnlyDictionary<string, int> GeojsonFeatureCountsByFile { get; init; }
 
 	/// <summary>The alias file's path, or <see langword="null"/> when it was not generated or had nothing to write.</summary>

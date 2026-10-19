@@ -9,8 +9,8 @@ namespace FeBuddy.UnitTests.Infrastructure.Nasr;
 
 /// <summary>
 /// Verifies <see cref="AiracCycleAvailability.ProbeAsync"/>: 200 -&gt; published,
-/// 404/403 -&gt; not yet published, a network error -&gt; unknown, and the HEAD -&gt; ranged-GET
-/// fallback.
+/// 404/403 -&gt; not yet published, a network error or a timeout -&gt; unknown, the HEAD -&gt;
+/// ranged-GET fallback, and a cancelled probe throws.
 /// </summary>
 [Collection("AppLog")]
 public sealed class AiracCycleAvailabilityTests : IDisposable
@@ -45,6 +45,34 @@ public sealed class AiracCycleAvailabilityTests : IDisposable
 		using HttpClient client = new(new StubHttpHandler(_ => throw new HttpRequestException("dns failure")));
 
 		Assert.Equal(AiracCyclePublicationState.Unknown, await AiracCycleAvailability.ProbeAsync(Cycle, client));
+	}
+
+	/// <summary>A request that times out, with the probe itself not cancelled, is inconclusive too.</summary>
+	[Fact]
+	public async Task probe_timeout_is_unknown()
+	{
+		using HttpClient client = new(new StubHttpHandler(_ => throw new TaskCanceledException("timed out")));
+
+		Assert.Equal(AiracCyclePublicationState.Unknown, await AiracCycleAvailability.ProbeAsync(Cycle, client));
+	}
+
+	/// <summary>A cancelled probe stops: it throws, never tries the ranged GET, and logs no probe error.</summary>
+	[Fact]
+	public async Task a_cancelled_probe_throws_without_trying_again()
+	{
+		int requests = 0;
+		using CancellationTokenSource cancelled = new();
+		await cancelled.CancelAsync();
+		using HttpClient client = new(new StubHttpHandler(_ =>
+		{
+			Interlocked.Increment(ref requests);
+			throw new OperationCanceledException(cancelled.Token);
+		}));
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => AiracCycleAvailability.ProbeAsync(Cycle, client, cancelled.Token));
+
+		Assert.Equal(1, requests);
+		Assert.DoesNotContain(AppLog.Entries, entry => entry.Message.Contains("probe error", StringComparison.Ordinal));
 	}
 
 	[Fact]

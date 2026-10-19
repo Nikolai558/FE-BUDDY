@@ -104,6 +104,6 @@ public static class UserConfigMigrations
 			applied.Add(step.Description);
 		}
 
-		return new UserConfigMigrationResult(migrated, fromVersion, toVersion, applied);
+		return new UserConfigMigrationResult(migrated, toVersion, applied);
 	}
 }

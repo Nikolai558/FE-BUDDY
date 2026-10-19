@@ -18,7 +18,7 @@ public sealed class AirwayWaypointBufferTests
 {
 	private static readonly GeometryFactory Factory = Wgs84.Factory;
 
-	private static AirwayPoint Point(string id, double lat, double lon) => new(id, "WP", lat, lon, "fix");
+	private static AirwayPoint Point(string id, double lat, double lon) => new(id, "WP", lat, lon);
 
 	private static LineString Leg((double Lon, double Lat) a, (double Lon, double Lat) b) =>
 		Factory.CreateLineString([new Coordinate(a.Lon, a.Lat), new Coordinate(b.Lon, b.Lat)]);
@@ -36,7 +36,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((150.0, 20.0), (180.0, 20.60750));
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			[leg], [start, resee], "TEST");
+			[leg], [start, resee], "TEST", AirwayWaypointBuffer.DefaultFixRadiusNm, AirwayWaypointBuffer.DefaultNavaidRadiusNm);
 
 		LineString buffered = Assert.Single(result.LineStrings);
 		Coordinate end = EndOf(buffered);
@@ -56,7 +56,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((175.0, 20.0), synthetic);
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			[leg], [a], "TEST");
+			[leg], [a], "TEST", AirwayWaypointBuffer.DefaultFixRadiusNm, AirwayWaypointBuffer.DefaultNavaidRadiusNm);
 
 		Coordinate end = EndOf(Assert.Single(result.LineStrings));
 
@@ -74,7 +74,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((-80.0, 40.0), roiBoundary);
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			[leg], [a], "TEST");
+			[leg], [a], "TEST", AirwayWaypointBuffer.DefaultFixRadiusNm, AirwayWaypointBuffer.DefaultNavaidRadiusNm);
 
 		Coordinate end = EndOf(Assert.Single(result.LineStrings));
 
@@ -91,7 +91,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((-80.0, 40.0), (-81.0, 41.0));
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			[leg], [a, b], "TEST");
+			[leg], [a, b], "TEST", AirwayWaypointBuffer.DefaultFixRadiusNm, AirwayWaypointBuffer.DefaultNavaidRadiusNm);
 
 		Coordinate[] buffered = Assert.Single(result.LineStrings).Coordinates;
 
@@ -139,7 +139,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((a.Longitude, a.Latitude), (b.Longitude, b.Latitude));
 
 		// 2.5 + 2.5 = 5 NM: kept. 4.5 + 4.5 = 9 NM: dropped, with an Info message.
-		Assert.Single(AirwayWaypointBuffer.Buffer([leg], [a, b], "TEST").LineStrings);
+		Assert.Single(AirwayWaypointBuffer.Buffer([leg], [a, b], "TEST", AirwayWaypointBuffer.DefaultFixRadiusNm, AirwayWaypointBuffer.DefaultNavaidRadiusNm).LineStrings);
 
 		AirwayBufferResult dropped = AirwayWaypointBuffer.Buffer([leg], [a, b], "TEST", fixRadiusNm: 4.5, navaidRadiusNm: 4.5);
 
@@ -160,5 +160,5 @@ public sealed class AirwayWaypointBufferTests
 	}
 
 	private static double DistanceNm(Coordinate coordinate, AirwayPoint point) =>
-		GeoMath.Distance(new Location(coordinate.Y, coordinate.X), new Location(point.Latitude, point.Longitude), round: false);
+		GeoMath.Distance(new Location(coordinate.Y, coordinate.X), new Location(point.Latitude, point.Longitude));
 }

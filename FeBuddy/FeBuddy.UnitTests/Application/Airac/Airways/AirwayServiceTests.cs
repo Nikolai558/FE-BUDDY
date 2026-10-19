@@ -176,7 +176,7 @@ public sealed class AirwayServiceTests : IDisposable
 
 	/// <summary>The distance, in NM, from a GeoJSON <c>[lon, lat]</c> position to a point.</summary>
 	private static double DistanceNm(JsonElement position, double lat, double lon) =>
-		GeoMath.Distance(new Location(position[1].GetDouble(), position[0].GetDouble()), new Location(lat, lon), round: false);
+		GeoMath.Distance(new Location(position[1].GetDouble(), position[0].GetDouble()), new Location(lat, lon));
 
 	[Fact]
 	public void run_with_crc_defaults_and_a_roi_draws_only_the_points_inside_it()

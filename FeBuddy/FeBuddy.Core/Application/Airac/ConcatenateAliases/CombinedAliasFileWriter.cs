@@ -176,7 +176,7 @@ public static class CombinedAliasFileWriter
 				$"{fileName} was not written: {why}" + DeleteEarlierFile(outputDirectory, fileName).Sentence)
 			{ IsAdvisory = true });
 
-			return Result(null, customFiles.Count, 0, 0, [], 0, 0, messages, stopwatch);
+			return Result(null, customFiles.Count, 0, 0, [], 0, messages, stopwatch);
 		}
 
 		StringBuilder builder = new();
@@ -220,9 +220,9 @@ public static class CombinedAliasFileWriter
 		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-		int duplicates = ReportDuplicates(custom, feBuddy, fileName, messages);
+		ReportDuplicates(custom, feBuddy, fileName, messages);
 
-		return Result(path, customFiles.Count, custom.Count, customCommands, [.. feBuddy.Select(f => f.Name)], feBuddyCommands, duplicates, messages, stopwatch);
+		return Result(path, customFiles.Count, custom.Count, customCommands, [.. feBuddy.Select(f => f.Name)], feBuddyCommands, messages, stopwatch);
 	}
 
 	/// <summary>How many alias commands <paramref name="text"/> holds: lines that start with a dot.</summary>
@@ -236,14 +236,14 @@ public static class CombinedAliasFileWriter
 	}
 
 	/// <summary>
-	/// Adds one advisory listing every command a custom file has that another merged file has too,
-	/// and returns how many there are. Each is listed with its files in the order they are merged,
+	/// Adds one advisory listing every command a custom file has that another merged file has too.
+	/// Each is listed with its files in the order they are merged,
 	/// so the last one named is the copy CRC uses - a custom file's, over FE-Buddy's. It is a notice,
 	/// not a warning: replacing one of FE-Buddy's commands is what the custom files are last for. A
 	/// command repeated inside one file is that file's business, and one only FE-Buddy's own files
 	/// share is already in <c>Duplicate_Alias_Commands.txt</c>, so neither is reported here.
 	/// </summary>
-	private static int ReportDuplicates(
+	private static void ReportDuplicates(
 		IReadOnlyList<(string Name, IReadOnlyList<string> Lines)> custom,
 		IReadOnlyList<(string Name, IReadOnlyList<string> Lines)> feBuddy,
 		string fileName,
@@ -292,8 +292,6 @@ public static class CombinedAliasFileWriter
 				"come after FE-Buddy's, so a command of yours replaces FE-Buddy's. To use FE-Buddy's instead, remove yours.")
 			{ IsAdvisory = true });
 		}
-
-		return duplicates.Length;
 	}
 
 	/// <summary>
@@ -334,7 +332,6 @@ public static class CombinedAliasFileWriter
 		int customCommands,
 		IReadOnlyList<string> feBuddyFiles,
 		int feBuddyCommands,
-		int duplicates,
 		List<ServiceMessage> messages,
 		Stopwatch stopwatch)
 	{
@@ -355,7 +352,6 @@ public static class CombinedAliasFileWriter
 			CustomCommandCount = customCommands,
 			FeBuddyFiles = feBuddyFiles,
 			FeBuddyCommandCount = feBuddyCommands,
-			DuplicateCommandCount = duplicates,
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 		};

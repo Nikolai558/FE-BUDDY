@@ -168,7 +168,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, NowUtc, FailureReason: null));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.NotNull(result.Data);
 		Assert.Single(result.Data!.Assignments);
@@ -363,7 +363,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, downloadedUtc, "special call signs download failed"));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.NotNull(result.Data);
 		Assert.Single(result.Data!.Assignments);
@@ -389,7 +389,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, NowUtc, FailureReason: null));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.Null(result.Data);
 
@@ -410,7 +410,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(FilePath: null, DownloadedUtc: null, "network down"));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.NotNull(result.Data);
 		Assert.Single(result.Data!.Assignments);
@@ -435,7 +435,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, NowUtc, FailureReason: null));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.Null(result.Data);
 		Assert.Equal(3, result.Messages.Count);
@@ -457,7 +457,7 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 			new SharedDataRefreshResult(specialPath, NowUtc, FailureReason: null));
 
 		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
-			Refresh(refreshed), NowUtc, CancellationToken.None);
+			Refresh(refreshed), refreshVirtualAirlineList: null, NowUtc, CancellationToken.None);
 
 		Assert.NotNull(result.Data);
 		Assert.Single(result.Data!.Assignments);

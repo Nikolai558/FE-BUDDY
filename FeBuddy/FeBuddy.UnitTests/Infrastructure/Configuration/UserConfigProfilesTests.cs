@@ -227,8 +227,6 @@ public sealed class UserConfigProfilesTests : IDisposable
 		Assert.StartsWith("There is already a profile called ZOB.", taken.Message, StringComparison.Ordinal);
 		Assert.Throws<ArgumentException>(() => UserConfigFile.CreateProfile("bad:name", null));
 		Assert.Throws<ArgumentException>(() => UserConfigFile.SwitchProfile("Nobody"));
-		Assert.True(UserConfigFile.ProfileExists(" zob "));
-		Assert.False(UserConfigFile.ProfileExists("ZNY"));
 	}
 
 	[Theory]

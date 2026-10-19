@@ -73,10 +73,8 @@ public sealed record NewsPost(NewsPostId Id, string DateHeading, string Title, s
 /// <see langword="false"/> when the News document could not be parsed - the caller must leave
 /// <c>General.NewsLastOpen</c> untouched and surface a warning.
 /// </param>
-/// <param name="FromNetwork"><see langword="true"/> when the document was fetched from GitHub, <see langword="false"/> when the bundled copy was used.</param>
 public sealed record NewsCheckResult(
 	IReadOnlyList<NewsPost> Posts,
 	NewsPostId? LatestPostId,
 	int NewPostCount,
-	bool ParseSucceeded,
-	bool FromNetwork);
+	bool ParseSucceeded);

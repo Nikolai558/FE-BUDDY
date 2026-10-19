@@ -76,9 +76,6 @@ public sealed class OutputFileNames
 	/// <summary>Every file keeps FE-Buddy's name.</summary>
 	public static OutputFileNames None { get; } = new(new Dictionary<string, string>());
 
-	/// <summary>Each renamed file's key and its new name, without an extension.</summary>
-	public IReadOnlyDictionary<string, string> NewNames => _newNames;
-
 	/// <summary>The name a file is written under: its new name and its own extension, or FE-Buddy's name for it.</summary>
 	/// <param name="fileKey">The file's key, e.g. <c>Airways_High_Lines</c> or <c>Airways.txt</c>.</param>
 	/// <returns>e.g. <c>ZOB High.geojson</c>, or <c>Airways_High_Lines.geojson</c> when it was not renamed.</returns>

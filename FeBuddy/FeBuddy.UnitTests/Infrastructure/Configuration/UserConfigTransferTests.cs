@@ -1074,5 +1074,5 @@ public sealed class UserConfigTransferTests : IDisposable
 	}
 
 	private static UserConfigPackage Package(Dictionary<string, string> values) =>
-		new("test.json", UserConfigTransfer.FormatVersion, "3.1.0", ExportedAt, values);
+		new("test.json", UserConfigTransfer.FormatVersion, "3.1.0", ExportedAt, values, UserConfigVersion.Current);
 }

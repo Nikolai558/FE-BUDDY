@@ -10,18 +10,7 @@ public sealed record ProcedureSettingsParseResult(ProcedureSettings Settings, IR
 
 /// <summary>The outcome of building every airport and procedure from the parsed d-TPP Metafile and NASR data.</summary>
 /// <param name="Airports">Every metafile airport, in file order.</param>
-/// <param name="Messages">Messages collected while building.</param>
-public sealed record ProcedureBuildResult(IReadOnlyList<ProcedureAirport> Airports, IReadOnlyList<ServiceMessage> Messages);
-
-/// <summary>The outcome of writing <c>Procedure_Changes.md</c>.</summary>
-/// <param name="FilePath">The path written, or <see langword="null"/> when the document was not generated.</param>
-/// <param name="Messages">Messages collected while writing.</param>
-public sealed record ProcedureChangesWriteResult(string? FilePath, IReadOnlyList<ServiceMessage> Messages);
-
-/// <summary>The outcome of writing <c>Procedures.json</c>.</summary>
-/// <param name="FilePath">The path written, or <see langword="null"/> when the document was not generated.</param>
-/// <param name="Messages">Messages collected while writing.</param>
-public sealed record ProceduresJsonWriteResult(string? FilePath, IReadOnlyList<ServiceMessage> Messages);
+public sealed record ProcedureBuildResult(IReadOnlyList<ProcedureAirport> Airports);
 
 /// <summary>
 /// The result of running the top-level Procedures sub-service (<c>ProcedureService.Run</c>): what

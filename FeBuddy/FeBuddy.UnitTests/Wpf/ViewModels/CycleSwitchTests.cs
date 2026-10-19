@@ -143,7 +143,8 @@ public sealed class CycleSwitchTests : IDisposable
 		await AiracCycleDataCache.Instance.PrepareCyclesAsync(
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Previous),
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Current),
-			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next));
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next),
+			AiracLaunchPlan.Everything);
 
 		AiracServiceViewModel screen = new();
 		AiracGeneralTabViewModel general = screen.Tabs.OfType<AiracGeneralTabViewModel>().Single();
@@ -189,7 +190,8 @@ public sealed class CycleSwitchTests : IDisposable
 		Task prepare = AiracCycleDataCache.Instance.PrepareCyclesAsync(
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Previous),
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Current),
-			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next));
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next),
+			AiracLaunchPlan.Everything);
 
 		if (wait)
 		{

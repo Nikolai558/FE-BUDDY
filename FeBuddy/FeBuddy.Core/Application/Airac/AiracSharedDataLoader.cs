@@ -65,12 +65,6 @@ public static class AiracSharedDataLoader
 	public static Task<AiracSharedDataLoadResult<WxStationDataCollection>> LoadWxStationsAsync(CancellationToken cancellationToken = default) =>
 		LoadWxStationsAsync(_refreshWxStations, DateTime.UtcNow, cancellationToken);
 
-	/// <summary>Downloads (or falls back on) and parses the two FAA telephony pages.</summary>
-	/// <param name="cancellationToken">Cancels the downloads.</param>
-	/// <returns>The parsed pages, or <see langword="null"/> when there is no usable copy of the register, and the messages for the run.</returns>
-	public static Task<AiracSharedDataLoadResult<TelephonyDataCollection>> LoadTelephonyAsync(CancellationToken cancellationToken = default) =>
-		LoadTelephonyAsync(includeVatsimRadar: false, cancellationToken);
-
 	/// <summary>
 	/// Downloads (or falls back on) and parses the two FAA telephony pages and, when the run includes
 	/// it, the virtual airline list - optional, like the U.S. special call signs.
@@ -109,16 +103,6 @@ public static class AiracSharedDataLoader
 			return new AiracSharedDataLoadResult<WxStationDataCollection>(null, messages);
 		}
 	}
-
-	/// <summary>
-	/// Same as <see cref="LoadTelephonyAsync(CancellationToken)"/>, with the downloads and the clock
-	/// supplied, so tests need neither the network nor a real date.
-	/// </summary>
-	internal static Task<AiracSharedDataLoadResult<TelephonyDataCollection>> LoadTelephonyAsync(
-		Func<CancellationToken, Task<TelephonyRefreshResult>> refresh,
-		DateTime nowUtc,
-		CancellationToken cancellationToken) =>
-		LoadTelephonyAsync(refresh, refreshVirtualAirlineList: null, nowUtc, cancellationToken);
 
 	/// <summary>
 	/// Same as <see cref="LoadTelephonyAsync(bool, CancellationToken)"/>, with the downloads and the

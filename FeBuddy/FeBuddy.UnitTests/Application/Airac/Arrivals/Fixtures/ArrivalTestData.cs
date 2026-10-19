@@ -294,7 +294,7 @@ internal static class ArrivalTestData
 			ServedAirports = ["AAA"],
 			Bodies =
 			[
-				new ArrivalRawRoute("BODY", 1, ArrivalRouteKind.Body, null, [new ArrivalRawPoint("ALPHA", "RP")])
+				new ArrivalRawRoute("BODY", 1, ArrivalRouteKind.Body, [new ArrivalRawPoint("ALPHA", "RP")])
 			],
 			Transitions = [],
 			BodiesByAirport = new Dictionary<string, IReadOnlyList<(string Name, int Sequence)>>()

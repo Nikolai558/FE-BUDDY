@@ -69,7 +69,6 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 		Assert.Equal(2, result.CustomCommandCount);
 		Assert.Equal(["Airways.txt", "Telephony.txt"], result.FeBuddyFiles);
 		Assert.Equal(3, result.FeBuddyCommandCount);
-		Assert.Equal(0, result.DuplicateCommandCount);
 		Assert.Empty(result.Messages);
 	}
 
@@ -281,8 +280,6 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 			"2610",
 			_output);
 
-		Assert.Equal(1, result.DuplicateCommandCount);
-
 		ServiceMessage notice = Assert.Single(result.Messages);
 		Assert.True(notice.IsAdvisory);
 		Assert.Equal(LogLevel.Info, notice.Level);
@@ -300,7 +297,6 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "a.txt", ".same .ECHO a"), Read(2, "b.txt", ".same .ECHO b")], [], "2610", _output);
 
-		Assert.Equal(1, result.DuplicateCommandCount);
 		Assert.Contains(".same (a.txt, b.txt)", Assert.Single(result.Messages).Text, StringComparison.Ordinal);
 	}
 
@@ -317,7 +313,6 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 			"2610",
 			_output);
 
-		Assert.Equal(0, result.DuplicateCommandCount);
 		Assert.Empty(result.Messages);
 	}
 
@@ -329,8 +324,8 @@ public sealed class CombinedAliasFileWriterTests : IDisposable
 		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "a.txt", commands)], [FeBuddyFile("Airways.txt", commands)], "2610", _output);
 
-		Assert.Equal(12, result.DuplicateCommandCount);
 		string text = Assert.Single(result.Messages).Text;
+		Assert.StartsWith("12 alias command(s) ", text, StringComparison.Ordinal);
 		Assert.Contains(".c10 (Airways.txt, a.txt), ...", text, StringComparison.Ordinal);
 		Assert.DoesNotContain(".c11", text, StringComparison.Ordinal);
 	}

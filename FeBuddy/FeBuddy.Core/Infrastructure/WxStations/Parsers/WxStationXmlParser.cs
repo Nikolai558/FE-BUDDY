@@ -36,13 +36,7 @@ public static class WxStationXmlParser
 		XElement dataElement = root.Element("data")
 			?? throw new InvalidDataException($"Wx station file '{xmlPath}' has no <data> element under <response>.");
 
-		List<WxStationXmlDataModel.Station> stations = [.. dataElement.Elements("Station").Select(ReadStation)];
-
-		return new WxStationDataCollection
-		{
-			Stations = stations,
-			NumResults = ParseNullableInt((string?)dataElement.Attribute("num_results")) ?? stations.Count,
-		};
+		return new WxStationDataCollection { Stations = [.. dataElement.Elements("Station").Select(ReadStation)] };
 	}
 
 	/// <summary>Async wrapper over <see cref="Parse"/>, for callers already on an async pipeline (e.g. <c>AiracCycleDataCache</c>).</summary>
@@ -89,11 +83,6 @@ public static class WxStationXmlParser
 
 	private static double? ParseNullableDouble(string? value) =>
 		value is not null && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result)
-			? result
-			: null;
-
-	private static int? ParseNullableInt(string? value) =>
-		value is not null && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result)
 			? result
 			: null;
 }

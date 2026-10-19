@@ -114,19 +114,19 @@ public sealed class DashboardViewModelTests : IDisposable
 	public void the_news_posts_are_put_in_again_only_when_they_changed()
 	{
 		NewsPost first = new(new NewsPostId(new DateOnly(2026, 10, 1), 1), "1 Oct 2026", "First", "Body.");
-		AppEnvironment.News = new NewsCheckResult([first], first.Id, 0, ParseSucceeded: true, FromNetwork: true);
+		AppEnvironment.News = new NewsCheckResult([first], first.Id, 0, ParseSucceeded: true);
 		DashboardViewModel dashboard = new();
 		int resets = 0;
 		dashboard.Posts.CollectionChanged += (_, _) => resets++;
 
-		AppEnvironment.News = new NewsCheckResult([first], first.Id, 1, ParseSucceeded: true, FromNetwork: true);
+		AppEnvironment.News = new NewsCheckResult([first], first.Id, 1, ParseSucceeded: true);
 		dashboard.RefreshNewsForTesting();
 
 		Assert.Equal(0, resets);
 		Assert.True(dashboard.NewsButtonHighlighted);
 
 		NewsPost second = new(new NewsPostId(new DateOnly(2026, 10, 2), 1), "2 Oct 2026", "Second", "Body.");
-		AppEnvironment.News = new NewsCheckResult([second, first], second.Id, 1, ParseSucceeded: true, FromNetwork: true);
+		AppEnvironment.News = new NewsCheckResult([second, first], second.Id, 1, ParseSucceeded: true);
 		dashboard.RefreshNewsForTesting();
 
 		Assert.Equal([second, first], dashboard.Posts);

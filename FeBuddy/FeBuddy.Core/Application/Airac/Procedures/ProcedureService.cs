@@ -143,7 +143,6 @@ public static class ProcedureService
 		List<ServiceMessage> messages)
 	{
 		ProcedureBuildResult buildResult = ProcedureBuilder.Build(nasr, dtpp, previousDtpp);
-		messages.AddRange(buildResult.Messages);
 
 		IReadOnlyDictionary<Procedure, FacilityFixMatch>? facilityFixes = settings.IncludeProceduresWithFixInFacility
 			? FindFacilityFixes(nasr, previousNasr, buildResult.Airports, settings, messages)
@@ -207,24 +206,12 @@ public static class ProcedureService
 
 		if (settings.GenerateChangesDocument)
 		{
-			ProcedureChangesWriteResult changesResult = ProcedureChangesMarkdownWriter.Generate(included, settings, dtpp, previousDtpp);
-			messages.AddRange(changesResult.Messages);
-
-			if (changesResult.FilePath is not null)
-			{
-				filesWritten.Add(changesResult.FilePath);
-			}
+			filesWritten.Add(ProcedureChangesMarkdownWriter.Generate(included, settings, dtpp, previousDtpp));
 		}
 
 		if (settings.GenerateProceduresJson)
 		{
-			ProceduresJsonWriteResult jsonResult = ProceduresJsonWriter.Generate(included, settings, dtpp);
-			messages.AddRange(jsonResult.Messages);
-
-			if (jsonResult.FilePath is not null)
-			{
-				filesWritten.Add(jsonResult.FilePath);
-			}
+			filesWritten.Add(ProceduresJsonWriter.Generate(included, settings, dtpp));
 		}
 
 		return new DocumentOutcome(included.Count, procedureCount, newCount, changedCount, deletedCount, reAddedCount, filesWritten);

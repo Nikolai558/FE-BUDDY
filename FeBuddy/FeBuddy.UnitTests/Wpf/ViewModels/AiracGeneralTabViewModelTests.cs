@@ -6,6 +6,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
@@ -434,6 +435,7 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		await AiracCycleDataCache.Instance.PrepareCyclesAsync(
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Previous),
 			AppEnvironment.GetAiracCycle(AiracCyclePosition.Current),
-			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next));
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next),
+			AiracLaunchPlan.Everything);
 	}
 }

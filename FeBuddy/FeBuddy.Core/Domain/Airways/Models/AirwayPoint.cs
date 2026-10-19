@@ -1,8 +1,7 @@
 namespace FeBuddy.Core.Domain.Airways.Models;
 
 /// <summary>
-/// One resolved waypoint on an airway: its identifier, NASR point type, coordinates, and
-/// which NASR data source it was resolved from.
+/// One resolved waypoint on an airway: its identifier, NASR point type and coordinates.
 /// </summary>
 /// <param name="PointId">The waypoint identifier (a <c>FROM_POINT</c> or <c>TO_POINT</c> value).</param>
 /// <param name="PointType">
@@ -12,12 +11,8 @@ namespace FeBuddy.Core.Domain.Airways.Models;
 /// </param>
 /// <param name="Latitude">Decimal latitude, in degrees.</param>
 /// <param name="Longitude">Decimal longitude, in degrees.</param>
-/// <param name="FoundIn">
-/// Which NASR data source the coordinates were resolved from: "fix", "navaid", or "airport".
-/// </param>
 public sealed record AirwayPoint(
 	string PointId,
 	string? PointType,
 	double Latitude,
-	double Longitude,
-	string FoundIn);
+	double Longitude);

@@ -31,14 +31,12 @@ public static class AiracCycleResolver
 	/// </summary>
 	/// <param name="position">Which cycle to resolve: the one in effect, or the one before or after it.</param>
 	/// <param name="asOfUtc">
-	/// The date to resolve against; defaults to today in UTC. Always pass a UTC date: cycles
-	/// change at 0000Z, so a local date can land on the wrong cycle.
+	/// The date to resolve against, in UTC: cycles change at 0000Z, so a local date can land on the
+	/// wrong cycle.
 	/// </param>
 	/// <returns>The cycle's ID, effective date, and the date string its NASR CSV download uses.</returns>
-	public static AiracCycleInfo GetCycle(AiracCyclePosition position, DateOnly? asOfUtc = null)
+	public static AiracCycleInfo GetCycle(AiracCyclePosition position, DateOnly asOfUtc)
 	{
-		DateOnly date = asOfUtc ?? DateOnly.FromDateTime(DateTime.UtcNow);
-
 		int offset = position switch
 		{
 			AiracCyclePosition.Previous => -1,
@@ -48,7 +46,7 @@ public static class AiracCycleResolver
 		};
 
 		// Floor division: a date before the reference cycle belongs to a cycle before it.
-		int cyclesSinceReference = (int)Math.Floor((date.DayNumber - ReferenceEffectiveDate.DayNumber) / (double)DaysPerCycle);
+		int cyclesSinceReference = (int)Math.Floor((asOfUtc.DayNumber - ReferenceEffectiveDate.DayNumber) / (double)DaysPerCycle);
 
 		return ForEffectiveDate(ReferenceEffectiveDate.AddDays((cyclesSinceReference + offset) * DaysPerCycle));
 	}

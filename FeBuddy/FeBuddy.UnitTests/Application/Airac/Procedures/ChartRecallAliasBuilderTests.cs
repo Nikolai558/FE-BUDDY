@@ -48,10 +48,6 @@ public sealed class ChartRecallAliasBuilderTests
 				".dtwL22Lc .OPENURL https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF  ; DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L",
 			],
 			result.Lines.Select(line => line.Text));
-
-		ChartRecallAliasLine first = result.Lines[0];
-		Assert.Equal("DTW", first.AirportId);
-		Assert.Equal("IAP", first.ChartCode);
 	}
 
 	[Fact]

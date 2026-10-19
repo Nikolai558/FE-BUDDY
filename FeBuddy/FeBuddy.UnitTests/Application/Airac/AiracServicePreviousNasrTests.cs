@@ -72,7 +72,7 @@ public sealed class AiracServicePreviousNasrTests : IDisposable
 			});
 		AiracCycleDataCache.ConfigureForTesting(cache);
 
-		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next, AiracLaunchPlan.Everything);
 
 		AiracServiceSettings settings = new()
 		{

@@ -52,12 +52,6 @@ public static partial class UserConfigFile
 		return [.. names.Order(StringComparer.OrdinalIgnoreCase)];
 	}
 
-	/// <summary>Whether a profile by this name (in any case) has a file.</summary>
-	/// <param name="name">The name.</param>
-	/// <returns><see langword="true"/> when it has.</returns>
-	public static bool ProfileExists(string name) =>
-		ProfileNames().Contains(name?.Trim() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
-
 	/// <summary>
 	/// Why a profile can't have <paramref name="name"/>, or <see langword="null"/> when it can. It
 	/// becomes part of a file's name, so Windows' rules for one apply. Surrounding spaces are ignored:

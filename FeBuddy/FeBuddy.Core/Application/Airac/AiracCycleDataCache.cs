@@ -210,7 +210,7 @@ public sealed class AiracCycleDataCache(
 
 	/// <summary>
 	/// The three cycle entries, once
-	/// <see cref="PrepareCyclesAsync(AiracCycleInfo, AiracCycleInfo, AiracCycleInfo, AiracLaunchPlan, CancellationToken)"/>
+	/// <see cref="PrepareCyclesAsync"/>
 	/// has been called.
 	/// </summary>
 	public IReadOnlyList<AiracCycleDataCacheEntry> Entries
@@ -236,27 +236,13 @@ public sealed class AiracCycleDataCache(
 	}
 
 	/// <summary>
-	/// Runs the launch pipeline for the three cycles: probe all three, then download and parse
-	/// each published cycle in the order current -&gt; next -&gt; previous, one parse at a time.
-	/// Never throws - a failed cycle is marked <see cref="CycleDataState.Failed"/>.
-	/// </summary>
-	/// <param name="previous">The previous cycle identity.</param>
-	/// <param name="current">The current cycle identity.</param>
-	/// <param name="next">The next cycle identity.</param>
-	/// <param name="cancellationToken">Cancels remaining work.</param>
-	public Task PrepareCyclesAsync(
-		AiracCycleInfo previous,
-		AiracCycleInfo current,
-		AiracCycleInfo next,
-		CancellationToken cancellationToken = default) =>
-		PrepareCyclesAsync(previous, current, next, AiracLaunchPlan.Everything, cancellationToken);
-
-	/// <summary>
 	/// Runs the launch pipeline for the three cycles as <paramref name="plan"/> says - all of it in
-	/// a normal launch. The three cycles are always tracked, whatever the plan: a cycle it leaves
-	/// unloaded is downloaded and parsed when something asks for it (<see cref="GetAsync"/>).
-	/// Without <see cref="AiracLaunchPlan.Download"/>, nothing touches the network: a cycle already on
-	/// disk is found by its folder alone, and only those can be parsed.
+	/// a normal launch: probe all three, then download and parse each published cycle in the order
+	/// current -&gt; next -&gt; previous, one parse at a time. Never throws - a failed cycle is marked
+	/// <see cref="CycleDataState.Failed"/>. The three cycles are always tracked, whatever the plan: a
+	/// cycle it leaves unloaded is downloaded and parsed when something asks for it
+	/// (<see cref="GetAsync"/>). Without <see cref="AiracLaunchPlan.Download"/>, nothing touches the
+	/// network: a cycle already on disk is found by its folder alone, and only those can be parsed.
 	/// </summary>
 	/// <param name="previous">The previous cycle identity.</param>
 	/// <param name="current">The current cycle identity.</param>

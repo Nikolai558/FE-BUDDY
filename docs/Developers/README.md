@@ -155,8 +155,9 @@ skipped in a session with no Windows sign-in behind it, such as some build agent
 ./FeBuddy/build.ps1
 ```
 
-(or double-click `FeBuddy/build.cmd`). It publishes the app self-contained for win-x64, builds the
-MSI and copies it to `FeBuddy/releases/FE-BUDDY-Setup.msi`. It also advances
+(or double-click `FeBuddy/build.cmd`). It publishes the app self-contained for win-x64 and
+precompiled (ReadyToRun), so the first use of each page isn't held up by compiling its code. It
+then builds the MSI and copies it to `FeBuddy/releases/FE-BUDDY-Setup.msi`. It also advances
 `FeBuddy/FeBuddy.Installer/installer-version-counter.json`: discard that change, since only the
 release workflow commits it ([why](VERSIONING.md#the-msis-own-version-number)).
 

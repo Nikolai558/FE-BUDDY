@@ -1,5 +1,8 @@
+using System.Text.Json.Nodes;
+
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels;
+using FeBuddy.Core.Application.News.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -9,7 +12,8 @@ namespace FeBuddy.UnitTests.Wpf.Shell;
 /// <summary>
 /// Covers <see cref="SettingsWrites"/> through the pages that save with it: a settings file that can't
 /// be written (here, read-only) is reported, never thrown, and the change stays unsaved on the page
-/// but not in memory, so saving again once the file can be written saves it. Against a throwaway config.
+/// but not in memory, so saving again once the file can be written saves it; and the News marked read saved
+/// to <c>Shared.json</c> alone. Against a throwaway config.
 /// </summary>
 [Collection("AppLog")]
 public sealed class SettingsWritesTests : IDisposable
@@ -92,5 +96,23 @@ public sealed class SettingsWritesTests : IDisposable
 
 		Assert.Equal(0, changes);
 		Assert.Null(DefaultRoiStore.Load());
+	}
+
+	/// <summary>
+	/// Marking the News read saves that one setting, to <c>Shared.json</c>, where it is kept: the profile's undo
+	/// snapshot - here the default ROI's - is left as it is.
+	/// </summary>
+	[Fact]
+	public void marking_the_news_read_saves_only_that_setting()
+	{
+		DefaultRoiStore.Set(new RegionOfInterest(40, -85, 42, -80));
+		DefaultRoiStore.Set(new RegionOfInterest(39, -86, 43, -79));
+		string snapshot = File.ReadAllText(UserConfigFile.PreviousFilePath);
+
+		DashboardViewModel.MarkNewsRead(new NewsPostId(new DateOnly(2026, 10, 19), 2));
+
+		Assert.Equal(snapshot, File.ReadAllText(UserConfigFile.PreviousFilePath));
+		Assert.Equal("2026-10-19.2", JsonNode.Parse(File.ReadAllText(UserConfigFile.SharedFilePath))!["General"]!["NewsLastOpen"]!.GetValue<string>());
+		Assert.True(UserConfigFile.CanUndo(DefaultRoiStore.Node));
 	}
 }

@@ -6,7 +6,7 @@ using FeBuddy.Core.Infrastructure.Configuration;
 namespace FeBuddy.Wpf.Shell;
 
 /// <summary>
-/// The one saved default ROI (<c>Services.AiracService.DefaultRoi</c> in <c>UserConfig.json</c>),
+/// The one saved default ROI (<c>General.DefaultRoi</c> in the profile in use),
 /// read and written by both Settings and the Map page's inline editor.
 /// </summary>
 /// <remarks>
@@ -26,7 +26,7 @@ public static class DefaultRoiStore
 	internal const string NeLatKey = $"{Node}.Corners.NeLat";
 	internal const string NeLonKey = $"{Node}.Corners.NeLon";
 
-	/// <summary>Raised after <see cref="Set"/> or <see cref="Clear"/> has written to disk; not when the write failed.</summary>
+	/// <summary>Raised after <see cref="Set"/> or <see cref="Clear"/> saves, and by <see cref="NotifyReloaded"/> after a settings import or a switch to another profile.</summary>
 	public static event EventHandler? Changed;
 
 	/// <summary>Reads the current default ROI.</summary>

@@ -323,10 +323,20 @@ public sealed class DashboardViewModel : ObservableObject
 		NewsCheckResult? news = AppEnvironment.News;
 		if (news is { ParseSucceeded: true, LatestPostId: { } latest })
 		{
-			UserConfigFile.TrySetValue(UserConfigKeys.NewsLastOpen, latest.ToString());
-			SettingsWrites.TrySave("General", "News you have read");
+			MarkNewsRead(latest);
 			NewsButtonHighlighted = false;
 		}
+	}
+
+	/// <summary>
+	/// Records the newest News post read (<see cref="UserConfigKeys.NewsLastOpen"/>), saving that one setting to
+	/// <c>Shared.json</c>, where it is kept: the profile and its undo snapshot are left as they are.
+	/// </summary>
+	/// <param name="latest">The newest post's ID.</param>
+	internal static void MarkNewsRead(NewsPostId latest)
+	{
+		UserConfigFile.TrySetValue(UserConfigKeys.NewsLastOpen, latest.ToString());
+		SettingsWrites.TrySaveShared([UserConfigKeys.NewsLastOpen], "News you have read");
 	}
 
 	private void DismissCycleDay()

@@ -1359,7 +1359,7 @@ Unit tests: names and comments that don't match what they test, unused helpers, 
 
 ### N1-41 · Minor · Low · DeferredSave's timer, close and retry have no test; a save-failure test fails only at its first write
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Open; half fixed (not yet merged) in S14 part 3: UserConfigFileTests has the read-only profile case, `a_profile_that_cannot_be_written_rolls_memory_back_and_offers_no_undo` (memory rolled back, `CanUndo` stays false; fails on the old code, which kept the failed save's snapshot). Left for part 4: the DeferredSave tests (timer, close, retry) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.UnitTests/Wpf/Shell/DeferredSaveTests.cs:45-92`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/Shell/DeferredSaveTests.cs#L45-L92); [`FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigFileTests.cs:328-344`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Infrastructure/Configuration/UserConfigFileTests.cs#L328-L344)
 

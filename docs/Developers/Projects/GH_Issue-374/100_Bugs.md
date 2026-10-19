@@ -4,7 +4,7 @@ Part of the [3.0 pre-release review](000_ReadMe.md) ([#374](https://github.com/N
 
 Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md#s1); the rest are [S2](020_Work-Plan.md#s2), and N1-5 onward, found in the review of the S2 to S5 code, are [S14](020_Work-Plan.md#s14). Each fix should come with a regression test.
 
-**71 findings** (2 High, 16 Med, 53 Low), 53 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
+**71 findings** (2 High, 16 Med, 53 Low), 57 done. Quote the ID when you comment on [#374](https://github.com/Nikolai558/FE-BUDDY/issues/374).
 
 ## Summary
 
@@ -70,10 +70,10 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 | [N1-15](#n1-15) | Bug | Low | A map change whose save failed is lost unless the same setting is changed again | Open | S14 |
 | [N1-16](#n1-16) | Bug | Low | An unexpected failure during a profile change or an import is never reported | Open | S14 |
 | [N1-17](#n1-17) | Bug | Low | "Home view saved" is shown even when nothing was saved | Open | S14 |
-| [N1-18](#n1-18) | Bug | Low | An undo file locked at its first read turns Undo off until the next save | Open | S14 |
-| [N1-19](#n1-19) | Bug | Low | The cached undo snapshot can disagree with the file; Undo stays on and does nothing | Open | S14 |
-| [N1-20](#n1-20) | Bug | Low | Marking the News read saves the whole General node | Open | S14 |
-| [N1-21](#n1-21) | Bug | Low | Copying the profiles shows every argument error as "Choose another folder" | Open | S14 |
+| [N1-18](#n1-18) | Bug | Low | An undo file locked at its first read turns Undo off until the next save | Fixed | S14 |
+| [N1-19](#n1-19) | Bug | Low | The cached undo snapshot can disagree with the file; Undo stays on and does nothing | Fixed | S14 |
+| [N1-20](#n1-20) | Bug | Low | Marking the News read saves the whole General node | Fixed | S14 |
+| [N1-21](#n1-21) | Bug | Low | Copying the profiles shows every argument error as "Choose another folder" | Fixed | S14 |
 | [N1-22](#n1-22) | Bug | Low | The File Names tab and the run check name clashes against different lists | Fixed | S14 |
 | [N1-23](#n1-23) | Bug | Low | The Map rejects a UTF-16 or ANSI GeoJSON file with a misleading reason | Fixed | S14 |
 | [N1-24](#n1-24) | Bug | Low | If the setup window crashes mid-install, msiexec can wait forever | Open | S14 |
@@ -290,7 +290,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-8 · Bug · Med · A settings write cut short (closing FE-Buddy mid-switch, a crash, power loss) can lose a whole profile
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Open; half fixed (not yet merged) in S14 part 3: every settings write (a profile, `Shared.json`, the undo snapshot, a new profile) goes beside the file first, flushed to disk, then moves over it, and a profile that can't be read as settings is kept as `UserConfig-damaged.<Profile>.json` (a `damaged` backup kind, in Settings-Reference) before a save writes over it. Tests: `UserConfigFileTests.a_damaged_profile_is_kept` and `a_write_that_stops_part_way_leaves_the_file_as_it_was` (both fail on the old code). Left for part 4: the wait at close · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:1107-1111`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L1107-L1111) (`WriteObject`, a plain `File.WriteAllText`, used for the profile at 588, 701 and 1220, `Shared.json` at 990, the undo snapshot at 572 and 705, and `CreateProfile`, [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:131`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L131)); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:260-267`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L260-L267) and 1071-1088 (an unreadable file); [`FeBuddy/FeBuddy.Wpf/App.xaml.cs`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/App.xaml.cs) and [`FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml.cs:80-89`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Views/ShellWindow.xaml.cs#L80-L89) (nothing waits at close). Already safe: `ReplaceAll` ([`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:405-418`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L405-L418), a temp file and `File.Replace`)
 
@@ -838,7 +838,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-18 · Bug · Low · An undo file locked the first time it is read turns "Undo last save" off until the next save
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). A missing or invalid snapshot still reads as empty; one that is there but can't be read is left unread, so the next `CanUndo` reads it again, and a save fails rather than write it back with one node. Test: `UserConfigFileTests.a_snapshot_locked_at_first_ask_is_read_again` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:1090-1105`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L1090-L1105), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:1114-1125`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L1114-L1125) (the cached snapshot), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:569`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L569)
 
@@ -850,7 +850,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-19 · Bug · Low · The cached undo snapshot can disagree with the file: Undo stays on and does nothing
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). `Undo`'s early return keeps what is on disk, a failed save forgets the cache (and puts the snapshot back once it was written), `DeleteProfile` forgets it, and the doc is fixed. Test: `UserConfigFileTests.undo_with_no_snapshot_on_disk_turns_undo_off` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:684-694`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L684-L694) (`Undo`'s early returns), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:569-573`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L569-L573), 585-588, [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:108-112`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L108-L112) (the doc), 642-646; [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:206-226`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L206-L226) (`DeleteProfile`); [`FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs:161-170`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/ServiceTabs/SubServiceSettingsViewModel.cs#L161-L170)
 
@@ -862,7 +862,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-20 · Bug · Low · Marking the News read saves the whole `General` node, over the default ROI's undo snapshot
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). The Dashboard's new `MarkNewsRead` saves `NewsLastOpen` alone through the new `SettingsWrites.TrySaveShared`; `SaveShared`'s doc lists its IO errors. Test: `SettingsWritesTests.marking_the_news_read_saves_only_that_setting` (fails on the old code) · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs:317-330`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/DashboardViewModel.cs#L317-L330) (327: `TrySave("General", …)`); [`FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs:22`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs#L22) (`General.DefaultRoi`); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:564-589`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L564-L589), [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs:621-636`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.cs#L621-L636) (`SaveShared`); [`FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/UserConfigLayoutTests.cs:161-178`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.UnitTests/Wpf/ViewModels/UserConfigLayoutTests.cs#L161-L178)
 
@@ -874,7 +874,7 @@ Things that behave wrongly. The Fix-first ones are session [S1](020_Work-Plan.md
 
 ### N1-21 · Bug · Low · Copying the profiles to a folder: every argument error is shown as "Choose another folder"
 
-**Status:** Open; found in the review of the S2 to S5 code at `4893e32` · **Session:** [S14](020_Work-Plan.md#s14)
+**Status:** Fixed (not yet merged). New `UserConfigFile.IsInsideAppData`, checked before the copy (`CopyProfilesTo` still refuses one too); any other argument error is logged and shown as a failed copy. Test: `UserConfigFileTests.a_copy_inside_fe_buddys_folder_is_recognised`, of the new check; the page's catch opens a file dialog, so it has no test · **Session:** [S14](020_Work-Plan.md#s14)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs:1096-1107`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Wpf/ViewModels/SettingsViewModel.cs#L1096-L1107); [`FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs:318-348`](https://github.com/Nikolai558/FE-BUDDY/blob/4893e322252685be1754b22451a6da3f2dd4e76d/FeBuddy/FeBuddy.Core/Infrastructure/Configuration/UserConfigFile.Profiles.cs#L318-L348) (327 is the intended throw; 322-323, 331 and 342 can throw `ArgumentException` too)
 

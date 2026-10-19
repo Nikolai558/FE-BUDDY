@@ -27,7 +27,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 | [W6-29](#w6-29) | Minor | Low | The AiracLayerKind enum is not in Map/Models | Agreed | S6 |
 | [W6-26](#w6-26) | Minor | Low | BaseMap.Load hides why a base layer failed to load | Open | S8 |
 | [W6-16](#w6-16) | Minor | Low | GeoJsonReader.Read's `<returns>` leaves out the Multi* types and skipped shapes | Open | S8 |
-| [W7-8](#w7-8) | Stale doc | Low | DefaultRoiStore names a settings file that no longer exists, and `Changed`'s doc misses `NotifyReloaded` | Open | S8 |
+| [W7-8](#w7-8) | Stale doc | Low | DefaultRoiStore names a settings file that no longer exists, and `Changed`'s doc misses `NotifyReloaded` | Fixed | S8 |
 | [W7-9](#w7-9) | Wrong doc | Low | Links' summary lists only three places; the links are used in six | Open | S8 |
 | [W7-10](#w7-10) | History wording | Low | Feature number in two summaries | Open | S8 |
 | [W7-12](#w7-12) | Minor | Low | Five window-placement data records sit in a file named after no type, outside Shell/Models/ | Agreed | S6 |
@@ -377,7 +377,7 @@ Comments and XML docs in FeBuddy.Wpf. Grouped by folder. Session [S8](020_Work-P
 
 ### W7-8 · Stale doc · Low · DefaultRoiStore names a settings file that no longer exists, and `Changed`'s doc misses `NotifyReloaded`
 
-**Status:** Open · **Session:** [S8](020_Work-Plan.md#s8)
+**Status:** Fixed (not yet merged), with [N1-36](200_Comments-Core.md#n1-36) in [S14](020_Work-Plan.md#s14): line 9 names `General.DefaultRoi` in the profile in use, and `Changed`'s summary adds `NotifyReloaded`, after an import or a profile switch · **Session:** [S8](020_Work-Plan.md#s8)
 
 **Where:** [`FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs:9`](https://github.com/Nikolai558/FE-BUDDY/blob/dc08390d05e3ce3f2be53b3106e9c5854380b236/FeBuddy/FeBuddy.Wpf/Shell/DefaultRoiStore.cs#L9),29
 

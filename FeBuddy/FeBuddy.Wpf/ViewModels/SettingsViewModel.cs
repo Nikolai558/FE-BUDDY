@@ -212,7 +212,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Facilities from the current cycle's parsed airports, as <c>ArtccName (RespArtccId)</c>.</summary>
 	public ObservableCollection<FacilityOption> Facilities { get; } = [];
 
-	/// <summary>The selected facility's <c>RespArtccId</c>. Persists to <c>Services.AiracService.UserArtccId</c>.</summary>
+	/// <summary>The selected facility's <c>RespArtccId</c>. Persists to <c>General.Facility</c> (<see cref="UserConfigKeys.Facility"/>).</summary>
 	public string? SelectedFacility
 	{
 		get => _selectedFacility;
@@ -1095,17 +1095,18 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		try
 		{
+			if (UserConfigFile.IsInsideAppData(dialog.FileName))
+			{
+				// Both empty FE-Buddy's own folder, so a copy saved in it would go too.
+				Toast.Warn("Choose another folder", $"The {action} empties {AppDataReset.RootDirectory}, copy and all. Nothing was {done}.");
+				return false;
+			}
+
 			int copied = UserConfigFile.CopyProfilesTo(dialog.FileName);
 			AppLog.Info("Settings", $"Saved a copy of {copied} settings profile(s) to '{dialog.FileName}' before the {action}.");
 			return true;
 		}
-		catch (ArgumentException)
-		{
-			// Both empty FE-Buddy's own folder, so a copy saved in it would go too.
-			Toast.Warn("Choose another folder", $"The {action} empties {AppDataReset.RootDirectory}, copy and all. Nothing was {done}.");
-			return false;
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
 		{
 			AppLog.Warning("Settings", $"Could not save a copy of the settings to '{dialog.FileName}': {ex.Message}");
 			Toast.Error("Could not save the copy", $"{ex.Message} Nothing was {done}.");

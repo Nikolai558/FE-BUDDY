@@ -24,6 +24,15 @@ internal static class SettingsWrites
 	/// <returns><see langword="true"/> when it was saved.</returns>
 	internal static bool TrySave(string nodePath, string what) => Try(() => UserConfigFile.Save(nodePath), what);
 
+	/// <summary>
+	/// Saves settings every profile shares to <c>Shared.json</c> alone (<see cref="UserConfigFile.SaveShared"/>),
+	/// leaving the profile and its undo snapshot as they are.
+	/// </summary>
+	/// <param name="keys">The shared settings, e.g. <see cref="UserConfigKeys.NewsLastOpen"/>.</param>
+	/// <param name="what">What is being saved, for the message.</param>
+	/// <returns><see langword="true"/> when they were saved.</returns>
+	internal static bool TrySaveShared(string[] keys, string what) => Try(() => UserConfigFile.SaveShared(keys), what);
+
 	/// <summary>Writes every setting in memory (<see cref="UserConfigFile.Write"/>).</summary>
 	/// <param name="what">What is being saved, for the message.</param>
 	/// <returns><see langword="true"/> when it was written.</returns>

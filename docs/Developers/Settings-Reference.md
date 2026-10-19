@@ -63,7 +63,7 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 |---|---|
 | `UserConfig.<Profile>.json` | One profile: every setting but the shared ones. The name follows Windows' rules for a file name, up to 64 characters; names differing only in case are the same profile. |
 | `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, `RememberWindowPlacement`, `MainWindowPlacement`). |
-| `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward). They move and go with it. |
+| `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward), `damaged` (the profile as it was when it couldn't be read as settings, kept before a save wrote over it). They move and go with it. |
 
 - In memory the two files are one dictionary, so a caller never knows which a key is in. `Save`
   writes a shared key under its node to `Shared.json`, and every other key to the profile. A shared

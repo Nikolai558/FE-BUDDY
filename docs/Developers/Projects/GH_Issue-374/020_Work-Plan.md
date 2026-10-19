@@ -214,7 +214,15 @@ reads nothing until Windows reports a change to it. Once it has been quiet for 3
 steps), the product version on disk is compared with the running one. When they differ, the main window offers a
 restart (`InstalledUpdate`, warning about anything unfinished, as Settings' restarts do), and until FE-Buddy restarts,
 starting an AIRAC Service run or a file conversion offers it again instead of running. Tests:
-`InstalledVersionWatcherTests`. **Not yet tested** with two Windows accounts.
+`InstalledVersionWatcherTests`.
+
+**Found on a VM** (two accounts, Nikolas, 2026-10-18): the first version never noticed. The update's own uninstall
+of the old version moves the files in use out to `C:\Config.Msi`, deletes the emptied `C:\Program Files\FE-BUDDY`,
+then creates it again for the new files, so a watch on the folder was left on the deleted one. The watcher now also
+watches the folder above it, sets its watch up again on the new folder, and looks again while the file is missing
+mid-install; a test deletes and recreates the folder as Windows Installer does. Testing it in one account doesn't work:
+that same uninstall step closes FE-Buddy in the installing account, whatever Restart Manager is told. **Retest**
+with two accounts pending.
 
 ### [#375](https://github.com/Nikolai558/FE-BUDDY/issues/375) · The installer's shortcuts showed a cached 2.x icon
 

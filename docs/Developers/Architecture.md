@@ -263,7 +263,9 @@ The FAA's data has quirks. Each rule lives in one class.
 - **Waypoint buffer** (`AirwayWaypointBuffer`): optionally stops each leg short of a five-letter fix
   and of anything else (2.5 and 5 NM to start, 0-10 NM each). Only real waypoints are buffered, never
   the points an antimeridian split or ROI clip adds.
-- **Antimeridian** (`AntimeridianSplitter`): a line crossing ±180° is split in two.
+- **Antimeridian** (`AntimeridianSplitter`): a line crossing ±180° is split in two. An ROI that
+  crosses it (one longitude past ±180) is clipped as two boxes either side of it, the lines split
+  there first, whatever `SplitAtAntimeridian` says (`RoiFilter.ClipLines`).
 - **Shared segments** (`LineStringMerger`): paths that share segments are merged into the fewest,
   longest lines that draw each segment once - smaller files, and dashes stay dashed.
 - **Symbol groups** (`SymbolFeatureMerger`, run by `GeojsonFileSet` on every file): symbols whose

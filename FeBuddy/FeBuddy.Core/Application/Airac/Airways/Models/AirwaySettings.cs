@@ -57,7 +57,10 @@ public sealed record AirwaySettings
 	/// <summary>Which airways the <c>Airways.txt</c> alias file covers.</summary>
 	public AliasRoiScope AliasRoiScope { get; init; } = AliasRoiScope.All;
 
-	/// <summary>Whether to split airway geometry at the antimeridian.</summary>
+	/// <summary>
+	/// Whether to split airway geometry at the antimeridian (AM). An <see cref="Roi"/> that crosses the AM
+	/// splits the lines it clips whether or not this is on (<see cref="Domain.Geo.RoiFilter.ClipLines"/>).
+	/// </summary>
 	public required bool SplitAtAntimeridian { get; init; }
 
 	/// <summary>

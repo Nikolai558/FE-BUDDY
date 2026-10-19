@@ -43,6 +43,27 @@ public sealed class ServiceValidation
 	}
 
 	/// <summary>
+	/// Records one failure against several inputs, such as two corners that are the wrong way round:
+	/// each box highlights and carries the message as its tool-tip, and the message is listed once.
+	/// </summary>
+	/// <param name="message">The message for those inputs.</param>
+	/// <param name="fieldKeys">The keys the view passes to <c>FieldState.Error</c>.</param>
+	public void AddFields(string message, params string[] fieldKeys)
+	{
+		bool added = false;
+
+		foreach (string fieldKey in fieldKeys)
+		{
+			added |= _fieldErrors.TryAdd(fieldKey, message);
+		}
+
+		if (added)
+		{
+			_messages.Add(message);
+		}
+	}
+
+	/// <summary>
 	/// Records a failure against one input when <paramref name="value"/> is blank - the
 	/// "required field with nothing in it" case.
 	/// </summary>

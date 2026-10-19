@@ -59,6 +59,12 @@ public sealed partial class MapCanvas : FrameworkElement
 
 	private const double HandleSize = 8.0;
 
+	/// <summary>
+	/// How close (pixels) a box's edge has to come to the top or bottom of the world to go onto it - to 90°
+	/// or -90° - at any zoom (see <see cref="SnapY"/>).
+	/// </summary>
+	private const double PoleSnap = 6.0;
+
 	/// <summary>Zoomed in at least this far, 0°, 0° is marked (see <c>DrawNullIsland</c>).</summary>
 	private const double NullIslandMinZoom = 8.0;
 
@@ -84,6 +90,8 @@ public sealed partial class MapCanvas : FrameworkElement
 	private bool _inspectOnRelease;
 	private Edges _resizeEdges;
 	private WorldRect _draft;       // the box being drawn/moved/resized, in world units
+	private WorldRect _moveStart;   // the box where a move began
+	private Vector _moveBy;         // how far the move has gone, in world units
 
 	// --- rendering -----------------------------------------------------------
 	private readonly VisualCollection _visuals;
@@ -251,7 +259,7 @@ public sealed partial class MapCanvas : FrameworkElement
 	/// <summary>
 	/// The ROI box, or <see langword="null"/> for none. Two-way: drawing, moving or resizing the
 	/// box writes it. Its longitudes are folded so the box's centre is within -180..180; a box
-	/// drawn across the 180th meridian therefore has an edge past ±180, which the host rejects.
+	/// drawn across the antimeridian (AM) therefore has an edge past ±180, and is saved that way.
 	/// </summary>
 	public GeoBounds? Roi
 	{
@@ -599,7 +607,8 @@ public sealed partial class MapCanvas : FrameworkElement
 
 		if (HitTestRoi(pos, out WorldRect box, out Edges edges))
 		{
-			_draft = box;
+			_draft = _moveStart = box;
+			_moveBy = default;
 			_resizeEdges = edges;
 			_drag = edges == Edges.None ? DragMode.MoveRoi : DragMode.ResizeRoi;
 			return;
@@ -615,10 +624,13 @@ public sealed partial class MapCanvas : FrameworkElement
 		base.OnMouseMove(e);
 		Point pos = e.GetPosition(this);
 
-		// Zoomed right out, the world is shorter than the map: the bands above and below it are no place at all.
+		// Zoomed right out, the world is shorter than the map: the bands above and below it are no place at
+		// all - except to the edge of a box being drawn, which goes onto the pole there, as it is saved.
 		double worldY = WorldY(pos.Y);
-		SetValue(CursorTextPropertyKey, worldY is >= 0.0 and <= 1.0
-			? Format(WebMercator.WorldYToLat(worldY), WebMercator.NormalizeLon(WebMercator.WorldXToLon(WorldX(pos.X))))
+		double lon = WebMercator.NormalizeLon(WebMercator.WorldXToLon(WorldX(pos.X)));
+		SetValue(CursorTextPropertyKey,
+			_drag is DragMode.DrawRoi or DragMode.ResizeRoi ? Format(LatAt(SnapY(worldY, PoleSnap / _scale)), lon)
+			: worldY is >= 0.0 and <= 1.0 ? Format(WebMercator.WorldYToLat(worldY), lon)
 			: string.Empty);
 
 		if (_drag == DragMode.None)
@@ -643,15 +655,16 @@ public sealed partial class MapCanvas : FrameworkElement
 				break;
 
 			case DragMode.DrawRoi:
-				_draft = new WorldRect(WorldX(_dragStartScreen.X), WorldX(pos.X), WorldY(_dragStartScreen.Y), WorldY(pos.Y)).Normalized();
+				_draft = SnapToPoles(
+					new WorldRect(WorldX(_dragStartScreen.X), WorldX(pos.X), WorldY(_dragStartScreen.Y), WorldY(pos.Y)).Normalized(),
+					PoleSnap / _scale);
 				RedrawRoi();
 				break;
 
 			case DragMode.MoveRoi:
-				// Up and down only as far as the world goes. A box already as tall as the world
-				// (pole to pole) cannot move up or down at all.
-				double moveY = _draft.Y1 - _draft.Y0 >= 1.0 ? 0.0 : Math.Clamp(dy, -_draft.Y0, 1.0 - _draft.Y1);
-				_draft = new WorldRect(_draft.X0 + dx, _draft.X1 + dx, _draft.Y0 + moveY, _draft.Y1 + moveY);
+				// From where the move began, so a box on a pole leaves it only once dragged clear of it.
+				_moveBy = new Vector(_moveBy.X + dx, _moveBy.Y + dy);
+				_draft = MoveBox(_moveStart, _moveBy.X, _moveBy.Y, PoleSnap / _scale);
 				RedrawRoi();
 				break;
 
@@ -665,7 +678,7 @@ public sealed partial class MapCanvas : FrameworkElement
 	private void ResizeDraft(Point pos)
 	{
 		double x = WorldX(pos.X);
-		double y = Math.Clamp(WorldY(pos.Y), 0.0, 1.0);
+		double y = SnapY(WorldY(pos.Y), PoleSnap / _scale);
 		WorldRect d = _draft;
 
 		// An edge dragged past its opposite simply stops there - flipping the box mid-drag is
@@ -891,17 +904,66 @@ public sealed partial class MapCanvas : FrameworkElement
 	/// <summary>
 	/// A world box back to lat/lon, shifted by whole worlds so its centre is within -180..180
 	/// and rounded to 4 decimal places (about 10 m - far finer than a pixel at any useful zoom).
+	/// An edge on or past the top of the world is 90°, and one on or past its bottom -90°: the Web
+	/// Mercator world stops at about ±85.05°, so that is how a box drawn on the map reaches a pole.
 	/// </summary>
-	private static GeoBounds ToGeo(WorldRect w)
+	/// <param name="w">The box.</param>
+	/// <returns>The box in lat/lon.</returns>
+	internal static GeoBounds ToGeo(WorldRect w)
 	{
 		double shift = Math.Floor((w.X0 + w.X1) / 2.0);
 		double west = WebMercator.WorldXToLon(w.X0 - shift);
 		double east = WebMercator.WorldXToLon(w.X1 - shift);
-		double north = WebMercator.WorldYToLat(Math.Clamp(w.Y0, 0.0, 1.0));
-		double south = WebMercator.WorldYToLat(Math.Clamp(w.Y1, 0.0, 1.0));
 		return new GeoBounds(
-			new GeoPoint(Math.Round(south, 4), Math.Round(west, 4)),
-			new GeoPoint(Math.Round(north, 4), Math.Round(east, 4)));
+			new GeoPoint(Math.Round(LatAt(w.Y1), 4), Math.Round(west, 4)),
+			new GeoPoint(Math.Round(LatAt(w.Y0), 4), Math.Round(east, 4)));
+	}
+
+	/// <summary>A world y as a latitude: on or past the top of the world is 90°, on or past its bottom -90°.</summary>
+	private static double LatAt(double y) => y <= 0.0 ? 90.0 : y >= 1.0 ? -90.0 : WebMercator.WorldYToLat(y);
+
+	/// <summary>
+	/// A world y within <paramref name="tolerance"/> of the top or bottom of the world, or past it, put
+	/// on it, so an edge only has to get near a pole to reach it (<see cref="LatAt"/>).
+	/// </summary>
+	/// <param name="y">The world y.</param>
+	/// <param name="tolerance">How near, in world units: <see cref="PoleSnap"/> pixels at the current zoom.</param>
+	/// <returns>0, 1, or <paramref name="y"/>.</returns>
+	internal static double SnapY(double y, double tolerance) => y <= tolerance ? 0.0 : y >= 1.0 - tolerance ? 1.0 : y;
+
+	/// <summary>
+	/// A box being drawn, with its top within <paramref name="tolerance"/> of the top of the world put on
+	/// it, and its bottom within it of the bottom of the world put on that (<see cref="SnapY"/>).
+	/// </summary>
+	/// <param name="box">The box, its edges in order.</param>
+	/// <param name="tolerance">How near, in world units.</param>
+	/// <returns>The box.</returns>
+	internal static WorldRect SnapToPoles(WorldRect box, double tolerance) => box with
+	{
+		Y0 = box.Y0 <= tolerance ? 0.0 : box.Y0,
+		Y1 = box.Y1 >= 1.0 - tolerance ? 1.0 : box.Y1,
+	};
+
+	/// <summary>
+	/// A box moved from <paramref name="start"/>: up and down only as far as the world goes (one as tall
+	/// as the world can't move up or down at all), and kept on a pole it starts on until moved further
+	/// than <paramref name="tolerance"/> from it, so a sideways move keeps it at 90° or -90°.
+	/// </summary>
+	/// <param name="start">The box where the move began.</param>
+	/// <param name="dx">How far it has moved across, in world units.</param>
+	/// <param name="dy">How far it has moved down, in world units.</param>
+	/// <param name="tolerance">How far, in world units, a box on a pole has to move to leave it.</param>
+	/// <returns>The moved box.</returns>
+	internal static WorldRect MoveBox(WorldRect start, double dx, double dy, double tolerance)
+	{
+		double moveY = start.Y1 - start.Y0 >= 1.0 ? 0.0 : Math.Clamp(dy, -start.Y0, 1.0 - start.Y1);
+
+		if ((start.Y0 <= 0.0 || start.Y1 >= 1.0) && Math.Abs(moveY) <= tolerance)
+		{
+			moveY = 0.0;
+		}
+
+		return new WorldRect(start.X0 + dx, start.X1 + dx, start.Y0 + moveY, start.Y1 + moveY);
 	}
 
 	// ============================ rendering ================================

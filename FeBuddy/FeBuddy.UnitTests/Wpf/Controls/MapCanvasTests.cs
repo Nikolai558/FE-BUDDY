@@ -15,14 +15,71 @@ namespace FeBuddy.UnitTests.Wpf.Controls;
 
 /// <summary>
 /// Covers <see cref="MapCanvas"/>: which copies of the world a shape is drawn in, framing layers
-/// the short way round the 180th meridian, the zoom as a percentage of the home view, and letting
-/// go of a map whose layer list lives on. Each test runs on a WPF thread of its own
+/// the short way round the 180th meridian, a box drawn up to a pole, the zoom as a percentage of the
+/// home view, and letting go of a map whose layer list lives on. Each test runs on a WPF thread of its own
 /// (<see cref="StaThread"/>).
 /// </summary>
 public sealed class MapCanvasTests
 {
 	/// <summary>The view the copy tests look through: world x 0.1 to 0.4.</summary>
 	private static readonly MapCanvas.WorldRect View = new(0.1, 0.4, 0.3, 0.5);
+
+	// ---- a box up to the poles ----
+
+	/// <summary>A box's top on or past the top of the world is 90°; its bottom on or past the bottom, -90°.</summary>
+	[Theory]
+	[InlineData(0.0, 90.0)]
+	[InlineData(-0.2, 90.0)]
+	public void a_box_on_or_past_the_top_of_the_world_reaches_90(double y0, double north)
+	{
+		GeoBounds box = MapCanvas.ToGeo(new MapCanvas.WorldRect(0.4, 0.5, y0, WebMercator.LatToWorldY(40)));
+
+		Assert.Equal(north, box.North);
+		Assert.Equal(40, box.South, 3);
+	}
+
+	[Theory]
+	[InlineData(1.0)]
+	[InlineData(1.3)]
+	public void a_box_on_or_past_the_bottom_of_the_world_reaches_minus_90(double y1)
+	{
+		GeoBounds box = MapCanvas.ToGeo(new MapCanvas.WorldRect(0.4, 0.5, WebMercator.LatToWorldY(-40), y1));
+
+		Assert.Equal(-90, box.South);
+		Assert.Equal(-40, box.North, 3);
+	}
+
+	[Fact]
+	public void a_box_inside_the_world_keeps_its_latitudes()
+	{
+		GeoBounds box = MapCanvas.ToGeo(new MapCanvas.WorldRect(0.4, 0.5, WebMercator.LatToWorldY(84), WebMercator.LatToWorldY(-84)));
+
+		Assert.Equal(84, box.North, 3);
+		Assert.Equal(-84, box.South, 3);
+	}
+
+	/// <summary>An edge only has to come within the snap of the top or bottom of the world to go onto it.</summary>
+	[Fact]
+	public void an_edge_near_a_pole_snaps_onto_it_and_one_further_off_does_not()
+	{
+		Assert.Equal(new MapCanvas.WorldRect(0.4, 0.5, 0.0, 1.0), MapCanvas.SnapToPoles(new MapCanvas.WorldRect(0.4, 0.5, 0.004, 0.996), 0.005));
+		Assert.Equal(new MapCanvas.WorldRect(0.4, 0.5, 0.01, 0.99), MapCanvas.SnapToPoles(new MapCanvas.WorldRect(0.4, 0.5, 0.01, 0.99), 0.005));
+		Assert.Equal(0.0, MapCanvas.SnapY(-0.3, 0.005));
+		Assert.Equal(1.0, MapCanvas.SnapY(0.997, 0.005));
+		Assert.Equal(0.5, MapCanvas.SnapY(0.5, 0.005));
+	}
+
+	/// <summary>A box on a pole stays on it through a mostly sideways move, and leaves it once dragged clear.</summary>
+	[Fact]
+	public void a_box_on_a_pole_stays_there_until_moved_clear_of_it()
+	{
+		MapCanvas.WorldRect atNorthPole = new(0.4, 0.5, 0.0, 0.3);
+
+		Assert.Equal(new MapCanvas.WorldRect(0.5, 0.6, 0.0, 0.3), MapCanvas.MoveBox(atNorthPole, 0.1, 0.004, 0.005));
+		Assert.Equal(new MapCanvas.WorldRect(0.4, 0.5, 0.0, 0.3), MapCanvas.MoveBox(atNorthPole, 0.0, -0.2, 0.005));
+		Assert.Equal(new MapCanvas.WorldRect(0.4, 0.5, 0.05, 0.35), MapCanvas.MoveBox(atNorthPole, 0.0, 0.05, 0.005));
+		Assert.Equal(-90, MapCanvas.ToGeo(MapCanvas.MoveBox(new MapCanvas.WorldRect(0.4, 0.5, 0.6, 1.0), 0.2, -0.003, 0.005)).South);
+	}
 
 	/// <summary>Every copy of the world in which a span overlaps the view, and no other.</summary>
 	[Theory]
@@ -90,6 +147,23 @@ public sealed class MapCanvasTests
 			Assert.True(map.FrameLayers([layer]));
 
 			Assert.Equal(-147.6, CentreLon(map.GetView()!.Value), 0.5);
+		});
+
+	/// <summary>
+	/// An ROI across the antimeridian (AM), saved with one edge past ±180, is framed across it - as Zoom to ROI
+	/// does - centred on its middle, 165W, not on the far side of the world.
+	/// </summary>
+	[Fact]
+	public void a_box_across_the_antimeridian_is_framed_across_it() =>
+		StaThread.Run(() =>
+		{
+			MapCanvas map = Sized();
+
+			map.FrameBounds(new GeoBounds(new GeoPoint(44, -206), new GeoPoint(90, -124)));
+
+			MapViewState view = map.GetView()!.Value;
+			Assert.Equal(-165.0, CentreLon(view), 0.5);
+			Assert.True(view.Scale > 900, $"the world is {view.Scale:0} px wide");
 		});
 
 	[Fact]

@@ -52,6 +52,13 @@ public interface IAreaSettings
 	/// <summary>Northeast corner longitude of the tab's own ROI.</summary>
 	string NeLon { get; set; }
 
+	/// <summary>
+	/// The warning both longitude boxes show while the tab's own ROI has its Southwest Longitude east
+	/// of its Northeast Longitude and nothing else wrong, or <see langword="null"/>: Save asks whether
+	/// the ROI crosses the antimeridian (AM) rather than refusing.
+	/// </summary>
+	string? RoiLongitudeWarning { get; }
+
 	/// <summary>The default ROI's corners and where to change it, or that none is set and what to do.</summary>
 	string DefaultRoiSummary { get; }
 

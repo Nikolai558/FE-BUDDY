@@ -80,6 +80,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private string _swLon = string.Empty;
 	private string _neLat = string.Empty;
 	private string _neLon = string.Empty;
+	private RegionOfInterest? _roiAcrossAntimeridian;
+	private bool _antimeridianDeclined;
 	private bool _isCycleReady;
 	private string? _cycleUnavailable;
 
@@ -311,16 +313,28 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	}
 
 	/// <inheritdoc />
-	public string SwLat { get => _swLat; set { if (SetProperty(ref _swLat, value)) MarkDirty(); } }
+	public string SwLat { get => _swLat; set { if (SetProperty(ref _swLat, value)) OnCornerTyped(); } }
 
 	/// <inheritdoc />
-	public string SwLon { get => _swLon; set { if (SetProperty(ref _swLon, value)) MarkDirty(); } }
+	public string SwLon { get => _swLon; set { if (SetProperty(ref _swLon, value)) OnCornerTyped(); } }
 
 	/// <inheritdoc />
-	public string NeLat { get => _neLat; set { if (SetProperty(ref _neLat, value)) MarkDirty(); } }
+	public string NeLat { get => _neLat; set { if (SetProperty(ref _neLat, value)) OnCornerTyped(); } }
 
 	/// <inheritdoc />
-	public string NeLon { get => _neLon; set { if (SetProperty(ref _neLon, value)) MarkDirty(); } }
+	public string NeLon { get => _neLon; set { if (SetProperty(ref _neLon, value)) OnCornerTyped(); } }
+
+	/// <inheritdoc />
+	public string? RoiLongitudeWarning => _roiAcrossAntimeridian is null
+		? null
+		: $"The Southwest Longitude ({SwLon.Trim()}) is east of the Northeast Longitude ({NeLon.Trim()}). " +
+		  "Save asks whether the ROI crosses the antimeridian (AM).";
+
+	/// <summary>
+	/// Asks whether an ROI with the Southwest Longitude east of the Northeast Longitude (both as typed)
+	/// crosses the antimeridian (AM). Unit tests stand in for <see cref="AntimeridianQuestion.Ask"/>.
+	/// </summary>
+	internal Func<string, string, bool> AskCrossesAntimeridian { get; set; } = AntimeridianQuestion.Ask;
 
 	/// <inheritdoc />
 	public string DefaultRoiSummary => DefaultRoiStore.Load() is { } roi
@@ -857,6 +871,34 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	protected RegionOfInterest? RoiInUse() => OverrideRoi ? TryReadOverrideCorners() : DefaultRoiStore.Load();
 
+	/// <inheritdoc />
+	/// <remarks>
+	/// While the tab's own ROI has its Southwest Longitude east of its Northeast Longitude and nothing
+	/// else wrong (<see cref="RoiLongitudeWarning"/>), asks first whether the ROI crosses the
+	/// antimeridian (AM). A yes writes the longitudes as a box drawn across the AM on the Map is
+	/// written (<see cref="RoiFilter.AsCrossingAntimeridian"/>), then saves; a no saves nothing and
+	/// marks both longitude boxes.
+	/// </remarks>
+	public override bool Save()
+	{
+		Revalidate();
+
+		if (_roiAcrossAntimeridian is { } crossing)
+		{
+			if (AskCrossesAntimeridian(SwLon.Trim(), NeLon.Trim()))
+			{
+				SwLon = FormatCorner(crossing.SwLon);
+				NeLon = FormatCorner(crossing.NeLon);
+			}
+			else
+			{
+				_antimeridianDeclined = true;
+			}
+		}
+
+		return base.Save();
+	}
+
 	// ================= private =================
 
 	private IEnumerable<EramClassDefault> AllCrcRows() => LineDefaults.Concat(SymbolDefaults).Concat(TextDefaults);
@@ -904,10 +946,21 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name));
 
 	/// <summary>
-	/// Checks the area while it matters (<see cref="IsAreaInUse"/>): the ARTCCs area needs one ticked,
-	/// and the ROI area an ROI - the default one set, or the tab's own with four valid corners.
+	/// Checks the area while it matters (<see cref="IsAreaInUse"/>), and works out again whether the
+	/// longitude boxes show <see cref="RoiLongitudeWarning"/>.
 	/// </summary>
 	private void ValidateArea(ServiceValidation validation)
+	{
+		_roiAcrossAntimeridian = null;
+		ValidateAreaInUse(validation);
+		OnPropertyChanged(nameof(RoiLongitudeWarning));
+	}
+
+	/// <summary>
+	/// The ARTCCs area needs one ticked, and the ROI area an ROI - the default one set, or the tab's
+	/// own with four valid corners.
+	/// </summary>
+	private void ValidateAreaInUse(ServiceValidation validation)
 	{
 		if (Areas.Count == 0 || !IsAreaInUse)
 		{
@@ -951,11 +1004,33 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			return;
 		}
 
-		if (TryReadOverrideCorners() is { } corners
-			&& !RoiFilter.IsCoordinatesRelativePositionValid(corners.SwLat, corners.SwLon, corners.NeLat, corners.NeLon, out string? positionError))
+		if (TryReadOverrideCorners() is not { } corners
+			|| RoiFilter.IsCoordinatesRelativePositionValid(corners.SwLat, corners.SwLon, corners.NeLat, corners.NeLon, out string? positionError))
+		{
+			return;
+		}
+
+		// The longitudes the wrong way round may be an ROI across the antimeridian: Save asks, so
+		// until then it is a warning, not an error. Once the answer is no, it is the longitudes to fix.
+		if (RoiFilter.AsCrossingAntimeridian(SwLat, SwLon, NeLat, NeLon) is not { } crossing)
 		{
 			validation.AddArea(ServiceAreas.Area, $"The ROI specific to {Title}: {positionError}");
 		}
+		else if (_antimeridianDeclined)
+		{
+			validation.AddFields($"The ROI specific to {Title}: {positionError}", nameof(SwLon), nameof(NeLon));
+		}
+		else
+		{
+			_roiAcrossAntimeridian = crossing;
+		}
+	}
+
+	/// <summary>A corner of the tab's own ROI changed: a "no" to the antimeridian question no longer stands.</summary>
+	private void OnCornerTyped()
+	{
+		_antimeridianDeclined = false;
+		MarkDirty();
 	}
 
 	/// <summary>
@@ -984,6 +1059,9 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private static string Corners(RegionOfInterest roi) =>
 		$"SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}";
 
+	/// <summary>A corner as the tab's own ROI boxes take it, to 6 decimal places.</summary>
+	private static string FormatCorner(double value) => value.ToString("0.######", CultureInfo.InvariantCulture);
+
 	private RegionOfInterest? TryReadOverrideCorners() =>
 		double.TryParse(SwLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
 		&& double.TryParse(SwLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
@@ -999,10 +1077,10 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		if (picked is { } roi)
 		{
-			SwLat = roi.SwLat.ToString("0.######", CultureInfo.InvariantCulture);
-			SwLon = roi.SwLon.ToString("0.######", CultureInfo.InvariantCulture);
-			NeLat = roi.NeLat.ToString("0.######", CultureInfo.InvariantCulture);
-			NeLon = roi.NeLon.ToString("0.######", CultureInfo.InvariantCulture);
+			SwLat = FormatCorner(roi.SwLat);
+			SwLon = FormatCorner(roi.SwLon);
+			NeLat = FormatCorner(roi.NeLat);
+			NeLon = FormatCorner(roi.NeLon);
 			OverrideRoi = true;
 		}
 	}

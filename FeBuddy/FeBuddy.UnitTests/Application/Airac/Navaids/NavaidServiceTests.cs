@@ -79,6 +79,25 @@ public sealed class NavaidServiceTests : IDisposable
 		Assert.Contains(".navOM ", aliasContents); // an excluded type, but the alias file has every type
 	}
 
+	/// <summary>An ROI across the antimeridian (AM), written past 180, keeps the NAVAIDs either side of it, and none outside it.</summary>
+	[Fact]
+	public void an_roi_across_the_antimeridian_keeps_the_navaids_either_side_of_it()
+	{
+		NasrCsvDataCollection data = NavaidTestData.Build(
+		[
+			NavaidTestData.Row("ADK", "NDB", "MOUNT MOFFETT", 529, 51.872, -176.676),
+			NavaidTestData.Row("SYA", "NDB", "SHEMYA", 221, 52.718, 174.060),
+			NavaidTestData.CgtRow(),
+		]);
+
+		NavaidServiceResult result = NavaidService.Run(data, Settings(
+			("Area", "Roi"), ("FilterByRoi", "Y"),
+			("RoiSwLat", "44.0"), ("RoiSwLon", "154.0"), ("RoiNeLat", "90.0"), ("RoiNeLon", "236.0")));
+
+		Assert.Equal(3, result.NavaidCount);
+		Assert.Equal(2, result.GeojsonNavaidCount);
+	}
+
 	[Fact]
 	public void an_advisory_message_explains_why_nothing_is_in_the_roi()
 	{

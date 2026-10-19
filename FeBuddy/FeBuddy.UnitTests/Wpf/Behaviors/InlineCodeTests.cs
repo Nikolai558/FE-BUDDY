@@ -53,11 +53,20 @@ public sealed class InlineCodeTests
 	public void a_markdown_link_is_split_from_the_text_around_it()
 	{
 		Assert.Equal(
-			[("Check them out ", null), ("HERE", "https://docs.virtualnas.net/data-admin/video-maps/#map-defaults"), (".", null)],
+			[("Check them out ", null, null), ("HERE", "https://docs.virtualnas.net/data-admin/video-maps/#map-defaults", null), (".", null, null)],
 			InlineCode.SplitLinks("Check them out [HERE](https://docs.virtualnas.net/data-admin/video-maps/#map-defaults)."));
 		Assert.Equal(
-			[("FAA", "https://www.faa.gov/"), (" and ", null), ("GNG", "http://gng.aero-nav.com/")],
+			[("FAA", "https://www.faa.gov/", null), (" and ", null, null), ("GNG", "http://gng.aero-nav.com/", null)],
 			InlineCode.SplitLinks("[FAA](https://www.faa.gov/) and [GNG](http://gng.aero-nav.com/)"));
+	}
+
+	/// <summary>A link's title, between quotes after its address, is kept for its tooltip - brackets in it included.</summary>
+	[Fact]
+	public void a_markdown_link_title_is_kept_apart_from_its_address()
+	{
+		Assert.Equal(
+			[("the ", null, null), ("antimeridian", "https://en.wikipedia.org/wiki/180th_meridian", "The 180° meridian (AM)."), (" (AM).", null, null)],
+			InlineCode.SplitLinks("the [antimeridian](https://en.wikipedia.org/wiki/180th_meridian \"The 180° meridian (AM).\") (AM)."));
 	}
 
 	[Theory]
@@ -69,14 +78,14 @@ public sealed class InlineCodeTests
 	[InlineData("Unclosed: [FAA](https://www.faa.gov/")]
 	public void text_with_no_web_link_is_all_plain(string text)
 	{
-		Assert.Equal([(text, (string?)null)], InlineCode.SplitLinks(text));
+		Assert.Equal([(text, (string?)null, (string?)null)], InlineCode.SplitLinks(text));
 	}
 
 	[Fact]
 	public void a_bracket_before_a_link_stays_in_the_text()
 	{
 		Assert.Equal(
-			[("[x] see ", null), ("FAA", "https://www.faa.gov/")],
+			[("[x] see ", null, null), ("FAA", "https://www.faa.gov/", null)],
 			InlineCode.SplitLinks("[x] see [FAA](https://www.faa.gov/)"));
 		Assert.Empty(InlineCode.SplitLinks(string.Empty));
 		Assert.Throws<ArgumentNullException>(() => InlineCode.SplitLinks(null!));
@@ -98,6 +107,21 @@ public sealed class InlineCodeTests
 			Assert.Equal("HERE", Assert.IsType<Run>(Assert.Single(link.Inlines)).Text);
 			Assert.Equal("https://www.faa.gov/", link.ToolTip);
 			Assert.Equal("[x](https://a.b/)", Assert.IsType<Run>(inlines[3]).Text);
+		});
+	}
+
+	/// <summary>A link with a title has the title as its tooltip, not the address.</summary>
+	[Fact]
+	public void a_link_with_a_title_shows_the_title_as_its_tooltip()
+	{
+		StaThread.Run(() =>
+		{
+			TextBlock text = new();
+
+			InlineCode.SetText(text, "See [FAA](https://www.faa.gov/ \"The FAA's home page\").");
+
+			Hyperlink link = Assert.IsType<Hyperlink>(text.Inlines.ElementAt(1));
+			Assert.Equal("The FAA's home page", link.ToolTip);
 		});
 	}
 

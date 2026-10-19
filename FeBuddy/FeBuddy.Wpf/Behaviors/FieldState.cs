@@ -34,6 +34,16 @@ public static class FieldState
 			"Hint", typeof(string), typeof(FieldState),
 			new PropertyMetadata(null));
 
+	/// <summary>
+	/// A warning for this input, or <see langword="null"/>: a value that isn't wrong as such, but that
+	/// saving will ask about. The themed TextBox shows it like an error, in the warning colour; it never
+	/// blocks a save, and an error, while there is one, shows instead.
+	/// </summary>
+	public static readonly DependencyProperty WarningProperty =
+		DependencyProperty.RegisterAttached(
+			"Warning", typeof(string), typeof(FieldState),
+			new PropertyMetadata(null, OnWarningChanged));
+
 	private static readonly DependencyPropertyKey HasErrorKey =
 		DependencyProperty.RegisterAttachedReadOnly(
 			"HasError", typeof(bool), typeof(FieldState),
@@ -41,6 +51,14 @@ public static class FieldState
 
 	/// <summary>Whether <see cref="ErrorProperty"/> is set - the trigger the styles key off.</summary>
 	public static readonly DependencyProperty HasErrorProperty = HasErrorKey.DependencyProperty;
+
+	private static readonly DependencyPropertyKey HasWarningKey =
+		DependencyProperty.RegisterAttachedReadOnly(
+			"HasWarning", typeof(bool), typeof(FieldState),
+			new PropertyMetadata(false));
+
+	/// <summary>Whether <see cref="WarningProperty"/> is set - the trigger the TextBox style keys off.</summary>
+	public static readonly DependencyProperty HasWarningProperty = HasWarningKey.DependencyProperty;
 
 	/// <summary>
 	/// Bubbles up from an element whose <see cref="ErrorProperty"/> changed, so the card around it
@@ -73,6 +91,24 @@ public static class FieldState
 	/// <param name="element">The input.</param>
 	/// <returns><see langword="true"/> when a message is set.</returns>
 	public static bool GetHasError(DependencyObject element) => (bool)element.GetValue(HasErrorProperty);
+
+	/// <summary>Sets the warning for an input.</summary>
+	/// <param name="element">The input.</param>
+	/// <param name="value">The warning, or <see langword="null"/>.</param>
+	public static void SetWarning(DependencyObject element, string? value) => element.SetValue(WarningProperty, value);
+
+	/// <summary>Gets the warning for an input.</summary>
+	/// <param name="element">The input.</param>
+	/// <returns>The warning, or <see langword="null"/>.</returns>
+	public static string? GetWarning(DependencyObject element) => (string?)element.GetValue(WarningProperty);
+
+	/// <summary>Whether the input currently has a warning.</summary>
+	/// <param name="element">The input.</param>
+	/// <returns><see langword="true"/> when a warning is set.</returns>
+	public static bool GetHasWarning(DependencyObject element) => (bool)element.GetValue(HasWarningProperty);
+
+	private static void OnWarningChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+		d.SetValue(HasWarningKey, !string.IsNullOrWhiteSpace(e.NewValue as string));
 
 	private static void OnErrorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 	{

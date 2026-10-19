@@ -133,11 +133,16 @@ public static partial class SubServiceSettingsReader
 
 	/// <summary>
 	/// Reads the Region of Interest: <see langword="null"/> unless <c>FilterByRoi</c> is <c>Y</c>,
-	/// in which case all four corners are required and validated.
+	/// in which case all four corners are required and validated (<see cref="RoiFilter"/>). An ROI
+	/// that crosses the antimeridian (AM) has one longitude past ±180, e.g. <c>RoiSwLon</c> -206 and
+	/// <c>RoiNeLon</c> -124.
 	/// </summary>
 	/// <param name="settings">The raw settings block.</param>
 	/// <returns>The ROI, or <see langword="null"/> when filtering by ROI is off.</returns>
-	/// <exception cref="ArgumentException">Thrown when a corner is missing, malformed, or the corners are the wrong way round.</exception>
+	/// <exception cref="ArgumentException">
+	/// Thrown when a corner is missing or malformed, the corners are the wrong way round (a Southwest
+	/// Longitude east of the Northeast Longitude among them), or the box is 360° or more wide.
+	/// </exception>
 	public static RegionOfInterest? ReadRoi(IReadOnlyDictionary<string, string> settings)
 	{
 		if (!SettingsValueReader.YesNo(settings, "FilterByRoi", defaultValue: false))

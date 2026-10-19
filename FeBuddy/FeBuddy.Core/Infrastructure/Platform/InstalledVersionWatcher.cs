@@ -1,4 +1,7 @@
-using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+
+using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Core.Infrastructure.Platform;
 
@@ -16,11 +19,18 @@ namespace FeBuddy.Core.Infrastructure.Platform;
 /// on the folder alone would be left on the deleted one, so the folder above it is watched too, and the
 /// folder's watch is set up again on whichever folder holds the file at each check. While the file is
 /// missing - mid-install - it is looked for again, for up to <see cref="MaxMissingChecks"/> checks.
+/// <para>
+/// The version is read from the file's own bytes (<see cref="VersionOf"/>), not through Windows' version
+/// information: that answers from the copy this process already has loaded, so a running FE-Buddy asking about its
+/// own <c>FE-BUDDY.dll</c> would only ever hear its own version back.
+/// </para>
 /// </remarks>
 public sealed class InstalledVersionWatcher : IDisposable
 {
 	/// <summary>How many times in a row a missing file is looked for again before waiting for the next change.</summary>
 	internal const int MaxMissingChecks = 100;
+
+	private const string LogSource = "Update";
 
 	private readonly Lock _gate = new();
 	private readonly string _path;
@@ -77,19 +87,68 @@ public sealed class InstalledVersionWatcher : IDisposable
 	/// <summary>Raised once, on a thread-pool thread, with the version now on disk, when it differs from the running one.</summary>
 	public event EventHandler<string>? Updated;
 
-	/// <summary>The FE-Buddy version a file holds: its product version, as <see cref="AppVersion"/> reads the running one.</summary>
+	/// <summary>
+	/// The FE-Buddy version an assembly file holds, as <see cref="AppVersion"/> reads the running one: its informational
+	/// version without build metadata, else its numeric version's first three parts. Read from the file's metadata,
+	/// never through a copy of it already loaded.
+	/// </summary>
 	/// <param name="path">The file.</param>
-	/// <returns>The version, or <see langword="null"/> when the file isn't there, can't be read, or has none.</returns>
+	/// <returns>The version, or <see langword="null"/> when the file isn't there, can't be read, or isn't an assembly.</returns>
 	public static string? VersionOf(string path)
 	{
 		try
 		{
-			return File.Exists(path) ? AppVersion.Clean(FileVersionInfo.GetVersionInfo(path).ProductVersion) : null;
+			if (!File.Exists(path))
+			{
+				return null;
+			}
+
+			using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+			using PEReader pe = new(stream);
+			if (!pe.HasMetadata)
+			{
+				return null;
+			}
+
+			MetadataReader metadata = pe.GetMetadataReader();
+			AssemblyDefinition assembly = metadata.GetAssemblyDefinition();
+
+			return InformationalVersion(metadata, assembly) ?? assembly.Version.ToString(3);
 		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or BadImageFormatException or InvalidOperationException)
 		{
 			return null;
 		}
+	}
+
+	/// <summary>The assembly's <c>AssemblyInformationalVersionAttribute</c>, without build metadata.</summary>
+	private static string? InformationalVersion(MetadataReader metadata, AssemblyDefinition assembly)
+	{
+		foreach (CustomAttributeHandle handle in assembly.GetCustomAttributes())
+		{
+			CustomAttribute attribute = metadata.GetCustomAttribute(handle);
+			if (attribute.Constructor.Kind != HandleKind.MemberReference)
+			{
+				continue;
+			}
+
+			EntityHandle type = metadata.GetMemberReference((MemberReferenceHandle)attribute.Constructor).Parent;
+			if (type.Kind != HandleKind.TypeReference)
+			{
+				continue;
+			}
+
+			TypeReference reference = metadata.GetTypeReference((TypeReferenceHandle)type);
+			if (metadata.StringComparer.Equals(reference.Name, "AssemblyInformationalVersionAttribute")
+				&& metadata.StringComparer.Equals(reference.Namespace, "System.Reflection"))
+			{
+				// The blob: a 0x0001 prolog, then the one string argument.
+				BlobReader value = metadata.GetBlobReader(attribute.Value);
+				return value.ReadUInt16() == 1 ? AppVersion.Clean(value.ReadSerializedString()) : null;
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>The version on disk when it isn't the running one (an update, or a rollback to an older one).</summary>
@@ -200,6 +259,7 @@ public sealed class InstalledVersionWatcher : IDisposable
 
 		Interlocked.Exchange(ref _missingChecks, 0);
 		WatchFolder();
+		AppLog.Info(LogSource, $"{_fileName} changed on disk: v{VersionOf(_path)} there, v{_runningVersion} running.");
 
 		if (ChangedVersion() is { } version && Interlocked.Exchange(ref _raised, 1) == 0)
 		{

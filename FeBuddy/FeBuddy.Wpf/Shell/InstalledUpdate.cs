@@ -51,6 +51,8 @@ public static class InstalledUpdate
 			return;
 		}
 
+		AppLog.Info(LogSource, $"Watching {path} for an update installed while this copy, v{AppVersion.Current}, is open.");
+
 		_watcher.Updated += (_, version) => dispatcher.BeginInvoke(() =>
 		{
 			NewVersion = version;

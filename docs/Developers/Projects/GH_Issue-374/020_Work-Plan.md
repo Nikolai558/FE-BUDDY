@@ -221,8 +221,14 @@ of the old version moves the files in use out to `C:\Config.Msi`, deletes the em
 then creates it again for the new files, so a watch on the folder was left on the deleted one. The watcher now also
 watches the folder above it, sets its watch up again on the new folder, and looks again while the file is missing
 mid-install; a test deletes and recreates the folder as Windows Installer does. Testing it in one account doesn't work:
-that same uninstall step closes FE-Buddy in the installing account, whatever Restart Manager is told. **Retest**
-with two accounts pending.
+that same uninstall step closes FE-Buddy in the installing account, whatever Restart Manager is told.
+
+**Found next** (the VM retest, then replayed on Nikolas's PC against a running FE-Buddy): the check then ran, but read
+the new file as the old version. Windows' version information (`FileVersionInfo`) answers from the copy of
+`FE-BUDDY.dll` the process already has loaded, so a running FE-Buddy only ever hears its own version back. The
+version is now read from the file's own metadata. Proven on the PC: a running FE-Buddy, its folder emptied, deleted and
+recreated with a newer build, logs the update about 3 seconds later and opens the restart offer. The watch also logs
+when it starts and what each check finds. **Retest** with two accounts on the VM pending.
 
 ### [#375](https://github.com/Nikolai558/FE-BUDDY/issues/375) · The installer's shortcuts showed a cached 2.x icon
 

@@ -16,6 +16,10 @@ public sealed class InstalledVersionWatcherTests : IDisposable
 	private static readonly string Assembly = typeof(AppVersion).Assembly.Location;
 	private static readonly string AssemblyVersion = AppVersion.Of(typeof(AppVersion).Assembly);
 
+	// Another, with a different version: the app itself.
+	private static readonly string WpfAssembly = typeof(FeBuddy.Wpf.Shell.InstalledUpdate).Assembly.Location;
+	private static readonly string WpfVersion = AppVersion.Of(typeof(FeBuddy.Wpf.Shell.InstalledUpdate).Assembly);
+
 	private readonly string _root = Directory.CreateTempSubdirectory("febuddy-watch-").FullName;
 
 	/// <summary>Deletes the throwaway folder.</summary>
@@ -25,9 +29,9 @@ public sealed class InstalledVersionWatcherTests : IDisposable
 		{
 			Directory.Delete(_root, recursive: true);
 		}
-		catch (IOException)
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
-			// Best-effort cleanup.
+			// Best-effort cleanup: a copy loaded by a test stays mapped until it is unloaded.
 		}
 	}
 
@@ -42,6 +46,25 @@ public sealed class InstalledVersionWatcherTests : IDisposable
 		Assert.Equal(AssemblyVersion, InstalledVersionWatcher.VersionOf(Program));
 		Assert.Null(InstalledVersionWatcher.VersionOf(Path.Combine(_root, "notes.txt")));
 		Assert.Null(InstalledVersionWatcher.VersionOf(Path.Combine(_root, "gone.dll")));
+	}
+
+	/// <summary>
+	/// A running FE-Buddy has its own <c>FE-BUDDY.dll</c> loaded. Windows' version information answers from that
+	/// loaded copy, so it reported the old version for the new file on disk; the version is read from the file itself.
+	/// </summary>
+	[Fact]
+	public void a_new_file_is_read_as_itself_even_while_the_old_one_is_loaded()
+	{
+		File.Copy(Assembly, Program);
+		System.Runtime.Loader.AssemblyLoadContext context = new("running copy", isCollectible: true);
+		context.LoadFromAssemblyPath(Program);
+
+		File.Move(Program, Path.Combine(_root, "5db1f.rbf"));
+		File.Copy(WpfAssembly, Program);
+
+		Assert.Equal(WpfVersion, InstalledVersionWatcher.VersionOf(Program));
+		Assert.NotEqual(AssemblyVersion, WpfVersion);
+		context.Unload();
 	}
 
 	/// <summary>A different version written over the file - moved aside first, as Windows Installer does - is reported once.</summary>

@@ -159,10 +159,16 @@
          bhv:FieldState.Error is bound to its tab's FieldErrors[<key>] gets a red edge, a faint
          red wash and the validator's own message as its tool-tip, so the box that needs fixing is
          obvious without reading the error list above the form. Its hint, if any, is
-         bhv:FieldState.Hint: a setter here, so the error can replace it. -->
+         bhv:FieldState.Hint: a setter here, so the error can replace it. A bhv:FieldState.Warning
+         looks the same in amber; the error trigger comes after it, so an error wins. -->
     <Style TargetType="TextBox" BasedOn="{StaticResource Field}">
         <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Hint), RelativeSource={RelativeSource Self}}" />
         <Style.Triggers>
+            <Trigger Property="bhv:FieldState.HasWarning" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Warn}" />
+                <Setter Property="Background" Value="{DynamicResource Brush.Warn.Soft}" />
+                <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Warning), RelativeSource={RelativeSource Self}}" />
+            </Trigger>
             <Trigger Property="bhv:FieldState.HasError" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
                 <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />

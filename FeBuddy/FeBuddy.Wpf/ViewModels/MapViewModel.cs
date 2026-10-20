@@ -8,6 +8,7 @@ using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Domain.Map.Models;
 using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -44,6 +45,7 @@ public sealed class MapViewModel : ObservableObject
 	private string _swLon = string.Empty;
 	private bool _isEditingRoi;
 	private string? _roiError;
+	private string? _longitudeError;
 	private bool _syncing;
 
 	// The target's ROI as last read: the ROI card's state reads it on every keystroke in a corner box, and
@@ -177,8 +179,31 @@ public sealed class MapViewModel : ObservableObject
 	public string? RoiError
 	{
 		get => _roiError;
-		private set => SetProperty(ref _roiError, value);
+		private set
+		{
+			if (SetProperty(ref _roiError, value) && value is null)
+			{
+				LongitudeError = null;
+			}
+		}
 	}
+
+	/// <summary>
+	/// Why both longitude fields are marked, or <see langword="null"/>: the user said an ROI whose
+	/// Southwest Longitude is east of its Northeast Longitude doesn't cross the antimeridian (AM), so
+	/// they are the ones to fix. Cleared by the next edit.
+	/// </summary>
+	public string? LongitudeError
+	{
+		get => _longitudeError;
+		private set => SetProperty(ref _longitudeError, value);
+	}
+
+	/// <summary>
+	/// Asks whether an ROI with the Southwest Longitude east of the Northeast Longitude (both as typed)
+	/// crosses the antimeridian (AM). Unit tests stand in for <see cref="AntimeridianQuestion.Ask"/>.
+	/// </summary>
+	internal Func<string, string, bool> AskCrossesAntimeridian { get; set; } = AntimeridianQuestion.Ask;
 
 	/// <summary>Whether the box differs from the saved one.</summary>
 	public bool IsRoiDirty => !Nullable.Equals(DraftRoi, ToBounds(_savedRoi));
@@ -344,12 +369,6 @@ public sealed class MapViewModel : ObservableObject
 
 		string swLat = SwLat.Trim(), swLon = SwLon.Trim(), neLat = NeLat.Trim(), neLon = NeLon.Trim();
 
-		if (CrossesAntimeridian(swLon, neLon))
-		{
-			RoiError = "The box crosses the 180° meridian. An ROI has to sit on one side of it - redraw it there.";
-			return;
-		}
-
 		if (!RoiFilter.IsCoordinateValidFormat(swLat, swLon, neLat, neLon, out string? formatError))
 		{
 			RoiError = formatError;
@@ -363,6 +382,20 @@ public sealed class MapViewModel : ObservableObject
 
 		if (!RoiFilter.IsCoordinatesRelativePositionValid(sLat, sLon, nLat, nLon, out string? positionError))
 		{
+			// The longitudes the wrong way round may be an ROI across the antimeridian: ask.
+			if (RoiFilter.AsCrossingAntimeridian(swLat, swLon, neLat, neLon) is { } crossing)
+			{
+				if (AskCrossesAntimeridian(swLon, neLon))
+				{
+					Finish(crossing);
+					return;
+				}
+
+				RoiError = positionError;
+				LongitudeError = positionError;
+				return;
+			}
+
 			RoiError = positionError;
 			return;
 		}
@@ -438,6 +471,8 @@ public sealed class MapViewModel : ObservableObject
 			return;
 		}
 
+		LongitudeError = null;
+
 		if (!IsEditingRoi)
 		{
 			IsEditingRoi = true;
@@ -469,14 +504,6 @@ public sealed class MapViewModel : ObservableObject
 		OnPropertyChanged(nameof(HasDraftRoi));
 		CommandManager.InvalidateRequerySuggested();
 	}
-
-	/// <summary>
-	/// Whether the corners describe a box drawn across the 180th meridian: the map writes such a
-	/// box with one edge past ±180 (e.g. west 170, east 190), which no ROI can hold.
-	/// </summary>
-	private static bool CrossesAntimeridian(string swLon, string neLon) =>
-		(TryParse(swLon, out double west) && west is < -180.0 and >= -360.0)
-		|| (TryParse(neLon, out double east) && east is > 180.0 and <= 360.0);
 
 	private static bool TryParse(string text, out double value) =>
 		double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value);

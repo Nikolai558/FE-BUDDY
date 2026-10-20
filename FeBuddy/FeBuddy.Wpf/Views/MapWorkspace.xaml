@@ -15,6 +15,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:MapViewModel}"
              d:DesignWidth="1200" d:DesignHeight="800">
@@ -269,12 +270,12 @@
                                 <TextBlock Text="NE lat" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
                                 <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
                                 <TextBox Grid.Row="1" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. 44.5" Margin="0,0,0,10" />
-                                <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. -78.0" Margin="0,0,0,10" />
+                                <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. -78.0" bhv:FieldState.Error="{Binding LongitudeError}" Margin="0,0,0,10" />
 
                                 <TextBlock Grid.Row="2" Text="SW lat" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
                                 <TextBlock Grid.Row="2" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
                                 <TextBox Grid.Row="3" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. 39.0" />
-                                <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. -86.0" />
+                                <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. -86.0" bhv:FieldState.Error="{Binding LongitudeError}" />
                             </Grid>
 
                             <TextBlock Text="{Binding RoiError}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"

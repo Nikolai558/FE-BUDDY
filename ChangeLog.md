@@ -21,6 +21,19 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ---
 
+## 3.0.0-beta.14
+### AIRAC Service
+- Bug #395 - An ROI can cross the antimeridian (AM), the 180° meridian west of Alaska: write it with
+  one longitude past ±180, such as SW 44, -206 / NE 90, -124. Type the Southwest Longitude east of the
+  Northeast one (154 and -124) and saving asks whether the ROI crosses the AM. The lines such an ROI
+  keeps are split at the AM, even with **Split GeoJSON at the Antimeridian** off.
+
+### Map
+- Bug #395 - A box drawn across the AM saves as drawn, for the default ROI and a tab's own. A box
+  drawn or resized to the top or bottom of the map reaches 90° (or -90°), not about 85°.
+
+---
+
 ## 3.0.0-beta.13
 ### Updates
 - Bug #379 - FE-Buddy left open while another Windows account updates it now notices and offers a

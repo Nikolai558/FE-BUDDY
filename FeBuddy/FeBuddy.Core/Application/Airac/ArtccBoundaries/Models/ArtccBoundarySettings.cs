@@ -31,7 +31,10 @@ public sealed record ArtccBoundarySettings
 	/// </summary>
 	public IReadOnlyCollection<string> LocationFilter { get; init; } = [];
 
-	/// <summary>Whether to split boundary lines at the antimeridian.</summary>
+	/// <summary>
+	/// Whether to split boundary lines at the antimeridian (AM). An <see cref="Roi"/> that crosses the AM
+	/// splits the lines it clips whether or not this is on (<see cref="Domain.Geo.RoiFilter.ClipLines"/>).
+	/// </summary>
 	public required bool SplitAtAntimeridian { get; init; }
 
 	/// <summary>When <see langword="true"/>, Features carry the <c>feb.*</c> properties listed in <see cref="FebProperties"/>.</summary>

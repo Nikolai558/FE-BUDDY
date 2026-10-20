@@ -9,8 +9,8 @@ its aeronautical data. Each cycle is named by year and number: `2610` is the 10t
 **Alias file** - A text file of dot-commands for CRC. A controller types a short command (`.J3F`) and
 CRC runs what it stands for (draw the fixes of airway J3).
 
-**Antimeridian** - The ±180° line of longitude. A line crossing it has to be split in two, or it
-draws the long way round the whole map.
+**Antimeridian (AM)** - The ±180° line of longitude. A line crossing it has to be split in two, or it
+draws the long way round the whole map. An ROI can cross it.
 
 **ARTCC** - Air Route Traffic Control Center: the facility controlling a large area of airspace, like
 Cleveland Center (ZOB).

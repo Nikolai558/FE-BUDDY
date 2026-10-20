@@ -10,7 +10,8 @@ namespace FeBuddy.UnitTests.Application.Settings;
 /// Covers <see cref="SubServiceSettingsReader.ReadCrcDefaultsFiles"/>: the list defaults to empty,
 /// and only a sub-service's own GeoJSON files are accepted. And the area
 /// (<see cref="SubServiceSettingsReader.ReadArea"/>): only an area the sub-service offers, what a
-/// block without one means, and that only its own filter - the ARTCCs or the ROI - is read.
+/// block without one means, and that only its own filter - the ARTCCs or the ROI - is read. And the ROI
+/// (<see cref="SubServiceSettingsReader.ReadRoi"/>) across the antimeridian.
 /// </summary>
 public sealed class SubServiceSettingsReaderTests
 {
@@ -22,6 +23,23 @@ public sealed class SubServiceSettingsReaderTests
 	private static CrcDefaultsFiles Read(params (string Key, string Value)[] entries) =>
 		SubServiceSettingsReader.ReadCrcDefaultsFiles(
 			Settings(entries), IsGeojson, example: "Things_Lines, Things_Text");
+
+	/// <summary>
+	/// An ROI across the antimeridian (AM) is read with one longitude past ±180; one with its longitudes
+	/// the wrong way round is refused, saying how to write it, since a file can't be asked what it meant.
+	/// </summary>
+	[Fact]
+	public void an_roi_across_the_antimeridian_is_read_and_one_the_wrong_way_round_is_refused()
+	{
+		Assert.Equal(
+			new RegionOfInterest(44.0, -206.0, 90.0, -124.0),
+			SubServiceSettingsReader.ReadRoi(Settings(
+				("FilterByRoi", "Y"), ("RoiSwLat", "44.0"), ("RoiSwLon", "-206.0"), ("RoiNeLat", "90.0"), ("RoiNeLon", "-124.0"))));
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => SubServiceSettingsReader.ReadRoi(Settings(
+			("FilterByRoi", "Y"), ("RoiSwLat", "44.0"), ("RoiSwLon", "154.0"), ("RoiNeLat", "90.0"), ("RoiNeLon", "-124.0"))));
+		Assert.Contains("take 360 off the Southwest Longitude", ex.Message, StringComparison.Ordinal);
+	}
 
 	[Fact]
 	public void no_file_gets_crc_defaults_when_the_key_is_absent_or_blank()

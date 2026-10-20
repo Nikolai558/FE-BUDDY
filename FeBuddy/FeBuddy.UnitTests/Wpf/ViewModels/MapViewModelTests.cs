@@ -75,18 +75,120 @@ public sealed class MapViewModelTests
 		Assert.Equal("Warn", vm.RoiStateKind);
 	}
 
-	/// <summary>A box over the 180th meridian can be drawn, but not saved.</summary>
+	private static readonly RegionOfInterest AcrossTheAntimeridian = new(44, -206, 90, -124);
+
+	/// <summary>A box drawn across the antimeridian (AM) saves as the map writes it, one edge past ±180.</summary>
 	[Fact]
-	public void a_box_over_the_meridian_is_refused_on_save()
+	public void a_box_drawn_across_the_antimeridian_saves_as_drawn()
+	{
+		Target target = new();
+		MapViewModel vm = new(target);
+
+		vm.OnQuickDrawn(new GeoBounds(new GeoPoint(44, -206), new GeoPoint(90, -124)));
+
+		Assert.Equal(AcrossTheAntimeridian, Assert.Single(target.Committed));
+		Assert.Null(vm.RoiError);
+	}
+
+	/// <summary>Typed corners with one edge past 180 save too: it is a box across the AM.</summary>
+	[Fact]
+	public void typed_corners_past_180_save()
 	{
 		Target target = new() { Current = Saved };
 		MapViewModel vm = new(target) { NeLon = "190" };
 
 		vm.SaveRoiCommand.Execute(null);
 
-		Assert.Contains("180° meridian", vm.RoiError, StringComparison.Ordinal);
+		Assert.Equal(Saved with { NeLon = 190 }, Assert.Single(target.Committed));
+	}
+
+	/// <summary>A saved ROI across the AM, or a reference one, comes back as one box across it, as saved.</summary>
+	[Fact]
+	public void a_saved_roi_across_the_antimeridian_is_one_box_across_it()
+	{
+		GeoBounds box = new(new GeoPoint(44, -206), new GeoPoint(90, -124));
+
+		MapViewModel saved = new(new Target { Current = AcrossTheAntimeridian });
+		MapViewModel picking = new(new Target { StartsEditing = true, Reference = AcrossTheAntimeridian });
+
+		Assert.Equal(box, saved.DraftRoi);
+		Assert.Equal("SW 44, -206 / NE 90, -124", saved.CopyText);
+		Assert.Equal(box, picking.ReferenceRoi);
+	}
+
+	/// <summary>Longitudes typed the wrong way round ask, with the values as typed, whether the ROI crosses the AM.</summary>
+	[Fact]
+	public void longitudes_the_wrong_way_round_ask_whether_the_roi_crosses_the_antimeridian()
+	{
+		List<(string SwLon, string NeLon)> asked = [];
+		MapViewModel vm = new(new Target())
+		{
+			AskCrossesAntimeridian = (swLon, neLon) =>
+			{
+				asked.Add((swLon, neLon));
+				return false;
+			},
+		};
+
+		TypeCorners(vm, "44", "154", "90", "-124");
+		vm.SaveRoiCommand.Execute(null);
+
+		Assert.Equal([("154", "-124")], asked);
+	}
+
+	/// <summary>Yes saves the box across the AM as drawing it would, and the fields show it so.</summary>
+	[Fact]
+	public void yes_saves_the_roi_across_the_antimeridian()
+	{
+		Target target = new();
+		MapViewModel vm = new(target) { AskCrossesAntimeridian = (_, _) => true };
+
+		TypeCorners(vm, "44", "154", "90", "-124");
+		vm.SaveRoiCommand.Execute(null);
+
+		Assert.Equal(AcrossTheAntimeridian, Assert.Single(target.Committed));
+		Assert.Equal("-206", vm.SwLon);
+		Assert.Equal("-124", vm.NeLon);
+		Assert.False(vm.IsEditingRoi);
+	}
+
+	/// <summary>No saves nothing: the fields stay as typed, with both longitudes marked, until the next edit.</summary>
+	[Fact]
+	public void no_saves_nothing_and_marks_both_longitudes()
+	{
+		Target target = new();
+		MapViewModel vm = new(target) { AskCrossesAntimeridian = (_, _) => false };
+
+		TypeCorners(vm, "44", "154", "90", "-124");
+		vm.SaveRoiCommand.Execute(null);
+
 		Assert.Empty(target.Committed);
+		Assert.Equal("154", vm.SwLon);
+		Assert.Equal("-124", vm.NeLon);
 		Assert.True(vm.IsEditingRoi);
+		Assert.StartsWith("The Southwest Longitude must be west of the Northeast Longitude.", vm.LongitudeError, StringComparison.Ordinal);
+		Assert.Equal(vm.LongitudeError, vm.RoiError);
+
+		vm.SwLon = "-206";
+
+		Assert.Null(vm.LongitudeError);
+	}
+
+	/// <summary>Longitudes the wrong way round with something else wrong too just say what: nothing to ask.</summary>
+	[Fact]
+	public void longitudes_the_wrong_way_round_with_the_latitudes_wrong_too_do_not_ask()
+	{
+		Target target = new();
+		bool asked = false;
+		MapViewModel vm = new(target) { AskCrossesAntimeridian = (_, _) => asked = true };
+
+		TypeCorners(vm, "90", "154", "44", "-124");
+		vm.SaveRoiCommand.Execute(null);
+
+		Assert.False(asked);
+		Assert.Empty(target.Committed);
+		Assert.Equal("The Northeast Latitude must be greater than the Southwest Latitude.", vm.RoiError);
+		Assert.Null(vm.LongitudeError);
 	}
 
 	/// <summary>Turning editing off puts every field back, a half-typed one included.</summary>
@@ -321,6 +423,15 @@ public sealed class MapViewModelTests
 	}
 
 	private static MapLayer Layer(params MapGeometry[] geometries) => new("ZOB_Test.geojson", geometries, System.Windows.Media.Brushes.Orange);
+
+	/// <summary>Types all four corners, one after the other, as in the fields.</summary>
+	private static void TypeCorners(MapViewModel vm, string swLat, string swLon, string neLat, string neLon)
+	{
+		vm.SwLat = swLat;
+		vm.SwLon = swLon;
+		vm.NeLat = neLat;
+		vm.NeLon = neLon;
+	}
 
 	private static void Type(MapViewModel vm, string field, string value)
 	{

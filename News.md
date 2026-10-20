@@ -13,6 +13,23 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-20
+<!--
+PostId: 2026-10-20.1
+-->
+
+**Version 3.0.0-beta.14 Compiled!**
+
+ROIs across the antimeridian, and boxes up to the poles
+
+- **ROI across the antimeridian (AM)**: an ROI can now cross the 180° meridian west of Alaska. Draw it across on the **Map**, or type it with one longitude past ±180, e.g. SW 44, -206 / NE 90, -124
+- **Typed it as 154 and -124?** Saving asks whether the ROI crosses the AM, and writes it the right way if it does
+- **Map**: a box drawn or resized to the top or bottom of the map now reaches 90° (or -90°), not about 85°
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.14)!!!
+
+---
+
 ## 2026-10-19
 <!--
 PostId: 2026-10-19.1

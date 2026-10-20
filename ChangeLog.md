@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.14
 ### AIRAC Service
 - Bug #395 - An ROI can cross the antimeridian (AM), the 180° meridian west of Alaska: write it with
   one longitude past ±180, such as SW 44, -206 / NE 90, -124. Type the Southwest Longitude east of the

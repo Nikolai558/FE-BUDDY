@@ -135,6 +135,53 @@ public static class UserConfigTransfer
 		return new UserConfigExportResult(path, exported.Count, folders, leftOut);
 	}
 
+	/// <summary>
+	/// Writes one settings export per profile into <paramref name="folder"/>, each named after its profile -
+	/// <c>FE-Buddy settings 2026-10-20 (ZOB).json</c> - and read from its file, whether or not it is the one
+	/// in use. Each imports as any export does. For going back to an FE-Buddy that can't read them, to import
+	/// once updated again.
+	/// </summary>
+	/// <param name="folder">Where to write them.</param>
+	/// <param name="profiles">The profiles.</param>
+	/// <returns>What was written, one per profile.</returns>
+	/// <exception cref="UserConfigTransferException"><paramref name="folder"/> is FE-Buddy's own settings folder.</exception>
+	/// <exception cref="ArgumentException">No profile has one of the names.</exception>
+	/// <exception cref="IOException">A profile couldn't be read, or an export written.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
+	/// <exception cref="InvalidOperationException">A profile is in an older layout that couldn't be brought forward.</exception>
+	public static IReadOnlyList<UserConfigExportResult> ExportProfiles(string folder, IReadOnlyCollection<string> profiles) =>
+		ExportProfiles(folder, profiles, AppVersion.Current, DateTimeOffset.UtcNow, PortablePathTokens.ForCurrentUser());
+
+	/// <summary>Writes one settings export per profile. The public overload passes this PC's version, time and folders.</summary>
+	/// <param name="folder">Where to write them.</param>
+	/// <param name="profiles">The profiles.</param>
+	/// <param name="appVersion">The FE-Buddy version to stamp each with.</param>
+	/// <param name="exportedUtc">When the export happened.</param>
+	/// <param name="tokens">How to tokenize folders.</param>
+	/// <returns>What was written, one per profile.</returns>
+	internal static IReadOnlyList<UserConfigExportResult> ExportProfiles(
+		string folder,
+		IReadOnlyCollection<string> profiles,
+		string appVersion,
+		DateTimeOffset exportedUtc,
+		PortablePathTokens tokens)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(folder);
+		ArgumentNullException.ThrowIfNull(profiles);
+
+		string date = exportedUtc.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+		return
+		[
+			.. profiles.Select(profile => Export(
+				Path.Combine(folder, $"FE-Buddy settings {date} ({profile}).json"),
+				UserConfigFile.ReadProfile(profile),
+				appVersion,
+				exportedUtc,
+				tokens)),
+		];
+	}
+
 	/// <summary>Reads a settings file: an FE-Buddy export, or a plain <c>UserConfig.json</c>.</summary>
 	/// <param name="path">The file to read.</param>
 	/// <returns>The file's settings, not yet imported.</returns>

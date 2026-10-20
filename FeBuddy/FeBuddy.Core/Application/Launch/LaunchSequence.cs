@@ -191,6 +191,9 @@ public static class LaunchSequence
 			"Reading saved settings",
 			() =>
 			{
+				// Every profile and Shared.json: a file a newer FE-Buddy saved is set aside, and older ones are
+				// brought forward together, before the profile in use is read.
+				UserConfigFile.CheckLayouts();
 				UserConfigReadResult read = UserConfigFile.ReadAll();
 
 				// No settings to read is FE-Buddy 3's first launch on this PC. Worked out before the

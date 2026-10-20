@@ -83,7 +83,8 @@ channel is Stable.
   **Open release page** is offered.
 - **Going back.** Saving a more stable channel in Settings while running a pre-release offers that
   channel's latest release, which is older (`VersionCheckResult.CanGoBack`); **Go back now**
-  installs it the same way. Only from Settings, never at launch.
+  installs it the same way. Only from Settings, never at launch. It first offers to export the
+  profiles that release can't read ([Settings Reference](Settings-Reference.md#going-back-to-an-older-release)).
 - **Installed or development build.** `InstalledProduct.IsMsiInstalled` compares the running folder
   with the `InstallLocation` the installer recorded under `HKLM\Software\FE-BUDDY`. A copy the MSI
   didn't install shows `- DEV` after its version.

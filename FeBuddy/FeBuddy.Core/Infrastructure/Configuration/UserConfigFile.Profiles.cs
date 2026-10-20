@@ -365,9 +365,9 @@ public static partial class UserConfigFile
 	/// <summary>
 	/// The profile to use: the one <c>Shared.json</c> names, when it has a file - or, before any has,
 	/// that one (or <see cref="DefaultProfile"/>), whose file the first save writes. When the one named
-	/// has gone, <see cref="DefaultProfile"/>, else the first there is.
+	/// has gone, <see cref="DefaultProfile"/>, else the first there is - with a warning, unless <paramref name="quietly"/>.
 	/// </summary>
-	private static string PickProfile(string? named)
+	private static string PickProfile(string? named, bool quietly = false)
 	{
 		string wanted = named is not null && ProfileNameProblem(named) is null ? named.Trim() : DefaultProfile;
 		List<string> existing = ProfileNames();
@@ -385,7 +385,10 @@ public static partial class UserConfigFile
 		string fallback = existing.FirstOrDefault(profile => profile.Equals(DefaultProfile, StringComparison.OrdinalIgnoreCase))
 			?? existing.Order(StringComparer.OrdinalIgnoreCase).First();
 
-		AppLog.Warning(LogSource, $"The settings profile '{wanted}' has no file. Using '{fallback}' instead.");
+		if (!quietly)
+		{
+			AppLog.Warning(LogSource, $"The settings profile '{wanted}' has no file. Using '{fallback}' instead.");
+		}
 		return fallback;
 	}
 

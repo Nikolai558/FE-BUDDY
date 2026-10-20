@@ -18,8 +18,10 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// </para>
 /// <para>
 /// The settings every profile shares (<see cref="UserConfigPortability.SharedByProfiles"/>) go through
-/// the same steps: <c>Shared.json</c> is brought forward on its own, by its own stamp, so a step that
-/// renames a shared setting renames it there too. A step sees only one file's settings at a time.
+/// the same steps: <c>Shared.json</c> is brought forward by its own stamp, so a step that renames a shared
+/// setting renames it there too. At launch, <c>Shared.json</c> and every profile are brought forward
+/// together (<see cref="MigrateTogether(UserConfigMigratingFile?, IReadOnlyList{UserConfigMigratingFile})"/>),
+/// so a step can also move a setting between a profile and <c>Shared.json</c>.
 /// </para>
 /// <para>
 /// A change that moves the settings file itself (a new folder, or one file split into two) is also a
@@ -83,27 +85,105 @@ public static class UserConfigMigrations
 		ArgumentOutOfRangeException.ThrowIfLessThan(fromVersion, UserConfigVersion.Oldest);
 		ArgumentOutOfRangeException.ThrowIfGreaterThan(fromVersion, toVersion);
 
-		Dictionary<string, string> migrated = new(values, StringComparer.Ordinal);
-		UserConfigMigrationContext context = new(migrated);
-		List<string> applied = [];
+		UserConfigMigratingFile file = new("settings", values, fromVersion);
+		MigrateTogether(shared: null, [file], toVersion, steps);
 
-		for (int version = fromVersion + 1; version <= toVersion; version++)
+		return file.Error is { } error
+			? throw error
+			: new UserConfigMigrationResult(file.Values, toVersion, file.Applied);
+	}
+
+	/// <summary>
+	/// Brings <c>Shared.json</c> and every profile up to the current layout together, one layout at a
+	/// time: each step runs on every profile still in the layout before it - the active profile first -
+	/// then on <c>Shared.json</c>, then its <see cref="UserConfigMigration.ThenShared"/> part. So a step can
+	/// move a setting between a profile and <c>Shared.json</c> (<see cref="UserConfigMigrationContext.MoveToShared"/>,
+	/// <see cref="UserConfigMigrationContext.CopyFromShared"/>), though the two can carry different stamps.
+	/// </summary>
+	/// <param name="shared"><c>Shared.json</c>, or <see langword="null"/> when there is none to bring forward.</param>
+	/// <param name="profiles">Every profile to bring forward, the active one first.</param>
+	/// <remarks>
+	/// A profile behind <c>Shared.json</c> - copied in by hand later, say - sees <c>Shared.json</c> as it is
+	/// now: a setting <c>Shared.json</c> has already taken from another profile stays as it is, and one it
+	/// has already handed to the profiles and dropped is gone, so that setting gets its default. A file a
+	/// step is missing for, or fails on, stops where it was read (<see cref="UserConfigMigratingFile.Error"/>);
+	/// the others carry on.
+	/// </remarks>
+	internal static void MigrateTogether(UserConfigMigratingFile? shared, IReadOnlyList<UserConfigMigratingFile> profiles) =>
+		MigrateTogether(shared, profiles, _currentVersion, _steps);
+
+	/// <summary>
+	/// Brings files up to <paramref name="toVersion"/> together with the steps given (see
+	/// <see cref="MigrateTogether(UserConfigMigratingFile?, IReadOnlyList{UserConfigMigratingFile})"/>).
+	/// </summary>
+	/// <param name="shared"><c>Shared.json</c>, or <see langword="null"/>.</param>
+	/// <param name="profiles">The profiles, the active one first.</param>
+	/// <param name="toVersion">The layout to bring them to.</param>
+	/// <param name="steps">The steps to choose from.</param>
+	/// <exception cref="ArgumentOutOfRangeException">A file is in a layout older than <see cref="UserConfigVersion.Oldest"/> or newer than <paramref name="toVersion"/>.</exception>
+	internal static void MigrateTogether(
+		UserConfigMigratingFile? shared,
+		IReadOnlyList<UserConfigMigratingFile> profiles,
+		int toVersion,
+		IReadOnlyList<UserConfigMigration> steps)
+	{
+		ArgumentNullException.ThrowIfNull(profiles);
+		ArgumentNullException.ThrowIfNull(steps);
+
+		UserConfigMigratingFile[] files = shared is null ? [.. profiles] : [.. profiles, shared];
+
+		foreach (UserConfigMigratingFile file in files)
 		{
-			UserConfigMigration step = steps.SingleOrDefault(s => s.ToVersion == version)
-				?? throw new InvalidOperationException($"No step brings settings to layout {version}.");
-
-			try
-			{
-				step.Apply(context);
-			}
-			catch (Exception ex)
-			{
-				throw new InvalidOperationException($"Bringing settings to layout {version} failed ({step.Description}): {ex.Message}", ex);
-			}
-
-			applied.Add(step.Description);
+			ArgumentOutOfRangeException.ThrowIfLessThan(file.Version, UserConfigVersion.Oldest);
+			ArgumentOutOfRangeException.ThrowIfGreaterThan(file.Version, toVersion);
 		}
 
-		return new UserConfigMigrationResult(migrated, toVersion, applied);
+		if (files.Length == 0)
+		{
+			return;
+		}
+
+		for (int version = files.Min(file => file.Version) + 1; version <= toVersion; version++)
+		{
+			UserConfigMigration? step = steps.SingleOrDefault(s => s.ToVersion == version);
+
+			foreach (UserConfigMigratingFile profile in profiles.Where(p => p.Error is null && p.Version == version - 1))
+			{
+				Dictionary<string, string>? sharedValues = shared is { Error: null } ? shared.Values : null;
+				Run(profile, step, version, s => s.Apply(new UserConfigMigrationContext(profile.Values, sharedValues)));
+			}
+
+			if (shared is { Error: null } && shared.Version == version - 1)
+			{
+				Run(shared, step, version, s =>
+				{
+					UserConfigMigrationContext context = new(shared.Values);
+					s.Apply(context);
+					s.ThenShared?.Invoke(context);
+				});
+			}
+		}
+	}
+
+	/// <summary>Runs one step on one file, or stops the file when the step is missing or fails.</summary>
+	private static void Run(UserConfigMigratingFile file, UserConfigMigration? step, int version, Action<UserConfigMigration> apply)
+	{
+		if (step is null)
+		{
+			file.Fail(new InvalidOperationException($"No step brings settings to layout {version}."));
+			return;
+		}
+
+		try
+		{
+			apply(step);
+		}
+		catch (Exception ex)
+		{
+			file.Fail(new InvalidOperationException($"Bringing settings to layout {version} failed ({step.Description}): {ex.Message}", ex));
+			return;
+		}
+
+		file.Stepped(version, step.Description);
 	}
 }

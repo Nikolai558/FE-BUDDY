@@ -181,4 +181,137 @@ public sealed class UserConfigMigrationsTests
 		Assert.Throws<ArgumentNullException>(() => context.Set("General.X", null!));
 		Assert.Throws<ArgumentNullException>(() => context.KeysAtOrBelow(null!));
 	}
+
+	// ---- every file together ----
+
+	/// <summary>
+	/// Each layout's step runs on every profile still before it, the active one first, then on Shared.json,
+	/// then its shared part - so a profile always meets Shared.json before the step takes a setting out of it.
+	/// </summary>
+	[Fact]
+	public void files_are_brought_forward_together_profiles_first_then_shared_json()
+	{
+		List<string> order = [];
+		UserConfigMigration step = new(3, "Records the order", settings => order.Add(settings.Get("Name")!))
+		{
+			ThenShared = shared => order.Add("then " + shared.Get("Name")),
+		};
+		UserConfigMigratingFile active = new("active", Settings(("Name", "active")), 2);
+		UserConfigMigratingFile other = new("other", Settings(("Name", "other")), 2);
+		UserConfigMigratingFile shared = new("shared", Settings(("Name", "shared")), 2);
+
+		UserConfigMigrations.MigrateTogether(shared, [active, other], 3, [step]);
+
+		Assert.Equal(["active", "other", "shared", "then shared"], order);
+		Assert.All([active, other, shared], file => Assert.True(file.Migrated));
+		Assert.Equal(["Records the order"], shared.Applied);
+	}
+
+	/// <summary>A file a step fails on goes back to how it was read; the others carry on, and see Shared.json.</summary>
+	[Fact]
+	public void a_file_a_step_fails_on_stops_where_it_was_read_and_the_others_carry_on()
+	{
+		UserConfigMigration step = new(3, "Fails on 'bad'", settings =>
+		{
+			settings.Set("General.Touched", "Y");
+
+			if (settings.Get("Name") == "bad")
+			{
+				throw new FormatException("bad file");
+			}
+
+			settings.CopyFromShared("General.Channel", "General.Copied");
+		});
+		UserConfigMigratingFile bad = new("bad", Settings(("Name", "bad")), 2);
+		UserConfigMigratingFile good = new("good", Settings(("Name", "good")), 2);
+		UserConfigMigratingFile shared = new("shared", Settings(("General.Channel", "Beta")), 2);
+
+		UserConfigMigrations.MigrateTogether(shared, [bad, good], 3, [step]);
+
+		Assert.Equal(Settings(("Name", "bad")), bad.Values);
+		Assert.Equal(2, bad.Version);
+		Assert.False(bad.Migrated);
+		Assert.Equal("Bringing settings to layout 3 failed (Fails on 'bad'): bad file", bad.Error!.Message);
+		Assert.Equal(Settings(("Name", "good"), ("General.Touched", "Y"), ("General.Copied", "Beta")), good.Values);
+		Assert.True(shared.Migrated);
+	}
+
+	/// <summary>
+	/// A file already in a later layout skips the steps before it; one a step is missing for stops; the
+	/// files' layouts are checked before any step runs.
+	/// </summary>
+	[Fact]
+	public void each_file_starts_at_its_own_layout_and_a_missing_step_stops_only_the_files_that_need_it()
+	{
+		UserConfigMigratingFile behind = new("behind", Settings(("General.A", "1")), 2);
+		UserConfigMigratingFile shared = new("shared", Settings(("General.A", "1")), 3);
+
+		UserConfigMigrations.MigrateTogether(shared, [behind], 3, [ToThree]);
+
+		Assert.Equal(Settings(("General.B", "1")), behind.Values);
+		Assert.Equal(Settings(("General.A", "1")), shared.Values);
+		Assert.False(shared.Migrated);
+
+		UserConfigMigratingFile missing = new("missing", Settings(), 3);
+		UserConfigMigrations.MigrateTogether(null, [missing], 4, [ToThree]);
+
+		Assert.Equal("No step brings settings to layout 4.", missing.Error!.Message);
+		Assert.Throws<ArgumentOutOfRangeException>(() => UserConfigMigrations.MigrateTogether(null, [new("old", Settings(), 1)], 3, [ToThree]));
+		Assert.Throws<ArgumentOutOfRangeException>(() => UserConfigMigrations.MigrateTogether(null, [new("new", Settings(), 4)], 3, [ToThree]));
+		Assert.Throws<ArgumentNullException>(() => UserConfigMigrations.MigrateTogether(null, null!, 3, [ToThree]));
+		UserConfigMigrations.MigrateTogether(null, [], 3, [ToThree]);
+	}
+
+	/// <summary>The real overload uses this version's layout and steps, which bring nothing forward yet.</summary>
+	[Fact]
+	public void with_this_versions_steps_files_in_the_current_layout_stay_as_they_are()
+	{
+		UserConfigMigratingFile profile = new("profile", Settings(("General.A", "1")), UserConfigVersion.Current);
+
+		UserConfigMigrations.MigrateTogether(null, [profile]);
+
+		Assert.False(profile.Migrated);
+		Assert.Null(profile.Error);
+	}
+
+	[Fact]
+	public void move_to_shared_moves_a_setting_out_of_the_profile_without_overwriting_shared_json()
+	{
+		Dictionary<string, string> profile = Settings(("General.Placement.Left", "10"), ("General.Placement.Top", "20"), ("General.Other", "x"));
+		Dictionary<string, string> shared = Settings(("General.Window.Top", "5"));
+
+		new UserConfigMigrationContext(profile, shared).MoveToShared("General.Placement", "General.Window");
+
+		Assert.Equal(Settings(("General.Other", "x")), profile);
+		Assert.Equal(Settings(("General.Window.Top", "5"), ("General.Window.Left", "10")), shared);
+	}
+
+	/// <summary>Shared.json's own pass has no Shared.json beside it: moving to it just drops the setting, copying from it does nothing.</summary>
+	[Fact]
+	public void with_no_shared_json_beside_it_move_to_shared_drops_and_copy_from_shared_does_nothing()
+	{
+		Dictionary<string, string> values = Settings(("General.Placement", "10"));
+		UserConfigMigrationContext context = Context(values);
+
+		context.CopyFromShared("General.Window", "General.Copied");
+		Assert.Equal(Settings(("General.Placement", "10")), values);
+
+		context.MoveToShared("General.Placement", "General.Window");
+		Assert.Empty(values);
+
+		Assert.Throws<ArgumentException>(() => context.MoveToShared("General.", "General.Window"));
+		Assert.Throws<ArgumentException>(() => context.CopyFromShared("General.Window", ".Copied"));
+	}
+
+	[Fact]
+	public void copy_from_shared_copies_a_setting_into_the_profile_keeping_its_own_and_shared_jsons()
+	{
+		Dictionary<string, string> profile = Settings(("General.Own.Top", "own"));
+		Dictionary<string, string> shared = Settings(("General.Window.Top", "5"), ("General.Window.Left", "10"), ("General.WindowNote", "n"));
+
+		new UserConfigMigrationContext(profile, shared).CopyFromShared("General.Window", "General.Own");
+
+		Assert.Equal(Settings(("General.Own.Top", "own"), ("General.Own.Left", "10")), profile);
+		Assert.Equal(3, shared.Count);
+	}
 }

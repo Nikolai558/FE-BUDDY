@@ -766,23 +766,6 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Equal("Beta", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
 	}
 
-	/// <summary>A Shared.json saved by a newer FE-Buddy is used as it is, and a save keeps its stamp.</summary>
-	[Fact]
-	public void a_newer_shared_file_is_left_alone_and_keeps_its_stamp()
-	{
-		const string NewerShared = """{ "ConfigVersion": 99, "ActiveProfile": "Default", "General": { "UpdateChannel": "Beta" } }""";
-		File.WriteAllText(UserConfigFile.SharedFilePath, NewerShared);
-
-		UserConfigFile.ReadAll();
-
-		Assert.Equal("Beta", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
-		Assert.Equal(NewerShared, File.ReadAllText(UserConfigFile.SharedFilePath));
-
-		UserConfigFile.TrySetValue(UserConfigKeys.UpdateChannel, "Stable");
-		UserConfigFile.SaveShared(UserConfigKeys.UpdateChannel);
-		Assert.Equal(99, Stamp(UserConfigFile.SharedFilePath));
-	}
-
 	/// <summary>An undo snapshot that can't be deleted is only a warning: the settings are still brought forward.</summary>
 	[Fact]
 	public void an_undo_snapshot_that_cannot_be_deleted_is_only_a_warning()
@@ -799,21 +782,6 @@ public sealed class UserConfigFileTests : IDisposable
 
 		Assert.Equal(3, Stamp(UserConfigFile.ConfigFilePath));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not delete 'UserConfig-previous.Default.json'", StringComparison.Ordinal));
-	}
-
-	/// <summary>A file a newer FE-Buddy saved keeps its stamp, so going back to the newer one never brings its own settings forward again.</summary>
-	[Fact]
-	public void a_file_from_a_newer_fe_buddy_keeps_its_stamp()
-	{
-		WriteFile("""{ "ConfigVersion": 7, "General": { "PrettyPrintGeojson": "Y" } }""");
-
-		UserConfigFile.ReadAll();
-		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
-		UserConfigFile.Save(AirwaysNode);
-
-		Assert.Equal("Y", UserConfigFile.GetValue("General.PrettyPrintGeojson"));
-		Assert.Equal(7, Stamp(UserConfigFile.ConfigFilePath));
-		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("was saved by a newer FE-Buddy (settings layout 7", StringComparison.Ordinal));
 	}
 
 	[Theory]

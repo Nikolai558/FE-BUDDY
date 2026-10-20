@@ -83,8 +83,9 @@ public static class AppDataReset
 
 		WaitForExit(request.WaitForProcessId, waitForExit);
 
-		// Every settings profile, Shared.json, and the steps a dev launch runs (Application.Launch.DevLaunchFile).
-		string[] settings = [UserConfigFile.ProfilesFolderName, DevLaunchFileName];
+		// Every settings profile, Shared.json, the settings a newer FE-Buddy saved that were set aside, and the
+		// steps a dev launch runs (Application.Launch.DevLaunchFile).
+		string[] settings = [UserConfigFile.ProfilesFolderName, UserConfigFile.RevertedFolderName, DevLaunchFileName];
 		List<string> notDeleted = [];
 
 		foreach (string entry in Entries(RootDirectory))

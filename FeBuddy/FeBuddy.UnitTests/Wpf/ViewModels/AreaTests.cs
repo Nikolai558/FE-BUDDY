@@ -296,6 +296,96 @@ public sealed class AreaTests : IDisposable
 		Assert.Empty(tab.ValidationErrors);
 	}
 
+	/// <summary>The tab's own ROI with its longitudes the wrong way round, typed as users often write an ROI across the antimeridian.</summary>
+	private static WxStationsViewModel TabWithLongitudesTheWrongWayRound()
+	{
+		WxStationsViewModel tab = new() { OverrideRoi = true, Area = SubServiceArea.Roi };
+		tab.SwLat = "44";
+		tab.SwLon = "154";
+		tab.NeLat = "90";
+		tab.NeLon = "-124";
+		return tab;
+	}
+
+	/// <summary>
+	/// Longitudes the wrong way round, with nothing else wrong, are a warning on both boxes, not an error,
+	/// so Save can ask whether the ROI crosses the antimeridian (AM).
+	/// </summary>
+	[Fact]
+	public void the_tabs_own_longitudes_the_wrong_way_round_are_a_warning_not_an_error()
+	{
+		WxStationsViewModel tab = TabWithLongitudesTheWrongWayRound();
+
+		Assert.Empty(tab.ValidationErrors);
+		Assert.Null(tab.FieldErrors["SwLon"]);
+		Assert.Equal(
+			"The Southwest Longitude (154) is east of the Northeast Longitude (-124). Save asks whether the ROI crosses the antimeridian (AM).",
+			tab.RoiLongitudeWarning);
+
+		tab.NeLat = "40";
+
+		Assert.Null(tab.RoiLongitudeWarning);
+		Assert.Contains(tab.ValidationErrors, error => error.StartsWith("The ROI specific to Wx Stations: ", StringComparison.Ordinal));
+	}
+
+	/// <summary>Save asks; yes writes the longitudes as a box drawn across the AM and saves them.</summary>
+	[Fact]
+	public void save_asks_and_yes_saves_the_tabs_own_roi_across_the_antimeridian()
+	{
+		List<(string SwLon, string NeLon)> asked = [];
+		WxStationsViewModel tab = TabWithLongitudesTheWrongWayRound();
+		tab.AskCrossesAntimeridian = (swLon, neLon) =>
+		{
+			asked.Add((swLon, neLon));
+			return true;
+		};
+
+		Assert.True(tab.Save());
+
+		Assert.Equal([("154", "-124")], asked);
+		Assert.Equal("-206", tab.SwLon);
+		Assert.Equal("-124", tab.NeLon);
+		Assert.Null(tab.RoiLongitudeWarning);
+
+		WxStationsViewModel reloaded = new();
+		Assert.Equal(("44", "-206", "90", "-124"), (reloaded.SwLat, reloaded.SwLon, reloaded.NeLat, reloaded.NeLon));
+	}
+
+	/// <summary>No saves nothing: the boxes stay as typed, both longitudes marked as errors, until the next edit.</summary>
+	[Fact]
+	public void no_saves_nothing_and_marks_both_of_the_tabs_own_longitudes()
+	{
+		WxStationsViewModel tab = TabWithLongitudesTheWrongWayRound();
+		tab.AskCrossesAntimeridian = (_, _) => false;
+
+		Assert.False(tab.Save());
+
+		Assert.Equal(("154", "-124"), (tab.SwLon, tab.NeLon));
+		Assert.True(tab.IsDirty);
+		Assert.StartsWith("The ROI specific to Wx Stations: The Southwest Longitude must be west", tab.FieldErrors["SwLon"], StringComparison.Ordinal);
+		Assert.Equal(tab.FieldErrors["SwLon"], tab.FieldErrors["NeLon"]);
+		Assert.Single(tab.ValidationErrors);
+		Assert.Null(tab.RoiLongitudeWarning);
+		Assert.Equal(string.Empty, new WxStationsViewModel().SwLon);
+
+		tab.SwLon = "155";
+
+		Assert.Null(tab.FieldErrors["SwLon"]);
+		Assert.NotNull(tab.RoiLongitudeWarning);
+	}
+
+	/// <summary>A default ROI across the AM shows in the tab's summary and preview as saved.</summary>
+	[Fact]
+	public void a_default_roi_across_the_antimeridian_shows_as_saved()
+	{
+		DefaultRoiStore.Set(new RegionOfInterest(44, -206, 90, -124));
+		WxStationsViewModel tab = new() { Area = SubServiceArea.Roi };
+
+		Assert.Equal("SW 44, -206 / NE 90, -124. Change it in Settings or on the Map page.", tab.DefaultRoiSummary);
+		Assert.Equal("SW 44, -206 / NE 90, -124", tab.BuildPreviewSummary().Single().Rows.Single(row => row.Label == "ROI corners").Value);
+		Assert.Empty(tab.ValidationErrors);
+	}
+
 	/// <summary>While every output the area narrows is off, its card greys out and the area isn't checked.</summary>
 	[Fact]
 	public void the_area_isnt_checked_while_the_outputs_it_narrows_are_off()

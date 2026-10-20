@@ -100,7 +100,7 @@ Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, `Wel
 | `Facility` | the Settings ▸ Facility ARTCC, e.g. `ZOB` (`UserConfigKeys.Facility`). The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedure Charts' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedure Charts until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
 | `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
-| `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
+| `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees, as a tab's own ROI's [corners](#keys-every-airac-sub-service-shares) (across the AM too) | none |
 
 The default ROI is saved by `DefaultRoiStore`, under its own `General.DefaultRoi` node: by the Map as
 soon as it is set or cleared, by Settings when **Save** is pressed. Clearing it only sets `FilterByRoi`
@@ -198,12 +198,18 @@ accept and ignore them.
 | `CrcDefaultsFor` | `CrcDefaultsScope` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `CrcDefaultsFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
 | `Area` | `Area` | which one area filter the run uses (`SubServiceArea`): `Artccs` (ARTCC Boundaries, Departures, Arrivals; Procedure Charts' facilities), `Roi`, `Everything`, or Procedure Charts' `None`. Only that filter is read | see below |
 | `FilterByRoi` | not saved: sent `Y` while `Area = Roi` and an ROI is set (the tab saves its own-or-default choice as `Roi.OverrideDefaultRoi`) | `Y` / `N`; **required** `Y` with `Area = Roi` | `N` |
-| `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCorners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees; **required** with `Area = Roi` (which also needs `FilterByRoi = Y`) | none |
+| `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCorners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees: latitudes `-90`-`90`, longitudes `-360`-`360`, south below north, west below east, less than 360° wide (`RoiFilter`); **required** with `Area = Roi` (which also needs `FilterByRoi = Y`) | none |
 | `Crc.<Class>.<Kind>.<field>` | `CrcEramPropertyDefaults.<row>.<field>` | see [CRC defaults](#crc-defaults) | none |
 
 - The app sends `Area`, and only the filter it names: the tab's ARTCCs with `Artccs`; with `Roi`,
   `FilterByRoi = Y` and the tab's own corners, or the default ROI's. The ARTCCs and the ROI are saved
   whichever area is picked.
+- An ROI that crosses the antimeridian (AM), the 180° meridian, has one longitude past ±180, either
+  way round: `RoiSwLon = -206` and `RoiNeLon = -124`, or `154` and `236`. A Southwest Longitude greater
+  than the Northeast one (`154` and `-124`) is refused. The app asks whether such typed corners cross
+  the AM, and saves a yes as drawing the box on the Map does (`-206` and `-124`). Output coordinates
+  stay within -180..180, and the lines an ROI across the AM clips are split there, whatever
+  `SplitAtAntimeridian` says.
 - A tab that has never saved an area starts on what its other settings mean
   (`UserConfigAreas.DefaultFor`): its ARTCCs (or, never saved, the Settings ▸ Facility ARTCC) if it has
   any, otherwise the ROI if it has its own or the default ROI is on, otherwise `Everything`
@@ -333,7 +339,7 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 | `BufferAirwayWaypoints` | | `Y` / `N` | `N` |
 | `FixBufferNm` | | NM short of a five-letter fix, `0`-`10` | `2.5` |
 | `NavaidBufferNm` | | NM short of any other waypoint, `0`-`10` | `5` |
-| `SplitAtAntimeridian` | | `Y` / `N` | `Y` |
+| `SplitAtAntimeridian` | | `Y` / `N`; an ROI that crosses the AM splits the lines it clips either way | `Y` |
 | `ExcludedDesignations` | | list of designations (an airway ID's leading letters), e.g. `A,G` | none |
 | `HighDesignations`, `LowDesignations`, `BothDesignations` | | lists: the designations in the High file, the Low file, or both | `J,Q` High, `V,T` Low |
 
@@ -398,7 +404,7 @@ unknown-key warning).
 |---|---|---|---|
 | `OutputBy` | | `HighLow`, `HighLowUnlimited`, `ArtccAltitude` | `HighLow` |
 | `LocationFilter` | | list of ARTCC IDs; read only with `Area = Artccs`, which needs one | saved: the Settings ▸ Facility ARTCC, until first saved |
-| `SplitAtAntimeridian` | | `Y` / `N` | `Y` |
+| `SplitAtAntimeridian` | | `Y` / `N`; an ROI that crosses the AM splits the lines it clips either way | `Y` |
 
 - No `GenerateGeojson`, `GenerateAliasFile` or `Emit…`: it always writes Lines only.
 - **`FebProperties`:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`, `altitude`,

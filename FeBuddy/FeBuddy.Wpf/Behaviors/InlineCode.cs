@@ -14,7 +14,7 @@ namespace FeBuddy.Wpf.Behaviors;
 /// Markdown gives <c>`code`</c>: the mono font on a faint panel. Folder names and paths in
 /// descriptions use it, so they stand out from the words around them. A Markdown link,
 /// <c>[HERE](https://docs.virtualnas.net/)</c>, outside the backticks shows as a link that opens in
-/// the browser.
+/// the browser, with its title, <c>[HERE](https://... "title")</c>, as its tooltip.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -130,30 +130,32 @@ public static class InlineCode
 	/// <summary>
 	/// Splits plain text at its Markdown links, <c>[text](https://...)</c>: each link's text and
 	/// address, and the plain text around them. Only an <c>http</c> or <c>https</c> address makes a
-	/// link; anything else stays in the plain text as written.
+	/// link; anything else stays in the plain text as written. A link's title,
+	/// <c>[text](https://... "title")</c>, is its tooltip, and may hold brackets of its own.
 	/// </summary>
 	/// <param name="text">The plain text: a part <see cref="Split"/> did not mark as code.</param>
-	/// <returns>The parts, in order, none of them empty; <c>Url</c> is <see langword="null"/> for plain text.</returns>
-	internal static IReadOnlyList<(string Text, string? Url)> SplitLinks(string text)
+	/// <returns>
+	/// The parts, in order, none of them empty; <c>Url</c> is <see langword="null"/> for plain text, and
+	/// <c>Title</c> for a link without one.
+	/// </returns>
+	internal static IReadOnlyList<(string Text, string? Url, string? Title)> SplitLinks(string text)
 	{
 		ArgumentNullException.ThrowIfNull(text);
 
-		List<(string Text, string? Url)> parts = [];
+		List<(string Text, string? Url, string? Title)> parts = [];
 		int plainStart = 0;
 		int searchFrom = 0;
 
 		while (text.IndexOf('[', searchFrom) is int open and >= 0)
 		{
 			int closeText = text.IndexOf("](", open + 1, StringComparison.Ordinal);
-			int closeUrl = closeText < 0 ? -1 : text.IndexOf(')', closeText + 2);
 
-			if (closeUrl < 0)
+			if (closeText < 0 || !TryReadTarget(text, closeText + 2, out string url, out string? title, out int end))
 			{
 				break;
 			}
 
 			string label = text[(open + 1)..closeText];
-			string url = text[(closeText + 2)..closeUrl];
 
 			if (label.Length == 0 || label.Contains('[') || !Uri.TryCreate(url, UriKind.Absolute, out Uri? uri)
 				|| (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
@@ -164,20 +166,45 @@ public static class InlineCode
 
 			if (open > plainStart)
 			{
-				parts.Add((text[plainStart..open], null));
+				parts.Add((text[plainStart..open], null, null));
 			}
 
-			parts.Add((label, url));
-			plainStart = closeUrl + 1;
+			parts.Add((label, url, title));
+			plainStart = end;
 			searchFrom = plainStart;
 		}
 
 		if (plainStart < text.Length)
 		{
-			parts.Add((text[plainStart..], null));
+			parts.Add((text[plainStart..], null, null));
 		}
 
 		return parts;
+	}
+
+	/// <summary>
+	/// Reads a link's target from just inside its <c>(</c>: the address, then an optional title between
+	/// quotes, then the closing <c>)</c>.
+	/// </summary>
+	/// <returns><see langword="false"/> when there is no closing <c>)</c>.</returns>
+	private static bool TryReadTarget(string text, int start, out string url, out string? title, out int end)
+	{
+		int closeUrl = text.IndexOf(')', start);
+		int quote = text.IndexOf(" \"", start, StringComparison.Ordinal);
+		int closeTitle = quote < 0 ? -1 : text.IndexOf("\")", quote + 2, StringComparison.Ordinal);
+
+		if (quote >= 0 && closeTitle >= 0 && (closeUrl < 0 || quote < closeUrl))
+		{
+			url = text[start..quote];
+			title = text[(quote + 2)..closeTitle];
+			end = closeTitle + 2;
+			return true;
+		}
+
+		url = closeUrl < 0 ? string.Empty : text[start..closeUrl];
+		title = null;
+		end = closeUrl + 1;
+		return closeUrl >= 0;
 	}
 
 	private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -193,9 +220,9 @@ public static class InlineCode
 		{
 			if (!isCode)
 			{
-				foreach ((string plain, string? url) in SplitLinks(part))
+				foreach ((string plain, string? url, string? title) in SplitLinks(part))
 				{
-					textBlock.Inlines.Add(url is null ? new Run(plain) : Link(plain, url));
+					textBlock.Inlines.Add(url is null ? new Run(plain) : Link(plain, url, title));
 				}
 
 				continue;
@@ -213,10 +240,13 @@ public static class InlineCode
 		}
 	}
 
-	/// <summary>A link in the accent colour that opens <paramref name="url"/> in the browser.</summary>
-	private static Hyperlink Link(string text, string url)
+	/// <summary>
+	/// A link in the accent colour that opens <paramref name="url"/> in the browser. Its tooltip is its
+	/// <paramref name="title"/>, or the address when it has none.
+	/// </summary>
+	private static Hyperlink Link(string text, string url, string? title)
 	{
-		Hyperlink link = new(new Run(text)) { ToolTip = url };
+		Hyperlink link = new(new Run(text)) { ToolTip = title ?? url };
 		link.SetResourceReference(TextElement.ForegroundProperty, "Brush.Accent");
 		link.Click += (_, _) => BrowserLauncher.Open(url);
 		return link;

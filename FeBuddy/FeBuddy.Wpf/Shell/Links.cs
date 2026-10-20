@@ -36,4 +36,7 @@ public static class Links
 
 	/// <summary>The issue tracker with a trailing slash, for turning a <c>#123</c> reference into a link.</summary>
 	public const string IssueUrlBase = Issues + "/";
+
+	/// <summary>What the antimeridian (AM), the 180° meridian, is: for the question an ROI that may cross it asks.</summary>
+	public const string Antimeridian = "https://en.wikipedia.org/wiki/180th_meridian";
 }

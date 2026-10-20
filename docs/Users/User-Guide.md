@@ -93,9 +93,11 @@ own.
 - **Area** - near the top: which part of the cycle the tab covers. Pick one; only it applies.
   **ARTCCs** (ARTCC Boundaries, Departures and Arrivals: the ones you tick), **ROI**, or
   **Everything**. For **ROI**, pick **The default ROI** (Settings or the Map page) or **An ROI
-  specific to *tab*** and type its corners or **Pick on map…**. A tab you've never saved starts on
-  its ARTCCs if any are ticked, otherwise the ROI if a default ROI is set, otherwise Everything.
-  Procedure Charts has an Area card of its own.
+  specific to *tab*** and type its corners or **Pick on map…**. If you type a Southwest Longitude
+  east of the Northeast one, such as 154 and -124, saving asks whether the ROI crosses the
+  antimeridian (AM); yes saves it as drawing it on the map would (-206 and -124). A tab you've
+  never saved starts on its ARTCCs if any are ticked, otherwise the ROI if a default ROI is set,
+  otherwise Everything. Procedure Charts has an Area card of its own.
 - **CRC ERAM Defaults** - CRC's "Map Defaults": how CRC draws a file, written as a hidden feature at
   its top ([vNAS docs](https://docs.virtualnas.net/data-admin/video-maps/#map-defaults)). At the top
   of the card, choose which GeoJSON files get them: **No CRC-ERAM defaults** (to start), **Every
@@ -457,8 +459,9 @@ to give the map room, and leaving Map expands it again, unless you collapse or e
 - **Base map** - US states, coastlines and lakes, gridlines, and their opacity. Your choices apply to
   every map.
 - **Default Region of Interest** - **Edit ROI**, drag a box (or type its corners), then **Save**.
-  **Shift + drag** draws and saves in one go. A box can't cross the 180° meridian. In a map window,
-  the button is **Use this ROI**.
+  **Shift + drag** draws and saves in one go. A box can cross the antimeridian (AM), the 180°
+  meridian west of Alaska; typed corners that look the wrong way round ask whether it does. In a map
+  window, the button is **Use this ROI**.
 - **AIRAC Cycle** - pick a cycle, then:
   - **Live data** - ARTCC boundaries, towered airports and VOR / VORTAC / TACANs, straight from the
     FAA data, no run needed.

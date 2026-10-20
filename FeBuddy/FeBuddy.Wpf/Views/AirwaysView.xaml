@@ -172,7 +172,7 @@
             <ctl:Card Header="Split GeoJSON at the Antimeridian" Outputs="Geojson">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Splits a line that crosses 180° longitude in two, so it doesn't stretch across the whole map.&#xA;&#xA;Most GeoJSON viewers, including CRC, need you to leave this option ticked ON, unless specifically told otherwise." />
+                               Text="Splits a line that crosses 180° longitude in two, so it doesn't stretch across the whole map. An ROI that crosses the antimeridian (AM) splits the lines it keeps either way.&#xA;&#xA;Most GeoJSON viewers, including CRC, need you to leave this option ticked ON, unless specifically told otherwise." />
                     <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
             </ctl:Card>

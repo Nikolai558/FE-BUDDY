@@ -118,6 +118,24 @@ public sealed class ProcedureSelectionTests
 		Assert.Single(included);
 	}
 
+	/// <summary>An ROI across the antimeridian (AM) takes the airports either side of it whole, and none outside it.</summary>
+	[Fact]
+	public void an_roi_across_the_antimeridian_includes_the_airports_either_side_of_it()
+	{
+		RegionOfInterest roi = new(44.0, -206.0, 90.0, -124.0);
+		ProcedureAirport adak = ProcedureTestData.BuiltAirport(
+			"ADK", latitude: 51.878, longitude: -176.646, procedures: [ProcedureTestData.BuiltProcedure("ONE")]);
+		ProcedureAirport shemya = ProcedureTestData.BuiltAirport(
+			"SYA", latitude: 52.712, longitude: 174.114, procedures: [ProcedureTestData.BuiltProcedure("TWO")]);
+		ProcedureAirport seattle = ProcedureTestData.BuiltAirport(
+			"SEA", latitude: 47.450, longitude: -122.309, procedures: [ProcedureTestData.BuiltProcedure("THREE")]);
+
+		IReadOnlyList<ProcedureAirport> included = ProcedureSelection.Select(
+			[adak, shemya, seattle], Settings(area: SubServiceArea.Roi, roi: roi), []);
+
+		Assert.Equal(["ADK", "SYA"], included.Select(airport => airport.AptIdent));
+	}
+
 	[Fact]
 	public void an_airport_without_coordinates_is_skipped_by_the_roi_even_when_the_area_is_the_roi()
 	{

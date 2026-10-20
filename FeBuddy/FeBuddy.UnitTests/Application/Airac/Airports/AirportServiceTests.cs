@@ -143,6 +143,24 @@ public sealed class AirportServiceTests : IDisposable
 		Assert.Contains("The alias file still covers every airport.", warning, StringComparison.Ordinal);
 	}
 
+	/// <summary>An ROI across the antimeridian (AM) keeps the airports either side of it, and none outside it.</summary>
+	[Fact]
+	public void an_roi_across_the_antimeridian_keeps_the_airports_either_side_of_it()
+	{
+		AirportServiceResult result = AirportService.Run(
+			SeattleData(
+				AirportTestDataBuilder.Base("ADK", icaoId: "PADK", name: "ADAK", latitude: 51.878, longitude: -176.646),
+				AirportTestDataBuilder.Base("SYA", icaoId: "PASY", name: "EARECKSON AS", latitude: 52.712, longitude: 174.114),
+				AirportTestDataBuilder.Base("HND", name: "TOKYO INTL", latitude: 35.552, longitude: 139.780)),
+			Settings(
+				("Area", "Roi"), ("FilterByRoi", "Y"),
+				("RoiSwLat", "44.0"), ("RoiSwLon", "-206.0"),
+				("RoiNeLat", "90.0"), ("RoiNeLon", "-124.0")));
+
+		Assert.Equal(5, result.AirportCount);
+		Assert.Equal(2, result.AirportsInRoiCount);
+	}
+
 	[Fact]
 	public void run_with_no_airports_at_all_says_none_were_found()
 	{

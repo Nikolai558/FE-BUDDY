@@ -63,6 +63,37 @@ public sealed class FieldStateTests
 		});
 
 	/// <summary>
+	/// With the theme's text box style, a warning shows in amber with its own tool-tip, and an error, while there is
+	/// one, shows instead.
+	/// </summary>
+	[Fact]
+	public void a_warning_shows_until_an_error_replaces_it() =>
+		StaThread.Run(() =>
+		{
+			ResourceDictionary inputs = (ResourceDictionary)System.Windows.Application.LoadComponent(
+				new Uri("/FE-BUDDY;component/Theme/Controls.Inputs.xaml", UriKind.Relative));
+			Panel view = (Panel)XamlReader.Parse(
+				"<StackPanel xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\" " +
+				"xmlns:bhv=\"clr-namespace:FeBuddy.Wpf.Behaviors;assembly=FE-BUDDY\" />");
+			TextBox box = new() { Style = (Style)inputs[typeof(TextBox)] };
+			view.Children.Add(box);
+
+			FieldState.SetWarning(box, "Save asks whether the ROI crosses the antimeridian (AM).");
+			Pump();
+			Assert.True(FieldState.GetHasWarning(box));
+			Assert.Equal("Save asks whether the ROI crosses the antimeridian (AM).", box.ToolTip);
+
+			FieldState.SetError(box, "The Southwest Longitude must be west of the Northeast Longitude.");
+			Pump();
+			Assert.Equal("The Southwest Longitude must be west of the Northeast Longitude.", box.ToolTip);
+
+			FieldState.SetError(box, null);
+			FieldState.SetWarning(box, null);
+			Pump();
+			Assert.False(FieldState.GetHasWarning(box));
+		});
+
+	/// <summary>
 	/// No box in FE-Buddy's views both shows an error and sets its own tool-tip: a local one always wins over the
 	/// theme's, so the error would never show. A box's hint goes in <see cref="FieldState.HintProperty"/> instead.
 	/// </summary>

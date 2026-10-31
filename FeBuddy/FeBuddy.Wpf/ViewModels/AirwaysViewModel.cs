@@ -466,7 +466,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 				? []
 				:
 				[
-					new(AirwayOutputFiles.Alias,
+					AliasSummaryFile(AirwayOutputFiles.Alias,
 						"Writes a command for each airway that draws its waypoints on a CRC STARS or ERAM window.\n"
 						+ "Example for airway J3: `.J3F .FF OAK RBL LKV IMB GEG`"),
 				],

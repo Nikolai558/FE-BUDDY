@@ -289,7 +289,8 @@ tests.
 - Everything else still knows the file by its key: `CrcDefaultsFor`, the combined alias file and the
   duplicate report.
 - A sub-service's own alias file keeps FE-Buddy's name while `ExportIndividualAliasFiles` is off: it
-  isn't exported, so its new name is kept but not used (`OutputFileNames.WithUnexportedAliasFilesIn`).
+  isn't exported, so the File Names tab doesn't list it and its new name is kept but not used
+  (`OutputFileNames.WithUnexportedAliasFilesIn`).
   A new name for `Combined_Alias.txt` is always used.
 
 ## CRC defaults

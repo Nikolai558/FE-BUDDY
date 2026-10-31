@@ -198,7 +198,10 @@ Not every sub-service has all four steps:
   is deleted when the run ends, however it ends. Their renames on the File Names tab are kept but not
   used; any of them an earlier run left in `Aliases` is deleted, under either name. No sub-service's
   result names its file then (`AiracServiceResult.DescribeAliasCommands` says "…, in Combined_Alias.txt"),
-  and the duplicate report names each as its section of `Combined_Alias.txt`.
+  and the duplicate report names each as its section of `Combined_Alias.txt`. In the GUI the General
+  tab's Alias File Exports card asks; the sub-service tabs follow it before Save (`IAliasFileExports`),
+  as they follow the table, for their note and What You'll Get, and the File Names tab lists the seven
+  files only while it is on.
 - **`Combined_Alias.txt`** is written last, into `Aliases`, by every run that writes an alias file
   (or has Add Custom Aliases in it). vNAS takes one alias file per facility, so
   `CombinedAliasFileWriter` writes:

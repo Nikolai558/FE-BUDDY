@@ -57,6 +57,8 @@ lines, and **Outputs include** lists what narrows one file further (Procedure Ch
 `Procedure_Changes.md` keeps only what changed). Under **outputs** are the files it writes, each with
 what goes in it, then any **note** on them. Its last line says where those outputs are turned on and
 off: the General tab. Procedure Charts and Telephony list their files on an **Outputs** card instead.
+While **Alias File Exports** is **No**, a tab's alias file is listed as `Combined_Alias.txt`, and a
+note under it (on the Outputs card for those two) says its own file isn't exported.
 
 ### Saving
 
@@ -77,6 +79,10 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
   its last file and it's left out, tick one and it's back in. One left out is greyed out in the list
   to the left and keeps its settings. Add Custom Aliases comes in by itself while an alias file is
   ticked.
+- **Alias File Exports** (while an alias file is ticked) - every alias command goes into
+  `Combined_Alias.txt`, the one alias file vNAS takes. **Also export each sub-service's own alias file**
+  is **No** to start; **Yes** also saves `Airports.txt`, `Faa_Chart_Recall.txt` and the rest in
+  `Aliases\`. Hover it for the files your choices make.
 
 ### The cards most tabs share
 
@@ -334,6 +340,8 @@ following the other tabs' settings.
 - A name can't be empty, contain `\ / : * ? " < > |`, end in a dot or an extension, be a name Windows
   reserves (`CON`, `NUL`, …), be over 100 characters, or match another file's.
 - Departures and Arrivals GeoJSON files can't be renamed: there's one per procedure.
+- While **Alias File Exports** (General tab) is **No**, the sub-services' own alias files aren't listed.
+  Their new names are kept for when it's **Yes**; `Combined_Alias.txt` is always listed.
 
 ### Preview Settings tab
 

@@ -105,7 +105,21 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		_fileNames.AttachToService(
 			FilesTheRunWrites,
-			() => AiracOutputPaths.CycleFolderName(AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).AiracCycleId));
+			() => AiracOutputPaths.CycleFolderName(AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).AiracCycleId),
+			() => _general.ExportIndividualAliasFiles);
+
+		// Alias File Exports, on the General tab and every tab with an alias file, names the combined file
+		// as the File Names tab has it; the File Names tab lists the sub-services' alias files only while
+		// they are exported. Both follow the choices as made, before Save.
+		_general.CombinedAliasFileName = _fileNames.WrittenNameOf(AiracOutputPaths.CombinedAliasFileName);
+		_fileNames.NamesChanged += (_, _) => _general.CombinedAliasFileName = _fileNames.WrittenNameOf(AiracOutputPaths.CombinedAliasFileName);
+		_general.PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName == nameof(AiracGeneralTabViewModel.ExportIndividualAliasFiles))
+			{
+				_fileNames.RefreshFiles();
+			}
+		};
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 
@@ -273,6 +287,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				{
 					subService.AttachOutputs(row);
 				}
+
+				subService.AttachAliasFileExports(_general);
 
 				subService.FilesChanged += (_, _) => RefreshConcatenateAliasesAvailability();
 			}

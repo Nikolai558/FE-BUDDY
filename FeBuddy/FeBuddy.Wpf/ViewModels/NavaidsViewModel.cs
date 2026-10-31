@@ -268,7 +268,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			Files =
 			[
-				new(NavaidOutputFiles.Alias,
+				AliasSummaryFile(NavaidOutputFiles.Alias,
 					"A `.nav` command for every operational NAVAID in the NAS, by its ID and by its name. It shows the "
 					+ "NAVAID's name, type, frequency, and ARTCCs. When a command fits more than one NAVAID, it shows each of them.\n"
 					+ "Example: `.navAA` or `.navCEDAR`"),

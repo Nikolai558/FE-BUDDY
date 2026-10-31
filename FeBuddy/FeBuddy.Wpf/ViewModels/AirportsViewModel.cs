@@ -169,7 +169,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		{
 			Files =
 			[
-				new(AirportOutputFiles.Alias,
+				AliasSummaryFile(AirportOutputFiles.Alias,
 					"An ISR command, `.apt` and the `FAA or ICAO ID`, for every operational airport in the NAS.\n"
 					+ "It describes the given airport by name, facility type, responsible ARTCC, longest runway, and more.\n"
 					+ "Example for Detroit Metro Airport: `.aptDTW` or `.aptKDTW`"),

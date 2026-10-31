@@ -21,9 +21,14 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 /// keeps it off the General tab's table altogether (Add Custom Aliases).
 /// </param>
 /// <param name="Help">What it and each of its outputs are, for the tooltips; <see langword="null"/> for none.</param>
+/// <param name="AliasFile">
+/// Its own alias file by FE-Buddy's name, e.g. <c>Airports.txt</c>; <see langword="null"/> for a sub-service
+/// with none. The General tab's Alias File Exports card names the ones it would export.
+/// </param>
 public sealed record SubServiceDescriptor(
 	string Key,
 	string DisplayName,
 	Func<ServiceTabViewModel> CreateTab,
 	SubServiceOutputKinds Outputs = SubServiceOutputKinds.None,
-	SubServiceHelp? Help = null);
+	SubServiceHelp? Help = null,
+	string? AliasFile = null);

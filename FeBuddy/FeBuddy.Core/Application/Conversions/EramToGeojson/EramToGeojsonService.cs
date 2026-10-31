@@ -165,12 +165,13 @@ public static class EramToGeojsonService
 		string outputDirectory = EramGeojsonWriter.OutputDirectory(settings);
 		ClearOutput(outputDirectory, messages);
 
-		(IReadOnlyList<string> paths, int featureCount) = EramGeojsonWriter.Write(geoMaps, settings, files, messages);
+		(IReadOnlyList<string> paths, int featureCount, int saaObjectsLeftOut) = EramGeojsonWriter.Write(geoMaps, settings, files, messages);
 
+		// After the advisory that the SAAs were left out, this says nothing else was left to draw.
 		if (paths.Count == 0)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"{name} has no elements to draw, so no GeoJSON was written for it.")
+				$"{name} has no elements to draw{(saaObjectsLeftOut > 0 ? " besides its SAAs" : string.Empty)}, so no GeoJSON was written for it.")
 			{
 				IsAdvisory = true
 			});

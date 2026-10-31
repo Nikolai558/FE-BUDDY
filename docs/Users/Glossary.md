@@ -18,7 +18,7 @@ Cleveland Center (ZOB).
 **BCG** - Brightness Control Group: the CRC setting (1-40) for which brightness knob controls a map
 element.
 
-**`Combined_Alias.txt`** - The one alias file a facility uploads to vNAS: every alias file the run
+**`Combined_Alias.txt`** - The one alias file a facility uploads to vNAS: every alias command the run
 made, then your facility's own from the Add Custom Aliases tab. Every run that makes an alias file
 writes it.
 

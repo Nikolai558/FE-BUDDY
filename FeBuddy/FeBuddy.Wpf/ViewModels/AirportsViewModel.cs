@@ -104,9 +104,9 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			summary += $", {airports.AirportsInRoiCount:N0} in the ROI";
 		}
 
-		if (airports.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(airports.AliasFilePath, airports.AliasCommandCount, "alias command(s)") is { } aliasCommands)
 		{
-			summary += $", {Path.GetFileName(airports.AliasFilePath)}: {airports.AliasCommandCount:N0} alias command(s)";
+			summary += $", {aliasCommands}";
 		}
 
 		if (airports.GeojsonFilesWritten.Count > 0)
@@ -169,7 +169,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		{
 			Files =
 			[
-				new(AirportOutputFiles.Alias,
+				AliasSummaryFile(AirportOutputFiles.Alias,
 					"An ISR command, `.apt` and the `FAA or ICAO ID`, for every operational airport in the NAS.\n"
 					+ "It describes the given airport by name, facility type, responsible ARTCC, longest runway, and more.\n"
 					+ "Example for Detroit Metro Airport: `.aptDTW` or `.aptKDTW`"),

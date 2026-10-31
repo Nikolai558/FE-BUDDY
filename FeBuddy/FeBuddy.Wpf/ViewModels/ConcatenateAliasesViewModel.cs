@@ -230,9 +230,10 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 			return null;
 		}
 
-		string feBuddy = merged.FeBuddyFiles.Count > 0
-			? $"{merged.FeBuddyCommandCount:N0} command(s) from {string.Join(", ", merged.FeBuddyFiles)}"
-			: "no FE-Buddy alias file";
+		// The sub-services' own files, or - when they weren't exported - the sections named after them.
+		string feBuddy = merged.FeBuddyFiles.Count == 0 ? "no FE-Buddy alias file"
+			: result.IndividualAliasFilesExported ? $"{merged.FeBuddyCommandCount:N0} command(s) from {string.Join(", ", merged.FeBuddyFiles)}"
+			: $"{merged.FeBuddyCommandCount:N0} command(s) in its {string.Join(", ", merged.FeBuddyFiles)} section(s)";
 
 		// Named as it was written: the user may have renamed it on the File Names tab. In the
 		// file's own order: FE-Buddy's aliases, then the custom files.

@@ -2,6 +2,7 @@ using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Arrivals;
 using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -316,6 +317,76 @@ public sealed class FileNamesViewModelTests : IDisposable
 			section.Rows,
 			row => Assert.Equal(("Rename files", "Yes - 1 file(s)"), (row.Label, row.Value)),
 			row => Assert.Equal(("Airways_High_Lines.geojson", "ZOB High.geojson"), (row.Label, row.Value)));
+	}
+
+	/// <summary>
+	/// While Alias File Exports is off, the sub-services' own alias files aren't listed and their new names
+	/// aren't sent to a run; Combined_Alias.txt stays. Their choices are kept, saved and all, so they come
+	/// back with the rows.
+	/// </summary>
+	[Fact]
+	public void the_sub_services_alias_files_are_listed_only_while_they_are_exported()
+	{
+		bool export = true;
+		_files.Add(OutputFileEntry.Renamable(AiracOutputPaths.CombinedAliasFileName, "Aliases", "AIRAC Service"));
+		FileNamesViewModel tab = new();
+		tab.AttachToService(() => _files, () => "AIRAC_2610", () => export);
+		tab.RenameFiles = true;
+		tab.RenameNoneCommand.Execute(null);
+		Row(tab, "Airways.txt").Rename = true;
+		Row(tab, "Airways.txt").NewName = "ZOB Airways";
+
+		export = false;
+		tab.RefreshFiles();
+
+		string[] keys = [.. tab.Folders.SelectMany(folder => folder.Files).Select(row => row.Key)];
+		Assert.DoesNotContain("Airways.txt", keys);
+		Assert.Contains(AiracOutputPaths.CombinedAliasFileName, keys);
+		Assert.Null(tab.BuildFileNamesBlock());
+		Assert.True(tab.Save());
+
+		FileNamesViewModel reopened = new();
+		reopened.AttachToService(() => _files, () => "AIRAC_2610", () => true);
+
+		Assert.True(Row(reopened, "Airways.txt").Rename);
+		Assert.Equal("ZOB Airways", Row(reopened, "Airways.txt").NewName);
+		Assert.Equal("ZOB Airways", reopened.BuildFileNamesBlock()!["Airways.txt"]);
+	}
+
+	/// <summary>
+	/// The name a file is written under follows the tab as it stands, before Save, and the tab says each
+	/// time it may have changed.
+	/// </summary>
+	[Fact]
+	public void the_name_a_file_is_written_under_follows_the_tab_before_save()
+	{
+		const string combined = AiracOutputPaths.CombinedAliasFileName;
+		_files.Add(OutputFileEntry.Renamable(combined, "Aliases", "AIRAC Service"));
+		FileNamesViewModel tab = NewTab();
+		int raised = 0;
+		tab.NamesChanged += (_, _) => raised++;
+
+		Assert.Equal(combined, tab.WrittenNameOf(combined));
+
+		tab.RenameFiles = true;
+		Assert.Equal(combined, tab.WrittenNameOf(combined));
+
+		Row(tab, combined).NewName = "ZOB vNAS";
+		Assert.Equal("ZOB vNAS.txt", tab.WrittenNameOf(combined));
+
+		Row(tab, combined).NewName = "ZOB/vNAS";
+		Assert.Equal(combined, tab.WrittenNameOf(combined));
+
+		Row(tab, combined).NewName = "ZOB vNAS";
+		tab.RenameNoneCommand.Execute(null);
+		Assert.Equal(combined, tab.WrittenNameOf(combined));
+
+		tab.RenameAllCommand.Execute(null);
+		Assert.Equal("ZOB vNAS.txt", tab.WrittenNameOf(combined));
+
+		tab.ReloadFromConfig();
+		Assert.Equal(combined, tab.WrittenNameOf(combined));
+		Assert.Equal(7, raised);
 	}
 
 	private FileNamesViewModel NewTab()

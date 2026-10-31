@@ -68,13 +68,13 @@ public static class AiracRunSummary
 						: string.Empty));
 			}
 
-			if (procedures.AliasFilePath is not null)
+			if (result.AliasCommandsSavedIn(procedures.AliasFilePath, procedures.AliasCommandCount) is not null)
 			{
 				parts.Add($"{procedures.AliasCommandCount:N0} FAA Chart Recall command(s)");
 			}
 		}
 
-		if (result.Telephony is { AliasFilePath: not null } telephony)
+		if (result.Telephony is { } telephony && result.AliasCommandsSavedIn(telephony.AliasFilePath, telephony.AliasCommandCount) is not null)
 		{
 			parts.Add($"{telephony.AliasCommandCount:N0} telephony command(s)");
 		}

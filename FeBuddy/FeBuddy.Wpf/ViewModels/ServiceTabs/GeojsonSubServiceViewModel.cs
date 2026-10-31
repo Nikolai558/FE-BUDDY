@@ -6,6 +6,7 @@ using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac.Models;
@@ -68,6 +69,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private readonly HashSet<(string ClassName, EramFieldKind Kind)> _crcRowsInUse = [];
 
 	private ISubServiceOutputs _outputs = new EveryOutput();
+	private IAliasFileExports _aliasFileExports = new EveryAliasFileExported();
 	private bool _emitLines = true;
 	private bool _emitSymbols = true;
 	private bool _emitText = true;
@@ -128,6 +130,62 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		_outputs = outputs;
 		_outputs.PropertyChanged += OnOutputsChanged;
 		OnOutputsChanged();
+	}
+
+	/// <summary>
+	/// The General tab's Alias File Exports card. A tab built on its own (a test) exports its alias
+	/// file, as every run did before the card.
+	/// </summary>
+	public IAliasFileExports AliasFileExports => _aliasFileExports;
+
+	/// <summary>Takes Alias File Exports from the General tab, and follows it before it is saved.</summary>
+	/// <param name="exports">The General tab.</param>
+	public void AttachAliasFileExports(IAliasFileExports exports)
+	{
+		ArgumentNullException.ThrowIfNull(exports);
+
+		_aliasFileExports.PropertyChanged -= OnAliasFileExportsChanged;
+		_aliasFileExports = exports;
+		_aliasFileExports.PropertyChanged += OnAliasFileExportsChanged;
+		OnAliasFileExportsChanged(this, new System.ComponentModel.PropertyChangedEventArgs(null));
+	}
+
+	/// <summary>
+	/// The note under the card that turns the tab's alias file on, e.g. <c>These commands go into
+	/// `Combined_Alias.txt`. `Airports.txt` itself isn't exported. ...</c>: while the alias file is on
+	/// and Alias File Exports is off; <see langword="null"/> otherwise. Inline Markdown.
+	/// </summary>
+	public string? UnexportedAliasFileNote =>
+		GenerateAliasFile && !_aliasFileExports.ExportIndividualAliasFiles && AliasFileName is { } aliasFile
+			? $"These commands go into `{_aliasFileExports.CombinedAliasFileName}`. `{aliasFile}` itself isn't exported. " +
+				"To export it too, turn on **Alias File Exports** on the General tab."
+			: null;
+
+	/// <summary>The tab's own alias file by FE-Buddy's name, e.g. <c>Airports.txt</c>, while it is on; <see langword="null"/> otherwise.</summary>
+	private string? AliasFileName => OutputFiles().FirstOrDefault(file => file.Group == OutputFileOption.AliasGroup)?.Key;
+
+	/// <summary>
+	/// The alias file as What You'll Get lists it: the tab's own while Alias File Exports is on,
+	/// otherwise the combined file its commands go into.
+	/// </summary>
+	/// <param name="aliasFile">The tab's own alias file, e.g. <c>Airports.txt</c>.</param>
+	/// <param name="description">What goes in it.</param>
+	/// <returns>The file.</returns>
+	protected SummaryFile AliasSummaryFile(string aliasFile, string description) =>
+		new(_aliasFileExports.ExportIndividualAliasFiles ? aliasFile : _aliasFileExports.CombinedAliasFileName, description);
+
+	/// <summary>After Alias File Exports changes; the General tab's other changes are ignored.</summary>
+	private void OnAliasFileExportsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+	{
+		if (e.PropertyName is { Length: > 0 } property
+			&& property != nameof(IAliasFileExports.ExportIndividualAliasFiles)
+			&& property != nameof(IAliasFileExports.CombinedAliasFileName))
+		{
+			return;
+		}
+
+		OnPropertyChanged(nameof(UnexportedAliasFileNote));
+		RaiseWhatYoullGetChanged();
 	}
 
 	/// <inheritdoc />
@@ -489,6 +547,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	protected virtual void OnOutputsChanged()
 	{
 		OnPropertyChanged(nameof(GenerateAliasFile));
+		OnPropertyChanged(nameof(UnexportedAliasFileNote));
 		OnPropertyChanged(nameof(GenerateGeojson));
 		OnPropertyChanged(nameof(OutputsOn));
 		RefreshOutputFiles();
@@ -1127,5 +1186,13 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		public bool ProcedureChanges => true;
 
 		public bool ProceduresJson => true;
+	}
+
+	/// <summary>Each sub-service's alias file exported, under FE-Buddy's name for the combined file: Alias File Exports for a tab not attached to a General tab.</summary>
+	private sealed class EveryAliasFileExported : ObservableObject, IAliasFileExports
+	{
+		public bool ExportIndividualAliasFiles => true;
+
+		public string CombinedAliasFileName => AiracOutputPaths.CombinedAliasFileName;
 	}
 }

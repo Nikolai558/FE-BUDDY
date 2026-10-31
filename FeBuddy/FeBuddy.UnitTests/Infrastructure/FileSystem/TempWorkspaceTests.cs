@@ -80,6 +80,35 @@ public sealed class TempWorkspaceTests : IDisposable
 		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Could not delete temp file", StringComparison.Ordinal));
 	}
 
+	/// <summary>A job's folder is a new one under its purpose, made by whoever writes there, and deleting it never throws.</summary>
+	[Fact]
+	public void a_job_gets_a_folder_of_its_own_which_is_deleted_quietly()
+	{
+		string first = TempWorkspace.NewJobDirectory("AliasFiles");
+		string second = TempWorkspace.NewJobDirectory("AliasFiles");
+
+		Assert.NotEqual(first, second);
+		Assert.Equal(Path.Combine(_tempRoot, "AliasFiles"), Path.GetDirectoryName(first));
+		Assert.False(Directory.Exists(first));
+		Assert.Throws<ArgumentException>(() => TempWorkspace.NewJobDirectory(" "));
+
+		Directory.CreateDirectory(Path.Combine(first, "nested"));
+		File.WriteAllText(Path.Combine(first, "nested", "Airways.txt"), ".a .b");
+		TempWorkspace.DeleteQuietly(first);
+		TempWorkspace.DeleteQuietly(second);
+
+		Assert.False(Directory.Exists(first));
+
+		Directory.CreateDirectory(second);
+		using (new FileStream(Path.Combine(second, "busy.txt"), FileMode.Create, FileAccess.Write, FileShare.None))
+		{
+			TempWorkspace.DeleteQuietly(second);
+		}
+
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith($"Could not delete temp folder '{second}'", StringComparison.Ordinal)
+			&& e.Message.EndsWith("It is cleared at the next launch.", StringComparison.Ordinal));
+	}
+
 	/// <summary>Without an override the workspace lives in the system temp folder.</summary>
 	[Fact]
 	public void temp_workspace_default_root_is_under_the_system_temp_folder()

@@ -21,6 +21,29 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ---
 
+## 3.0.0-beta.15
+### Updates
+- Feature #399 - Before **Go back now** installs an older release, the update window names the
+  profiles it can't read and offers **Export…**, so you can bring them back with **Import…** after
+  updating again.
+
+### AIRAC Service
+- New **Alias File Exports** card on the General tab: alias commands now go only into
+  `Combined_Alias.txt`, the one alias file vNAS takes. Set **Also export each sub-service's own alias
+  file** to **Yes** to also get `Airports.txt`, `Faa_Chart_Recall.txt` and the rest. While it's
+  **No**, a run deletes those files an earlier run left in `Aliases\`, and File Names hides them.
+
+### File Conversions
+- Feature #401 - ERAM to GeoJSON leaves out SAA objects in every layout, since they're of little use
+  on VATSIM. The results say how many were left out.
+
+### Settings
+- Feature #399 - Settings saved by a newer FE-Buddy that this one can't read are moved to
+  `%APPDATA%\FE-Buddy\Reverted` and replaced with the newest backup it can read, or the defaults.
+  FE-Buddy says so once when it opens.
+
+---
+
 ## 3.0.0-beta.14
 ### AIRAC Service
 - Bug #395 - An ROI can cross the antimeridian (AM), the 180° meridian west of Alaska: write it with

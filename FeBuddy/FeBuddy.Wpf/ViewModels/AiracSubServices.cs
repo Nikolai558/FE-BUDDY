@@ -82,7 +82,8 @@ public static class AiracSubServices
 					"name, tower, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF, weather, hours, and airspace. " +
 					"Every operational airport is included. The area doesn't apply.",
 				Geojson: "Runways_Lines, Airports_Symbols, and Airports_Text (FAA ID and name). " +
-					"With ROI as the area, only the airports inside it.")),
+					"With ROI as the area, only the airports inside it."),
+			AliasFile: AirportOutputFiles.Alias),
 		new SubServiceDescriptor(AirwaysKey, "Airways", () => new AirwaysViewModel(), AliasAndGeojson,
 			new SubServiceHelp(
 				"Every airway in the FAA's NASR data: map files of its line, fixes and labels, and a command that shows its fixes on the scope.",
@@ -90,28 +91,32 @@ public static class AiracSubServices
 					"or, with ROI as the area, only those that cross it.",
 				Geojson: "Airways_High and Airways_Low, or a set per airway type (J, V, Q, T, …), each with Lines, Symbols, and Text. " +
 					"Pick the airway types, which file each goes in, and whether lines stop short of their fixes. " +
-					"With ROI as the area, the lines are cut off at its edge.")),
+					"With ROI as the area, the lines are cut off at its edge."),
+			AliasFile: AirwayOutputFiles.Alias),
 		new SubServiceDescriptor(ArrivalsKey, "Arrivals", () => new ArrivalsViewModel(), AliasAndGeojson,
 			new SubServiceHelp(
 				"Arrivals from the FAA's NASR data: map files for each one in a folder per airport, and a command for each airport and arrival that shows its fixes.",
 				Alias: "Arrivals.txt: a command for each airport and arrival that shows its fixes, Ex: .lasBLAIDf. " +
 					"The area (ARTCCs, ROI, or everything) and the amendment date narrow it, the same as the GeoJSON.",
 				Geojson: "Lines, Symbols, and Text for each airport and arrival, in Geojson\\<ARTCC>\\<airport>\\. " +
-					"Narrow them by area (ARTCCs, ROI, or everything) and amendment date.")),
+					"Narrow them by area (ARTCCs, ROI, or everything) and amendment date."),
+			AliasFile: ArrivalOutputFiles.Alias),
 		new SubServiceDescriptor(DeparturesKey, "Departures", () => new DeparturesViewModel(), AliasAndGeojson,
 			new SubServiceHelp(
 				"SIDs, and obstacle departures (ODPs) if you want them, from the FAA's NASR data: map files for each one in a folder per airport, and a command for each airport and departure that shows its fixes.",
 				Alias: "Departures.txt: a command for each airport and departure that shows its fixes, Ex: .laxDOTSSf. " +
 					"The area (ARTCCs, ROI, or everything) and the amendment date narrow it, the same as the GeoJSON.",
 				Geojson: "Lines, Symbols, and Text for each airport and departure, in Geojson\\<ARTCC>\\<airport>\\. " +
-					"Narrow them by area (ARTCCs, ROI, or everything) and amendment date.")),
+					"Narrow them by area (ARTCCs, ROI, or everything) and amendment date."),
+			AliasFile: DepartureOutputFiles.Alias),
 		new SubServiceDescriptor(NavaidsKey, "NAVAIDs", () => new NavaidsViewModel(), AliasAndGeojson,
 			new SubServiceHelp(
 				"NAVAIDs from the FAA's NASR data: a symbol and a label on the map, and .nav commands that show each one's name, type, frequency, and ARTCCs.",
 				Alias: "Navaids.txt: a .nav command for each identifier and each name, Ex: .navAA or .navCEDAR. " +
 					"Every operational NAVAID is included: the area and the NAVAID types don't apply.",
 				Geojson: "NAVAIDs_Symbols and NAVAIDs_Text, or a pair per NAVAID type. Pick the NAVAID types, the file layout, " +
-					"and how symbols are drawn. The types and the area limit the GeoJSON only. With ROI as the area, only the NAVAIDs inside it.")),
+					"and how symbols are drawn. The types and the area limit the GeoJSON only. With ROI as the area, only the NAVAIDs inside it."),
+			AliasFile: NavaidOutputFiles.Alias),
 		new SubServiceDescriptor(FixesKey, "Fixes", () => new FixesViewModel(),
 			Outputs: SubServiceOutputKinds.Geojson,
 			Help: new SubServiceHelp(
@@ -126,13 +131,15 @@ public static class AiracSubServices
 					"Ex: .dtwI22Lc. What you pick for the documents doesn't narrow it.",
 				ProcedureChanges: "Procedure_Changes.md: every chart added, changed, or deleted this cycle in the area, and at the airports and " +
 					"procedures you pick, grouped by facility, with links to the FAA's comparison PDFs and charts.",
-				ProceduresJson: "Procedures.json: every current chart at the airports you pick, with the fields you choose, for other tools to read.")),
+				ProceduresJson: "Procedures.json: every current chart at the airports you pick, with the fields you choose, for other tools to read."),
+			AliasFile: ProcedureOutputFiles.Alias),
 		new SubServiceDescriptor(TelephonyKey, "Telephony", () => new TelephonyViewModel(),
 			SubServiceOutputKinds.Alias,
 			new SubServiceHelp(
 				"Operators' call signs from the FAA's telephony list, and your facility's virtual airlines, as .id commands. Alias file only.",
 				Alias: "Telephony.txt: an .id command for each operator's 3LD and its telephony, Ex: .idAVA and .idAVIANCA, " +
-					"showing who it is. Add your virtual airlines, and the virtual airline list (GNG + VATSIM-Radar) if you want it. Telephony has no area.")),
+					"showing who it is. Add your virtual airlines, and the virtual airline list (GNG + VATSIM-Radar) if you want it. Telephony has no area."),
+			AliasFile: TelephonyOutputFiles.Alias),
 		new SubServiceDescriptor(WxStationsKey, "Wx Stations", () => new WxStationsViewModel(),
 			Outputs: SubServiceOutputKinds.Geojson,
 			Help: new SubServiceHelp(

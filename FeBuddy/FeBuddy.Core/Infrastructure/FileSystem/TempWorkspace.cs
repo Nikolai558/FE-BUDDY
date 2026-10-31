@@ -81,6 +81,40 @@ public static class TempWorkspace
 		return failures;
 	}
 
+	/// <summary>
+	/// A new folder for one job's scratch files - an AIRAC Service run's alias files that aren't exported,
+	/// say: <c>%TEMP%\FE-Buddy\&lt;purpose&gt;\&lt;a name of its own&gt;</c>. Only its path: whatever writes there
+	/// creates it, and deletes it when the job ends (<see cref="DeleteQuietly"/>). Launch clears it anyway.
+	/// </summary>
+	/// <param name="purpose">The folder the job's folder goes in, e.g. <c>AliasFiles</c>.</param>
+	/// <returns>The folder's full path.</returns>
+	public static string NewJobDirectory(string purpose)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(purpose);
+
+		return Path.Combine(RootDirectory, purpose, Guid.NewGuid().ToString("N"));
+	}
+
+	/// <summary>
+	/// Deletes a scratch folder and everything in it. Best-effort: one that can't be deleted (a file
+	/// open elsewhere) is logged and left for the next launch to clear. Never throws.
+	/// </summary>
+	/// <param name="directory">The folder, which may not exist.</param>
+	public static void DeleteQuietly(string directory)
+	{
+		try
+		{
+			if (Directory.Exists(directory))
+			{
+				Directory.Delete(directory, recursive: true);
+			}
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning(LogSource, $"Could not delete temp folder '{directory}': {ex.Message} It is cleared at the next launch.");
+		}
+	}
+
 	/// <summary>Points the scratch root somewhere else. Unit tests only.</summary>
 	/// <param name="root">A throwaway directory, or <see langword="null"/> to restore the default.</param>
 	internal static void ConfigureForTesting(string? root) => _rootOverride = root;

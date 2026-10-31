@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.15
 ### Updates
 - Feature #399 - Before **Go back now** installs an older release, the update window names the
   profiles it can't read and offers **Export…**, so you can bring them back with **Import…** after
@@ -37,12 +41,6 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Feature #399 - Settings saved by a newer FE-Buddy that this one can't read are moved to
   `%APPDATA%\FE-Buddy\Reverted` and replaced with the newest backup it can read, or the defaults.
   FE-Buddy says so once when it opens.
-
-### Dev notes
-- Settings layouts: `UserConfigVersion.Layouts` names the first release to save each layout, and
-  every profile and `Shared.json` are brought forward together (`MoveToShared`, `CopyFromShared`).
-- Alias writers get their path from `AiracOutputPaths.AliasFilePath`. Unexported alias files go to
-  the run's temp folder, which is deleted however the run ends.
 
 ---
 

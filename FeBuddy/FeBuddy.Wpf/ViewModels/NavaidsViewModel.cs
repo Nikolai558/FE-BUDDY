@@ -194,9 +194,9 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		summary += $", {navaids.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
 
-		if (navaids.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(navaids.AliasFilePath, navaids.AliasCommandCount, "alias command(s)") is { } aliasCommands)
 		{
-			summary += $", {Path.GetFileName(navaids.AliasFilePath)}: {navaids.AliasCommandCount:N0} alias command(s)";
+			summary += $", {aliasCommands}";
 		}
 
 		return new SubServiceRunResult(Title, summary, navaids.Messages);
@@ -268,7 +268,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			Files =
 			[
-				new(NavaidOutputFiles.Alias,
+				AliasSummaryFile(NavaidOutputFiles.Alias,
 					"A `.nav` command for every operational NAVAID in the NAS, by its ID and by its name. It shows the "
 					+ "NAVAID's name, type, frequency, and ARTCCs. When a command fits more than one NAVAID, it shows each of them.\n"
 					+ "Example: `.navAA` or `.navCEDAR`"),

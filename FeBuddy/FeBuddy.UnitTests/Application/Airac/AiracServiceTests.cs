@@ -26,7 +26,9 @@ namespace FeBuddy.UnitTests.Application.Airac;
 /// sub-service into the one <c>AIRAC_&lt;cycle&gt;</c> folder with the duplicate-alias report,
 /// combines the alias files into <c>Combined_Alias.txt</c> (with the custom files Add Custom Aliases
 /// adds), writes renamed files under their new names, handles an earlier run's files as asked, and is a safe
-/// no-op (with a warning) when nothing is selected.
+/// no-op (with a warning) when nothing is selected. These runs export each sub-service's own alias file
+/// (<see cref="AiracServiceSettings.ExportIndividualAliasFiles"/>); <see cref="AiracServiceAliasExportTests"/>
+/// covers a run that doesn't.
 /// </summary>
 public sealed class AiracServiceTests : IDisposable
 {
@@ -49,6 +51,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			AddFeBuddyOutputFolder = addFeBuddyOutputFolder,
 			ExistingOutput = existingOutput,
 			Airports = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
@@ -64,6 +67,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Airways = null,
 		};
 
@@ -89,6 +93,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			// GeoJSON off: only the alias file is written.
 			Airways = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
@@ -146,7 +151,7 @@ public sealed class AiracServiceTests : IDisposable
 	/// ArrivalAliasWriter.CommandName's remarks), so both alias files write ".orfNUTIYf" - exactly the
 	/// case the duplicate-alias check exists to catch.
 	/// </summary>
-	private static NasrCsvDataCollection NutiyAtOrf()
+	internal static NasrCsvDataCollection NutiyAtOrf()
 	{
 		NasrCsvDataCollection data = DepartureTestData.Build(
 			bases: [DepartureTestData.Base("NUTIY", "ZDC", "NUTIY1.NUTIY", amendmentNo: "ONE", servedArpt: "ORF")],
@@ -179,6 +184,7 @@ public sealed class AiracServiceTests : IDisposable
 	{
 		SelectedCycle = Cycle,
 		OutputDirectory = _output,
+		ExportIndividualAliasFiles = true,
 		Departures = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		Arrivals = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 	};
@@ -375,6 +381,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Arrivals = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
 
@@ -398,6 +405,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Arrivals = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateAliasFile", "N" } },
 		};
 
@@ -417,6 +425,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
 			Arrivals = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
@@ -445,6 +454,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Navaids = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
 
@@ -468,6 +478,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Navaids = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateAliasFile", "N" } },
 		};
 
@@ -486,6 +497,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
 			Navaids = new Dictionary<string, string> { { "Area", "Everything" }, { "GenerateGeojson", "N" } },
 		};
@@ -518,6 +530,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ArtccBoundaries = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
@@ -540,6 +553,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
 			ArtccBoundaries = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
@@ -574,6 +588,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Fixes = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
@@ -593,6 +608,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Fixes = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
@@ -611,6 +627,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
 			Fixes = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
@@ -641,6 +658,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
@@ -660,6 +678,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
@@ -680,6 +699,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
 			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
@@ -708,6 +728,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
@@ -735,6 +756,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			WxStations = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
@@ -792,6 +814,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Telephony = new Dictionary<string, string>(),
 		};
 
@@ -818,6 +841,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Telephony = new Dictionary<string, string>(),
 		};
 
@@ -849,6 +873,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Telephony = new Dictionary<string, string>(),
 			ConcatenateAliases = new Dictionary<string, string>(),
 		};
@@ -880,6 +905,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Telephony = new Dictionary<string, string>(),
 			ConcatenateAliases = new Dictionary<string, string> { ["addcustomaliasfiles"] = "y" },
 			FileNames = new Dictionary<string, string>
@@ -918,6 +944,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Telephony = new Dictionary<string, string>(),
 			FileNames = new Dictionary<string, string> { ["Combined_Alias.txt"] = "ZOB vNAS" },
 		};
@@ -968,6 +995,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Telephony = new Dictionary<string, string>(),
 		};
 
@@ -993,6 +1021,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Telephony = new Dictionary<string, string>(),
 			ConcatenateAliases = new Dictionary<string, string> { ["AddCustomAliasFiles"] = "N", ["Sources.1.FilePath"] = "not even a full path" },
 		};
@@ -1019,6 +1048,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Fixes = new Dictionary<string, string> { { "Area", "Everything" } },
 		};
 
@@ -1043,6 +1073,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ConcatenateAliases = new Dictionary<string, string>(),
 		};
 
@@ -1069,6 +1100,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Telephony = new Dictionary<string, string>(),
 			ConcatenateAliases = new Dictionary<string, string> { ["Sources.1.FilePath"] = @"C:\ZOB-Alias.txt" },
 		};
@@ -1109,6 +1141,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ConcatenateAliases = new Dictionary<string, string>(),
 		};
 		AiracSupplementalData supplemental = new()
@@ -1136,6 +1169,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ConcatenateAliases = new Dictionary<string, string>(),
 		};
 
@@ -1158,6 +1192,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			ExistingOutput = ExistingOutputAction.DeleteExisting,
 			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
@@ -1176,6 +1211,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
@@ -1199,6 +1235,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
@@ -1224,6 +1261,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
@@ -1252,6 +1290,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 			Procedures = new Dictionary<string, string> { ["Area"] = "Artccs", ["Facilities"] = "ZOB" },
 		};
 
@@ -1340,6 +1379,7 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
+			ExportIndividualAliasFiles = true,
 		};
 
 		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync((AiracServiceSettings)null!, new NasrCsvDataCollection(), new AiracSupplementalData()));

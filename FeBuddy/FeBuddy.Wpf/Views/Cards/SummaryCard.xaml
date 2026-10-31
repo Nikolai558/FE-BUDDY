@@ -4,10 +4,13 @@
     gets, one per line, each after the first starting with a chip ("for", "and only", ...), then
     the files it writes. Binds to the tab's WhatYoullGet (ServiceTabViewModel); the Preview Settings
     tab shows the same summary. WhatYoullGetFooter, when the tab has one, says where the outputs
-    are turned on and off.
+    are turned on and off. While the tab's alias file is on but Alias File Exports (General tab) is
+    off, the card ends with a note that its commands go into Combined_Alias.txt (UnexportedAliasFileNote),
+    unless ShowsAliasFileNote="False": a tab with an Outputs card has the note there.
 
     Usage:
         <cards:SummaryCard />
+        <cards:SummaryCard ShowsAliasFileNote="False" />
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.Cards.SummaryCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -16,6 +19,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             x:Name="Self"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:ServiceTabViewModel}"
              d:DesignWidth="820">
@@ -25,6 +30,11 @@
             <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,14,0,0"
                        Text="{Binding WhatYoullGetFooter}"
                        Visibility="{Binding WhatYoullGetFooter, Converter={StaticResource StringToVis}}" />
+            <Border Visibility="{Binding ShowsAliasFileNote, ElementName=Self, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
+                           bhv:InlineMarkdown.Text="{Binding UnexportedAliasFileNote}"
+                           Visibility="{Binding UnexportedAliasFileNote, Converter={StaticResource StringToVis}}" />
+            </Border>
         </StackPanel>
     </ctl:Card>
 </UserControl>

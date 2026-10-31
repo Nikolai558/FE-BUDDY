@@ -570,9 +570,8 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				$"and {telephony.VirtualAirlineCount:N0} virtual airline(s){fromVatsimRadar}"
 			: $"{telephony.IcaoAssignmentCount:N0} ICAO operator(s) and {telephony.SpecialCallSignCount:N0} U.S. special call sign(s)";
 
-		string summary = telephony.AliasFilePath is not null
-			? $"{Path.GetFileName(telephony.AliasFilePath)}: {telephony.AliasCommandCount:N0} command(s) for {operators}"
-			: "Nothing written";
+		string summary = result.DescribeAliasCommands(telephony.AliasFilePath, telephony.AliasCommandCount, $"command(s) for {operators}")
+			?? "Nothing written";
 
 		return new SubServiceRunResult(Title, summary, telephony.Messages);
 	}

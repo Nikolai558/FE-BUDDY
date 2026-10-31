@@ -30,7 +30,7 @@
             <cards:AttentionCard />
 
             <!-- ============ what the outputs get, every filter in one place ============ -->
-            <cards:SummaryCard />
+            <cards:SummaryCard ShowsAliasFileNote="False" />
 
             <!-- ============ outputs ============ -->
             <ctl:Card Header="Outputs">
@@ -41,6 +41,10 @@
                                bhv:InlineCode.Text="`.idAVA`&#xA;`.idAVIANCA`" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="50,12,0,0"
                                bhv:InlineCode.Text="Overlapping or duplicate 3LD and telephony situations respond with both options to the user.&#xA;For example, one operator has a 3LD of `AVA`, while `AVA` is also the telephony of another operator." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="50,10,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               bhv:InlineMarkdown.Text="{Binding UnexportedAliasFileNote}"
+                               Visibility="{Binding UnexportedAliasFileNote, Converter={StaticResource StringToVis}}" />
                 </StackPanel>
             </ctl:Card>
 

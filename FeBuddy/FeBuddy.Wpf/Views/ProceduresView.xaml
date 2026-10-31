@@ -39,7 +39,7 @@
             </ctl:Card>
 
             <!-- ============ what the outputs get, every filter in one place ============ -->
-            <cards:SummaryCard />
+            <cards:SummaryCard ShowsAliasFileNote="False" />
 
             <!-- ============ outputs ============ -->
             <ctl:Card Header="Outputs">
@@ -54,6 +54,10 @@
                                            Description="Writes an `.openurl` command for most charts in the d-TPP Metafile.&#xA;For example:" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="66,2,0,0"
                                bhv:InlineCode.Text="`.dtwI22Lc` opens the &quot;ILS OR LOC RWY 22L&quot; approach chart for DTW airport." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="50,10,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               bhv:InlineMarkdown.Text="{Binding UnexportedAliasFileNote}"
+                               Visibility="{Binding UnexportedAliasFileNote, Converter={StaticResource StringToVis}}" />
                 </StackPanel>
             </ctl:Card>
 

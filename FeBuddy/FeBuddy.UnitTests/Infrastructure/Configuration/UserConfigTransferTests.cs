@@ -133,6 +133,30 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.False(package.Values.ContainsKey(UserConfigKeys.UpdateChannel));
 	}
 
+	/// <summary>
+	/// Before going back to a release that can't read them, each profile is exported to a file of its own,
+	/// read from its file whether or not it is in use - each imports as it was.
+	/// </summary>
+	[Fact]
+	public void export_profiles_writes_one_file_per_profile_that_reads_back()
+	{
+		Directory.CreateDirectory(UserConfigFile.Directory);
+		File.WriteAllText(UserConfigFile.ProfileFilePath("ZOB"), """{ "ConfigVersion": 2, "Services": { "AiracService": { "UserArtccId": "ZOB" } } }""");
+		File.WriteAllText(UserConfigFile.ProfileFilePath("ZNY"), """{ "ConfigVersion": 2, "Services": { "AiracService": { "UserArtccId": "ZNY" } } }""");
+		string folder = Path.Combine(_directory, "exports");
+		Directory.CreateDirectory(folder);
+
+		IReadOnlyList<UserConfigExportResult> results = UserConfigTransfer.ExportProfiles(folder, ["ZOB", "ZNY"], "3.1.0", ExportedAt, Alice);
+
+		Assert.Equal(
+			[Path.Combine(folder, "FE-Buddy settings 2026-09-27 (ZOB).json"), Path.Combine(folder, "FE-Buddy settings 2026-09-27 (ZNY).json")],
+			results.Select(result => result.Path));
+		Assert.Equal("ZOB", UserConfigTransfer.Read(results[0].Path).Values[ArtccKey]);
+		Assert.Equal("ZNY", UserConfigTransfer.Read(results[1].Path).Values[ArtccKey]);
+		Assert.Throws<ArgumentException>(() => UserConfigTransfer.ExportProfiles(folder, ["ZDC"], "3.1.0", ExportedAt, Alice));
+		Assert.Throws<ArgumentException>(() => UserConfigTransfer.ExportProfiles(" ", ["ZOB"]));
+	}
+
 	// ============================ read ============================
 
 	/// <summary>An export round-trips through <see cref="UserConfigTransfer.Read"/> with its header.</summary>

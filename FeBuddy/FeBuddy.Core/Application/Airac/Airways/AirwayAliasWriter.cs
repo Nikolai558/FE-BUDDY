@@ -62,10 +62,8 @@ public static class AirwayAliasWriter
 			builder.AppendLine($".{airway.AwyId}F .FF {pointIds}");
 		}
 
-		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
-		Directory.CreateDirectory(directory);
-
-		string path = Path.Combine(directory, settings.FileNames.FileName(AirwayOutputFiles.Alias));
+		string path = AiracOutputPaths.AliasFilePath(settings.OutputDirectory, settings.FileNames, AirwayOutputFiles.Alias);
+		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 		File.WriteAllText(path, builder.ToString());
 
 		return new AirwayAliasGenerateResult(path, airwaysWithPoints.Count);

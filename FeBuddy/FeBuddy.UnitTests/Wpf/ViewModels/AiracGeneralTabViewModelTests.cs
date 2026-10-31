@@ -215,6 +215,112 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.Equal("Y", UserConfigFile.GetValue(UserConfigKeys.DefaultRoiFilter));
 	}
 
+	/// <summary>
+	/// Exporting each sub-service's own alias file is off until saved on; it is saved under this tab's node, the
+	/// run reads it as saved, and Undo last save takes it back.
+	/// </summary>
+	[Fact]
+	public void exporting_the_individual_alias_files_is_off_until_saved_on_and_undoes_with_the_tab()
+	{
+		AiracGeneralTabViewModel general = new();
+
+		Assert.False(general.ExportIndividualAliasFiles);
+		Assert.False(AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn());
+
+		Assert.True(general.Save());
+		Assert.Equal("N", UserConfigFile.GetValue($"{Node}.ExportIndividualAliasFiles"));
+
+		general.ExportIndividualAliasFiles = true;
+		Assert.True(general.IsDirty);
+		Assert.False(AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn());
+
+		Assert.True(general.Save());
+		Assert.Equal("Y", UserConfigFile.GetValue($"{Node}.ExportIndividualAliasFiles"));
+		Assert.True(AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn());
+		Assert.True(new AiracGeneralTabViewModel().ExportIndividualAliasFiles);
+
+		general.UndoLastSave();
+
+		Assert.False(general.ExportIndividualAliasFiles);
+		Assert.False(AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn());
+	}
+
+	/// <summary>
+	/// The Alias File Exports card shows only while an included sub-service writes an alias file. Its
+	/// tooltip names the files Yes would export, by FE-Buddy's names; it, its first line and the preview
+	/// name the combined file as the File Names tab has it, which is never this tab's to save.
+	/// </summary>
+	[Fact]
+	public void the_alias_file_exports_card_shows_only_while_an_alias_file_is_made()
+	{
+		AiracGeneralTabViewModel general = new();
+		List<string?> changed = [];
+		general.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+		Assert.True(general.ShowsAliasFileExports);
+		Assert.Equal(
+			"Yes also saves these in the Aliases folder: Airports.txt, Airways.txt, Arrivals.txt, Departures.txt, Navaids.txt, Faa_Chart_Recall.txt, Telephony.txt.\n" +
+			"Each holds only its own sub-service's commands, which are in Combined_Alias.txt either way.",
+			general.AliasFileExportsToolTip);
+		Assert.Equal("Every alias command goes into `Combined_Alias.txt`, the one alias file vNAS takes.", general.AliasFileExportsIntro);
+		Assert.Equal("Only `Combined_Alias.txt`: each sub-service's own alias file isn't exported", AliasFilesPreview(general));
+
+		foreach (SubServiceRow row in general.SubServices.Where(row => row.OffersAlias && row.Key != AiracSubServices.ProceduresKey))
+		{
+			row.Alias = false;
+		}
+
+		Assert.StartsWith("Yes also saves these in the Aliases folder: Faa_Chart_Recall.txt.\n", general.AliasFileExportsToolTip, StringComparison.Ordinal);
+
+		changed.Clear();
+		Row(general, AiracSubServices.ProceduresKey).Alias = false;
+
+		Assert.False(general.ShowsAliasFileExports);
+		Assert.Contains(nameof(AiracGeneralTabViewModel.ShowsAliasFileExports), changed);
+		Assert.Null(AliasFilesPreview(general));
+
+		Row(general, AiracSubServices.AirportsKey).Alias = true;
+		general.ExportIndividualAliasFiles = true;
+
+		Assert.True(general.ShowsAliasFileExports);
+		Assert.Equal("`Combined_Alias.txt`, and each sub-service's own: `Airports.txt`", AliasFilesPreview(general));
+
+		AiracGeneralTabViewModel renamed = new() { CombinedAliasFileName = "ZOB vNAS.txt" };
+
+		Assert.Equal("Every alias command goes into `ZOB vNAS.txt`, the one alias file vNAS takes.", renamed.AliasFileExportsIntro);
+		Assert.EndsWith("which are in ZOB vNAS.txt either way.", renamed.AliasFileExportsToolTip, StringComparison.Ordinal);
+		Assert.Equal("Only `ZOB vNAS.txt`: each sub-service's own alias file isn't exported", AliasFilesPreview(renamed));
+		Assert.False(renamed.IsDirty);
+	}
+
+	/// <summary>A reload (Discard, Undo, an import) shows or hides the card for the outputs it brings back.</summary>
+	[Fact]
+	public void a_reload_shows_or_hides_the_alias_file_exports_card()
+	{
+		AiracGeneralTabViewModel general = new();
+
+		foreach (SubServiceRow row in general.SubServices.Where(row => row.OffersAlias))
+		{
+			row.Alias = false;
+		}
+
+		Assert.True(general.Save());
+		Assert.False(new AiracGeneralTabViewModel().ShowsAliasFileExports);
+
+		List<string?> changed = [];
+		general.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+		Row(general, AiracSubServices.AirportsKey).Alias = true;
+		changed.Clear();
+		general.RevertChanges();
+
+		Assert.False(general.ShowsAliasFileExports);
+		Assert.Contains(nameof(AiracGeneralTabViewModel.ShowsAliasFileExports), changed);
+	}
+
+	/// <summary>The General section's Alias files row, or <see langword="null"/> while it has none.</summary>
+	private static string? AliasFilesPreview(AiracGeneralTabViewModel general) =>
+		general.BuildPreviewSummary()[0].Rows.SingleOrDefault(row => row.Label == "Alias files")?.Value;
+
 	/// <summary>Settings edited by hand with every output off would make nothing: they load with every output on.</summary>
 	[Fact]
 	public void every_output_off_loads_with_every_output_on()

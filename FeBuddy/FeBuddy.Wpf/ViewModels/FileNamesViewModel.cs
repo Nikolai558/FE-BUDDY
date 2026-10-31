@@ -28,6 +28,11 @@ namespace FeBuddy.Wpf.ViewModels;
 /// back keeps its choice.
 /// </para>
 /// <para>
+/// While the General tab's Alias File Exports is off, the sub-services' own alias files aren't listed -
+/// a run doesn't export them - but their choices are kept like any other file's, so they apply again
+/// once it is on. <c>Combined_Alias.txt</c> is always listed while an alias file is made.
+/// </para>
+/// <para>
 /// While renaming is on, every file ticked for renaming needs a new name. A file with no choice yet
 /// starts ticked, so a file a changed setting adds to the list - one the user has never seen here -
 /// is flagged until they name it or untick it.
@@ -56,6 +61,7 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 
 	private Func<IEnumerable<OutputFileEntry>> _listFiles = () => [];
 	private Func<string> _cycleFolderName = () => string.Empty;
+	private Func<bool> _exportsIndividualAliasFiles = () => true;
 	private string? _filesSignature;
 	private bool _renameFiles;
 	private bool _changingAll;
@@ -77,6 +83,9 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 	/// <inheritdoc />
 	public override string Title => "File Names";
 
+	/// <summary>Raised when a file's name may have changed: renaming turned on or off, a file ticked or unticked, or a new name typed.</summary>
+	public event EventHandler? NamesChanged;
+
 	/// <summary>Whether the user renames some files. Off by default: every file keeps FE-Buddy's name.</summary>
 	public bool RenameFiles
 	{
@@ -86,6 +95,7 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 			if (SetProperty(ref _renameFiles, value))
 			{
 				MarkDirty();
+				NamesChanged?.Invoke(this, EventArgs.Empty);
 				CommandManager.InvalidateRequerySuggested();
 			}
 		}
@@ -115,12 +125,29 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 	/// </summary>
 	/// <param name="listFiles">Every file the included sub-services' settings write right now.</param>
 	/// <param name="cycleFolderName">The selected cycle's folder name, e.g. <c>AIRAC_2610</c>.</param>
-	internal void AttachToService(Func<IEnumerable<OutputFileEntry>> listFiles, Func<string> cycleFolderName)
+	/// <param name="exportsIndividualAliasFiles">
+	/// Whether the General tab's Alias File Exports is on right now; <see langword="null"/> for always.
+	/// While it is off, the sub-services' own alias files aren't listed, but their new names are kept.
+	/// </param>
+	internal void AttachToService(Func<IEnumerable<OutputFileEntry>> listFiles, Func<string> cycleFolderName, Func<bool>? exportsIndividualAliasFiles = null)
 	{
 		_listFiles = listFiles;
 		_cycleFolderName = cycleFolderName;
+		_exportsIndividualAliasFiles = exportsIndividualAliasFiles ?? (() => true);
 		RefreshFiles();
 	}
+
+	/// <summary>
+	/// The name a file is written under as the tab stands: its new name while renaming is on and it is
+	/// ticked with a name that can be used, otherwise FE-Buddy's.
+	/// </summary>
+	/// <param name="key">The file key, e.g. <c>Combined_Alias.txt</c>.</param>
+	/// <returns>The file name, extension and all.</returns>
+	public string WrittenNameOf(string key) =>
+		RenameFiles && _choices.TryGetValue(key, out FileNameChoice choice) && choice.Rename
+			&& choice.Name.Trim().Length > 0 && OutputFileNames.Problem(choice.Name) is null
+			? choice.Name.Trim() + OutputFileNames.ExtensionOf(key)
+			: OutputFileNames.DefaultFileName(key);
 
 	/// <summary>
 	/// Re-reads the files from the other tabs. The rows are rebuilt only when the list changed, so a
@@ -128,7 +155,8 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 	/// </summary>
 	internal void RefreshFiles()
 	{
-		List<OutputFileEntry> files = [.. _listFiles()];
+		bool listAliasFiles = _exportsIndividualAliasFiles();
+		List<OutputFileEntry> files = [.. _listFiles().Where(file => listAliasFiles || !AiracOutputPaths.SubServiceAliasFileKeys.Contains(file.Key, StringComparer.OrdinalIgnoreCase))];
 		string cycleFolder = _cycleFolderName();
 		string signature = string.Join('|', files.Select(file => $"{file.Folder}/{file.FileName}/{file.Key}/{file.CanRename}").Prepend(cycleFolder));
 
@@ -212,6 +240,7 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 		OnPropertyChanged(nameof(RenameFiles));
 		RefreshFiles();
 		ClearDirty();
+		NamesChanged?.Invoke(this, EventArgs.Empty);
 	}
 
 	/// <inheritdoc />
@@ -311,6 +340,7 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 		if (!_changingAll)
 		{
 			MarkDirty();
+			NamesChanged?.Invoke(this, EventArgs.Empty);
 			CommandManager.InvalidateRequerySuggested();
 		}
 	}
@@ -332,6 +362,7 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 		}
 
 		MarkDirty();
+		NamesChanged?.Invoke(this, EventArgs.Empty);
 		CommandManager.InvalidateRequerySuggested();
 	}
 

@@ -1,4 +1,11 @@
+using FeBuddy.Core.Application.Airac.Airports;
+using FeBuddy.Core.Application.Airac.Airways;
+using FeBuddy.Core.Application.Airac.Arrivals;
+using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Airac.Navaids;
+using FeBuddy.Core.Application.Airac.Procedures;
+using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 
@@ -15,7 +22,7 @@ namespace FeBuddy.Core.Application.Airac;
 /// <code>
 /// AIRAC_2610\
 /// ├── Duplicate_Alias_Commands.txt      the alias commands the run's alias files share
-/// ├── Aliases\                          every alias file (Airways.txt, Faa_Chart_Recall.txt, ...)
+/// ├── Aliases\                          each sub-service's alias file (Airways.txt, ...), when exported
 /// │   └── Combined_Alias.txt            all of them in one, for vNAS (see CombinedAliasFileWriter)
 /// ├── Geojson\                          every GeoJSON file
 /// └── Publication_Docs\                 the Procedures sub-service's two documents
@@ -25,6 +32,12 @@ namespace FeBuddy.Core.Application.Airac;
 /// alias file it wrote, one after another, into <c>Combined_Alias.txt</c>, followed by the user's own
 /// custom alias files when Add Custom Aliases adds them. A folder is created only
 /// when a file is written into it.
+/// </para>
+/// <para>
+/// Each sub-service's own alias file is saved in <c>Aliases</c> only while
+/// <see cref="AiracServiceSettings.ExportIndividualAliasFiles"/> is on. Otherwise it is written to FE-Buddy's
+/// scratch area under FE-Buddy's name (<see cref="AliasFilePath"/>), combined from there, and deleted when
+/// the run ends.
 /// </para>
 /// <para>
 /// The file names here are FE-Buddy's. The user can give most files a name of their own (the File
@@ -47,6 +60,18 @@ public static class AiracOutputPaths
 
 	/// <summary>The folder the Procedures sub-service's documents go in, inside the cycle folder.</summary>
 	public const string PublicationDocsFolder = "Publication_Docs";
+
+	/// <summary>
+	/// Each sub-service's own alias file, by its key, in the order a run combines them: <c>Airways.txt</c>,
+	/// <c>Airports.txt</c>, <c>Departures.txt</c>, <c>Arrivals.txt</c>, <c>Navaids.txt</c>,
+	/// <c>Faa_Chart_Recall.txt</c> and <c>Telephony.txt</c>. They are exported only while
+	/// <see cref="AiracServiceSettings.ExportIndividualAliasFiles"/> is on; <c>Combined_Alias.txt</c> always is.
+	/// </summary>
+	public static IReadOnlyList<string> SubServiceAliasFileKeys { get; } =
+	[
+		AirwayOutputFiles.Alias, AirportOutputFiles.Alias, DepartureOutputFiles.Alias, ArrivalOutputFiles.Alias,
+		NavaidOutputFiles.Alias, ProcedureOutputFiles.Alias, TelephonyOutputFiles.Alias,
+	];
 
 	/// <summary>
 	/// The report of the alias commands more than one line of the run's alias files uses, written
@@ -81,6 +106,22 @@ public static class AiracOutputPaths
 	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>
 	/// <returns>The folder's full path.</returns>
 	public static string AliasDirectory(string outputDirectory) => Path.Combine(outputDirectory, AliasFolder);
+
+	/// <summary>
+	/// Where a sub-service's own alias file is written: <c>&lt;output&gt;\Aliases\&lt;its name&gt;</c>, or FE-Buddy's
+	/// scratch folder for the run when the run doesn't export it (<see cref="OutputFileNames.UnexportedAliasDirectory"/>).
+	/// Every alias writer asks here.
+	/// </summary>
+	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>
+	/// <param name="fileNames">The run's file names, which say where an alias file that isn't exported goes.</param>
+	/// <param name="fileKey">The alias file's key, e.g. <c>Airways.txt</c>.</param>
+	/// <returns>The file's full path. Its folder may not exist yet.</returns>
+	public static string AliasFilePath(string outputDirectory, OutputFileNames fileNames, string fileKey)
+	{
+		ArgumentNullException.ThrowIfNull(fileNames);
+
+		return Path.Combine(fileNames.UnexportedAliasDirectory ?? AliasDirectory(outputDirectory), fileNames.FileName(fileKey));
+	}
 
 	/// <summary>The one alias file to upload to vNAS: <c>&lt;output&gt;\Aliases\Combined_Alias.txt</c>.</summary>
 	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>

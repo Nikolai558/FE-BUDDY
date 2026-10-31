@@ -52,9 +52,10 @@ last save** restores. Settings' own **Save** writes the whole profile, with no u
 
 Each file starts with `"ConfigVersion"`, its layout (`UserConfigVersion`), which every write stamps
 and which is never read as a setting. A file with no stamp, or one older than
-`UserConfigVersion.Oldest`, is read as the oldest layout. At launch, a profile in an older layout is
-brought forward (`UserConfigMigrations`) and written back, the old file kept as
-`UserConfig-v<old layout>.<Profile>.json`. See [Changing the layout](#changing-the-layout).
+`UserConfigVersion.Oldest`, is read as the oldest layout. At launch, every profile and `Shared.json`
+in an older layout are brought forward together (`UserConfigMigrations`) and written back, each old
+file kept as `UserConfig-v<old layout>.<Profile>.json` or `Shared-v<old layout>.json`. A file a newer
+FE-Buddy saved is set aside instead. See [Changing the layout](#changing-the-layout).
 
 ## Settings profiles
 
@@ -65,6 +66,10 @@ Everything is in `%APPDATA%\FE-Buddy\User Configurations`:
 | `UserConfig.<Profile>.json` | One profile: every setting but the shared ones. The name follows Windows' rules for a file name, up to 64 characters; names differing only in case are the same profile. |
 | `Shared.json` | `ActiveProfile` (the profile in use), and the settings every profile shares: `UserConfigPortability.SharedByProfiles` (the update channel, `NewsLastOpen`, `FeBuddyGitHub.CredentialId`, `LegacyGitHubTokenNoticeShown`, `WelcomeShown`, `RememberWindowPlacement`, `MainWindowPlacement`). |
 | `UserConfig-<kind>.<Profile>.json` | A profile's backups: `previous` (undo), `before-import`, `v<N>` (brought forward), `damaged` (the profile as it was when it couldn't be read as settings, kept before a save wrote over it). They move and go with it. |
+| `Shared-v<N>.json` | `Shared.json` as it was in layout N, kept when it was brought forward. |
+
+Settings a newer FE-Buddy saved that this one can't read go to `%APPDATA%\FE-Buddy\Reverted`
+([Going back](#going-back-to-an-older-release)).
 
 - In memory the two files are one dictionary, so a caller never knows which a key is in. `Save`
   writes a shared key under its node to `Shared.json`, and every other key to the profile.
@@ -120,6 +125,7 @@ The AIRAC Service's General tab. Its node sits beside the other tabs' nodes, so 
 | `CyclePosition` | `Current`, `Next` or `Previous`: the cycle last saved. A saved `Next` reopens on Next unless the FAA hasn't published it; anything else opens on Current | `Current` |
 | `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
+| `ExportIndividualAliasFiles` | `Y` / `N`: also save each sub-service's own alias file (`Airports.txt`, `Faa_Chart_Recall.txt`, …) in `Aliases\`. `N` puts their commands only in `Combined_Alias.txt` ([Where files go](#where-files-go)). Read as saved by the run (`AiracServiceSettings.ExportIndividualAliasFiles`) | `N` |
 
 ### Services.AiracService.DuplicateAliases
 
@@ -232,7 +238,7 @@ accept and ignore them.
 
 | File | Goes in |
 |---|---|
-| Alias file | `Aliases\` |
+| Alias file | `Aliases\`, while the General tab's `ExportIndividualAliasFiles` is on. Off (the default), it is written to the run's folder in FE-Buddy's scratch area, under FE-Buddy's name, and is only a section of `Combined_Alias.txt`; any an earlier run left in `Aliases\` is deleted |
 | `Combined_Alias.txt` | `Aliases\`, whenever the run wrote an alias file or [Add Custom Aliases](#add-custom-aliases) is in it, unless the user stops the run at the duplicate review |
 | GeoJSON | `Geojson\` (Departures and Arrivals: `Geojson\<ARTCC>\<airport>\`) |
 | Procedure Charts' documents | `Publication_Docs\` |
@@ -282,6 +288,10 @@ tests.
   FE-Buddy name.
 - Everything else still knows the file by its key: `CrcDefaultsFor`, the combined alias file and the
   duplicate report.
+- A sub-service's own alias file keeps FE-Buddy's name while `ExportIndividualAliasFiles` is off: it
+  isn't exported, so the File Names tab doesn't list it and its new name is kept but not used
+  (`OutputFileNames.WithUnexportedAliasFilesIn`).
+  A new name for `Combined_Alias.txt` is always used.
 
 ## CRC defaults
 
@@ -653,11 +663,19 @@ no list:
 ## Changing the layout
 
 Testers keep their settings from one version to the next, so a saved setting is never just renamed.
-Renaming, moving or dropping one, or changing how its value is written, makes a new layout. Moving
-the settings file while every setting keeps its dotted path is not a layout change: it needs only
-step 3.
 
-1. **Bump `UserConfigVersion.Current`.**
+- **Every rename, move, re-format or removal of a saved setting is a new layout with its own step**,
+  in a pre-release too.
+- **A layout number is never used twice**, not even one that never shipped.
+- **`UserConfigVersion.Oldest` never goes up**: a user who skipped releases would lose their
+  settings. Keep the old steps instead. `UserConfigVersionTests` checks it.
+
+Moving the settings file while every setting keeps its dotted path is not a layout change: it needs
+only step 3.
+
+1. **Bump `UserConfigVersion.Current`**, and add the layout to `UserConfigVersion.Layouts` and to the
+   table below, with the first release that saves it. `UserConfigVersionTests` checks that the two
+   match and that this version reads the current layout.
 2. **Add the step** that turns the old layout into the new one to `UserConfigMigrations.All`:
    ```csharp
    new UserConfigMigration(3, "Airways' buffer distances moved under Buffer", settings =>
@@ -668,9 +686,19 @@ step 3.
    ```
    A step edits the settings by dotted path (`Move`, `ChangeValue`, `Set`, `Remove`). It may meet a
    file that already has some of the new layout: `Move`, `Set` and `Remove` can run twice without
-   harm, and a `ChangeValue` must leave an already-changed value alone. The shared settings go
-   through the same steps: `Shared.json` is brought forward on its own, by its own stamp, so a step
-   sees one file's settings at a time, and one that renames a shared setting renames it there too.
+   harm, and a `ChangeValue` must leave an already-changed value alone.
+
+   Every file is brought forward together, one layout at a time
+   (`UserConfigMigrations.MigrateTogether`). A step runs on each profile still behind it, the one in
+   use first, then on `Shared.json`, then its `ThenShared` part on `Shared.json` alone. So a step that
+   renames a shared setting renames it there too, and a step can move a setting between the files:
+   - `MoveToShared(from, to)` moves a profile's setting into `Shared.json`. The profile in use runs
+     first, so its value is the one kept.
+   - `CopyFromShared(from, to)` gives each profile a copy of a shared setting, keeping one it already
+     has. `ThenShared = shared => shared.Remove(...)` then takes it out of `Shared.json`.
+
+   A profile behind `Shared.json` (one copied in by hand, say) sees `Shared.json` as it is now: a
+   setting already handed out and removed gets its default.
 3. **For a file that moves**, have `UserConfigFile` look for it where the old layout kept it too.
 4. **Add a sample** of the new layout: `FeBuddy.UnitTests\Fixtures\UserConfig\UserConfig.v<N>.json`,
    a full file as the new version saves it, with its fingerprint in `UserConfigLayoutTests`.
@@ -685,3 +713,18 @@ The layouts so far:
 | Layout | First saved by | Change |
 |---|---|---|
 | 2 | 3.0.0-beta.6 | The oldest FE-Buddy reads (`UserConfigVersion.Oldest`) |
+
+### Going back to an older release
+
+An older FE-Buddy can't read a file in a newer layout. At launch (`UserConfigFile.CheckLayouts`), and
+whenever the profile in use is read, it moves such a file, with the profile's undo copy, to
+`%APPDATA%\FE-Buddy\Reverted\<UTC time>\`. Each check gets a new folder, and nothing there is deleted
+(a reset that keeps settings keeps it too). In the file's place it puts the newest `v<N>` or
+`Shared-v<N>.json` backup it can read, or a file with the defaults, so the profile keeps its place.
+The app then says what it did, once.
+
+Before **Go back now** downloads, the update window asks about the profiles that release can't read
+(`UserConfigFile.UnreadableBy`, from `UserConfigVersion.Layouts`): **Export…** writes one file per
+profile (`UserConfigTransfer.ExportProfiles`) for **Import…** after updating again. Nothing is moved
+then. `Shared.json` is never exported: its settings are all this PC's, and the Reverted copy keeps
+them.

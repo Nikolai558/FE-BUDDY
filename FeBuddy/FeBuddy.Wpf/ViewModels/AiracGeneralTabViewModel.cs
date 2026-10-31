@@ -27,18 +27,23 @@ namespace FeBuddy.Wpf.ViewModels;
 /// this tab it is only kept once saved.
 /// </para>
 /// <para>
+/// The Alias File Exports card shows while an included sub-service writes an alias file. The tabs
+/// follow its choice before it is saved, as they follow the table (<see cref="IAliasFileExports"/>).
+/// </para>
+/// <para>
 /// The table owns each sub-service's outputs; its tab reads them (<see cref="ISubServiceOutputs"/>).
 /// They are saved under this tab's <c>Outputs</c> node, never inside a sub-service's own node, so
 /// saving or undoing a sub-service tab can't change them. Nothing saved means everything included
 /// and every output on.
 /// </para>
 /// </remarks>
-public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
+public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel, IAliasFileExports
 {
 	private const string Node = $"{UserConfigAreas.AiracNode}.{AiracTabs.General}";
 	private const string SelectedSubServicesKey = "SelectedSubServices";
 	private const string OutputsNode = "Outputs";
 	private const string CyclePositionKey = "CyclePosition";
+	private const string ExportIndividualAliasFilesKey = "ExportIndividualAliasFiles";
 
 	private bool _loading;
 	private bool _cycleFromSave;
@@ -46,6 +51,8 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	private string _waitingMessage = string.Empty;
 	private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
 	private AiracCyclePosition _cyclePositionBeforeReload = AiracCyclePosition.Current;
+	private bool _exportIndividualAliasFiles;
+	private string _combinedAliasFileName = AiracOutputPaths.CombinedAliasFileName;
 
 	/// <summary>Builds the tab and restores the saved cycle and sub-services.</summary>
 	public AiracGeneralTabViewModel()
@@ -133,6 +140,54 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			CycleChanged?.Invoke(this, EventArgs.Empty);
 		}
 	}
+
+	/// <summary>
+	/// Whether a run also saves each sub-service's own alias file beside <c>Combined_Alias.txt</c>
+	/// (<see cref="AiracServiceSettings.ExportIndividualAliasFiles"/>). Off by default.
+	/// </summary>
+	public bool ExportIndividualAliasFiles
+	{
+		get => _exportIndividualAliasFiles;
+		set
+		{
+			if (SetProperty(ref _exportIndividualAliasFiles, value) && !_loading)
+			{
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <inheritdoc />
+	/// <remarks>The File Names tab's to say: the screen sets it whenever a name there changes. It is never saved here.</remarks>
+	public string CombinedAliasFileName
+	{
+		get => _combinedAliasFileName;
+		set
+		{
+			if (SetProperty(ref _combinedAliasFileName, value))
+			{
+				OnPropertyChanged(nameof(AliasFileExportsIntro));
+				OnPropertyChanged(nameof(AliasFileExportsToolTip));
+			}
+		}
+	}
+
+	/// <summary>Whether the Alias File Exports card shows: while an included sub-service writes an alias file.</summary>
+	public bool ShowsAliasFileExports => AliasFilesOn.Any();
+
+	/// <summary>The Alias File Exports card's first line, naming the combined file as the run will write it.</summary>
+	public string AliasFileExportsIntro => $"Every alias command goes into `{CombinedAliasFileName}`, the one alias file vNAS takes.";
+
+	/// <summary>
+	/// The Alias File Exports question's tooltip: the files Yes would export, by FE-Buddy's names - those
+	/// the table's choices write right now.
+	/// </summary>
+	public string AliasFileExportsToolTip =>
+		$"Yes also saves these in the Aliases folder: {string.Join(", ", AliasFilesOn)}.\n" +
+		$"Each holds only its own sub-service's commands, which are in {CombinedAliasFileName} either way.";
+
+	/// <summary>The alias files the table's choices write, by FE-Buddy's names, in rail order.</summary>
+	private IEnumerable<string> AliasFilesOn => IncludedSubServices.Where(row => row.Alias).Select(row => row.Descriptor.AliasFile).OfType<string>();
 
 	/// <summary>e.g. <c>Cycle 2610 · effective 01 Oct 2026</c> for the current selection.</summary>
 	public string SelectedCycleLabel
@@ -225,13 +280,21 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	{
 		string[] included = [.. IncludedSubServices.Select(s => $"{s.DisplayName} ({DescribeOutputs(s.OutputsOn)})")];
 
-		ServicePreviewRow[] rows =
+		List<ServicePreviewRow> rows =
 		[
 			new ServicePreviewRow("Cycle", SelectedCycleLabel),
 			new ServicePreviewRow("Sub-services", included.Length == 0 ? "None" : string.Join("\n", included)),
-			new ServicePreviewRow("Output folder",
-				$"`{OutputPreferences.CycleDirectory(AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId)}`"),
 		];
+
+		if (ShowsAliasFileExports)
+		{
+			rows.Add(new ServicePreviewRow("Alias files", ExportIndividualAliasFiles
+				? $"`{CombinedAliasFileName}`, and each sub-service's own: {string.Join(", ", AliasFilesOn.Select(file => $"`{file}`"))}"
+				: $"Only `{CombinedAliasFileName}`: each sub-service's own alias file isn't exported"));
+		}
+
+		rows.Add(new ServicePreviewRow("Output folder",
+			$"`{OutputPreferences.CycleDirectory(AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId)}`"));
 
 		return [new ServicePreviewSection("General", rows)];
 	}
@@ -259,13 +322,23 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			{
 				row.Load(included?.Contains(row.Key) ?? true, ReadOutputs(row));
 			}
+
+			ExportIndividualAliasFiles = Get(ExportIndividualAliasFilesKey) is { } export && IsYes(export);
 		}
 		finally
 		{
 			_loading = false;
 		}
 
+		RaiseAliasFileExportsCard();
 		ClearDirty();
+	}
+
+	/// <summary>Announces what the Alias File Exports card reads from the table.</summary>
+	private void RaiseAliasFileExportsCard()
+	{
+		OnPropertyChanged(nameof(ShowsAliasFileExports));
+		OnPropertyChanged(nameof(AliasFileExportsToolTip));
 	}
 
 	/// <inheritdoc />
@@ -290,6 +363,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	{
 		Set(CyclePositionKey, SelectedCyclePosition.ToString());
 		Set(SelectedSubServicesKey, string.Join(',', IncludedSubServices.Select(s => s.Key)));
+		Set(ExportIndividualAliasFilesKey, YesNo(ExportIndividualAliasFiles));
 
 		foreach (SubServiceRow row in SubServices)
 		{
@@ -302,6 +376,8 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 	private void OnSubServicesChanged()
 	{
+		RaiseAliasFileExportsCard();
+
 		if (_loading)
 		{
 			return;
@@ -344,6 +420,14 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		return saved is null || IsYes(saved);
 	}
 
+
+	/// <summary>
+	/// Whether a run saves each sub-service's own alias file, as last saved (<see cref="ExportIndividualAliasFiles"/>);
+	/// nothing saved is off. Unsaved changes on this tab don't count.
+	/// </summary>
+	/// <returns><see langword="true"/> when it is on.</returns>
+	public static bool IsSavedIndividualAliasExportOn() =>
+		UserConfigFile.GetValue($"{Node}.{ExportIndividualAliasFilesKey}") is { } saved && IsYes(saved);
 
 	private static bool IsYes(string value) =>
 		value.Trim().Equals("Y", StringComparison.OrdinalIgnoreCase) || value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);

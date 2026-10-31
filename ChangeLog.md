@@ -18,6 +18,31 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### Updates
+- Feature #399 - Before **Go back now** installs an older release, the update window names the
+  profiles it can't read and offers **Export…**, so you can bring them back with **Import…** after
+  updating again.
+
+### AIRAC Service
+- New **Alias File Exports** card on the General tab: alias commands now go only into
+  `Combined_Alias.txt`, the one alias file vNAS takes. Set **Also export each sub-service's own alias
+  file** to **Yes** to also get `Airports.txt`, `Faa_Chart_Recall.txt` and the rest. While it's
+  **No**, a run deletes those files an earlier run left in `Aliases\`, and File Names hides them.
+
+### File Conversions
+- Feature #401 - ERAM to GeoJSON leaves out SAA objects in every layout, since they're of little use
+  on VATSIM. The results say how many were left out.
+
+### Settings
+- Feature #399 - Settings saved by a newer FE-Buddy that this one can't read are moved to
+  `%APPDATA%\FE-Buddy\Reverted` and replaced with the newest backup it can read, or the defaults.
+  FE-Buddy says so once when it opens.
+
+### Dev notes
+- Settings layouts: `UserConfigVersion.Layouts` names the first release to save each layout, and
+  every profile and `Shared.json` are brought forward together (`MoveToShared`, `CopyFromShared`).
+- Alias writers get their path from `AiracOutputPaths.AliasFilePath`. Unexported alias files go to
+  the run's temp folder, which is deleted however the run ends.
 
 ---
 

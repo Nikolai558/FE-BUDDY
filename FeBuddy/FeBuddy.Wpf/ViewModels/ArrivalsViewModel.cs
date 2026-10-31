@@ -262,9 +262,9 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			summary += $", {arrivals.SkippedForMissingPointsCount:N0} skipped for missing points";
 		}
 
-		if (arrivals.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(arrivals.AliasFilePath, arrivals.AliasCommandCount, "alias command(s)") is { } aliasCommands)
 		{
-			summary += $", {Path.GetFileName(arrivals.AliasFilePath)}: {arrivals.AliasCommandCount:N0} alias command(s)";
+			summary += $", {aliasCommands}";
 		}
 
 		return new SubServiceRunResult(Title, summary, arrivals.Messages);

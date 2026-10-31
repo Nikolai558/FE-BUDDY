@@ -879,9 +879,10 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				+ $"{procedures.ChangedCount} changed, {procedures.DeletedCount} deleted, {procedures.FilesWritten.Count} document(s)");
 		}
 
-		if (procedures.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(procedures.AliasFilePath, procedures.AliasCommandCount, $"command(s) for {procedures.AliasAirportCount:N0} airport(s)")
+			is { } aliasCommands)
 		{
-			parts.Add($"{ProcedureOutputFiles.Alias}: {procedures.AliasCommandCount:N0} command(s) for {procedures.AliasAirportCount:N0} airport(s)");
+			parts.Add(aliasCommands);
 		}
 
 		string summary = parts.Count > 0 ? string.Join("; ", parts) : "Nothing written";

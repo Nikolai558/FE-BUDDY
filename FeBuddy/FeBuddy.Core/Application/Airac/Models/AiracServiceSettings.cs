@@ -46,6 +46,14 @@ public sealed record AiracServiceSettings
 	public IReadOnlyDictionary<string, string>? FileNames { get; init; }
 
 	/// <summary>
+	/// Whether each sub-service's own alias file (<see cref="AiracOutputPaths.SubServiceAliasFileKeys"/>) is
+	/// saved in the cycle's <c>Aliases</c> folder beside <c>Combined_Alias.txt</c>. <see langword="false"/> (the
+	/// default) puts their commands only in <c>Combined_Alias.txt</c>: the files are written to FE-Buddy's
+	/// scratch area under FE-Buddy's names, combined from there, and deleted when the run ends.
+	/// </summary>
+	public bool ExportIndividualAliasFiles { get; init; }
+
+	/// <summary>
 	/// What happens to a duplicated alias command no choice settles: <see langword="false"/> (the
 	/// default) lists it in <c>Duplicate_Alias_Commands.txt</c>; <see langword="true"/> stops the run,
 	/// before any alias file is saved, for the user to choose (the reviewer given to <c>RunAsync</c>).

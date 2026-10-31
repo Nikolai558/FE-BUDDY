@@ -37,8 +37,7 @@ public static class OutputFileNamesParser
 	/// </summary>
 	public static IReadOnlySet<string> KeptFileKeys { get; } = new HashSet<string>(
 	[
-		AirwayOutputFiles.Alias, AirportOutputFiles.Alias, DepartureOutputFiles.Alias, ArrivalOutputFiles.Alias,
-		NavaidOutputFiles.Alias, ProcedureOutputFiles.Alias, TelephonyOutputFiles.Alias,
+		.. AiracOutputPaths.SubServiceAliasFileKeys,
 		ProcedureOutputFiles.Changes, ProcedureOutputFiles.Json,
 		AiracOutputPaths.CombinedAliasFileName, AiracOutputPaths.DuplicateAliasReportFileName,
 	], StringComparer.OrdinalIgnoreCase);

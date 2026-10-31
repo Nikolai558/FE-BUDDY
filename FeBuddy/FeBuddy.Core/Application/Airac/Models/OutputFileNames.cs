@@ -76,6 +76,33 @@ public sealed class OutputFileNames
 	/// <summary>Every file keeps FE-Buddy's name.</summary>
 	public static OutputFileNames None { get; } = new(new Dictionary<string, string>());
 
+	/// <summary>
+	/// The folder each sub-service's own alias file goes in while the run doesn't export it
+	/// (<see cref="AiracServiceSettings.ExportIndividualAliasFiles"/>): the run's folder in FE-Buddy's scratch
+	/// area. <see langword="null"/> when they are exported, to the cycle's <c>Aliases</c> folder
+	/// (<see cref="AiracOutputPaths.AliasFilePath"/>).
+	/// </summary>
+	public string? UnexportedAliasDirectory { get; private init; }
+
+	/// <summary>
+	/// These names for a run that doesn't export the sub-services' own alias files
+	/// (<see cref="AiracOutputPaths.SubServiceAliasFileKeys"/>): those go in <paramref name="directory"/> under
+	/// FE-Buddy's names, so <c>Combined_Alias.txt</c> heads each section with it. Every other file keeps the name
+	/// given it here, <c>Combined_Alias.txt</c> included.
+	/// </summary>
+	/// <param name="directory">The run's folder in FE-Buddy's scratch area.</param>
+	/// <returns>The names to run with. The renames left out stay saved, for a run that exports the files.</returns>
+	public OutputFileNames WithUnexportedAliasFilesIn(string directory)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(directory);
+
+		Dictionary<string, string> kept = _newNames
+			.Where(entry => !AiracOutputPaths.SubServiceAliasFileKeys.Contains(entry.Key, StringComparer.OrdinalIgnoreCase))
+			.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase);
+
+		return new OutputFileNames(kept) { UnexportedAliasDirectory = directory };
+	}
+
 	/// <summary>The name a file is written under: its new name and its own extension, or FE-Buddy's name for it.</summary>
 	/// <param name="fileKey">The file's key, e.g. <c>Airways_High_Lines</c> or <c>Airways.txt</c>.</param>
 	/// <returns>e.g. <c>ZOB High.geojson</c>, or <c>Airways_High_Lines.geojson</c> when it was not renamed.</returns>

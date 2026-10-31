@@ -215,6 +215,36 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.Equal("Y", UserConfigFile.GetValue(UserConfigKeys.DefaultRoiFilter));
 	}
 
+	/// <summary>
+	/// Exporting each sub-service's own alias file is off until saved on; it is saved under this tab's node, the
+	/// run reads it as saved, and Undo last save takes it back.
+	/// </summary>
+	[Fact]
+	public void exporting_the_individual_alias_files_is_off_until_saved_on_and_undoes_with_the_tab()
+	{
+		AiracGeneralTabViewModel general = new();
+
+		Assert.False(general.ExportIndividualAliasFiles);
+		Assert.False(AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn());
+
+		Assert.True(general.Save());
+		Assert.Equal("N", UserConfigFile.GetValue($"{Node}.ExportIndividualAliasFiles"));
+
+		general.ExportIndividualAliasFiles = true;
+		Assert.True(general.IsDirty);
+		Assert.False(AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn());
+
+		Assert.True(general.Save());
+		Assert.Equal("Y", UserConfigFile.GetValue($"{Node}.ExportIndividualAliasFiles"));
+		Assert.True(AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn());
+		Assert.True(new AiracGeneralTabViewModel().ExportIndividualAliasFiles);
+
+		general.UndoLastSave();
+
+		Assert.False(general.ExportIndividualAliasFiles);
+		Assert.False(AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn());
+	}
+
 	/// <summary>Settings edited by hand with every output off would make nothing: they load with every output on.</summary>
 	[Fact]
 	public void every_output_off_loads_with_every_output_on()

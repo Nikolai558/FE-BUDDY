@@ -249,9 +249,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			summary += $", {airways.ExcludedAirwayIds.Count:N0} excluded";
 		}
 
-		if (airways.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(airways.AliasFilePath, airways.AliasAirwayLineCount, "alias line(s)") is { } aliasCommands)
 		{
-			summary += $", {Path.GetFileName(airways.AliasFilePath)}: {airways.AliasAirwayLineCount:N0} alias line(s)";
+			summary += $", {aliasCommands}";
 		}
 
 		if (airways.GeojsonFilesWritten.Count > 0)

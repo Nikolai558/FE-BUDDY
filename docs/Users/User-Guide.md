@@ -304,7 +304,7 @@ aviationweather.gov's station list (not NASR), downloaded every run. No Lines or
 ### Add Custom Aliases tab
 
 vNAS takes one alias file per facility, so every run that makes an alias file writes
-`Aliases\Combined_Alias.txt`: every alias file the run makes, then - if you answer **Yes** - your
+`Aliases\Combined_Alias.txt`: every sub-service's alias commands, then - if you answer **Yes** - your
 facility's own, which win because CRC uses the last copy of a command. Upload that one file. The tab
 is greyed out while no sub-service makes an alias file.
 
@@ -430,7 +430,7 @@ Every AIRAC Service run of a cycle writes into one `AIRAC_<cycle>` folder in you
 └── FE-Buddy_Output\
     ├── AIRAC_2610\
     │   ├── Duplicate_Alias_Commands.txt   (when the run wrote an alias file)
-    │   ├── Aliases\                       every alias file, and Combined_Alias.txt
+    │   ├── Aliases\                       Combined_Alias.txt: every sub-service's alias commands
     │   ├── Geojson\                       every GeoJSON file
     │   └── Publication_Docs\              Procedure_Changes.md, Procedures.json
     ├── DAT to GeoJSON\
@@ -443,8 +443,8 @@ Every AIRAC Service run of a cycle writes into one `AIRAC_<cycle>` folder in you
 - The conversions replace any file of the same name.
 
 **`Duplicate_Alias_Commands.txt`** lists every alias command that more than one line uses across the
-run's alias files (CRC runs only one of them), grouped by ARTCC - yours first - then `TELEPHONY` and
-`OTHER`. The Review tab warns when there are any. A duplicate your choices settle (see
+run's alias commands (CRC runs only one of them), grouped by ARTCC - yours first - then `TELEPHONY` and
+`OTHER`, each line under the name of its section of `Combined_Alias.txt`. The Review tab warns when there are any. A duplicate your choices settle (see
 [Preview Settings](#preview-settings-tab)) isn't listed.
 
 ## Map

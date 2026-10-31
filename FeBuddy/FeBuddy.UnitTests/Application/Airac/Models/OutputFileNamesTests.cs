@@ -176,6 +176,48 @@ public sealed class OutputFileNamesTests
 		Assert.Equal("ZOB.txt", names.FileName("Airways.txt"));
 	}
 
+	/// <summary>
+	/// A run that doesn't export the sub-services' alias files writes them to its scratch folder under FE-Buddy's
+	/// names; every other file - Combined_Alias.txt included - keeps the name it was given.
+	/// </summary>
+	[Fact]
+	public void unexported_alias_files_go_to_the_scratch_folder_under_fe_buddys_names()
+	{
+		OutputFileNames names = new(new Dictionary<string, string>
+		{
+			["Airports.txt"] = "ZOB Airports",
+			["Faa_Chart_Recall.txt"] = "ZOB Charts",
+			["Combined_Alias.txt"] = "ZOB vNAS",
+			["Airways_High_Lines"] = "ZOB High",
+		});
+
+		OutputFileNames unexported = names.WithUnexportedAliasFilesIn(@"C:\Temp\FE-Buddy\AliasFiles\run");
+
+		Assert.Null(names.UnexportedAliasDirectory);
+		Assert.Equal(@"C:\Out\AIRAC_2610\Aliases\ZOB Airports.txt", AiracOutputPaths.AliasFilePath(@"C:\Out\AIRAC_2610", names, "Airports.txt"));
+		Assert.Equal(@"C:\Out\AIRAC_2610\Aliases\Airways.txt", AiracOutputPaths.AliasFilePath(@"C:\Out\AIRAC_2610", OutputFileNames.None, "Airways.txt"));
+
+		Assert.Equal(@"C:\Temp\FE-Buddy\AliasFiles\run", unexported.UnexportedAliasDirectory);
+		Assert.Equal(@"C:\Temp\FE-Buddy\AliasFiles\run\Airports.txt", AiracOutputPaths.AliasFilePath(@"C:\Out\AIRAC_2610", unexported, "Airports.txt"));
+		Assert.Equal("Faa_Chart_Recall.txt", unexported.FileName("Faa_Chart_Recall.txt"));
+		Assert.Equal("ZOB vNAS.txt", unexported.FileName("Combined_Alias.txt"));
+		Assert.Equal("ZOB High.geojson", unexported.FileName("Airways_High_Lines"));
+
+		Assert.Throws<ArgumentException>(() => names.WithUnexportedAliasFilesIn(" "));
+		Assert.Throws<ArgumentNullException>(() => AiracOutputPaths.AliasFilePath(@"C:\Out", null!, "Airports.txt"));
+	}
+
+	/// <summary>The seven alias files a run can leave unexported are every alias file's key but the combined file's.</summary>
+	[Fact]
+	public void the_sub_services_alias_files_are_the_seven_txt_files_in_aliases()
+	{
+		Assert.Equal(
+			["Airways.txt", "Airports.txt", "Departures.txt", "Arrivals.txt", "Navaids.txt", "Faa_Chart_Recall.txt", "Telephony.txt"],
+			AiracOutputPaths.SubServiceAliasFileKeys);
+		Assert.All(AiracOutputPaths.SubServiceAliasFileKeys, key => Assert.Equal(AiracOutputPaths.AliasFolder, OutputFileNames.FolderOf(key)));
+		Assert.All(AiracOutputPaths.SubServiceAliasFileKeys, key => Assert.Contains(key, OutputFileNamesParser.KeptFileKeys));
+	}
+
 	[Fact]
 	public void nothing_may_be_null()
 	{

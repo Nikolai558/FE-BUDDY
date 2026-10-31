@@ -688,6 +688,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 					? facility.ToUpperInvariant()
 					: null,
 				FileNames = _fileNames.BuildFileNamesBlock(),
+				ExportIndividualAliasFiles = AiracGeneralTabViewModel.IsSavedIndividualAliasExportOn(),
 				ReviewDuplicateAliases = DuplicateAliasesCardViewModel.LoadReview(),
 				DuplicateAliasChoices = DuplicateAliasesCardViewModel.LoadChoices(),
 				Airways = AirwaysTab?.BuildSettingsBlock(),

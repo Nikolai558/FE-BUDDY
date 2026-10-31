@@ -104,9 +104,9 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			summary += $", {airports.AirportsInRoiCount:N0} in the ROI";
 		}
 
-		if (airports.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(airports.AliasFilePath, airports.AliasCommandCount, "alias command(s)") is { } aliasCommands)
 		{
-			summary += $", {Path.GetFileName(airports.AliasFilePath)}: {airports.AliasCommandCount:N0} alias command(s)";
+			summary += $", {aliasCommands}";
 		}
 
 		if (airports.GeojsonFilesWritten.Count > 0)

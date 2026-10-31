@@ -118,9 +118,47 @@ public sealed record AiracServiceResult : ServiceResult
 	public CombinedAliasResult? CombinedAlias { get; init; }
 
 	/// <summary>
+	/// Whether each sub-service's own alias file was saved in the cycle's <c>Aliases</c> folder
+	/// (<see cref="AiracServiceSettings.ExportIndividualAliasFiles"/>). When it wasn't, no sub-service's result
+	/// names its alias file - it was only ever in FE-Buddy's scratch area - and its commands are only in
+	/// <c>Combined_Alias.txt</c>.
+	/// </summary>
+	public bool IndividualAliasFilesExported { get; init; }
+
+	/// <summary>
+	/// The file a sub-service's alias commands were saved in: its own alias file, or <c>Combined_Alias.txt</c>
+	/// when its own wasn't exported (<see cref="IndividualAliasFilesExported"/>).
+	/// </summary>
+	/// <param name="aliasFilePath">The sub-service's alias file, as its result names it.</param>
+	/// <param name="commandCount">How many alias commands (or lines) it made.</param>
+	/// <returns>
+	/// The file's name, e.g. <c>Airports.txt</c>; <see langword="null"/> when none were saved: it made none, or
+	/// the run stopped at the duplicate review.
+	/// </returns>
+	public string? AliasCommandsSavedIn(string? aliasFilePath, int commandCount) =>
+		aliasFilePath is not null ? Path.GetFileName(aliasFilePath)
+			: !IndividualAliasFilesExported && commandCount > 0 && CombinedAlias?.FilePath is { } combined ? Path.GetFileName(combined)
+			: null;
+
+	/// <summary>
+	/// What a sub-service's summary says about its alias commands, naming the file they are in: e.g.
+	/// <c>Airports.txt: 1,234 alias command(s)</c>, or <c>1,234 alias command(s), in Combined_Alias.txt</c> when
+	/// its own file wasn't exported.
+	/// </summary>
+	/// <param name="aliasFilePath">The sub-service's alias file, as its result names it.</param>
+	/// <param name="commandCount">How many alias commands (or lines) it made.</param>
+	/// <param name="what">What follows the count, e.g. <c>alias command(s)</c>.</param>
+	/// <returns>The words; <see langword="null"/> when no command was saved (<see cref="AliasCommandsSavedIn"/>).</returns>
+	public string? DescribeAliasCommands(string? aliasFilePath, int commandCount, string what) =>
+		AliasCommandsSavedIn(aliasFilePath, commandCount) is not { } file ? null
+			: aliasFilePath is not null ? $"{file}: {commandCount:N0} {what}"
+			: $"{commandCount:N0} {what}, in {file}";
+
+	/// <summary>
 	/// Every file the run wrote, in sub-service order: each sub-service's GeoJSON and documents and its alias
-	/// file, then the duplicate alias report and the combined alias file. A run stopped at the duplicate review
-	/// names no alias file - they were deleted.
+	/// file, then the duplicate alias report and the combined alias file. A run that didn't export the
+	/// sub-services' alias files (<see cref="IndividualAliasFilesExported"/>), or stopped at the duplicate review,
+	/// names none of them.
 	/// </summary>
 	public IReadOnlyList<string> FilesWritten
 	{

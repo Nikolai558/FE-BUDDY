@@ -35,7 +35,8 @@ namespace FeBuddy.Core.Application.Airac;
 /// </para>
 /// <para>
 /// A file is told apart by its key, FE-Buddy's name for it, so a file the user renamed (the File
-/// Names tab) is read the same way; the report names each file as it was written.
+/// Names tab) is read the same way; the report names each file as it was written, and a file that
+/// wasn't exported as its section of <c>Combined_Alias.txt</c>. It gives no line numbers.
 /// </para>
 /// </remarks>
 public static class DuplicateAliasReport
@@ -56,6 +57,11 @@ public static class DuplicateAliasReport
 	/// <param name="primaryFacility">The ARTCC listed first (the user's own facility), or <see langword="null"/> to list every ARTCC alphabetically.</param>
 	/// <param name="generatedUtc">When the report was made, for its heading.</param>
 	/// <param name="fileName">The report's name, when the user gave it one of their own (see <see cref="OutputFileNames"/>).</param>
+	/// <param name="sectionsOf">
+	/// The combined alias file the alias files are sections of, when they weren't exported themselves
+	/// (<see cref="AiracServiceSettings.ExportIndividualAliasFiles"/>), so the report names each as its section; otherwise
+	/// <see langword="null"/>.
+	/// </param>
 	/// <returns>The report's path and the duplicates it lists.</returns>
 	public static DuplicateAliasReportResult Write(
 		IReadOnlyList<AliasFileWritten> aliasFiles,
@@ -64,7 +70,8 @@ public static class DuplicateAliasReport
 		string outputDirectory,
 		string? primaryFacility,
 		DateTime generatedUtc,
-		string fileName = AiracOutputPaths.DuplicateAliasReportFileName)
+		string fileName = AiracOutputPaths.DuplicateAliasReportFileName,
+		string? sectionsOf = null)
 	{
 		ArgumentNullException.ThrowIfNull(aliasFiles);
 		ArgumentNullException.ThrowIfNull(nasr);
@@ -73,7 +80,7 @@ public static class DuplicateAliasReport
 		ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
 		IReadOnlyList<DuplicateAliasCommand> duplicates = Find(aliasFiles, nasr);
-		string text = Format(duplicates, aliasFiles, cycleId, primaryFacility, generatedUtc);
+		string text = Format(duplicates, aliasFiles, cycleId, primaryFacility, generatedUtc, sectionsOf);
 
 		Directory.CreateDirectory(outputDirectory);
 		string path = Path.Combine(outputDirectory, fileName);
@@ -167,7 +174,8 @@ public static class DuplicateAliasReport
 		IReadOnlyList<AliasFileWritten> aliasFiles,
 		string cycleId,
 		string? primaryFacility,
-		DateTime generatedUtc)
+		DateTime generatedUtc,
+		string? sectionsOf = null)
 	{
 		StringBuilder report = new();
 
@@ -178,7 +186,14 @@ public static class DuplicateAliasReport
 		report.AppendLine("run one of them. Commands are compared ignoring case, the way CRC matches them.");
 		report.AppendLine("Solutions are required at ARTCC level. Consult the FE-Buddy developers if unable to resolve at a local level.");
 		report.AppendLine();
-		report.AppendLine("Files checked: " + string.Join(", ", aliasFiles.Select(file => Path.GetFileName(file.FilePath))));
+		report.AppendLine("Files checked: " + string.Join(", ", aliasFiles.Select(file => Path.GetFileName(file.FilePath)))
+			+ (sectionsOf is null ? string.Empty : $", in {sectionsOf}"));
+
+		if (sectionsOf is not null)
+		{
+			report.AppendLine($"Those files aren't exported: each is a section of {sectionsOf}, under a \"; ----- <file> -----\" line.");
+		}
+
 		report.AppendLine();
 
 		if (duplicates.Count == 0)

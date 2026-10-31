@@ -194,9 +194,9 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		summary += $", {navaids.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
 
-		if (navaids.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(navaids.AliasFilePath, navaids.AliasCommandCount, "alias command(s)") is { } aliasCommands)
 		{
-			summary += $", {Path.GetFileName(navaids.AliasFilePath)}: {navaids.AliasCommandCount:N0} alias command(s)";
+			summary += $", {aliasCommands}";
 		}
 
 		return new SubServiceRunResult(Title, summary, navaids.Messages);

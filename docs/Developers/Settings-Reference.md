@@ -125,6 +125,7 @@ The AIRAC Service's General tab. Its node sits beside the other tabs' nodes, so 
 | `CyclePosition` | `Current`, `Next` or `Previous`: the cycle last saved. A saved `Next` reopens on Next unless the FAA hasn't published it; anything else opens on Current | `Current` |
 | `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Add Custom Aliases isn't in the table: its tab comes in by itself | every sub-service |
 | `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
+| `ExportIndividualAliasFiles` | `Y` / `N`: also save each sub-service's own alias file (`Airports.txt`, `Faa_Chart_Recall.txt`, …) in `Aliases\`. `N` puts their commands only in `Combined_Alias.txt` ([Where files go](#where-files-go)). Read as saved by the run (`AiracServiceSettings.ExportIndividualAliasFiles`) | `N` |
 
 ### Services.AiracService.DuplicateAliases
 
@@ -237,7 +238,7 @@ accept and ignore them.
 
 | File | Goes in |
 |---|---|
-| Alias file | `Aliases\` |
+| Alias file | `Aliases\`, while the General tab's `ExportIndividualAliasFiles` is on. Off (the default), it is written to the run's folder in FE-Buddy's scratch area, under FE-Buddy's name, and is only a section of `Combined_Alias.txt`; any an earlier run left in `Aliases\` is deleted |
 | `Combined_Alias.txt` | `Aliases\`, whenever the run wrote an alias file or [Add Custom Aliases](#add-custom-aliases) is in it, unless the user stops the run at the duplicate review |
 | GeoJSON | `Geojson\` (Departures and Arrivals: `Geojson\<ARTCC>\<airport>\`) |
 | Procedure Charts' documents | `Publication_Docs\` |
@@ -287,6 +288,9 @@ tests.
   FE-Buddy name.
 - Everything else still knows the file by its key: `CrcDefaultsFor`, the combined alias file and the
   duplicate report.
+- A sub-service's own alias file keeps FE-Buddy's name while `ExportIndividualAliasFiles` is off: it
+  isn't exported, so its new name is kept but not used (`OutputFileNames.WithUnexportedAliasFilesIn`).
+  A new name for `Combined_Alias.txt` is always used.
 
 ## CRC defaults
 

@@ -10,7 +10,7 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// </summary>
 /// <remarks>
 /// The file goes in the cycle folder's <c>Aliases</c> folder (see
-/// <see cref="AiracOutputPaths.AliasDirectory"/>), like every other alias file; an AIRAC Service run
+/// <see cref="AiracOutputPaths.AliasFilePath"/>), like every other alias file; an AIRAC Service run
 /// also copies it into <c>Combined_Alias.txt</c>. The help command
 /// (<see cref="ProcedureSettings.HelpCommand"/>), when on, is its first line.
 /// </remarks>
@@ -50,10 +50,8 @@ public static class ChartRecallAliasWriter
 			builder.Append(line.Text).AppendLine();
 		}
 
-		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
-		Directory.CreateDirectory(directory);
-
-		string path = Path.Combine(directory, settings.FileNames.FileName(ProcedureOutputFiles.Alias));
+		string path = AiracOutputPaths.AliasFilePath(settings.OutputDirectory, settings.FileNames, ProcedureOutputFiles.Alias);
+		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
 		// UTF-8 without a BOM, like every other alias file.
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));

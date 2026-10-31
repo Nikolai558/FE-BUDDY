@@ -41,9 +41,10 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// </para>
 /// <para>
 /// The file carries its layout version (<see cref="UserConfigVersion"/>) at the top, outside the
-/// settings, and every write stamps it. A file read in an older layout is brought up to the current
-/// one (<see cref="UserConfigMigrations"/>) and written back at once, the file as it was kept beside
-/// it as <c>UserConfig-v&lt;old version&gt;.&lt;Profile&gt;.json</c>.
+/// settings, and every write stamps it. Files in an older layout are brought up to the current one
+/// (<see cref="UserConfigMigrations"/>) together and written back at once, each kept as it was beside
+/// it as <c>UserConfig-v&lt;old version&gt;.&lt;Profile&gt;.json</c> (or <c>Shared-v&lt;old version&gt;.json</c>); one
+/// a newer FE-Buddy saved is set aside (<see cref="CheckLayouts"/>).
 /// </para>
 /// </remarks>
 public static partial class UserConfigFile
@@ -171,85 +172,112 @@ public static partial class UserConfigFile
 	/// <returns>Whether the profile was read, missing or unreadable.</returns>
 	public static UserConfigReadResult ReadAll()
 	{
+		bool setAside = false;
+		UserConfigReadResult result;
+
 		lock (Gate)
 		{
-			Dictionary<string, string> held = new(Values, StringComparer.Ordinal);
-			int heldStamp = _stampVersion;
-			string? heldProfile = _profileInMemory;
-
-			Values.Clear();
-			_stampVersion = UserConfigMigrations.CurrentVersion;
-			_profileUnreadable = false;
-			_profileInMemory = null;
-
-			SharedRead sharedRead = ReadShared();
-			_profile = PickProfile(sharedRead.ActiveProfile);
-			BringSharedForward(sharedRead);
-			Dictionary<string, string> shared = sharedRead.Values;
-
-			ReadUndoSnapshotIfNeeded();
-
-			string path = ConfigFilePath;
-
-			if (!File.Exists(path))
+			// Launch checks every file's layout before the first read; this catches a file that isn't in the
+			// current layout since - the profile just switched to, say.
+			if (NeedsLayoutCheck())
 			{
-				AddAll(shared);
-				_profileInMemory = _profile;
-				AppLog.Warning(LogSource, $"No config file at '{path}'. Using defaults for every setting.");
-				return UserConfigReadResult.Missing;
+				setAside = CheckLayoutsLocked();
 			}
 
-			try
+			result = ReadAllLocked();
+		}
+
+		if (setAside)
+		{
+			FilesSetAside?.Invoke(null, EventArgs.Empty);
+		}
+
+		return result;
+	}
+
+	/// <summary>The read itself (<see cref="ReadAll"/>). Call under <see cref="Gate"/>.</summary>
+	private static UserConfigReadResult ReadAllLocked()
+	{
+		Dictionary<string, string> held = new(Values, StringComparer.Ordinal);
+		int heldStamp = _stampVersion;
+		string? heldProfile = _profileInMemory;
+
+		Values.Clear();
+		_stampVersion = UserConfigMigrations.CurrentVersion;
+		_profileUnreadable = false;
+		_profileInMemory = null;
+
+		SharedRead sharedRead = ReadShared();
+		_profile = PickProfile(sharedRead.ActiveProfile);
+
+		// The layout check writes Shared.json forward, or sets it aside; one it couldn't keeps its stamp,
+		// so a save never passes it off as current.
+		_sharedStampVersion = sharedRead.Version;
+		Dictionary<string, string> shared = sharedRead.Values;
+
+		ReadUndoSnapshotIfNeeded();
+
+		string path = ConfigFilePath;
+
+		if (!File.Exists(path))
+		{
+			AddAll(shared);
+			_profileInMemory = _profile;
+			AppLog.Warning(LogSource, $"No config file at '{path}'. Using defaults for every setting.");
+			return UserConfigReadResult.Missing;
+		}
+
+		try
+		{
+			string json = File.ReadAllText(path);
+			JsonNode? root = JsonNode.Parse(json);
+
+			if (root is JsonObject obj)
 			{
-				string json = File.ReadAllText(path);
-				JsonNode? root = JsonNode.Parse(json);
+				int version = TakeVersion(obj, path);
+				FlattenInto(obj, prefix: string.Empty, Values);
+				_profileInMemory = _profile;
 
-				if (root is JsonObject obj)
+				AddAll(shared);
+
+				// The layout check writes a file in an older layout forward, and sets aside one a newer
+				// FE-Buddy saved. One it couldn't keeps its stamp - so a save never passes it off as
+				// current - and an older one is brought forward here, in memory, until it can be written.
+				if (version != UserConfigMigrations.CurrentVersion)
 				{
-					int version = TakeVersion(obj, path);
-					FlattenInto(obj, prefix: string.Empty, Values);
-					_profileInMemory = _profile;
-
-					AddAll(shared);
+					_stampVersion = version;
 
 					if (version < UserConfigMigrations.CurrentVersion)
 					{
-						BringForward(path, version);
+						BringForwardInMemory(version);
 					}
-					else if (version > UserConfigMigrations.CurrentVersion)
-					{
-						// Saves keep its stamp, so the newer FE-Buddy never takes its own settings for old ones.
-						_stampVersion = version;
-						AppLog.Warning(LogSource, $"'{Path.GetFileName(path)}' was saved by a newer FE-Buddy (settings layout {version}; this one knows up to " +
-							$"{UserConfigMigrations.CurrentVersion}). Settings it doesn't know are kept as they are.");
-					}
-
-					return UserConfigReadResult.Read;
 				}
 
-				Values.Clear();
-				AddAll(shared);
-				AppLog.Warning(LogSource, $"Config file '{path}' is not a JSON object. Using defaults.");
-				return UserConfigReadResult.Unreadable;
+				return UserConfigReadResult.Read;
 			}
-			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
-				&& string.Equals(heldProfile, _profile, StringComparison.OrdinalIgnoreCase))
-			{
-				Values.Clear();
-				AddAll(held);
-				_stampVersion = heldStamp;
-				_profileInMemory = heldProfile;
-				AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Keeping the settings read before.");
-				return UserConfigReadResult.Unreadable;
-			}
-			catch (Exception ex)
-			{
-				Values.Clear();
-				AddAll(shared);
-				_profileUnreadable = ex is IOException or UnauthorizedAccessException;
-				AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Using defaults.");
-				return UserConfigReadResult.Unreadable;
-			}
+
+			Values.Clear();
+			AddAll(shared);
+			AppLog.Warning(LogSource, $"Config file '{path}' is not a JSON object. Using defaults.");
+			return UserConfigReadResult.Unreadable;
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+			&& string.Equals(heldProfile, _profile, StringComparison.OrdinalIgnoreCase))
+		{
+			Values.Clear();
+			AddAll(held);
+			_stampVersion = heldStamp;
+			_profileInMemory = heldProfile;
+			AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Keeping the settings read before.");
+			return UserConfigReadResult.Unreadable;
+		}
+		catch (Exception ex)
+		{
+			Values.Clear();
+			AddAll(shared);
+			_profileUnreadable = ex is IOException or UnauthorizedAccessException;
+			AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Using defaults.");
+			return UserConfigReadResult.Unreadable;
 		}
 	}
 
@@ -784,6 +812,7 @@ public static partial class UserConfigFile
 			_profileInMemory = null;
 			ForgetUndoSnapshot();
 			WritingFileForTesting = null;
+			PendingSetAside.Clear();
 		}
 	}
 
@@ -888,15 +917,8 @@ public static partial class UserConfigFile
 	/// <summary>What <see cref="ReadShared"/> found in <c>Shared.json</c>.</summary>
 	/// <param name="Values">The shared settings, in the current layout unless they couldn't be brought to it.</param>
 	/// <param name="ActiveProfile">The name of the active profile, or <see langword="null"/>.</param>
-	/// <param name="Version">The layout the file was in: the current one when it is missing, empty or unreadable.</param>
-	/// <param name="Applied">The steps that brought its settings forward; empty when none ran.</param>
-	/// <param name="MigrationError">Why its settings couldn't be brought forward, or <see langword="null"/>.</param>
-	private sealed record SharedRead(
-		Dictionary<string, string> Values,
-		string? ActiveProfile,
-		int Version,
-		IReadOnlyList<string> Applied,
-		string? MigrationError);
+	/// <param name="Version">The layout the file is in: the current one when it is missing, empty or unreadable.</param>
+	private sealed record SharedRead(Dictionary<string, string> Values, string? ActiveProfile, int Version);
 
 	/// <summary>The nodes in an undo snapshot, for <see cref="CanUndo"/>.</summary>
 	/// <param name="Path">The snapshot's file, which names its profile.</param>
@@ -906,7 +928,7 @@ public static partial class UserConfigFile
 	/// <summary>
 	/// Reads <c>Shared.json</c>: the shared settings in it, brought up to the current layout in memory
 	/// (<see cref="UserConfigMigrations"/>), and the name of the active profile. A missing or unreadable
-	/// file has neither. Nothing is written: <see cref="BringSharedForward"/> does that at launch.
+	/// file has neither. Nothing is written: the layout check (<see cref="CheckLayouts"/>) does that.
 	/// </summary>
 	private static SharedRead ReadShared()
 	{
@@ -914,7 +936,7 @@ public static partial class UserConfigFile
 
 		if (root.Count == 0)
 		{
-			return new SharedRead(new(StringComparer.Ordinal), null, UserConfigMigrations.CurrentVersion, [], null);
+			return new SharedRead(new(StringComparer.Ordinal), null, UserConfigMigrations.CurrentVersion);
 		}
 
 		int version = TakeVersion(root, SharedFileName);
@@ -925,9 +947,6 @@ public static partial class UserConfigFile
 		Dictionary<string, string> all = new(StringComparer.Ordinal);
 		FlattenInto(root, prefix: string.Empty, all);
 
-		IReadOnlyList<string> applied = [];
-		string? error = null;
-
 		// Brought forward before the shared keys are picked out, so a step that renames one is followed.
 		if (version < UserConfigMigrations.CurrentVersion)
 		{
@@ -935,76 +954,17 @@ public static partial class UserConfigFile
 			{
 				UserConfigMigrationResult result = UserConfigMigrations.Migrate(all, version);
 				all = new(result.Values, StringComparer.Ordinal);
-				applied = result.Applied;
 			}
-			catch (InvalidOperationException ex)
+			catch (InvalidOperationException)
 			{
-				error = ex.Message;
+				// Used as they are: the layout check has said why.
 			}
 		}
 
 		Dictionary<string, string> shared = all.Where(entry => UserConfigPortability.SharedByProfiles.Contains(entry.Key))
 			.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
 
-		return new SharedRead(shared, activeProfile, version, applied, error);
-	}
-
-	/// <summary>
-	/// Writes <c>Shared.json</c> back in the current layout once <see cref="ReadShared"/> has brought its
-	/// settings up from an older one, as <see cref="BringForward"/> does the profile. A file saved by a
-	/// newer FE-Buddy, or one whose update can't be worked out, is used as it is, left alone and keeps
-	/// its stamp; one whose update can't be written keeps its old stamp, so the next launch tries again.
-	/// Never throws.
-	/// </summary>
-	private static void BringSharedForward(SharedRead read)
-	{
-		_sharedStampVersion = UserConfigMigrations.CurrentVersion;
-
-		if (read.Version > UserConfigMigrations.CurrentVersion)
-		{
-			_sharedStampVersion = read.Version;
-			AppLog.Warning(LogSource, $"'{SharedFileName}' was saved by a newer FE-Buddy (settings layout {read.Version}; this one knows up to " +
-				$"{UserConfigMigrations.CurrentVersion}). Settings it doesn't know are kept as they are.");
-			return;
-		}
-
-		if (read.MigrationError is { } error)
-		{
-			_sharedStampVersion = read.Version;
-			AppLog.Warning(LogSource, $"Could not bring the settings in '{SharedFileName}' up from layout {read.Version} to layout " +
-				$"{UserConfigMigrations.CurrentVersion}: {error} They are used as they are, and the file is left unchanged.");
-			return;
-		}
-
-		if (read.Version == UserConfigMigrations.CurrentVersion)
-		{
-			return;
-		}
-
-		try
-		{
-			// The active profile's name is kept as the file had it, not as PickProfile read it.
-			JsonObject tree = BuildTree(read.Values);
-			JsonObject root = read.ActiveProfile is { } activeProfile ? new() { [ActiveProfileKey] = activeProfile } : [];
-
-			foreach (KeyValuePair<string, JsonNode?> entry in tree.ToList())
-			{
-				tree.Remove(entry.Key);
-				root[entry.Key] = entry.Value;
-			}
-
-			WriteConfig(SharedFilePath, root, UserConfigMigrations.CurrentVersion);
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			_sharedStampVersion = read.Version;
-			AppLog.Warning(LogSource, $"Brought the settings in '{SharedFileName}' up from layout {read.Version} to layout " +
-				$"{UserConfigMigrations.CurrentVersion}, but could not write it: {ex.Message} FE-Buddy tries again at the next launch.");
-			return;
-		}
-
-		AppLog.Info(LogSource, $"Brought the settings in '{SharedFileName}' up from layout {read.Version} to layout " +
-			$"{UserConfigMigrations.CurrentVersion}: {string.Join("; ", read.Applied)}.");
+		return new SharedRead(shared, activeProfile, version);
 	}
 
 	/// <summary>
@@ -1308,13 +1268,11 @@ public static partial class UserConfigFile
 	}
 
 	/// <summary>
-	/// Brings the settings just read in layout <paramref name="version"/> up to the current one and
-	/// writes them back, keeping the file as it was (<see cref="BroughtForwardFilePath(int)"/>). The
-	/// per-node undo snapshots are of the old layout, so they go. When the update can't be worked out,
-	/// the settings are used as they are and the file is left alone; when it can't be written, the
-	/// file keeps its old stamp so the next launch tries again. Never throws.
+	/// Brings the settings just read in layout <paramref name="version"/> up to the current one in memory, for a
+	/// file the layout check couldn't write forward: it keeps its stamp, so the next read tries again. When the
+	/// update can't be worked out, the settings are used as they are; the check has said why. Never throws.
 	/// </summary>
-	private static void BringForward(string path, int version)
+	private static void BringForwardInMemory(int version)
 	{
 		UserConfigMigrationResult result;
 
@@ -1322,11 +1280,8 @@ public static partial class UserConfigFile
 		{
 			result = UserConfigMigrations.Migrate(Values, version);
 		}
-		catch (InvalidOperationException ex)
+		catch (InvalidOperationException)
 		{
-			_stampVersion = version;
-			AppLog.Warning(LogSource, $"Could not bring the settings in '{Path.GetFileName(path)}' up from layout {version} to layout {UserConfigMigrations.CurrentVersion}: " +
-				$"{ex.Message} They are used as they are, and the file is left unchanged.");
 			return;
 		}
 
@@ -1336,31 +1291,6 @@ public static partial class UserConfigFile
 		{
 			Values[entry.Key] = entry.Value;
 		}
-
-		string keptAs = BroughtForwardFilePath(version);
-
-		try
-		{
-			File.Copy(path, keptAs, overwrite: true);
-			WriteConfig(path, BuildTree(ProfileValues(Values)), UserConfigMigrations.CurrentVersion);
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			_stampVersion = version;
-			AppLog.Warning(LogSource, $"Brought the settings up from layout {version} to layout {UserConfigMigrations.CurrentVersion}, but could not write " +
-				$"'{Path.GetFileName(path)}': {ex.Message} FE-Buddy tries again at the next launch.");
-			return;
-		}
-
-		if (!DeleteIfPresent(PreviousFilePath))
-		{
-			AppLog.Warning(LogSource, $"Could not delete '{Path.GetFileName(PreviousFilePath)}', so Undo last save may put back a setting in the old layout.");
-		}
-
-		ForgetUndoSnapshot();
-
-		AppLog.Info(LogSource, $"Brought the settings up from layout {version} to layout {UserConfigMigrations.CurrentVersion}: " +
-			$"{string.Join("; ", result.Applied)}. The file as it was is kept as '{Path.GetFileName(keptAs)}'.");
 	}
 
 	private static JsonNode? GetNodeAtPath(JsonObject root, string dottedPath)

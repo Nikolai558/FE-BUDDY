@@ -12,6 +12,9 @@
 
     The table's columns line up through SharedSizeGroup on a stock Grid per row, so nothing is
     measured or rebuilt by hand.
+
+    Alias File Exports, under the table, asks whether a run also exports each sub-service's own
+    alias file beside Combined_Alias.txt. It shows only while an alias file is being made.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracGeneralTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -171,13 +174,35 @@
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                Text="Deselecting options here will usually grey-out that menu option in the tabs to the left." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
-                               bhv:InlineCode.Text="Alias files will be output separately per-type, along with a single combined alias file `Combined_Alias.txt` for vNAS upload." />
+                               bhv:InlineCode.Text="Alias commands go into a single combined alias file `Combined_Alias.txt` for vNAS upload. Each sub-service's own alias file can be exported too, under Alias File Exports below." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="16,2,0,0"
                                Text="- Custom alias files may be added to this file, if you so choose." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
                                Text="All settings/preferences are saved to this profile." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="16,2,0,0"
                                Text="- Change or create multiple profiles in the SETTINGS menu." />
+                </StackPanel>
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- ============ alias file exports ============
+             Only while an included sub-service writes an alias file. Combined_Alias.txt is written
+             either way; the question decides whether each sub-service's own file is too. The
+             tooltip names the files Yes would export. -->
+        <ctl:Card Header="Alias File Exports" Outputs="Alias"
+                  Visibility="{Binding ShowsAliasFileExports, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,0"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                           bhv:InlineCode.Text="{Binding AliasFileExportsIntro}" />
+                <StackPanel Margin="0,14,0,0" HorizontalAlignment="Left" Background="Transparent"
+                            ToolTip="{Binding AliasFileExportsToolTip}"
+                            ToolTipService.InitialShowDelay="250" ToolTipService.ShowDuration="60000">
+                    <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Also export each sub-service's own alias file" />
+                    <RadioButton GroupName="ExportIndividualAliasFiles" Content="No" Margin="0,6,0,0"
+                                 IsChecked="{Binding ExportIndividualAliasFiles, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                    <RadioButton GroupName="ExportIndividualAliasFiles" Content="Yes" Margin="0,3,0,0"
+                                 IsChecked="{Binding ExportIndividualAliasFiles, Mode=TwoWay}" />
                 </StackPanel>
             </StackPanel>
         </ctl:Card>

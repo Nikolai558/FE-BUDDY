@@ -57,6 +57,8 @@ lines, and **Outputs include** lists what narrows one file further (Procedure Ch
 `Procedure_Changes.md` keeps only what changed). Under **outputs** are the files it writes, each with
 what goes in it, then any **note** on them. Its last line says where those outputs are turned on and
 off: the General tab. Procedure Charts and Telephony list their files on an **Outputs** card instead.
+While **Alias File Exports** is **No**, a tab's alias file is listed as `Combined_Alias.txt`, and a
+note under it (on the Outputs card for those two) says its own file isn't exported.
 
 ### Saving
 
@@ -77,6 +79,10 @@ problem in a red box at its top and outlines each card concerned in red. Hover a
   its last file and it's left out, tick one and it's back in. One left out is greyed out in the list
   to the left and keeps its settings. Add Custom Aliases comes in by itself while an alias file is
   ticked.
+- **Alias File Exports** (while an alias file is ticked) - every alias command goes into
+  `Combined_Alias.txt`, the one alias file vNAS takes. **Also export each sub-service's own alias file**
+  is **No** to start; **Yes** also saves `Airports.txt`, `Faa_Chart_Recall.txt` and the rest in
+  `Aliases\`. Hover it for the files your choices make.
 
 ### The cards most tabs share
 
@@ -304,7 +310,7 @@ aviationweather.gov's station list (not NASR), downloaded every run. No Lines or
 ### Add Custom Aliases tab
 
 vNAS takes one alias file per facility, so every run that makes an alias file writes
-`Aliases\Combined_Alias.txt`: every alias file the run makes, then - if you answer **Yes** - your
+`Aliases\Combined_Alias.txt`: every sub-service's alias commands, then - if you answer **Yes** - your
 facility's own, which win because CRC uses the last copy of a command. Upload that one file. The tab
 is greyed out while no sub-service makes an alias file.
 
@@ -334,6 +340,8 @@ following the other tabs' settings.
 - A name can't be empty, contain `\ / : * ? " < > |`, end in a dot or an extension, be a name Windows
   reserves (`CON`, `NUL`, …), be over 100 characters, or match another file's.
 - Departures and Arrivals GeoJSON files can't be renamed: there's one per procedure.
+- While **Alias File Exports** (General tab) is **No**, the sub-services' own alias files aren't listed.
+  Their new names are kept for when it's **Yes**; `Combined_Alias.txt` is always listed.
 
 ### Preview Settings tab
 
@@ -409,7 +417,7 @@ export, into an `ERAM_TO_GEOJSON` folder. Each map is named after its `GeomapId`
   In every layout but Raw, lines that share every property are joined and such symbols become one
   feature (a MultiPoint); labels stay one feature each.
 - **CRC ERAM Defaults Source** - **From the XML**, **From the XML, filling gaps from the card** (what
-  gives SAA objects, which have no BCG or filters, a look) or **From the card only**. Hover each for
+  gives a look to objects with no BCG or filters) or **From the card only**. Hover each for
   an example. The CRC ERAM Defaults card shows only when the card is a source.
 - **FE-Buddy Helper Properties** - optional `feb.*` fields saying where each feature came from.
 - With the export's `ConsoleCommandControl.xml` beside `Geomaps.xml`, it also writes
@@ -419,6 +427,8 @@ export, into an `ERAM_TO_GEOJSON` folder. Each map is named after its `GeomapId`
 
 A value CRC can't draw (a `DME` symbol, say) is left out, and the results say what CRC will draw
 instead. Text ERAM keeps hidden is left out, and ERAM's colours aren't carried over.
+SAA objects (`MapObjectType` `SAA`) are always left out, in every layout: they're of little use on VATSIM,
+and the results say how many were left out.
 
 ## Output files
 
@@ -430,7 +440,7 @@ Every AIRAC Service run of a cycle writes into one `AIRAC_<cycle>` folder in you
 └── FE-Buddy_Output\
     ├── AIRAC_2610\
     │   ├── Duplicate_Alias_Commands.txt   (when the run wrote an alias file)
-    │   ├── Aliases\                       every alias file, and Combined_Alias.txt
+    │   ├── Aliases\                       Combined_Alias.txt: every sub-service's alias commands
     │   ├── Geojson\                       every GeoJSON file
     │   └── Publication_Docs\              Procedure_Changes.md, Procedures.json
     ├── DAT to GeoJSON\
@@ -443,8 +453,8 @@ Every AIRAC Service run of a cycle writes into one `AIRAC_<cycle>` folder in you
 - The conversions replace any file of the same name.
 
 **`Duplicate_Alias_Commands.txt`** lists every alias command that more than one line uses across the
-run's alias files (CRC runs only one of them), grouped by ARTCC - yours first - then `TELEPHONY` and
-`OTHER`. The Review tab warns when there are any. A duplicate your choices settle (see
+run's alias commands (CRC runs only one of them), grouped by ARTCC - yours first - then `TELEPHONY` and
+`OTHER`, each line under the name of its section of `Combined_Alias.txt`. The Review tab warns when there are any. A duplicate your choices settle (see
 [Preview Settings](#preview-settings-tab)) isn't listed.
 
 ## Map

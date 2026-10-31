@@ -1,13 +1,17 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.Views.Models;
 
 using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 
 using FeBuddy.Versioning;
@@ -97,6 +101,46 @@ public sealed class UpdateWindowViewModel : ObservableObject
 	/// window so the prompt is owned by it. Without it, the update goes ahead.
 	/// </summary>
 	public Func<IReadOnlyList<string>, bool>? ConfirmCloseWithUnfinishedWork { get; set; }
+
+	/// <summary>
+	/// Asks, before going back, what to do about the profiles the older release can't read
+	/// (<see cref="DescribeUnreadableSettings"/>): export them first (<see cref="ConfirmChoice.Confirm"/>), go on
+	/// without (<see cref="ConfirmChoice.Alternative"/>), or stop (<see cref="ConfirmChoice.Cancel"/>). Set by the
+	/// window so the prompt is owned by it. Without it, going back goes ahead.
+	/// </summary>
+	public Func<IReadOnlyList<string>, ConfirmChoice>? AskAboutUnreadableSettings { get; set; }
+
+	/// <summary>Asks where to export those profiles, or returns <see langword="null"/> when the user cancels. Set by the window.</summary>
+	public Func<string?>? PickExportFolder { get; set; }
+
+	/// <summary>
+	/// The profiles a release can't read (<see cref="UserConfigFile.UnreadableBy"/>), off the UI thread. Unit tests
+	/// stand in for it.
+	/// </summary>
+	internal Func<string, IReadOnlyList<string>> FindUnreadableProfiles { get; set; } = version => UserConfigFile.UnreadableBy(version).Profiles;
+
+	/// <summary>Exports profiles into a folder (<see cref="UserConfigTransfer.ExportProfiles(string, IReadOnlyCollection{string})"/>), off the UI thread. Unit tests stand in for it.</summary>
+	internal Action<string, IReadOnlyList<string>> ExportProfiles { get; set; } = (folder, profiles) => UserConfigTransfer.ExportProfiles(folder, profiles);
+
+	/// <summary>The heading of the question about settings the older release can't read.</summary>
+	public string UnreadableSettingsHeading => $"v{LatestVersion} can't read your settings";
+
+	/// <summary>The question's text: which profiles, what v<see cref="LatestVersion"/> does with them, and why to export them.</summary>
+	/// <param name="profiles">The profiles it can't read.</param>
+	/// <returns>The text, the folder between backticks.</returns>
+	public string DescribeUnreadableSettings(IReadOnlyList<string> profiles)
+	{
+		ArgumentNullException.ThrowIfNull(profiles);
+
+		string which = profiles.Count == 1
+			? $"the profile {profiles[0]}"
+			: $"the profiles {string.Join(", ", profiles.Take(profiles.Count - 1))} and {profiles[^1]}";
+
+		return
+			$"Settings saved in this version can't be read by v{LatestVersion}: {which}. When v{LatestVersion} opens, it sets " +
+			@"them aside in `%APPDATA%\FE-Buddy\Reverted` and goes back to the last copy of each it can read, or to its defaults." +
+			"\n\nExport them first to import them after you update again.";
+	}
 
 	/// <summary>
 	/// <see langword="true"/> when the window takes the user back to <see cref="LatestVersion"/>, an
@@ -198,6 +242,11 @@ public sealed class UpdateWindowViewModel : ObservableObject
 
 	private async Task UpdateAsync()
 	{
+		if (IsGoingBack && !await SettingsReadyToGoBackAsync())
+		{
+			return;
+		}
+
 		if (!CanInstall)
 		{
 			BrowserLauncher.Open(ReleaseUrl);
@@ -259,6 +308,49 @@ public sealed class UpdateWindowViewModel : ObservableObject
 			: $"Started the installer for v{LatestVersion}; closing FE-Buddy.");
 		InstallerStarted = true;
 		CloseRequested?.Invoke(this, EventArgs.Empty);
+	}
+
+	/// <summary>
+	/// Before going back: when the release can't read profiles saved here, says so and asks whether to export
+	/// them first (<see cref="AskAboutUnreadableSettings"/>). Nothing is moved here: the release sets them aside
+	/// itself the first time it opens.
+	/// </summary>
+	/// <returns>Whether to go on.</returns>
+	internal async Task<bool> SettingsReadyToGoBackAsync()
+	{
+		IReadOnlyList<string> profiles = await Task.Run(() => FindUnreadableProfiles(LatestVersion));
+
+		if (profiles.Count == 0 || AskAboutUnreadableSettings is not { } ask)
+		{
+			return true;
+		}
+
+		ConfirmChoice choice = ask(profiles);
+
+		if (choice == ConfirmChoice.Alternative)
+		{
+			return true;
+		}
+
+		if (choice != ConfirmChoice.Confirm || PickExportFolder?.Invoke() is not { } folder)
+		{
+			return false;
+		}
+
+		ErrorText = null;
+
+		try
+		{
+			await Task.Run(() => ExportProfiles(folder, profiles));
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or UserConfigTransferException)
+		{
+			ErrorText = $"The settings could not be exported ({ex.Message}), so nothing was downloaded.";
+			return false;
+		}
+
+		AppLog.Info("UpdateInstaller", $"Exported {profiles.Count} settings profile(s) to '{folder}' before going back to v{LatestVersion}.");
+		return true;
 	}
 
 	private void ReportProgress(DownloadProgress progress)

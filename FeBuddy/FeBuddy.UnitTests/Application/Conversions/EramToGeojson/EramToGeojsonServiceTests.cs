@@ -3,6 +3,7 @@ using System.Text.Json;
 using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Conversions.EramToGeojson;
 using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
+using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Eram.Models;
@@ -430,7 +431,7 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 	{
 		WriteGeomaps(
 			Object("AAV", 64, LineDefaults + SymbolDefaults + LineAB + SymbolA),
-			Object("SAA", 9, "<GeoMapSaa><SaaID>R0001</SaaID><GeoMapSaaBoundary><GeoSaaLinesSegments>" +
+			Object("AIRSPACE", 9, "<GeoMapSaa><SaaID>R0001</SaaID><GeoMapSaaBoundary><GeoSaaLinesSegments>" +
 				"<GeoMapSaaLine><StartLatitude>40000000N</StartLatitude><StartLongitude>100000000W</StartLongitude>" +
 				"<EndLatitude>40300000N</EndLatitude><EndLongitude>100000000W</EndLongitude></GeoMapSaaLine>" +
 				"</GeoSaaLinesSegments></GeoMapSaaBoundary></GeoMapSaa>"));
@@ -485,13 +486,13 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 		Assert.Equal("BCG 01_Filters 01_Type PARTIAL_Group 1_Object ZOB3NM_Style none_Thick 1_Lines.geojson", Path.GetFileName(result.GeojsonFilesWritten[0]));
 	}
 
-	/// <summary>The warnings ZOB's GeoMaps give: a symbol style CRC has no match for, and SAA defaults with no BCG.</summary>
+	/// <summary>The warnings ZOB's GeoMaps give: a symbol style CRC has no match for, and text defaults with no BCG.</summary>
 	[Fact]
 	public void from_the_xml_a_default_crc_cannot_draw_or_does_not_have_says_what_crc_draws_instead()
 	{
 		WriteGeomaps(
 			Object("DME", 3, SymbolDefaults.Replace("<SymbolStyle>VOR</SymbolStyle>", "<SymbolStyle>DME</SymbolStyle>", StringComparison.Ordinal) + SymbolA),
-			Object("SAA", 8, TextDefaults.Replace("<BCGGroup>3</BCGGroup>", string.Empty, StringComparison.Ordinal) + TextA));
+			Object("AIRSPACE", 8, TextDefaults.Replace("<BCGGroup>3</BCGGroup>", string.Empty, StringComparison.Ordinal) + TextA));
 
 		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "Raw")));
 
@@ -499,7 +500,7 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 			[
 				"Geomaps.xml: CENTER / DME_3: its SymbolDefaults (symbol style `DME`) are not values CRC can draw. " +
 				"FE-Buddy left the `style` property blank and therefore, CRC will auto-assign a style to it which is likely to be `vor`.",
-				"Geomaps.xml: CENTER / SAA_8: its TextDefaults have no BCG. " +
+				"Geomaps.xml: CENTER / AIRSPACE_8: its TextDefaults have no BCG. " +
 				"FE-Buddy left the `bcg` property blank and therefore, CRC will auto-assign a BCG to it which is likely to be `1`.",
 			],
 			result.Warnings);
@@ -538,7 +539,7 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 	{
 		WriteGeomaps(
 			Object("HAS", 1, LineDefaults + LineAB),
-			Object("SAA", 4,
+			Object("AIRSPACE", 4,
 				"<DefaultLineProperties><LineStyle>ShortDashed</LineStyle><Color>White</Color><Thickness>1</Thickness></DefaultLineProperties>" +
 				"<GeoMapSaa><SaaID>R0001</SaaID><GeoMapSaaBoundary><GeoSaaLinesSegments>" +
 				"<GeoMapSaaLine><StartLatitude>40000000N</StartLatitude><StartLongitude>100000000W</StartLongitude>" +
@@ -547,15 +548,15 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 
 		SourceFilesConversionResult result = EramToGeojsonService.Run(CardSettings("XmlThenCard"));
 
-		// SAA defaults carry no BCG or filters: the card's 11 fills both, the XML keeps its style.
+		// The AIRSPACE defaults carry no BCG or filters: the card's 11 fills both, the XML keeps its style.
 		Assert.Equal(
 			[
 				"BCG 01_Filters 01_Type HAS_Group 1_Object ZOB3NM_Style Solid_Thick 1_Lines.geojson",
-				"BCG 11_Filters 11_Type SAA_Group 4_Object R0001_Style ShortDashed_Thick 1_Lines.geojson",
+				"BCG 11_Filters 11_Type AIRSPACE_Group 4_Object R0001_Style ShortDashed_Thick 1_Lines.geojson",
 			],
 			result.GeojsonFilesWritten.Select(Path.GetFileName));
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info
-			&& m.Text == "Geomaps.xml: CENTER / SAA_4: its LineDefaults have no BCG or filters. The CRC Line defaults set on the tab fill them in.");
+			&& m.Text == "Geomaps.xml: CENTER / AIRSPACE_4: its LineDefaults have no BCG or filters. The CRC Line defaults set on the tab fill them in.");
 		Assert.Empty(result.Warnings);
 	}
 
@@ -608,6 +609,130 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 		string warning = Assert.Single(result.Warnings);
 		Assert.Contains("no CRC Symbol defaults are set on the tab", warning);
 		Assert.EndsWith("carry only filter 0 (shown at every filter setting) and CRC draws them with its own defaults.", warning, StringComparison.Ordinal);
+	}
+
+	// ================= SAAs (issue #401) =================
+
+	/// <summary>An SAA object, as ZOB's GeoMaps have them: line defaults, a boundary segment, and a line of its own.</summary>
+	private static string SaaObject(string type = "SAA", int group = 9) => Object(type, group, LineDefaults +
+		"<GeoMapSaa><SaaID>R0001</SaaID><GeoMapSaaBoundary><GeoSaaLinesSegments>" +
+		"<GeoMapSaaLine><StartLatitude>45000000N</StartLatitude><StartLongitude>100000000W</StartLongitude>" +
+		"<EndLatitude>45300000N</EndLatitude><EndLongitude>100000000W</EndLongitude></GeoMapSaaLine>" +
+		"</GeoSaaLinesSegments></GeoMapSaaBoundary></GeoMapSaa>" +
+		Line("R0001", "46000000N", "100000000W", "46300000N", "100000000W"));
+
+	/// <summary>Every file the last run wrote, by its path under the conversion's folder, with what it holds.</summary>
+	private Dictionary<string, string> Written(SourceFilesConversionResult result) =>
+		result.GeojsonFilesWritten.ToDictionary(path => Path.GetRelativePath(RootFolder, path), File.ReadAllText);
+
+	/// <summary>Every layout writes exactly what it writes for the same file without its SAA.</summary>
+	[Theory]
+	[InlineData("ByFilters")]
+	[InlineData("ByAttributes")]
+	[InlineData("Raw")]
+	[InlineData("RawPlus")]
+	public void every_layout_leaves_out_the_saa_objects_and_nothing_else(string layout)
+	{
+		string[] kept = [Object("AAV", 64, LineDefaults + SymbolDefaults + TextDefaults + LineAB + LineBC + SymbolA + TextA)];
+		WriteGeomaps([.. kept, SaaObject()]);
+
+		SourceFilesConversionResult withSaa = EramToGeojsonService.Run(Settings(("OutputLayout", layout)));
+		Dictionary<string, string> written = Written(withSaa);
+
+		WriteGeomaps(kept);
+		SourceFilesConversionResult withoutSaa = EramToGeojsonService.Run(Settings(("OutputLayout", layout)));
+
+		Assert.NotEmpty(written);
+		Assert.Equal(Written(withoutSaa), written);
+		Assert.Equal(withoutSaa.FeaturesWritten, withSaa.FeaturesWritten);
+
+		// The same object under another type changes the files, so the files above really lost something.
+		WriteGeomaps([.. kept, SaaObject("AIRSPACE")]);
+
+		Assert.NotEqual(written, Written(EramToGeojsonService.Run(Settings(("OutputLayout", layout)))));
+	}
+
+	/// <summary><c>MapObjectType</c> <c>SAA</c> in any case, with spaces around it, is an SAA; a type that only holds the letters is not.</summary>
+	[Theory]
+	[InlineData("SAA", true)]
+	[InlineData("saa", true)]
+	[InlineData(" SAA ", true)]
+	[InlineData("SAAX", false)]
+	[InlineData("NOT SAA", false)]
+	[InlineData("SupplementalLine", false)]
+	public void an_saa_is_map_object_type_saa_in_any_case_and_spacing(string type, bool isSaa)
+	{
+		Assert.Equal(isSaa, EramGeojsonWriter.IsSaa(new EramGeoMapObject(type, 1, null, null, null, [])));
+
+		WriteGeomaps(Object("AAV", 64, LineDefaults + LineAB), SaaObject(type));
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "Raw")));
+
+		Assert.Equal(isSaa ? 1 : 3, result.FeaturesWritten);
+		Assert.Equal(isSaa, result.Messages.Any(m => m.Text.Contains("SAAs are intentionally not converted", StringComparison.Ordinal)));
+		Assert.Throws<ArgumentNullException>(() => EramGeojsonWriter.IsSaa(null!));
+	}
+
+	/// <summary>One advisory per file counts the SAA objects and their elements, in the singular for one; a file without SAAs has none.</summary>
+	[Fact]
+	public void the_advisory_counts_the_saa_objects_and_their_elements()
+	{
+		WriteGeomaps(Object("AAV", 64, LineDefaults + LineAB), SaaObject(), SaaObject(group: 10), Object("SAA", 11, LineDefaults + LineBC));
+
+		ServiceMessage advisory = Assert.Single(EramToGeojsonService.Run(Settings()).Messages, m => m.Text.Contains("SAA", StringComparison.Ordinal));
+
+		Assert.Equal("Geomaps.xml: left out 3 SAA objects (5 elements): SAAs are intentionally not converted.", advisory.Text);
+		Assert.Equal(LogLevel.Info, advisory.Level);
+		Assert.True(advisory.IsAdvisory);
+
+		WriteGeomaps(Object("AAV", 64, LineDefaults + LineAB), Object("SAA", 11, LineDefaults + LineBC));
+
+		Assert.Contains(EramToGeojsonService.Run(Settings()).Messages,
+			m => m.Text == "Geomaps.xml: left out 1 SAA object (1 element): SAAs are intentionally not converted.");
+
+		WriteGeomaps(Object("AAV", 64, LineDefaults + LineAB));
+
+		Assert.DoesNotContain(EramToGeojsonService.Run(Settings()).Messages, m => m.Text.Contains("SAA", StringComparison.Ordinal));
+	}
+
+	/// <summary>
+	/// A map with only SAAs writes no file. A file with only SAAs writes no GeoJSON, and says so after the
+	/// advisory, naming the SAAs as all it had.
+	/// </summary>
+	[Fact]
+	public void a_map_or_file_with_only_saa_objects_writes_nothing()
+	{
+		WriteGeomapsWithRecords("Geomaps.xml", Record("CENTER", Object("AAV", 64, LineDefaults + LineAB)) + Record("SUA", SaaObject()));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "Raw")));
+
+		Assert.Equal([Path.Combine(RootFolder, "CENTER_CENTER-MAP.geojson")], result.GeojsonFilesWritten);
+		Assert.False(Directory.Exists(Path.Combine(RootFolder, "SUA_SUA-MAP")));
+
+		WriteGeomaps(SaaObject());
+		result = EramToGeojsonService.Run(Settings());
+
+		Assert.Empty(result.GeojsonFilesWritten);
+		Assert.Equal(
+			[
+				"Geomaps.xml: left out 1 SAA object (2 elements): SAAs are intentionally not converted.",
+				"Geomaps.xml has no elements to draw besides its SAAs, so no GeoJSON was written for it.",
+			],
+			result.Messages.Where(m => m.IsAdvisory).Select(m => m.Text));
+	}
+
+	/// <summary>An SAA's defaults are never looked at: missing ones raise no warning, from the XML or from the tab.</summary>
+	[Fact]
+	public void an_saa_without_defaults_raises_no_defaults_warning()
+	{
+		WriteGeomaps(Object("AAV", 64, LineDefaults + LineAB), Object("SAA", 9, LineBC + SymbolA + TextA));
+
+		Assert.Empty(EramToGeojsonService.Run(Settings()).Warnings);
+
+		WriteGeomaps(Object("ONE", 1, SymbolA), Object("SAA", 9, LineBC + TextA));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("DefaultsSource", "Card")));
+
+		Assert.Contains("no CRC Symbol defaults are set on the tab", Assert.Single(result.Warnings), StringComparison.Ordinal);
 	}
 
 	// ================= the run =================

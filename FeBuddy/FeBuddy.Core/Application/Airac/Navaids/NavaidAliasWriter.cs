@@ -90,10 +90,8 @@ public static class NavaidAliasWriter
 			builder.Append(command).Append(" .echo ").Append(EchoCards.Join(blocksByCommand[command])).AppendLine();
 		}
 
-		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
-		Directory.CreateDirectory(directory);
-
-		string path = Path.Combine(directory, settings.FileNames.FileName(NavaidOutputFiles.Alias));
+		string path = AiracOutputPaths.AliasFilePath(settings.OutputDirectory, settings.FileNames, NavaidOutputFiles.Alias);
+		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
 		// UTF-8 without a BOM, like every other alias writer.
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));

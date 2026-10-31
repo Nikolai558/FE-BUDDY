@@ -3,7 +3,7 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// <summary>
 /// The files the Procedures sub-service writes, by file key (the name the File Names tab uses): two
 /// documents inside <see cref="AiracOutputPaths.PublicationDocsFolder"/>, and the FAA Chart Recall
-/// alias file, which goes where every alias file goes (<see cref="AiracOutputPaths.AliasDirectory"/>).
+/// alias file, which goes where every alias file goes (<see cref="AiracOutputPaths.AliasFilePath"/>).
 /// </summary>
 public static class ProcedureOutputFiles
 {

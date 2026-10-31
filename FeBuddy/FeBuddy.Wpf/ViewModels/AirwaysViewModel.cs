@@ -249,9 +249,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			summary += $", {airways.ExcludedAirwayIds.Count:N0} excluded";
 		}
 
-		if (airways.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(airways.AliasFilePath, airways.AliasAirwayLineCount, "alias line(s)") is { } aliasCommands)
 		{
-			summary += $", {Path.GetFileName(airways.AliasFilePath)}: {airways.AliasAirwayLineCount:N0} alias line(s)";
+			summary += $", {aliasCommands}";
 		}
 
 		if (airways.GeojsonFilesWritten.Count > 0)
@@ -466,7 +466,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 				? []
 				:
 				[
-					new(AirwayOutputFiles.Alias,
+					AliasSummaryFile(AirwayOutputFiles.Alias,
 						"Writes a command for each airway that draws its waypoints on a CRC STARS or ERAM window.\n"
 						+ "Example for airway J3: `.J3F .FF OAK RBL LKV IMB GEG`"),
 				],

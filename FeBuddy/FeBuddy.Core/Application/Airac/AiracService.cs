@@ -28,6 +28,7 @@ using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -67,8 +68,17 @@ namespace FeBuddy.Core.Application.Airac;
 /// custom alias files while Add Custom Aliases (the Concatenate Aliases block) adds them.
 /// </para>
 /// <para>
+/// Each sub-service's own alias file is saved beside it only while
+/// <see cref="AiracServiceSettings.ExportIndividualAliasFiles"/> is on. Otherwise the sub-services write
+/// them to a folder of the run's own in FE-Buddy's scratch area, under FE-Buddy's names, and the
+/// duplicate check and <c>Combined_Alias.txt</c> read them from there; the folder goes when the run
+/// ends. Such a file an earlier run left in <c>Aliases</c> is deleted, so it can't be taken for this
+/// run's.
+/// </para>
+/// <para>
 /// A file the user renamed (<see cref="AiracServiceSettings.FileNames"/>) is written under its new
-/// name wherever it goes; everything else still knows it by its key, FE-Buddy's name for it.
+/// name wherever it goes; everything else still knows it by its key, FE-Buddy's name for it. A
+/// sub-service's alias file that isn't exported keeps FE-Buddy's name.
 /// </para>
 /// </remarks>
 public static class AiracService
@@ -77,6 +87,9 @@ public static class AiracService
 
 	/// <summary>The Add Custom Aliases (Concatenate Aliases) sub-service's name in progress reports: its tab's title.</summary>
 	private const string ConcatenateAliasesName = "Add Custom Aliases";
+
+	/// <summary>The folder in FE-Buddy's scratch area each run's unexported alias files go in, a folder per run.</summary>
+	internal const string UnexportedAliasFolder = "AliasFiles";
 
 	/// <summary>
 	/// Whether the run's cycle folder already holds anything - an earlier run of the same cycle
@@ -304,8 +317,46 @@ public static class AiracService
 
 		// Before anything is deleted or written: a new name that can't be used stops the run here.
 		OutputFileNamesParseResult fileNamesParse = OutputFileNamesParser.Parse(settings.FileNames);
+
+		// A sub-service's own alias file that isn't exported is written to a folder of the run's own in
+		// FE-Buddy's scratch area, which goes when the run ends - finished, failed or cancelled.
+		string? unexportedAliasDirectory = settings.ExportIndividualAliasFiles ? null : TempWorkspace.NewJobDirectory(UnexportedAliasFolder);
+
+		try
+		{
+			return await RunSubServicesAsync(settings, nasrData, supplementalData, fileNamesParse, unexportedAliasDirectory, progress, reviewDuplicates, cancellationToken)
+				.ConfigureAwait(false);
+		}
+		finally
+		{
+			if (unexportedAliasDirectory is not null)
+			{
+				TempWorkspace.DeleteQuietly(unexportedAliasDirectory);
+			}
+		}
+	}
+
+	/// <summary>
+	/// The run itself (<see cref="RunAsync(AiracServiceSettings, NasrCsvDataCollection, AiracSupplementalData, IProgress{AiracServiceProgress}?, CancellationToken, DuplicateAliasReviewer?)"/>),
+	/// once the new file names are known to be usable. <paramref name="unexportedAliasDirectory"/> is where the
+	/// sub-services' own alias files go when they aren't exported; <see langword="null"/> when they are.
+	/// </summary>
+	private static async Task<AiracServiceResult> RunSubServicesAsync(
+		AiracServiceSettings settings,
+		NasrCsvDataCollection nasrData,
+		AiracSupplementalData supplementalData,
+		OutputFileNamesParseResult fileNamesParse,
+		string? unexportedAliasDirectory,
+		IProgress<AiracServiceProgress>? progress,
+		DuplicateAliasReviewer? reviewDuplicates,
+		CancellationToken cancellationToken)
+	{
 		OutputFileNames fileNames = fileNamesParse.FileNames;
 		string combinedAliasFileName = fileNames.FileName(AiracOutputPaths.CombinedAliasFileName);
+
+		// What the sub-services write under: each alias file that isn't exported keeps FE-Buddy's name, so
+		// Combined_Alias.txt and the duplicate report name its section that way.
+		OutputFileNames runFileNames = unexportedAliasDirectory is null ? fileNames : fileNames.WithUnexportedAliasFilesIn(unexportedAliasDirectory);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		string outputDirectory = settings.CycleOutputDirectory;
@@ -348,53 +399,53 @@ public static class AiracService
 
 		AirwayServiceResult? airwaysResult = await RunSubServiceAsync(
 			settings.Airways, "Airways", "Building airway GeoJSON and alias output",
-			block => AirwayService.Run(nasrData, block, fileNames),
+			block => AirwayService.Run(nasrData, block, runFileNames),
 			result => $"{result.AirwayCount} airway(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		AirportServiceResult? airportsResult = await RunSubServiceAsync(
 			settings.Airports, "Airports", "Building airport GeoJSON and alias output",
-			block => AirportService.Run(nasrData, block, fileNames),
+			block => AirportService.Run(nasrData, block, runFileNames),
 			result => $"{result.AirportCount} airport(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		DepartureServiceResult? departuresResult = await RunSubServiceAsync(
 			settings.Departures, "Departures", "Building departure procedure GeoJSON and alias output",
-			block => DepartureService.Run(nasrData, block, fileNames),
+			block => DepartureService.Run(nasrData, block, runFileNames),
 			result => $"{result.AirportProcedureCount} airport procedure(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		ArrivalServiceResult? arrivalsResult = await RunSubServiceAsync(
 			settings.Arrivals, "Arrivals", "Building arrival procedure GeoJSON and alias output",
-			block => ArrivalService.Run(nasrData, block, fileNames),
+			block => ArrivalService.Run(nasrData, block, runFileNames),
 			result => $"{result.AirportProcedureCount} airport procedure(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		NavaidServiceResult? navaidsResult = await RunSubServiceAsync(
 			settings.Navaids, "NAVAIDs", "Building NAVAID GeoJSON and alias output",
-			block => NavaidService.Run(nasrData, block, fileNames),
+			block => NavaidService.Run(nasrData, block, runFileNames),
 			result => $"{result.NavaidCount} NAVAID(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		ArtccBoundaryServiceResult? artccBoundariesResult = await RunSubServiceAsync(
 			settings.ArtccBoundaries, "ARTCC Boundaries", "Building ARTCC boundary GeoJSON output",
-			block => ArtccBoundaryService.Run(nasrData, block, fileNames),
+			block => ArtccBoundaryService.Run(nasrData, block, runFileNames),
 			result => $"{result.LocationCount} ARTCC(s), {result.RingCount} boundary line(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		FixServiceResult? fixesResult = await RunSubServiceAsync(
 			settings.Fixes, "Fixes", "Building fix GeoJSON output",
-			block => FixService.Run(nasrData, block, fileNames),
+			block => FixService.Run(nasrData, block, runFileNames),
 			result => $"{result.FixCount} fix(es), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		WxStationServiceResult? wxStationsResult = await RunSubServiceAsync(
 			settings.WxStations, "Wx Stations", "Building weather station GeoJSON output",
-			block => WxStationService.Run(supplementalData.WxStations, block, fileNames),
+			block => WxStationService.Run(supplementalData.WxStations, block, runFileNames),
 			result => $"{result.StationCount} station(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		ProcedureServiceResult? proceduresResult = await RunSubServiceAsync(
 			settings.Procedures, "Procedure Charts", "Building procedure publication documents",
-			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block, fileNames, supplementalData.PreviousNasr),
+			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block, runFileNames, supplementalData.PreviousNasr),
 			result => $"{result.AirportCount} airport(s), {result.NewCount + result.ChangedCount + result.DeletedCount} change(s), {result.FilesWritten.Count} document(s)"
 				+ (result.AliasFilePath is not null ? $", {result.AliasCommandCount} FAA Chart Recall command(s)" : string.Empty)).ConfigureAwait(false);
 
 		TelephonyServiceResult? telephonyResult = await RunSubServiceAsync(
 			settings.Telephony, "Telephony", "Building the telephony alias file",
-			block => TelephonyService.Run(supplementalData.Telephony, block, fileNames),
+			block => TelephonyService.Run(supplementalData.Telephony, block, runFileNames),
 			result => $"{result.AliasCommandCount} command(s), {result.MergedCommandCount} showing more than one operator").ConfigureAwait(false);
 
 		// Every alias file this run wrote, in the order the sub-services ran: checked together for
@@ -415,6 +466,19 @@ public static class AiracService
 			.Where(output => output.Path is not null)
 			.Select(output => new AliasFileWritten(output.Key, output.Path!))];
 
+		// vNAS takes one alias file, so every run that writes an alias file writes Combined_Alias.txt: those
+		// files, then the user's own custom alias files while Add Custom Aliases adds them. A run that
+		// writes no alias file leaves an earlier one alone, like any other earlier file ("Overwrite
+		// files") - unless Add Custom Aliases is in it, with custom files of its own to combine.
+		bool combine = aliasFiles.Length > 0 || settings.ConcatenateAliases is not null;
+
+		// Beside this run's Combined_Alias.txt, a sub-service's alias file an earlier run left could be taken for
+		// this run's, so a run that doesn't export them deletes them, under either name.
+		if (combine && unexportedAliasDirectory is not null && DeleteEarlierAliasFiles(outputDirectory, fileNames) is { } deletedEarlier)
+		{
+			AddMessage(deletedEarlier);
+		}
+
 		DuplicateAliasReportResult? duplicateAliasReport = null;
 		DuplicateAliasOutcome duplicateOutcome = new([], [], Stopped: false);
 
@@ -428,10 +492,14 @@ public static class AiracService
 			duplicateOutcome = await SettleDuplicatesAsync(
 				aliasFiles, nasrData, settings, supplementalData, reviewDuplicates, progress, messages, cancellationToken).ConfigureAwait(false);
 
+			// A file that isn't exported is named as its section of Combined_Alias.txt - unless the run stopped
+			// here, and no Combined_Alias.txt is written.
+			string? sectionsOf = unexportedAliasDirectory is not null && !duplicateOutcome.Stopped ? combinedAliasFileName : null;
+
 			duplicateAliasReport = await Task.Run(
 				() => DuplicateAliasReport.Write(
 					aliasFiles, nasrData, settings.SelectedCycle.AiracCycleId, outputDirectory, settings.PrimaryFacility, DateTime.UtcNow,
-					fileNames.FileName(AiracOutputPaths.DuplicateAliasReportFileName)),
+					fileNames.FileName(AiracOutputPaths.DuplicateAliasReportFileName), sectionsOf),
 				cancellationToken).ConfigureAwait(false);
 
 			AddMessage(DuplicateAliasMessage(duplicateAliasReport, aliasFiles.Length));
@@ -447,15 +515,6 @@ public static class AiracService
 
 				string earlier = CombinedAliasFileWriter.DeleteEarlierFile(outputDirectory, combinedAliasFileName).Sentence;
 
-				// They're gone, so no sub-service's result names one: its review would list a file that isn't there.
-				airwaysResult = airwaysResult is null ? null : airwaysResult with { AliasFilePath = null };
-				airportsResult = airportsResult is null ? null : airportsResult with { AliasFilePath = null };
-				departuresResult = departuresResult is null ? null : departuresResult with { AliasFilePath = null };
-				arrivalsResult = arrivalsResult is null ? null : arrivalsResult with { AliasFilePath = null };
-				navaidsResult = navaidsResult is null ? null : navaidsResult with { AliasFilePath = null };
-				proceduresResult = proceduresResult is null ? null : proceduresResult with { AliasFilePath = null };
-				telephonyResult = telephonyResult is null ? null : telephonyResult with { AliasFilePath = null };
-
 				AddMessage(new ServiceMessage(LogLevel.Warning, LogSource,
 					$"You stopped the run at the duplicate alias commands, so it saved no alias file and no {combinedAliasFileName}.{earlier} " +
 					$"The duplicates are listed in {Path.GetFileName(duplicateAliasReport.FilePath)}; the other files the run wrote are in the cycle folder.")
@@ -463,11 +522,6 @@ public static class AiracService
 			}
 		}
 
-		// vNAS takes one alias file, so every run that writes an alias file writes Combined_Alias.txt: those
-		// files, then the user's own custom alias files while Add Custom Aliases adds them. A run that
-		// writes no alias file leaves an earlier one alone, like any other earlier file ("Overwrite
-		// files") - unless Add Custom Aliases is in it, with custom files of its own to combine.
-		bool combine = aliasFiles.Length > 0 || settings.ConcatenateAliases is not null;
 		string progressName = settings.ConcatenateAliases is not null ? ConcatenateAliasesName : "AIRAC";
 		CombinedAliasResult? combinedAliasResult = null;
 
@@ -495,6 +549,19 @@ public static class AiracService
 					$"FE-Buddy alias file(s), then {combinedAliasResult.CustomCommandCount:N0} custom command(s).";
 
 			progress?.Report(new AiracServiceProgress(progressName, summary, 100));
+		}
+
+		// An alias file that wasn't exported was only ever in the scratch folder, and one the user stopped the run
+		// over is gone: either way no sub-service's result names it, so nothing in the review links to it.
+		if (unexportedAliasDirectory is not null || duplicateOutcome.Stopped)
+		{
+			airwaysResult = airwaysResult is null ? null : airwaysResult with { AliasFilePath = null };
+			airportsResult = airportsResult is null ? null : airportsResult with { AliasFilePath = null };
+			departuresResult = departuresResult is null ? null : departuresResult with { AliasFilePath = null };
+			arrivalsResult = arrivalsResult is null ? null : arrivalsResult with { AliasFilePath = null };
+			navaidsResult = navaidsResult is null ? null : navaidsResult with { AliasFilePath = null };
+			proceduresResult = proceduresResult is null ? null : proceduresResult with { AliasFilePath = null };
+			telephonyResult = telephonyResult is null ? null : telephonyResult with { AliasFilePath = null };
 		}
 
 		if (!anySelected)
@@ -526,6 +593,7 @@ public static class AiracService
 			Procedures = proceduresResult,
 			Telephony = telephonyResult,
 			CombinedAlias = combinedAliasResult,
+			IndividualAliasFilesExported = unexportedAliasDirectory is null,
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting
@@ -668,6 +736,59 @@ public static class AiracService
 			messages.Add(message);
 			AppLog.Write(message.Level, message.Source, message.Text);
 		}
+	}
+
+	/// <summary>
+	/// Deletes each sub-service's own alias file an earlier run left in the cycle's <c>Aliases</c> folder, under
+	/// FE-Buddy's name and under the one the File Names tab gives it: for a run that doesn't export them.
+	/// </summary>
+	/// <returns>One advisory saying what was deleted, or couldn't be; <see langword="null"/> when there was none.</returns>
+	private static ServiceMessage? DeleteEarlierAliasFiles(string outputDirectory, OutputFileNames fileNames)
+	{
+		string directory = AiracOutputPaths.AliasDirectory(outputDirectory);
+		List<string> deleted = [];
+		List<string> notDeleted = [];
+		string? problem = null;
+
+		foreach (string name in AiracOutputPaths.SubServiceAliasFileKeys
+			.SelectMany(key => new[] { OutputFileNames.DefaultFileName(key), fileNames.FileName(key) })
+			.Distinct(StringComparer.OrdinalIgnoreCase))
+		{
+			string path = Path.Combine(directory, name);
+
+			if (!File.Exists(path))
+			{
+				continue;
+			}
+
+			try
+			{
+				File.Delete(path);
+				deleted.Add(name);
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			{
+				notDeleted.Add(name);
+				problem ??= ex.Message;
+			}
+		}
+
+		if (notDeleted.Count > 0)
+		{
+			return new ServiceMessage(LogLevel.Warning, LogSource,
+				$"{Names(notDeleted)}, which an earlier run left in {AiracOutputPaths.AliasFolder}, could not be deleted ({problem}): " +
+				$"{(notDeleted.Count == 1 ? "it isn't" : "they aren't")} this run's, so don't upload {(notDeleted.Count == 1 ? "it" : "them")}." +
+				(deleted.Count > 0 ? $" {Names(deleted)} {(deleted.Count == 1 ? "was" : "were")} deleted." : string.Empty))
+			{ IsAdvisory = true };
+		}
+
+		return deleted.Count == 0 ? null : new ServiceMessage(LogLevel.Info, LogSource,
+			$"{Names(deleted)}, which an earlier run left in {AiracOutputPaths.AliasFolder}, {(deleted.Count == 1 ? "was" : "were")} deleted " +
+			$"so {(deleted.Count == 1 ? "it" : "they")} can't be taken for this run's.")
+		{ IsAdvisory = true };
+
+		static string Names(List<string> names) =>
+			names.Count == 1 ? names[0] : $"{string.Join(", ", names[..^1])} and {names[^1]}";
 	}
 
 	/// <summary>What <see cref="SettleDuplicatesAsync"/> did.</summary>

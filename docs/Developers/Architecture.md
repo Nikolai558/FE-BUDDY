@@ -145,7 +145,8 @@ AiracService.RunAsync
         1. XxxSettingsParser.Parse    block → typed settings + warnings
         2. XxxBuilder                 FAA rows → domain objects
         3. XxxGeojsonWriter           → .geojson files
-        4. XxxAliasWriter             → alias .txt
+        4. XxxAliasWriter             → alias .txt, in Aliases - or the run's scratch
+                                      folder while ExportIndividualAliasFiles is off
   DuplicateAliasChoices               the saved choices for duplicated commands; any left, with
                                       Review on: the run asks the GUI (DuplicateAliasReviewer),
                                       which can stop it - then no alias file is kept
@@ -189,12 +190,24 @@ Not every sub-service has all four steps:
 - **Every file is ready for vNAS.** In the cycle folder (`AiracOutputPaths`), GeoJSON goes in
   `Geojson`, alias files in `Aliases`, Procedure Charts' documents in `Publication_Docs`, and
   `Duplicate_Alias_Commands.txt` sits at the top.
+- **Each sub-service's own alias file is optional** (`AiracServiceSettings.ExportIndividualAliasFiles`,
+  the General tab, off by default). Off, the sub-services write them to a folder of the run's own in
+  FE-Buddy's scratch area (`TempWorkspace.NewJobDirectory`) under FE-Buddy's names: the one place an
+  alias writer asks is `AiracOutputPaths.AliasFilePath`, which reads the folder from the run's
+  `OutputFileNames`. The duplicate check and `Combined_Alias.txt` read them from there, and the folder
+  is deleted when the run ends, however it ends. Their renames on the File Names tab are kept but not
+  used; any of them an earlier run left in `Aliases` is deleted, under either name. No sub-service's
+  result names its file then (`AiracServiceResult.DescribeAliasCommands` says "…, in Combined_Alias.txt"),
+  and the duplicate report names each as its section of `Combined_Alias.txt`. In the GUI the General
+  tab's Alias File Exports card asks; the sub-service tabs follow it before Save (`IAliasFileExports`),
+  as they follow the table, for their note and What You'll Get, and the File Names tab lists the seven
+  files only while it is on.
 - **`Combined_Alias.txt`** is written last, into `Aliases`, by every run that writes an alias file
   (or has Add Custom Aliases in it). vNAS takes one alias file per facility, so
   `CombinedAliasFileWriter` writes:
   1. the first `.FeUseOnly` line any custom file has;
   2. a start line, `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. …`;
-  3. each alias file the run wrote, under `; ----- <name> -----`;
+  3. each alias file the run wrote, under `; ----- <name> -----` (FE-Buddy's name when not exported);
   4. an end line, `; ===== End of FE-Buddy aliases. …`;
   5. each custom alias file, in order, while Add Custom Aliases adds them (`AddCustomAliasFiles`, on
      by default).
@@ -207,6 +220,9 @@ Not every sub-service has all four steps:
   `EramToGeojsonService`), one source file at a time through `ConversionFiles`: an unreadable file
   fails alone. Each writes into its own folder beside the `AIRAC_<cycle>` folders
   (`ServiceOutputPaths`).
+  ERAM to GeoJSON leaves out every SAA object (`MapObjectType` `SAA`) in every layout, before its
+  defaults are looked at, and says so in one advisory: the rule is `EramGeojsonWriter.IsSaa`. The reader
+  (`EramGeoMapReader`) still reads them.
 
 ## Settings
 

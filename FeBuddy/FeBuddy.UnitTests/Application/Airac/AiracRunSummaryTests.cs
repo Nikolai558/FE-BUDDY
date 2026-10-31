@@ -67,4 +67,39 @@ public sealed class AiracRunSummaryTests
 		Assert.Equal("Cycle 2610: nothing to produce.", AiracRunSummary.Describe("2610", new AiracServiceResult { Messages = [], Elapsed = TimeSpan.Zero, OutputDirectory = "out" }));
 		Assert.Throws<ArgumentNullException>(() => AiracRunSummary.Describe("2610", null!));
 	}
+
+	/// <summary>
+	/// A run that didn't export the sub-services' alias files names none of them, but still counts their
+	/// commands - they are in Combined_Alias.txt - unless it stopped at the duplicate review.
+	/// </summary>
+	[Fact]
+	public void unexported_alias_files_are_not_listed_but_their_commands_are_counted()
+	{
+		AiracServiceResult everyPart = EveryPart();
+		AiracServiceResult unexported = everyPart with
+		{
+			IndividualAliasFilesExported = false,
+			Airways = everyPart.Airways! with { AliasFilePath = null },
+			Airports = everyPart.Airports! with { AliasFilePath = null },
+			Departures = everyPart.Departures! with { AliasFilePath = null },
+			Arrivals = everyPart.Arrivals! with { AliasFilePath = null },
+			Navaids = everyPart.Navaids! with { AliasFilePath = null },
+			Procedures = everyPart.Procedures! with { AliasFilePath = null },
+			Telephony = everyPart.Telephony! with { AliasFilePath = null },
+		};
+
+		Assert.DoesNotContain(unexported.FilesWritten, file => file.EndsWith(".txt", StringComparison.Ordinal) && !file.Contains("Combined", StringComparison.Ordinal) && !file.Contains("Duplicate", StringComparison.Ordinal));
+		Assert.Contains("50 FAA Chart Recall command(s), 7 telephony command(s), Combined_Alias.txt (15 command(s))", AiracRunSummary.Describe("2610", unexported), StringComparison.Ordinal);
+		Assert.Equal("Combined_Alias.txt", unexported.AliasCommandsSavedIn(null, 7));
+		Assert.Null(unexported.AliasCommandsSavedIn(null, 0));
+		Assert.Equal("Telephony.txt", everyPart.AliasCommandsSavedIn("Telephony.txt", 7));
+		Assert.Equal("7 command(s), in Combined_Alias.txt", unexported.DescribeAliasCommands(null, 7, "command(s)"));
+		Assert.Equal("Telephony.txt: 7 command(s)", everyPart.DescribeAliasCommands(@"Aliases\Telephony.txt", 7, "command(s)"));
+
+		// Stopped at the duplicate review: no Combined_Alias.txt, so the commands were saved nowhere.
+		AiracServiceResult stopped = unexported with { CombinedAlias = null, StoppedAtDuplicateReview = true };
+		Assert.DoesNotContain("FAA Chart Recall command(s)", AiracRunSummary.Describe("2610", stopped), StringComparison.Ordinal);
+		Assert.DoesNotContain("telephony command(s)", AiracRunSummary.Describe("2610", stopped), StringComparison.Ordinal);
+		Assert.Null(stopped.DescribeAliasCommands(null, 7, "command(s)"));
+	}
 }

@@ -19,6 +19,8 @@ using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.GitHub;
 using FeBuddy.Core.Infrastructure.GitHub.Models;
@@ -121,6 +123,7 @@ public sealed class ShellViewModel : ObservableObject
 
 		// Live launch/pipeline state.
 		AppEnvironment.Changed += OnEnvironmentChanged;
+		UserConfigFile.FilesSetAside += OnFilesSetAside;
 		AiracCycleDataCache.Instance.StateChanged += OnCycleStateChanged;
 
 		// A token added, edited or removed: check the saved GitHub tokens again.
@@ -451,9 +454,54 @@ public sealed class ShellViewModel : ObservableObject
 		_dispatcher.InvokeAsync(ShowLaunchWindows, DispatcherPriority.ApplicationIdle);
 	}
 
+	/// <summary>Settings a newer FE-Buddy saved were set aside - on a profile switch, say: says so once the window is idle.</summary>
+	private void OnFilesSetAside(object? sender, EventArgs e) =>
+		_dispatcher.InvokeAsync(ShowLaunchWindows, DispatcherPriority.ApplicationIdle);
+
 	/// <summary>
-	/// Shows launch's one-time windows, one after the other: the welcome to FE-Buddy 3 first, then the
-	/// notice about FE-Buddy 2.x's GitHub token variable. An open window keeps the dispatcher running,
+	/// Says what the settings files' layout check set aside (<see cref="UserConfigFile.TakeSetAside"/>), once: which
+	/// profiles, what is in their place and where they went, with the folder a click away.
+	/// </summary>
+	private static void ShowSettingsSetAsideNotice()
+	{
+		IReadOnlyList<UserConfigSetAside> setAside = UserConfigFile.TakeSetAside();
+
+		if (setAside.Count == 0)
+		{
+			return;
+		}
+
+		Window? owner = Application.Current?.MainWindow is { IsVisible: true } main ? main : null;
+
+		if (ConfirmWindow.Show(owner, "Settings from a newer FE-Buddy were set aside", DescribeSetAside(setAside),
+			confirmText: "Open the folder", cancelText: "Close"))
+		{
+			string folder = setAside.Count == 1 ? setAside[0].Folder : UserConfigFile.RevertedDirectory;
+			Process.Start(new ProcessStartInfo("explorer.exe", $"\"{folder}\"") { UseShellExecute = true });
+		}
+	}
+
+	/// <summary>The set-aside notice's text: where the files went, what each profile has now, and how to get them back.</summary>
+	/// <param name="setAside">What each check set aside.</param>
+	/// <returns>The text, folders between backticks.</returns>
+	internal static string DescribeSetAside(IReadOnlyList<UserConfigSetAside> setAside)
+	{
+		string folders = string.Join(" and ", setAside.Select(entry => $"`{entry.Folder}`"));
+		IEnumerable<string> files = setAside.SelectMany(entry => entry.Files).Select(file =>
+			$"•  {(file.Profile is { } profile ? $"Profile {profile}" : "Settings every profile shares (update channel, window position)")}: " +
+			(file.RestoredLayout is null ? "every default" : "the last copy this version saved"));
+
+		return
+			$"A newer FE-Buddy saved some of your settings in a way this version can't read, so they were moved to {folders}. " +
+			"In their place:\n\n" +
+			string.Join("\n", files) + "\n\n" +
+			"After you update FE-Buddy again, import a profile from there with Settings ▸ Import….";
+	}
+
+	/// <summary>
+	/// Shows launch's one-time windows, one after the other: settings a newer FE-Buddy saved that were set
+	/// aside, then the welcome to FE-Buddy 3, then the notice about FE-Buddy 2.x's GitHub token variable. An
+	/// open window keeps the dispatcher running,
 	/// so a later call can arrive while one is open; it leaves the windows to the call already
 	/// showing them, which goes on to the next once the first is closed.
 	/// </summary>
@@ -468,6 +516,7 @@ public sealed class ShellViewModel : ObservableObject
 
 		try
 		{
+			ShowSettingsSetAsideNotice();
 			ShowWelcome();
 			ShowLegacyGitHubTokenNotice();
 		}

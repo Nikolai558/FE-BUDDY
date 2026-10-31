@@ -96,6 +96,7 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 			OutputDirectory = _root,
 			Messages = [],
 			Elapsed = TimeSpan.Zero,
+			IndividualAliasFilesExported = true,
 			CombinedAlias = new CombinedAliasResult
 			{
 				FilePath = Path.Combine(_root, "Aliases", "Combined_Alias.txt"),
@@ -109,6 +110,11 @@ public sealed class ConcatenateAliasesViewModelTests : IDisposable
 		Assert.Equal(
 			"Combined_Alias.txt: 3 command(s) from Airports.txt. Your custom alias files weren't added",
 			tab.DescribeRunResult(result)?.Summary);
+
+		// Airports.txt itself wasn't exported: it is only a section of the combined file.
+		Assert.Equal(
+			"Combined_Alias.txt: 3 command(s) in its Airports.txt section(s). Your custom alias files weren't added",
+			tab.DescribeRunResult(result with { IndividualAliasFilesExported = false })?.Summary);
 		Assert.Null(tab.DescribeRunResult(new AiracServiceResult { OutputDirectory = _root, Messages = [], Elapsed = TimeSpan.Zero }));
 	}
 

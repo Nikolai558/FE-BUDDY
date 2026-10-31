@@ -269,9 +269,9 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			summary += $", {departures.SkippedForMissingPointsCount:N0} skipped for missing points";
 		}
 
-		if (departures.AliasFilePath is not null)
+		if (result.DescribeAliasCommands(departures.AliasFilePath, departures.AliasCommandCount, "alias command(s)") is { } aliasCommands)
 		{
-			summary += $", {Path.GetFileName(departures.AliasFilePath)}: {departures.AliasCommandCount:N0} alias command(s)";
+			summary += $", {aliasCommands}";
 		}
 
 		return new SubServiceRunResult(Title, summary, departures.Messages);
@@ -356,7 +356,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		if (!noArtccs && GenerateAliasFile)
 		{
-			files.Add(new(DepartureOutputFiles.Alias,
+			files.Add(AliasSummaryFile(DepartureOutputFiles.Alias,
 				"A command for each departure at each airport that draws its waypoints on a CRC STARS or ERAM window.\n"
 				+ "Example: `.laxGMNf .FF GMN VNY COREZ AVE EHF`\n"
 				+ "See the Alias Command Guide, under Info, for more examples and exceptions."));

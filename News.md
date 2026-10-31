@@ -13,6 +13,25 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-31
+<!--
+PostId: 2026-10-31.1
+-->
+
+**Version 3.0.0-beta.15 Compiled!**
+
+One alias file by default, no more SAAs, and a safer way back
+
+- **Just `Combined_Alias.txt`**: alias commands now go only into `Combined_Alias.txt`, the one alias file vNAS takes. Want `Airports.txt`, `Faa_Chart_Recall.txt` and the rest too? On the AIRAC Service's **General** tab, set **Also export each sub-service's own alias file** to **Yes**
+- **Heads up**: while it's **No**, a run deletes the sub-service alias files an earlier run left in `Aliases\`
+- **ERAM to GeoJSON**: SAA objects are now left out, since they're of little use on VATSIM. The results say how many
+- **Going back to an older release?** **Go back now** first offers to export the profiles that release can't read, so you can **Import…** them after you update again
+- **Settings from a newer FE-Buddy** that this one can't read are set aside in `%APPDATA%\FE-Buddy\Reverted`, and FE-Buddy tells you when it opens
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.15)!!!
+
+---
+
 ## 2026-10-20
 <!--
 PostId: 2026-10-20.1

@@ -2,7 +2,8 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 
 /// <summary>
 /// The settings a <see cref="UserConfigMigration"/> changes, by dotted path, and the edits a
-/// layout change is made of: move, change a value, set, remove.
+/// layout change is made of: move, change a value, set, remove - and, between a profile and
+/// <c>Shared.json</c>, move to it or copy from it.
 /// </summary>
 /// <remarks>
 /// Every edit can run twice without harm, so a step that stopped part-way, or a file that already
@@ -12,12 +13,18 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 public sealed class UserConfigMigrationContext
 {
 	private readonly Dictionary<string, string> _values;
+	private readonly Dictionary<string, string>? _shared;
 
 	/// <summary>Wraps the settings being brought forward. <see cref="UserConfigMigrations"/> builds it.</summary>
 	/// <param name="values">The settings, edited in place.</param>
-	internal UserConfigMigrationContext(Dictionary<string, string> values)
+	/// <param name="shared">
+	/// <c>Shared.json</c>'s settings, edited in place, while a profile is brought forward with it; otherwise
+	/// <see langword="null"/>: an import, or <c>Shared.json</c> itself.
+	/// </param>
+	internal UserConfigMigrationContext(Dictionary<string, string> values, Dictionary<string, string>? shared = null)
 	{
 		_values = values;
+		_shared = shared;
 	}
 
 	/// <summary>Every setting, by dotted path.</summary>
@@ -81,6 +88,59 @@ public sealed class UserConfigMigrationContext
 		if (_values.TryGetValue(key, out string? value))
 		{
 			_values[key] = change(value) ?? throw new InvalidOperationException($"The new value for '{key}' is null.");
+		}
+	}
+
+	/// <summary>
+	/// Moves a setting, and every setting below it, out of this profile into <c>Shared.json</c>, where every
+	/// profile shares it: a setting that becomes this PC's rather than a profile's.
+	/// </summary>
+	/// <remarks>
+	/// <c>Shared.json</c> keeps a value it already has. The active profile is brought forward first, so
+	/// its value is the one kept; every other profile's copy just goes. With no <c>Shared.json</c> beside
+	/// the file - an import, or <c>Shared.json</c> itself - the setting is dropped: an import never carries
+	/// <c>Shared.json</c>'s settings.
+	/// </remarks>
+	/// <param name="from">The dotted path in the profile.</param>
+	/// <param name="to">The dotted path in <c>Shared.json</c>.</param>
+	/// <exception cref="ArgumentException">Either path cannot name a setting.</exception>
+	public void MoveToShared(string from, string to)
+	{
+		ThrowIfInvalid(from);
+		ThrowIfInvalid(to);
+
+		foreach (string key in KeysAtOrBelow(from))
+		{
+			_shared?.TryAdd(to + key[from.Length..], _values[key]);
+			_values.Remove(key);
+		}
+	}
+
+	/// <summary>
+	/// Copies a setting, and every setting below it, from <c>Shared.json</c> into this profile: a setting
+	/// that becomes each profile's own. A value the profile already has at <paramref name="to"/> is kept.
+	/// </summary>
+	/// <remarks>
+	/// <c>Shared.json</c> keeps its copy, so every profile gets one; the step's
+	/// <see cref="UserConfigMigration.ThenShared"/> takes it out once they all have. Nothing happens with no
+	/// <c>Shared.json</c> beside the file.
+	/// </remarks>
+	/// <param name="from">The dotted path in <c>Shared.json</c>.</param>
+	/// <param name="to">The dotted path in the profile.</param>
+	/// <exception cref="ArgumentException">Either path cannot name a setting.</exception>
+	public void CopyFromShared(string from, string to)
+	{
+		ThrowIfInvalid(from);
+		ThrowIfInvalid(to);
+
+		if (_shared is null)
+		{
+			return;
+		}
+
+		foreach (KeyValuePair<string, string> entry in _shared.Where(entry => IsAtOrBelow(entry.Key, from)).ToList())
+		{
+			_values.TryAdd(to + entry.Key[from.Length..], entry.Value);
 		}
 	}
 

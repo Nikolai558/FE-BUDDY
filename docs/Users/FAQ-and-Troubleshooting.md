@@ -91,6 +91,11 @@ It won't put an older stable version over a newer one. To leave a pre-release (a
 the latest stable, choose **Stable** in Settings ▸ Updates / Update Channel, **Save**, then **Go back
 now**.
 
+### I went back to an older FE-Buddy and my settings changed
+
+Settings it can't read are moved to `%APPDATA%\FE-Buddy\Reverted`, and FE-Buddy tells you when it
+opens. After you update again, bring them back with Settings ▸ **Import…**.
+
 ### FE-Buddy crashed
 
 Please attach these when you [report it](https://github.com/Nikolai558/FE-BUDDY/issues):

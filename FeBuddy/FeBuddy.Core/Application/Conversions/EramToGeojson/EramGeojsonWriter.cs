@@ -52,11 +52,18 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 /// grouped into MultiPoint Features (<see cref="SymbolFeatureMerger"/>) only where everything they
 /// carry matches, <c>feb.*</c> included; a label is always a Feature of its own.
 /// </para>
+/// <para>
+/// Every layout leaves out SAA objects (<see cref="IsSaa"/>), before their defaults are looked at, and says
+/// in one advisory how many objects and elements it left out. A map with only SAAs writes no file.
+/// </para>
 /// </remarks>
 public static class EramGeojsonWriter
 {
 	/// <summary>The conversion's folder inside the output directory: the original tool's <c>E2G_OUTPUT</c>.</summary>
 	public const string RootFolder = "ERAM_TO_GEOJSON";
+
+	/// <summary>The <c>MapObjectType</c> of an ERAM SAA (special activity airspace), which every layout leaves out (<see cref="IsSaa"/>).</summary>
+	public const string SaaObjectType = "SAA";
 
 	private const string LogSource = "EramGeojsonWriter";
 
@@ -103,8 +110,9 @@ public static class EramGeojsonWriter
 	/// <param name="settings">The parsed settings.</param>
 	/// <param name="files">The run's file set, which does the writing and remembers what was written.</param>
 	/// <param name="messages">Where notices about missing defaults and unusable values go.</param>
-	/// <returns>The files written for this Geomaps file, and how many rendered Features they hold.</returns>
-	public static (IReadOnlyList<string> Paths, int FeatureCount) Write(
+	/// <returns>The files written for this Geomaps file, and how many rendered Features they hold, and how many SAA objects
+	/// were left out (<see cref="IsSaa"/>).</returns>
+	public static (IReadOnlyList<string> Paths, int FeatureCount, int SaaObjectsLeftOut) Write(
 		EramGeoMapFile geoMaps,
 		EramToGeojsonSettings settings,
 		GeojsonFileSet files,
@@ -122,6 +130,8 @@ public static class EramGeojsonWriter
 		HashSet<string> mapNames = new(StringComparer.OrdinalIgnoreCase);
 		HashSet<EramElementKind> kindsWithoutCard = [];
 		int hidden = 0;
+		int saaObjects = 0;
+		int saaElements = 0;
 
 		foreach (EramGeoMap map in geoMaps.Maps)
 		{
@@ -130,6 +140,14 @@ public static class EramGeojsonWriter
 
 			foreach (EramGeoMapObject mapObject in map.Objects)
 			{
+				// Before anything else, so an SAA's defaults are never checked or warned about.
+				if (IsSaa(mapObject))
+				{
+					saaObjects++;
+					saaElements += mapObject.Elements.Count;
+					continue;
+				}
+
 				string context = $"{sourceName}: {map.Name} / {mapObject.Name}";
 				Bases bases = Resolve(mapObject, settings, context, messages, kindsWithoutCard);
 
@@ -200,8 +218,32 @@ public static class EramGeojsonWriter
 				$"{sourceName}: {hidden:N0} label(s) ERAM keeps hidden (DisplaySetting false) were left out."));
 		}
 
+		if (saaObjects > 0)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"{sourceName}: left out {Count(saaObjects, "SAA object")} ({Count(saaElements, "element")}): SAAs are intentionally not converted.")
+			{
+				IsAdvisory = true
+			});
+		}
+
 		string[] written = [.. files.FilesWritten.Skip(before)];
-		return (written, written.Sum(path => files.RenderedFeatureCountsByFile[path]));
+		return (written, written.Sum(path => files.RenderedFeatureCountsByFile[path]), saaObjects);
+	}
+
+	/// <summary>
+	/// Whether a map object is an SAA - its <c>MapObjectType</c> is <see cref="SaaObjectType"/>, in any case,
+	/// with any spaces around it - which every layout leaves out (issue #401): SAAs are of little use on
+	/// VATSIM, and leaving them out keeps the files small. The reader still reads them; only the
+	/// conversion leaves them out.
+	/// </summary>
+	/// <param name="mapObject">The map object.</param>
+	/// <returns><see langword="true"/> for an SAA.</returns>
+	public static bool IsSaa(EramGeoMapObject mapObject)
+	{
+		ArgumentNullException.ThrowIfNull(mapObject);
+
+		return mapObject.ObjectType.Trim().Equals(SaaObjectType, StringComparison.OrdinalIgnoreCase);
 	}
 
 	// ================= looks =================
@@ -583,6 +625,9 @@ public static class EramGeojsonWriter
 		EramElementKind.Symbol => "symbols",
 		_ => "text",
 	};
+
+	/// <summary><c>1 element</c>, <c>340 elements</c>.</summary>
+	private static string Count(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count:N0} {noun}s";
 
 	private static string TwoDigits(int value) => value.ToString("00", CultureInfo.InvariantCulture);
 

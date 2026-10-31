@@ -61,7 +61,7 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8" TextWrapping="Wrap"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           bhv:InlineCode.Text="Each map is named after its GeomapId and button label, e.g. `CENTER_CENTER-MAP`.&#xA;`ConsoleCommandControl.txt` sits beside the maps in every layout.&#xA;Hover a layout to see what it writes." />
+                           bhv:InlineCode.Text="Each map is named after its GeomapId and button label, e.g. `CENTER_CENTER-MAP`.&#xA;`ConsoleCommandControl.txt` sits beside the maps in every layout.&#xA;SAA objects (`MapObjectType`=`SAA`) are intentionally left out of every layout.&#xA;Hover a layout to see what it writes." />
 
                 <ctl:Option Margin="0,4,0,0"
                             Description="A folder per set of filters, holding one file each for its lines, symbols and text. The fewest files, with short names.">
@@ -157,7 +157,7 @@
                                         <TextBlock TextWrapping="Wrap" Text="Anything with no filters at all shows at every filter setting (filter 0)." />
                                     </DockPanel>
                                     <TextBlock Style="{StaticResource TipLine}"
-                                               bhv:InlineCode.Text="Example: `DME` symbols are drawn as `vor`. SAA lines, which have no BCG or filters in the XML, get BCG 1 and show at every filter setting." />
+                                               bhv:InlineCode.Text="Example: `DME` symbols are drawn as `vor`. Lines whose defaults have no BCG or filters in the XML get BCG 1 and show at every filter setting." />
                                 </StackPanel>
                             </ToolTip>
                         </RadioButton.ToolTip>
@@ -186,7 +186,7 @@
                                         <TextBlock TextWrapping="Wrap" Text="A panel with Include unticked isn't used; CRC fills that kind's gaps, as in From the XML." />
                                     </DockPanel>
                                     <TextBlock Style="{StaticResource TipLine}"
-                                               bhv:InlineCode.Text="Example: with the card's symbol style set to `tacan`, `DME` symbols become `tacan` instead of `vor`. SAA lines get the card's BCG and filters." />
+                                               bhv:InlineCode.Text="Example: with the card's symbol style set to `tacan`, `DME` symbols become `tacan` instead of `vor`. Lines whose defaults have no BCG or filters get the card's." />
                                 </StackPanel>
                             </ToolTip>
                         </RadioButton.ToolTip>

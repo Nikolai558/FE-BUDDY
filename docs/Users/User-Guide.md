@@ -417,7 +417,7 @@ export, into an `ERAM_TO_GEOJSON` folder. Each map is named after its `GeomapId`
   In every layout but Raw, lines that share every property are joined and such symbols become one
   feature (a MultiPoint); labels stay one feature each.
 - **CRC ERAM Defaults Source** - **From the XML**, **From the XML, filling gaps from the card** (what
-  gives SAA objects, which have no BCG or filters, a look) or **From the card only**. Hover each for
+  gives a look to objects with no BCG or filters) or **From the card only**. Hover each for
   an example. The CRC ERAM Defaults card shows only when the card is a source.
 - **FE-Buddy Helper Properties** - optional `feb.*` fields saying where each feature came from.
 - With the export's `ConsoleCommandControl.xml` beside `Geomaps.xml`, it also writes
@@ -427,6 +427,8 @@ export, into an `ERAM_TO_GEOJSON` folder. Each map is named after its `GeomapId`
 
 A value CRC can't draw (a `DME` symbol, say) is left out, and the results say what CRC will draw
 instead. Text ERAM keeps hidden is left out, and ERAM's colours aren't carried over.
+SAA objects (`MapObjectType` `SAA`) are always left out, in every layout: they're of little use on VATSIM,
+and the results say how many were left out.
 
 ## Output files
 

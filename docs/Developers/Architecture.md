@@ -220,6 +220,9 @@ Not every sub-service has all four steps:
   `EramToGeojsonService`), one source file at a time through `ConversionFiles`: an unreadable file
   fails alone. Each writes into its own folder beside the `AIRAC_<cycle>` folders
   (`ServiceOutputPaths`).
+  ERAM to GeoJSON leaves out every SAA object (`MapObjectType` `SAA`) in every layout, before its
+  defaults are looked at, and says so in one advisory: the rule is `EramGeojsonWriter.IsSaa`. The reader
+  (`EramGeoMapReader`) still reads them.
 
 ## Settings
 
